@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { AgchainProjectCreateDialog } from '@/components/agchain/AgchainProjectCreateDialog';
 import { AgchainBenchmarksTable } from '@/components/agchain/benchmarks/AgchainBenchmarksTable';
 import { useAgchainBenchmarks } from '@/hooks/agchain/useAgchainBenchmarks';
+import type { AgchainBenchmarkCreateRequest } from '@/lib/agchainBenchmarks';
 import {
   broadcastAgchainProjectListChanged,
   setStoredAgchainProjectFocusSlug,
@@ -38,12 +39,8 @@ export default function AgchainProjectsPage() {
     setSearchParams(next, { replace: !open });
   }
 
-  async function handleCreateBenchmark(payload: {
-    benchmark_name: string;
-    benchmark_slug: string | null;
-    description: string;
-  }) {
-    const result = await createBenchmark(payload) as { benchmark_slug?: string };
+  async function handleCreateBenchmark(payload: AgchainBenchmarkCreateRequest) {
+    const result = await createBenchmark(payload);
     const nextSlug = result.benchmark_slug ?? payload.benchmark_slug ?? null;
     setStoredAgchainProjectFocusSlug(nextSlug);
     broadcastAgchainProjectListChanged(nextSlug);

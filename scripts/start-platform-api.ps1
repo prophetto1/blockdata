@@ -10,6 +10,8 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptDir
 $serviceDir = Join-Path $repoRoot "services\platform-api"
 $envPath = Join-Path $repoRoot ".env"
+$managedStateDir = Join-Path $repoRoot ".codex-tmp\platform-api-dev"
+$managedStatePath = Join-Path $managedStateDir "state.json"
 
 function Set-DotEnvVariables {
   param(
@@ -55,6 +57,45 @@ function Resolve-PythonCommand {
   throw "Unable to find python.exe or py.exe on PATH."
 }
 
+function Write-ManagedState {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$PythonCommand,
+
+    [Parameter(Mandatory = $true)]
+    [string[]]$UvicornArgs
+  )
+
+  $launcherStartedAt = $null
+  try {
+    $currentProcess = Get-Process -Id $PID -ErrorAction Stop
+    $launcherStartedAt = $currentProcess.StartTime.ToUniversalTime().ToString("o")
+  } catch {
+    $launcherStartedAt = $null
+  }
+
+  New-Item -ItemType Directory -Force -Path $managedStateDir | Out-Null
+
+  $state = [ordered]@{
+    written_at = (Get-Date).ToUniversalTime().ToString("o")
+    repo_root = $repoRoot
+    service_dir = $serviceDir
+    env_path = $envPath
+    env_loaded = Test-Path $envPath
+    state_path = $managedStatePath
+    bootstrap_script = $PSCommandPath
+    port = $Port
+    listen_host = $ListenHost
+    reload = -not $NoReload
+    launcher_pid = $PID
+    launcher_started_at = $launcherStartedAt
+    python_command = $PythonCommand
+    uvicorn_args = $UvicornArgs
+  }
+
+  $state | ConvertTo-Json -Depth 6 | Set-Content -Path $managedStatePath -Encoding UTF8
+}
+
 Set-DotEnvVariables -Path $envPath
 
 $pythonCommand = Resolve-PythonCommand
@@ -68,8 +109,11 @@ if (-not $NoReload) {
   $uvicornArgs += "--reload"
 }
 
+Write-ManagedState -PythonCommand $pythonCommand -UvicornArgs $uvicornArgs
+
 Write-Output "=== platform-api Config ==="
 Write-Output "ENV_FILE:       $envPath"
+Write-Output "STATE_FILE:     $managedStatePath"
 Write-Output "SUPABASE_URL:   $($env:SUPABASE_URL)"
 Write-Output "LOG_LEVEL:      $(if ($env:LOG_LEVEL) { $env:LOG_LEVEL } else { 'INFO' })"
 Write-Output "OTEL_ENABLED:   $(if ($env:OTEL_ENABLED) { $env:OTEL_ENABLED } else { 'false' })"

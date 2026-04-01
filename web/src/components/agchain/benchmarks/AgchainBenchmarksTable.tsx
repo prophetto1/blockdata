@@ -1,20 +1,20 @@
 import { Link } from 'react-router-dom';
-import { type AgchainBenchmarkListRow } from '@/lib/agchainBenchmarks';
+import { type AgchainProjectRegistryRow } from '@/lib/agchainBenchmarks';
 
 type AgchainBenchmarksTableProps = {
-  items: AgchainBenchmarkListRow[];
+  items: AgchainProjectRegistryRow[];
   loading: boolean;
 };
 
-function formatState(value: AgchainBenchmarkListRow['state']) {
+function formatState(value: AgchainProjectRegistryRow['state']) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function formatValidation(item: AgchainBenchmarkListRow) {
+function formatValidation(item: AgchainProjectRegistryRow) {
   return `${item.validation_status} (${item.validation_issue_count})`;
 }
 
-function formatActivity(item: AgchainBenchmarkListRow) {
+function formatActivity(item: AgchainProjectRegistryRow) {
   const lastRun = item.last_run_at ? new Date(item.last_run_at).toLocaleString() : 'No runs yet';
   const updated = new Date(item.updated_at).toLocaleString();
   return `${lastRun} | updated ${updated}`;

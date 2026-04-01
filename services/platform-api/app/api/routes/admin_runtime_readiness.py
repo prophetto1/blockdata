@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from time import perf_counter
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -19,6 +19,44 @@ logger = logging.getLogger("platform-api.admin-runtime-readiness")
 router = APIRouter(prefix="/admin/runtime", tags=["admin-runtime-readiness"])
 
 
+def _record_snapshot_observability(
+    *,
+    span: Any,
+    surface: str,
+    result: str,
+    degraded_count: int,
+    failed_count: int,
+    http_status_code: int,
+) -> None:
+    try:
+        set_span_attributes(
+            span,
+            {
+                "surface": surface,
+                "result": result,
+                "degraded_count": degraded_count,
+                "failed_count": failed_count,
+                "http.status_code": http_status_code,
+            },
+        )
+        record_runtime_readiness_snapshot(
+            result=result,
+            degraded_count=degraded_count,
+            failed_count=failed_count,
+            http_status_code=http_status_code,
+        )
+    except Exception:
+        logger.warning(
+            "Failed to record runtime readiness snapshot observability",
+            exc_info=True,
+            extra={
+                "surface": surface,
+                "result": result,
+                "http_status_code": http_status_code,
+            },
+        )
+
+
 @router.get("/readiness", openapi_extra={"x-required-role": "platform_admin"})
 async def get_runtime_readiness(
     surface: Literal["all", "shared", "blockdata", "agchain"] = Query(default="all"),
@@ -31,50 +69,41 @@ async def get_runtime_readiness(
             summary = snapshot["summary"]
             degraded_count = summary["warn"] + summary["fail"]
             failed_count = summary["fail"]
-            set_span_attributes(
-                span,
-                {
-                    "surface": surface,
-                    "result": "ok",
-                    "degraded_count": degraded_count,
-                    "failed_count": failed_count,
-                    "http.status_code": 200,
-                },
-            )
-            record_runtime_readiness_snapshot(
+            _record_snapshot_observability(
+                span=span,
+                surface=surface,
                 result="ok",
                 degraded_count=degraded_count,
                 failed_count=failed_count,
                 http_status_code=200,
             )
             if degraded_count > 0 or failed_count > 0:
-                logger.warning(
-                    "admin.runtime.readiness.degraded",
-                    extra={
-                        "surface": surface,
-                        "degraded_count": degraded_count,
-                        "failed_count": failed_count,
-                        "failed_check_ids": [
-                            check["id"]
-                            for grouped_surface in snapshot["surfaces"]
-                            for check in grouped_surface["checks"]
-                            if check["status"] in {"warn", "fail"}
-                        ],
-                    },
-                )
+                try:
+                    logger.warning(
+                        "admin.runtime.readiness.degraded",
+                        extra={
+                            "surface": surface,
+                            "degraded_count": degraded_count,
+                            "failed_count": failed_count,
+                            "failed_check_ids": [
+                                check.get("id")
+                                for grouped_surface in snapshot.get("surfaces", [])
+                                for check in grouped_surface.get("checks", [])
+                                if check.get("status") in {"warn", "fail"}
+                            ],
+                        },
+                    )
+                except Exception:
+                    logger.warning(
+                        "Failed to emit degraded runtime readiness warning",
+                        exc_info=True,
+                        extra={"surface": surface},
+                    )
             return snapshot
         except Exception as exc:
-            set_span_attributes(
-                span,
-                {
-                    "surface": surface,
-                    "result": "error",
-                    "degraded_count": 0,
-                    "failed_count": 0,
-                    "http.status_code": 500,
-                },
-            )
-            record_runtime_readiness_snapshot(
+            _record_snapshot_observability(
+                span=span,
+                surface=surface,
                 result="error",
                 degraded_count=0,
                 failed_count=0,

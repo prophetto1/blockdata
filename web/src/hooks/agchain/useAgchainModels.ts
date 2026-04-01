@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  connectModelKey,
   createAgchainModelTarget,
+  disconnectModelKey,
   fetchAgchainModelDetail,
   fetchAgchainModelProviders,
   fetchAgchainModels,
@@ -11,6 +13,7 @@ import {
   type AgchainProviderDefinition,
   updateAgchainModelTarget,
 } from '@/lib/agchainModels';
+import { deriveAgchainProviderRows } from '@/lib/agchainModelProviders';
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unknown error';
@@ -19,7 +22,8 @@ function getErrorMessage(error: unknown) {
 export function useAgchainModels() {
   const [items, setItems] = useState<AgchainModelTarget[]>([]);
   const [providers, setProviders] = useState<AgchainProviderDefinition[]>([]);
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [selectedProviderSlug, setSelectedProviderSlug] = useState<string | null>(null);
+  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AgchainModelDetail | null>(null);
   const [listLoading, setListLoading] = useState(true);
   const [providersLoading, setProvidersLoading] = useState(true);
@@ -28,6 +32,16 @@ export function useAgchainModels() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+
+  const providerRows = useMemo(() => deriveAgchainProviderRows(providers, items), [providers, items]);
+  const selectedProvider = useMemo(
+    () => providerRows.find((provider) => provider.provider_slug === selectedProviderSlug) ?? null,
+    [providerRows, selectedProviderSlug],
+  );
+  const selectedTarget = useMemo(
+    () => selectedProvider?.targets.find((target) => target.model_target_id === selectedTargetId) ?? null,
+    [selectedProvider, selectedTargetId],
+  );
 
   const loadItems = useCallback(async () => {
     setListLoading(true);
@@ -75,21 +89,49 @@ export function useAgchainModels() {
   }, [loadItems, loadProviders]);
 
   useEffect(() => {
-    if (!selectedModelId) {
+    if (!selectedProvider) {
+      setSelectedTargetId(null);
       setDetail(null);
       setDetailError(null);
       return;
     }
 
-    void loadDetail(selectedModelId);
-  }, [loadDetail, selectedModelId]);
+    const nextTargetId =
+      selectedProvider.targets.find((target) => target.model_target_id === selectedTargetId)?.model_target_id ??
+      selectedProvider.credential_anchor_target_id ??
+      selectedProvider.targets[0]?.model_target_id ??
+      null;
 
-  const selectModel = useCallback((modelTargetId: string) => {
-    setSelectedModelId(modelTargetId);
+    if (nextTargetId !== selectedTargetId) {
+      setSelectedTargetId(nextTargetId);
+    }
+
+    if (!nextTargetId) {
+      setDetail(null);
+      setDetailError(null);
+    }
+  }, [selectedProvider, selectedTargetId]);
+
+  useEffect(() => {
+    if (!selectedTargetId) {
+      setDetail(null);
+      setDetailError(null);
+      return;
+    }
+
+    void loadDetail(selectedTargetId);
+  }, [loadDetail, selectedTargetId]);
+
+  const selectProvider = useCallback((providerSlug: string) => {
+    setSelectedProviderSlug(providerSlug);
   }, []);
 
-  const clearSelection = useCallback(() => {
-    setSelectedModelId(null);
+  const closeProvider = useCallback(() => {
+    setSelectedProviderSlug(null);
+  }, []);
+
+  const selectTarget = useCallback((modelTargetId: string) => {
+    setSelectedTargetId(modelTargetId);
   }, []);
 
   const createModel = useCallback(
@@ -98,7 +140,8 @@ export function useAgchainModels() {
       try {
         const result = await createAgchainModelTarget(payload);
         await loadItems();
-        setSelectedModelId(result.model_target_id);
+        setSelectedProviderSlug(payload.provider_slug);
+        setSelectedTargetId(result.model_target_id);
         setError(null);
         return result;
       } catch (nextError) {
@@ -111,17 +154,15 @@ export function useAgchainModels() {
     [loadItems],
   );
 
-  const updateSelectedModel = useCallback(
-    async (payload: Partial<AgchainModelTargetWrite>) => {
-      if (!selectedModelId) {
-        throw new Error('No model target selected');
-      }
-
+  const updateModel = useCallback(
+    async (modelTargetId: string, payload: Partial<AgchainModelTargetWrite>) => {
       setMutating(true);
       try {
-        const result = await updateAgchainModelTarget(selectedModelId, payload);
+        const result = await updateAgchainModelTarget(modelTargetId, payload);
         await loadItems();
-        await loadDetail(selectedModelId);
+        if (selectedTargetId === modelTargetId) {
+          await loadDetail(modelTargetId);
+        }
         setError(null);
         return result;
       } catch (nextError) {
@@ -131,36 +172,84 @@ export function useAgchainModels() {
         setMutating(false);
       }
     },
-    [loadDetail, loadItems, selectedModelId],
+    [loadDetail, loadItems, selectedTargetId],
   );
 
-  const refreshSelectedModelHealth = useCallback(async () => {
-    if (!selectedModelId) {
-      throw new Error('No model target selected');
+  const refreshModelHealth = useCallback(
+    async (modelTargetId: string) => {
+      setRefreshing(true);
+      try {
+        const result = await refreshAgchainModelTargetHealth(modelTargetId);
+        await loadItems();
+        await loadDetail(modelTargetId);
+        setSelectedTargetId(modelTargetId);
+        setError(null);
+        return result;
+      } catch (nextError) {
+        setError(getErrorMessage(nextError));
+        throw nextError;
+      } finally {
+        setRefreshing(false);
+      }
+    },
+    [loadDetail, loadItems],
+  );
+
+  const connectKey = useCallback(
+    async (apiKey: string) => {
+      const anchorTargetId = selectedProvider?.credential_anchor_target_id;
+      if (!anchorTargetId) {
+        throw new Error('No eligible api_key target is available for this provider');
+      }
+
+      setMutating(true);
+      try {
+        const result = await connectModelKey(anchorTargetId, apiKey);
+        await loadItems();
+        await loadDetail(selectedTargetId ?? anchorTargetId);
+        setError(null);
+        return result;
+      } catch (nextError) {
+        setError(getErrorMessage(nextError));
+        throw nextError;
+      } finally {
+        setMutating(false);
+      }
+    },
+    [loadDetail, loadItems, selectedProvider, selectedTargetId],
+  );
+
+  const disconnectKey = useCallback(async () => {
+    const anchorTargetId = selectedProvider?.credential_anchor_target_id;
+    if (!anchorTargetId) {
+      throw new Error('No eligible api_key target is available for this provider');
     }
 
-    setRefreshing(true);
+    setMutating(true);
     try {
-      const result = await refreshAgchainModelTargetHealth(selectedModelId);
+      const result = await disconnectModelKey(anchorTargetId);
       await loadItems();
-      await loadDetail(selectedModelId);
+      await loadDetail(selectedTargetId ?? anchorTargetId);
       setError(null);
       return result;
     } catch (nextError) {
       setError(getErrorMessage(nextError));
       throw nextError;
     } finally {
-      setRefreshing(false);
+      setMutating(false);
     }
-  }, [loadDetail, loadItems, selectedModelId]);
+  }, [loadDetail, loadItems, selectedProvider, selectedTargetId]);
 
   return {
     items,
     providers,
-    selectedModelId,
-    selectedModel: detail?.model_target ?? null,
+    providerRows,
+    selectedProviderSlug,
+    selectedProvider,
+    selectedTargetId,
+    selectedTarget: detail?.model_target ?? selectedTarget,
     recentHealthChecks: detail?.recent_health_checks ?? [],
-    providerDefinition: detail?.provider_definition ?? null,
+    providerDefinition: selectedProvider?.provider_definition ?? detail?.provider_definition ?? null,
     listLoading,
     providersLoading,
     detailLoading,
@@ -168,10 +257,13 @@ export function useAgchainModels() {
     refreshing,
     error,
     detailError,
-    selectModel,
-    clearSelection,
+    selectProvider,
+    closeProvider,
+    selectTarget,
     createModel,
-    updateSelectedModel,
-    refreshSelectedModelHealth,
+    updateModel,
+    refreshModelHealth,
+    connectKey,
+    disconnectKey,
   };
 }

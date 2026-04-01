@@ -18,6 +18,7 @@ export const AGCHAIN_NAV_SECTIONS: AdminNavSection[] = [
       { label: 'Datasets',      icon: IconDatabase,        path: '/app/agchain/datasets' },
       { label: 'Prompts',       icon: IconFileText,        path: '/app/agchain/prompts' },
       { label: 'Scorers',       icon: IconChartBar,        path: '/app/agchain/scorers' },
+      { label: 'Models',        icon: IconCpu,             path: '/app/agchain/models' },
       { label: 'Parameters',    icon: IconAdjustments,     path: '/app/agchain/parameters' },
       { label: 'Tools',         icon: IconCpu,             path: '/app/agchain/tools' },
       { label: 'Observability', icon: IconActivity,        path: '/app/agchain/observability' },

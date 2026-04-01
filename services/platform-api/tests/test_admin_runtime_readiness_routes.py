@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 import pytest
+from unittest.mock import MagicMock
 
 from app.auth.dependencies import require_superuser
 from app.auth.principals import AuthPrincipal
@@ -18,16 +19,33 @@ def _superuser_principal() -> AuthPrincipal:
     )
 
 
-@pytest.fixture
-def client(monkeypatch):
+def _make_app(monkeypatch):
+    from app.core.config import get_settings
+    import app.main as main_module
+
     monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
     monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
     monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
 
+    get_settings.cache_clear()
+    monkeypatch.setattr(
+        main_module,
+        "init_pool",
+        lambda: MagicMock(status=lambda: {"max_workers": 0, "max_queue_depth": 0, "active": 0, "saturated": False}),
+    )
+    monkeypatch.setattr(main_module, "shutdown_pool", lambda: None)
+    monkeypatch.setattr(main_module, "start_pipeline_jobs_worker", lambda: None)
+    monkeypatch.setattr(main_module, "stop_pipeline_jobs_worker", lambda: None)
+    monkeypatch.setattr(main_module, "start_storage_cleanup_worker", lambda: None)
+    monkeypatch.setattr(main_module, "stop_storage_cleanup_worker", lambda: None)
+    return create_app()
+
+
+@pytest.fixture
+def client(monkeypatch):
     from app.core.config import get_settings
 
-    get_settings.cache_clear()
-    app = create_app()
+    app = _make_app(monkeypatch)
     with TestClient(app) as test_client:
       yield test_client
     get_settings.cache_clear()
@@ -35,14 +53,9 @@ def client(monkeypatch):
 
 @pytest.fixture
 def superuser_client(monkeypatch):
-    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
-    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
-    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
-
     from app.core.config import get_settings
 
-    get_settings.cache_clear()
-    app = create_app()
+    app = _make_app(monkeypatch)
     app.dependency_overrides[require_superuser] = _superuser_principal
     with TestClient(app) as test_client:
         yield test_client
@@ -124,3 +137,59 @@ def test_get_runtime_readiness_returns_grouped_snapshot(superuser_client, monkey
     assert [surface["id"] for surface in body["surfaces"]] == ["shared", "blockdata", "agchain"]
     assert body["surfaces"][0]["checks"][0]["label"] == "Platform API readiness"
     assert body["surfaces"][1]["checks"][0]["evidence"] == {"cors_configured": False}
+
+
+def test_get_runtime_readiness_returns_snapshot_when_snapshot_metrics_raise(superuser_client, monkeypatch):
+    snapshot = {
+        "generated_at": "2026-03-30T16:00:00Z",
+        "summary": {"ok": 1, "warn": 0, "fail": 0, "unknown": 0},
+        "surfaces": [
+            {
+                "id": "shared",
+                "label": "Shared",
+                "summary": {"ok": 1, "warn": 0, "fail": 0, "unknown": 0},
+                "checks": [
+                    {
+                        "id": "shared.platform_api.ready",
+                        "category": "process",
+                        "status": "ok",
+                        "label": "Platform API readiness",
+                        "summary": "Platform API process is ready.",
+                        "evidence": {"ready": True},
+                        "remediation": "No action required.",
+                        "checked_at": "2026-03-30T16:00:00Z",
+                    }
+                ],
+            }
+        ],
+    }
+
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.get_runtime_readiness_snapshot",
+        lambda **_kwargs: snapshot,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.record_runtime_readiness_snapshot",
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("snapshot metrics unavailable")),
+    )
+
+    response = superuser_client.get("/admin/runtime/readiness?surface=all")
+
+    assert response.status_code == 200
+    assert response.json()["summary"] == {"ok": 1, "warn": 0, "fail": 0, "unknown": 0}
+
+
+def test_get_runtime_readiness_still_returns_backend_500_when_error_metrics_raise(superuser_client, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.get_runtime_readiness_snapshot",
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("snapshot exploded")),
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.record_runtime_readiness_snapshot",
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("snapshot metrics unavailable")),
+    )
+
+    response = superuser_client.get("/admin/runtime/readiness?surface=all")
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Failed to build runtime readiness snapshot"}

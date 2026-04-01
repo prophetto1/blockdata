@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { AGCHAIN_NAV_SECTIONS } from './AgchainLeftNav';
 
 describe('AGCHAIN_NAV_SECTIONS', () => {
-  it('defines the locked 8-item overview-first AGChain rail in order', () => {
+  it('defines the locked 9-item overview-first AGChain rail in order', () => {
     expect(AGCHAIN_NAV_SECTIONS).toHaveLength(1);
     expect(AGCHAIN_NAV_SECTIONS[0]?.items.map((item) => item.label)).toEqual([
       'Overview',
       'Datasets',
       'Prompts',
       'Scorers',
+      'Models',
       'Parameters',
       'Tools',
       'Observability',
@@ -20,6 +21,7 @@ describe('AGCHAIN_NAV_SECTIONS', () => {
       '/app/agchain/datasets',
       '/app/agchain/prompts',
       '/app/agchain/scorers',
+      '/app/agchain/models',
       '/app/agchain/parameters',
       '/app/agchain/tools',
       '/app/agchain/observability',

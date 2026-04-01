@@ -1,9 +1,12 @@
 import { Button } from '@/components/ui/button';
-import type { AgchainBenchmarkSummary, AgchainBenchmarkVersionSummary } from '@/lib/agchainBenchmarks';
+import type {
+  AgchainBenchmarkWorkbenchSummary,
+  AgchainBenchmarkWorkbenchVersionSummary,
+} from '@/lib/agchainBenchmarks';
 
 type AgchainBenchmarkWorkbenchHeaderProps = {
-  benchmark: AgchainBenchmarkSummary | null;
-  currentVersion: AgchainBenchmarkVersionSummary | null;
+  benchmark: AgchainBenchmarkWorkbenchSummary | null;
+  currentVersion: AgchainBenchmarkWorkbenchVersionSummary | null;
   counts: {
     selected_eval_model_count: number;
     tested_model_count: number;

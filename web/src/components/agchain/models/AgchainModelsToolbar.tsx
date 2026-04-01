@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Select, createListCollection } from '@ark-ui/react/select';
 import { Portal } from '@ark-ui/react/portal';
 import { IconChevronDown } from '@tabler/icons-react';
@@ -8,15 +8,6 @@ import {
   type AgchainModelTargetWrite,
   type AgchainProviderDefinition,
 } from '@/lib/agchainModels';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 
 export type ModelTargetDraft = {
   label: string;
@@ -34,11 +25,8 @@ export type ModelTargetDraft = {
 };
 
 type AgchainModelsToolbarProps = {
-  providers: AgchainProviderDefinition[];
   search: string;
   onSearchChange: (value: string) => void;
-  onCreate: (payload: AgchainModelTargetWrite) => Promise<unknown>;
-  creating: boolean;
   error: string | null;
 };
 
@@ -369,90 +357,33 @@ export function ModelTargetFormFields({
 }
 
 export function AgchainModelsToolbar({
-  providers,
   search,
   onSearchChange,
-  onCreate,
-  creating,
   error,
 }: AgchainModelsToolbarProps) {
-  const [createOpen, setCreateOpen] = useState(false);
-  const [draft, setDraft] = useState<ModelTargetDraft>(() => createEmptyModelTargetDraft(providers));
-
-  useEffect(() => {
-    if (!createOpen) {
-      setDraft(createEmptyModelTargetDraft(providers));
-    }
-  }, [createOpen, providers]);
-
-  async function handleCreate() {
-    const provider = getProvider(providers, draft.provider_slug);
-    await onCreate(modelTargetDraftToWrite(draft, provider));
-    setCreateOpen(false);
-  }
-
   return (
-    <>
-      <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex-1">
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground">Models</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              Global provider-backed model targets supported by AG chain, including auth readiness and
-              lightweight health checks.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <input
-              aria-label="Search models"
-              className={`${inputClass} min-w-72`}
-              placeholder="Search label, provider, or qualified model"
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-            />
-            <Button type="button" onClick={() => setCreateOpen(true)} disabled={providers.length === 0}>
-              Add Model Target
-            </Button>
-          </div>
-        </div>
-        {error ? (
-          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
-            {error}
+    <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex-1">
+          <h2 className="text-lg font-semibold text-foreground">Providers</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-7 text-muted-foreground">
+            Configure provider access, review readiness, and open a provider&apos;s detail panel to inspect its
+            curated global targets.
           </p>
-        ) : null}
-      </section>
-
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-2xl">
-          <SheetHeader>
-            <SheetTitle>Add Model Target</SheetTitle>
-            <SheetDescription>
-              Create a new provider-backed model target using the supported AG chain provider catalog.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-6">
-            <ModelTargetFormFields draft={draft} providers={providers} onChange={setDraft} />
-          </div>
-          <SheetFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => void handleCreate()}
-              disabled={
-                creating ||
-                !draft.provider_slug ||
-                !draft.label.trim() ||
-                !draft.model_name.trim() ||
-                !draft.qualified_model.trim()
-              }
-            >
-              {creating ? 'Creating...' : 'Create Model'}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-    </>
+        </div>
+        <input
+          aria-label="Search providers"
+          className={`${inputClass} min-w-72`}
+          placeholder="Search provider or target"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+        />
+      </div>
+      {error ? (
+        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
+          {error}
+        </p>
+      ) : null}
+    </section>
   );
 }

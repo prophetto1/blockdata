@@ -1,6 +1,12 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import * as agchainBenchmarkContracts from '@/lib/agchainBenchmarks';
+import type {
+  AgchainBenchmarkDetail,
+  AgchainBenchmarkWorkbenchDetail,
+  AgchainProjectRegistryRow,
+} from '@/lib/agchainBenchmarks';
 import AgchainBenchmarksPage from './AgchainBenchmarksPage';
 
 const useAgchainBenchmarkStepsMock = vi.fn();
@@ -8,6 +14,79 @@ const useAgchainBenchmarkStepsMock = vi.fn();
 vi.mock('@/hooks/agchain/useAgchainBenchmarkSteps', () => ({
   useAgchainBenchmarkSteps: () => useAgchainBenchmarkStepsMock(),
 }));
+
+const PROJECT_ROW: AgchainProjectRegistryRow = {
+  benchmark_id: 'benchmark-1',
+  benchmark_slug: 'legal-10',
+  benchmark_name: 'Legal-10',
+  description: 'Three-step benchmark package for legal analysis.',
+  state: 'draft',
+  current_spec_label: 'v0.1.0',
+  current_spec_version: 'v0.1.0',
+  version_status: 'draft',
+  step_count: 2,
+  selected_eval_model_count: 2,
+  tested_model_count: 1,
+  tested_policy_bundle_count: 0,
+  validation_status: 'warn',
+  validation_issue_count: 2,
+  last_run_at: null,
+  updated_at: '2026-03-31T16:45:00Z',
+  href: '/app/agchain/overview?project=legal-10',
+};
+
+const BENCHMARK_DETAIL: AgchainBenchmarkDetail = {
+  benchmark: {
+    benchmark_id: 'benchmark-1',
+    benchmark_slug: 'legal-10',
+    benchmark_name: 'Legal-10',
+    description: 'Three-step benchmark package for legal analysis.',
+    tags: ['legal', 'phase-1'],
+    latest_version_id: 'version-1',
+    latest_version_label: 'v0.1.0',
+    status: 'draft',
+    validation_status: 'warn',
+    updated_at: '2026-03-31T16:45:00Z',
+  },
+  current_draft_version: {
+    benchmark_version_id: 'version-1',
+    version_label: 'v0.1.0',
+    version_status: 'draft',
+    dataset_version_id: 'dataset-version-1',
+    validation_status: 'warn',
+    scorer_count: 1,
+    tool_count: 0,
+    created_at: '2026-03-31T16:45:00Z',
+    updated_at: '2026-03-31T16:45:00Z',
+  },
+  current_published_version: null,
+  recent_runs_count: 0,
+};
+
+const WORKBENCH_DETAIL: AgchainBenchmarkWorkbenchDetail = {
+  benchmark: {
+    benchmark_id: 'benchmark-1',
+    benchmark_slug: 'legal-10',
+    benchmark_name: 'Legal-10',
+    description: 'Three-step benchmark package for legal analysis.',
+  },
+  current_version: {
+    benchmark_version_id: 'version-1',
+    version_label: 'v0.1.0',
+    version_status: 'draft',
+    plan_family: 'custom',
+    step_count: 2,
+    validation_status: 'warn',
+    validation_issue_count: 2,
+  },
+  permissions: {
+    can_edit: true,
+  },
+  counts: {
+    selected_eval_model_count: 2,
+    tested_model_count: 1,
+  },
+};
 
 afterEach(() => {
   cleanup();
@@ -17,25 +96,9 @@ describe('AgchainBenchmarksPage', () => {
   beforeEach(() => {
     useAgchainBenchmarkStepsMock.mockReset();
     useAgchainBenchmarkStepsMock.mockReturnValue({
-      benchmark: {
-        benchmark_id: 'benchmark-1',
-        benchmark_slug: 'legal-10',
-        benchmark_name: 'Legal-10',
-        description: 'Three-step benchmark package for legal analysis.',
-      },
-      currentVersion: {
-        benchmark_version_id: 'version-1',
-        version_label: 'v0.1.0',
-        version_status: 'draft',
-        plan_family: 'custom',
-        step_count: 2,
-        validation_status: 'warn',
-        validation_issue_count: 2,
-      },
-      counts: {
-        selected_eval_model_count: 2,
-        tested_model_count: 1,
-      },
+      benchmark: WORKBENCH_DETAIL.benchmark,
+      currentVersion: WORKBENCH_DETAIL.current_version,
+      counts: WORKBENCH_DETAIL.counts,
       steps: [
         {
           benchmark_step_id: 'step-1',
@@ -84,17 +147,17 @@ describe('AgchainBenchmarksPage', () => {
       createStep: vi.fn(),
       updateSelectedStep: vi.fn(),
       deleteSelectedStep: vi.fn(),
-      focusedProject: {
-        benchmark_id: 'benchmark-1',
-        benchmark_slug: 'legal-10',
-        benchmark_name: 'Legal-10',
-        description: 'Three-step benchmark package for legal analysis.',
-      },
+      focusedProject: PROJECT_ROW,
       hasProjectFocus: true,
     });
   });
 
   it('renders benchmark definition as a selected-project child page rather than a multi-project registry', () => {
+    expect(agchainBenchmarkContracts).toBeTypeOf('object');
+    expect(PROJECT_ROW.benchmark_slug).toBe('legal-10');
+    expect(BENCHMARK_DETAIL.current_draft_version?.dataset_version_id).toBe('dataset-version-1');
+    expect(WORKBENCH_DETAIL.current_version?.step_count).toBe(2);
+
     render(
       <MemoryRouter>
         <AgchainBenchmarksPage />

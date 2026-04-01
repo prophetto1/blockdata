@@ -182,7 +182,11 @@ def create_app() -> FastAPI:
     from app.api.routes.agchain_models import router as agchain_models_router
     app.include_router(agchain_models_router)
 
-    # 5k. AG chain benchmark catalog (user-scoped, before plugin catch-all)
+    # 5k. AG chain dataset registry (user-scoped, before plugin catch-all)
+    from app.api.routes.agchain_datasets import router as agchain_datasets_router
+    app.include_router(agchain_datasets_router)
+
+    # 5l. AG chain benchmark catalog (user-scoped, before plugin catch-all)
     from app.api.routes.agchain_benchmarks import router as agchain_benchmarks_router
     app.include_router(agchain_benchmarks_router)
 

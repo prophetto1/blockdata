@@ -3,10 +3,10 @@ import {
   buildEmptyBenchmarkStepDraft,
   createAgchainBenchmarkStep,
   deleteAgchainBenchmarkStep,
-  fetchAgchainBenchmarkDetail,
+  fetchAgchainBenchmarkWorkbenchDetail,
   fetchAgchainBenchmarkSteps,
   reorderAgchainBenchmarkSteps,
-  type AgchainBenchmarkDetail,
+  type AgchainBenchmarkWorkbenchDetail,
   type AgchainBenchmarkStepWrite,
   type AgchainBenchmarkStepsDetail,
   updateAgchainBenchmarkStep,
@@ -20,7 +20,7 @@ function getErrorMessage(error: unknown) {
 export function useAgchainBenchmarkSteps() {
   const { focusedProject, loading: focusLoading } = useAgchainProjectFocus();
   const benchmarkSlug = focusedProject?.benchmark_slug;
-  const [detail, setDetail] = useState<AgchainBenchmarkDetail | null>(null);
+  const [detail, setDetail] = useState<AgchainBenchmarkWorkbenchDetail | null>(null);
   const [stepsDetail, setStepsDetail] = useState<AgchainBenchmarkStepsDetail | null>(null);
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export function useAgchainBenchmarkSteps() {
     setLoading(true);
     try {
       const [nextDetail, nextSteps] = await Promise.all([
-        fetchAgchainBenchmarkDetail(benchmarkSlug),
+        fetchAgchainBenchmarkWorkbenchDetail(benchmarkSlug),
         fetchAgchainBenchmarkSteps(benchmarkSlug),
       ]);
       setDetail(nextDetail);

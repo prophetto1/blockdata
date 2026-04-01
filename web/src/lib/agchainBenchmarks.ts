@@ -1,29 +1,34 @@
 import { platformApiFetch } from '@/lib/platformApi';
 
+export type AgchainBenchmarkRouteParams = {
+  benchmarkSlug: string;
+};
+
+export type AgchainBenchmarkStatus = 'draft' | 'ready' | 'running' | 'attention' | 'archived';
+export type AgchainBenchmarkVersionStatus = 'draft' | 'published' | 'archived';
+export type AgchainValidationStatus = 'pass' | 'warn' | 'fail' | 'unknown';
+
 export type AgchainBenchmarkListRow = {
   benchmark_id: string;
   benchmark_slug: string;
   benchmark_name: string;
   description: string;
-  state: 'draft' | 'ready' | 'running' | 'attention' | 'archived';
-  current_spec_label: string;
-  current_spec_version: string;
-  version_status: 'draft' | 'published' | 'archived';
-  step_count: number;
-  selected_eval_model_count: number;
-  tested_model_count: number;
-  tested_policy_bundle_count: number;
-  validation_status: 'pass' | 'warn' | 'fail' | 'unknown';
-  validation_issue_count: number;
-  last_run_at: string | null;
+  latest_version_id: string | null;
+  latest_version_label: string | null;
+  dataset_version_id: string | null;
+  scorer_count: number;
+  tool_count: number;
+  status: AgchainBenchmarkStatus;
+  validation_status: AgchainValidationStatus;
   updated_at: string;
-  href: string;
 };
 
 export type AgchainBenchmarkCreateRequest = {
+  project_id?: string | null;
   benchmark_name: string;
   benchmark_slug: string | null;
   description: string;
+  tags?: string[];
 };
 
 export type AgchainBenchmarkSummary = {
@@ -31,15 +36,139 @@ export type AgchainBenchmarkSummary = {
   benchmark_slug: string;
   benchmark_name: string;
   description: string;
+  tags: string[];
+  latest_version_id: string | null;
+  latest_version_label: string | null;
+  status: AgchainBenchmarkStatus;
+  validation_status: AgchainValidationStatus;
+  updated_at: string;
 };
 
 export type AgchainBenchmarkVersionSummary = {
   benchmark_version_id: string;
   version_label: string;
-  version_status: 'draft' | 'published' | 'archived';
+  version_status: AgchainBenchmarkVersionStatus;
+  dataset_version_id: string | null;
+  validation_status: AgchainValidationStatus;
+  scorer_count: number;
+  tool_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AgchainSolverPlan = Record<string, unknown>;
+
+export type AgchainModelRoleAssignment = {
+  role: string;
+  model_target_id: string | null;
+  label?: string;
+};
+
+export type AgchainTaskDefinition = {
+  dataset_version_id: string;
+  task_name: string | null;
+  task_file_ref: string | null;
+  task_definition_jsonb: Record<string, unknown> | null;
+  solver_plan_jsonb: Record<string, unknown>;
+  scorer_refs_jsonb: Record<string, unknown>[];
+  tool_refs_jsonb: Record<string, unknown>[];
+  sandbox_profile_id: string | null;
+  sandbox_overrides_jsonb: Record<string, unknown>;
+  model_roles_jsonb: Record<string, unknown>;
+  generate_config_jsonb: Record<string, unknown>;
+  eval_config_jsonb: Record<string, unknown>;
+};
+
+export type AgchainBenchmarkVersionDetail = {
+  benchmark_version: AgchainBenchmarkVersionSummary & {
+    task_name: string | null;
+    task_file_ref: string | null;
+    task_definition_jsonb: Record<string, unknown> | null;
+    solver_plan_jsonb: AgchainSolverPlan;
+  };
+  dataset_version: {
+    dataset_version_id: string;
+    version_label: string;
+  } | null;
+  scorer_refs: Record<string, unknown>[];
+  tool_refs: Record<string, unknown>[];
+  sandbox_profile: {
+    sandbox_profile_id: string;
+    provider: string;
+    profile_name: string;
+  } | null;
+  model_roles: AgchainModelRoleAssignment[];
+  generate_config: Record<string, unknown>;
+  eval_config: Record<string, unknown>;
+  validation_summary: Record<string, unknown>;
+};
+
+export type AgchainBenchmarkDetail = {
+  benchmark: AgchainBenchmarkSummary;
+  current_draft_version: AgchainBenchmarkVersionSummary | null;
+  current_published_version: AgchainBenchmarkVersionSummary | null;
+  recent_runs_count: number;
+};
+
+export type AgchainBenchmarkListResponse = {
+  items: AgchainBenchmarkListRow[];
+  next_cursor: string | null;
+};
+
+export type AgchainBenchmarkVersionsResponse = {
+  items: AgchainBenchmarkVersionSummary[];
+  next_cursor: string | null;
+};
+
+export type AgchainBenchmarkValidationResponse = {
+  ok: boolean;
+  issues: Record<string, unknown>[];
+  warnings: Record<string, unknown>[];
+  resolved_refs: Record<string, unknown>;
+  compatibility_summary: Record<string, unknown>;
+};
+
+export type AgchainProjectRegistryRow = {
+  benchmark_id: string;
+  benchmark_slug: string;
+  benchmark_name: string;
+  description: string;
+  state: AgchainBenchmarkStatus;
+  current_spec_label: string;
+  current_spec_version: string;
+  version_status: AgchainBenchmarkVersionStatus;
+  step_count: number;
+  selected_eval_model_count: number;
+  tested_model_count: number;
+  tested_policy_bundle_count: number;
+  validation_status: AgchainValidationStatus;
+  validation_issue_count: number;
+  last_run_at: string | null;
+  updated_at: string;
+  href: string;
+};
+
+export type AgchainProjectRegistryListResponse = {
+  items: AgchainProjectRegistryRow[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type AgchainBenchmarkWorkbenchSummary = {
+  benchmark_id: string;
+  benchmark_slug: string;
+  benchmark_name: string;
+  description: string;
+};
+
+export type AgchainBenchmarkWorkbenchVersionSummary = {
+  benchmark_version_id: string;
+  version_label: string;
+  version_status: AgchainBenchmarkVersionStatus;
   plan_family: string;
   step_count: number;
-  validation_status: 'pass' | 'warn' | 'fail' | 'unknown';
+  validation_status: AgchainValidationStatus;
   validation_issue_count: number;
 };
 
@@ -78,9 +207,9 @@ export type AgchainBenchmarkStepWrite = {
 
 export type AgchainBenchmarkStepUpdate = Partial<AgchainBenchmarkStepWrite>;
 
-export type AgchainBenchmarkDetail = {
-  benchmark: AgchainBenchmarkSummary;
-  current_version: AgchainBenchmarkVersionSummary | null;
+export type AgchainBenchmarkWorkbenchDetail = {
+  benchmark: AgchainBenchmarkWorkbenchSummary;
+  current_version: AgchainBenchmarkWorkbenchVersionSummary | null;
   permissions: {
     can_edit: boolean;
   };
@@ -91,20 +220,13 @@ export type AgchainBenchmarkDetail = {
 };
 
 export type AgchainBenchmarkStepsDetail = {
-  benchmark: AgchainBenchmarkSummary;
-  current_version: AgchainBenchmarkVersionSummary | null;
+  benchmark: AgchainBenchmarkWorkbenchSummary;
+  current_version: AgchainBenchmarkWorkbenchVersionSummary | null;
   can_edit: boolean;
   steps: AgchainBenchmarkStepRow[];
 };
 
-export type AgchainBenchmarkListResponse = {
-  items: AgchainBenchmarkListRow[];
-  total: number;
-  limit: number;
-  offset: number;
-};
-
-type BenchmarkCreateResponse = {
+export type AgchainBenchmarkCreateResult = {
   ok: boolean;
   benchmark_id: string;
   benchmark_slug: string;
@@ -170,9 +292,11 @@ export function sanitizeBenchmarkCreateRequest(
   payload: AgchainBenchmarkCreateRequest,
 ): AgchainBenchmarkCreateRequest {
   return {
+    project_id: payload.project_id ?? null,
     benchmark_name: payload.benchmark_name.trim(),
     benchmark_slug: trimToNull(payload.benchmark_slug),
     description: payload.description.trim(),
+    tags: payload.tags?.map((tag) => tag.trim()).filter(Boolean) ?? [],
   };
 }
 
@@ -284,16 +408,16 @@ export function parseStepConfigJson(stepConfigJson: string): Record<string, unkn
   }
 }
 
-export async function fetchAgchainBenchmarks(
+export async function fetchAgchainProjectRegistry(
   limit = 50,
   offset = 0,
-): Promise<AgchainBenchmarkListResponse> {
+): Promise<AgchainProjectRegistryListResponse> {
   const params = new URLSearchParams({
     limit: String(limit),
     offset: String(offset),
   });
   const response = await platformApiFetch(`/agchain/benchmarks?${params.toString()}`);
-  const data = await parseJsonResponse<Partial<AgchainBenchmarkListResponse>>(response);
+  const data = await parseJsonResponse<Partial<AgchainProjectRegistryListResponse>>(response);
   const items = data.items ?? [];
   return {
     items,
@@ -303,21 +427,63 @@ export async function fetchAgchainBenchmarks(
   };
 }
 
+export const fetchAgchainBenchmarks = fetchAgchainProjectRegistry;
+
 export async function createAgchainBenchmark(
   payload: AgchainBenchmarkCreateRequest,
-): Promise<BenchmarkCreateResponse> {
+): Promise<AgchainBenchmarkCreateResult> {
   const response = await platformApiFetch('/agchain/benchmarks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(sanitizeBenchmarkCreateRequest(payload)),
   });
 
-  return parseJsonResponse<BenchmarkCreateResponse>(response);
+  return parseJsonResponse<AgchainBenchmarkCreateResult>(response);
 }
 
 export async function fetchAgchainBenchmarkDetail(benchmarkSlug: string): Promise<AgchainBenchmarkDetail> {
   const response = await platformApiFetch(`/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}`);
   return parseJsonResponse<AgchainBenchmarkDetail>(response);
+}
+
+export async function fetchAgchainBenchmarkWorkbenchDetail(
+  benchmarkSlug: string,
+): Promise<AgchainBenchmarkWorkbenchDetail> {
+  const response = await platformApiFetch(`/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}`);
+  return parseJsonResponse<AgchainBenchmarkWorkbenchDetail>(response);
+}
+
+export async function fetchAgchainBenchmarkVersions(
+  benchmarkSlug: string,
+  limit = 50,
+  cursor?: string | null,
+): Promise<AgchainBenchmarkVersionsResponse> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (cursor) {
+    params.set('cursor', cursor);
+  }
+
+  const response = await platformApiFetch(
+    `/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}/versions?${params.toString()}`,
+  );
+  return parseJsonResponse<AgchainBenchmarkVersionsResponse>(response);
+}
+
+export async function fetchAgchainBenchmarkVersionDetail(
+  benchmarkSlug: string,
+  benchmarkVersionId: string,
+): Promise<AgchainBenchmarkVersionDetail> {
+  const response = await platformApiFetch(
+    `/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}/versions/${encodeURIComponent(benchmarkVersionId)}`,
+  );
+  return parseJsonResponse<AgchainBenchmarkVersionDetail>(response);
+}
+
+export async function validateAgchainBenchmark(benchmarkSlug: string): Promise<AgchainBenchmarkValidationResponse> {
+  const response = await platformApiFetch(`/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}/validate`, {
+    method: 'POST',
+  });
+  return parseJsonResponse<AgchainBenchmarkValidationResponse>(response);
 }
 
 export async function fetchAgchainBenchmarkSteps(benchmarkSlug: string): Promise<AgchainBenchmarkStepsDetail> {

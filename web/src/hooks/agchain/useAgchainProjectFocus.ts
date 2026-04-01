@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchAgchainBenchmarks, type AgchainBenchmarkListRow } from '@/lib/agchainBenchmarks';
+import { fetchAgchainProjectRegistry, type AgchainProjectRegistryRow } from '@/lib/agchainBenchmarks';
 import {
   AGCHAIN_PROJECT_FOCUS_CHANGED_EVENT,
   AGCHAIN_PROJECT_FOCUS_STORAGE_KEY,
@@ -17,7 +17,7 @@ function getErrorMessage(error: unknown) {
 export { AGCHAIN_PROJECT_FOCUS_STORAGE_KEY };
 
 export function useAgchainProjectFocus() {
-  const [items, setItems] = useState<AgchainBenchmarkListRow[]>([]);
+  const [items, setItems] = useState<AgchainProjectRegistryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [focusedProjectSlug, setFocusedProjectSlugState] = useState<string | null>(() => readStoredAgchainProjectFocusSlug());
@@ -25,7 +25,7 @@ export function useAgchainProjectFocus() {
   const loadItems = useCallback(async (preferredSlug?: string | null) => {
     setLoading(true);
     try {
-      const nextPage = await fetchAgchainBenchmarks(DEFAULT_LIMIT, 0);
+      const nextPage = await fetchAgchainProjectRegistry(DEFAULT_LIMIT, 0);
       const nextItems = nextPage.items;
       const storedSlug = preferredSlug ?? readStoredAgchainProjectFocusSlug();
       const resolvedFocus = storedSlug && nextItems.some((item) => item.benchmark_slug === storedSlug)

@@ -47,14 +47,14 @@ export const NAV_SECTIONS: AdminNavSection[] = [
     label: 'SYSTEM',
     items: [
       { label: 'Audit History', icon: IconClipboardList, path: '/app/superuser/audit' },
-      { label: 'Operational Status', icon: IconServer, path: '/app/superuser/operational-readiness' },
       { label: 'API Endpoints', icon: IconCode, path: '/app/superuser/api-endpoints' },
       { label: 'Test Integrations', icon: IconTestPipe, path: '/app/superuser/test-integrations' },
     ],
   },
   {
-    label: 'DESIGN',
+    label: 'DEV ONLY',
     items: [
+      { label: 'Operational Readiness', icon: IconServer, path: '/app/superuser/operational-readiness' },
       { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
     ],
   },

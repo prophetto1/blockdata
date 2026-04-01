@@ -3,9 +3,11 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { OperationalReadinessBootstrapPanel } from '@/components/superuser/OperationalReadinessBootstrapPanel';
 import { OperationalReadinessCheckGrid } from '@/components/superuser/OperationalReadinessCheckGrid';
 import { OperationalReadinessClientPanel } from '@/components/superuser/OperationalReadinessClientPanel';
+import { OperationalReadinessLocalRecoveryPanel } from '@/components/superuser/OperationalReadinessLocalRecoveryPanel';
 import { OperationalReadinessSummary } from '@/components/superuser/OperationalReadinessSummary';
 import { Button } from '@/components/ui/button';
 import { useOperationalReadiness } from '@/hooks/useOperationalReadiness';
+import { usePlatformApiDevRecovery } from '@/hooks/usePlatformApiDevRecovery';
 
 export function Component() {
   useShellHeaderTitle({
@@ -24,6 +26,18 @@ export function Component() {
     clientDiagnostics,
     refresh,
   } = useOperationalReadiness();
+  const devRecovery = usePlatformApiDevRecovery({
+    onRecovered: refresh,
+  });
+
+  async function handleRefresh() {
+    if (devRecovery.enabled) {
+      await Promise.all([refresh(), devRecovery.refreshStatus()]);
+      return;
+    }
+
+    await refresh();
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6">
@@ -40,14 +54,28 @@ export function Component() {
               Backend proof first, operator actions second, browser-local diagnostics only when needed.
             </p>
           </div>
-          <Button type="button" onClick={() => void refresh()} disabled={loading || refreshing}>
-            <RefreshCw aria-hidden="true" className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <Button type="button" onClick={() => void handleRefresh()} disabled={loading || refreshing || devRecovery.recovering}>
+            <RefreshCw
+              aria-hidden="true"
+              className={`mr-2 h-4 w-4 ${refreshing || devRecovery.loading ? 'animate-spin' : ''}`}
+            />
             Refresh Status
           </Button>
         </div>
       </header>
 
       <OperationalReadinessBootstrapPanel bootstrap={bootstrap} error={error} />
+
+      {devRecovery.enabled ? (
+        <OperationalReadinessLocalRecoveryPanel
+          loading={devRecovery.loading}
+          recovering={devRecovery.recovering}
+          error={devRecovery.error}
+          status={devRecovery.status}
+          lastRecovery={devRecovery.lastRecovery}
+          onRecover={devRecovery.recover}
+        />
+      ) : null}
 
       {bootstrap.snapshot_available && summary ? (
         <>

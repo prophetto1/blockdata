@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import IndexBuilderPage from './IndexBuilderPage';
@@ -44,6 +44,16 @@ const useProjectFocusMock = vi.fn();
 vi.mock('@/hooks/useProjectFocus', () => ({
   useProjectFocus: () => useProjectFocusMock(),
 }));
+
+beforeAll(() => {
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  }
+});
 
 afterEach(() => {
   cleanup();

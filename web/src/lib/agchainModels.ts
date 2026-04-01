@@ -22,6 +22,7 @@ export type AgchainModelTarget = {
   api_base_display: string | null;
   auth_kind: string;
   credential_status: string;
+  key_suffix: string | null;
   enabled: boolean;
   supports_evaluated: boolean;
   supports_judge: boolean;
@@ -171,4 +172,22 @@ export async function refreshAgchainModelTargetHealth(modelTargetId: string) {
     message: string;
     probe_strategy: string;
   }>(response);
+}
+
+export async function connectModelKey(modelTargetId: string, apiKey: string) {
+  const response = await platformApiFetch(`/agchain/models/${modelTargetId}/connect-key`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ api_key: apiKey }),
+  });
+
+  return parseJsonResponse<{ ok: boolean; key_suffix: string; credential_status: string }>(response);
+}
+
+export async function disconnectModelKey(modelTargetId: string) {
+  const response = await platformApiFetch(`/agchain/models/${modelTargetId}/disconnect-key`, {
+    method: 'DELETE',
+  });
+
+  return parseJsonResponse<{ ok: boolean; credential_status: string }>(response);
 }

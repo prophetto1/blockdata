@@ -50,14 +50,24 @@ describe('AdminLeftNav', () => {
     expect(getSecondaryNav('/app/superuser/parsers-docling')).toHaveLength(0);
   });
 
-  it('exports the operational status entry for the primary admin rail', () => {
-    const operationalStatus = NAV_SECTIONS
+  it('groups layout captures and operational readiness under the dev-only admin rail section', () => {
+    const devOnlySection = NAV_SECTIONS.find((section) => section.label === 'DEV ONLY');
+    const operationalReadiness = NAV_SECTIONS
       .flatMap((section) => section.items)
       .find((item) => item.path === '/app/superuser/operational-readiness');
+    const layoutCaptures = devOnlySection?.items.find(
+      (item) => item.path === '/app/superuser/design-layout-captures',
+    );
 
-    expect(operationalStatus).toMatchObject({
-      label: 'Operational Status',
+    expect(devOnlySection).toBeDefined();
+    expect(layoutCaptures).toMatchObject({
+      label: 'Layout Captures',
+      path: '/app/superuser/design-layout-captures',
+    });
+    expect(operationalReadiness).toMatchObject({
+      label: 'Operational Readiness',
       path: '/app/superuser/operational-readiness',
     });
+    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/operational-readiness');
   });
 });

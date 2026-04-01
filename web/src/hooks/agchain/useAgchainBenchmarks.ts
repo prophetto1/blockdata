@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   createAgchainBenchmark,
-  fetchAgchainBenchmarks,
+  fetchAgchainProjectRegistry,
   type AgchainBenchmarkCreateRequest,
-  type AgchainBenchmarkListRow,
-  type AgchainBenchmarkListResponse,
+  type AgchainProjectRegistryListResponse,
+  type AgchainProjectRegistryRow,
 } from '@/lib/agchainBenchmarks';
 
 function getErrorMessage(error: unknown) {
@@ -12,8 +12,8 @@ function getErrorMessage(error: unknown) {
 }
 
 export function useAgchainBenchmarks() {
-  const [items, setItems] = useState<AgchainBenchmarkListRow[]>([]);
-  const [pagination, setPagination] = useState<Pick<AgchainBenchmarkListResponse, 'total' | 'limit' | 'offset'>>({
+  const [items, setItems] = useState<AgchainProjectRegistryRow[]>([]);
+  const [pagination, setPagination] = useState<Pick<AgchainProjectRegistryListResponse, 'total' | 'limit' | 'offset'>>({
     total: 0,
     limit: 50,
     offset: 0,
@@ -25,7 +25,7 @@ export function useAgchainBenchmarks() {
   const loadItems = useCallback(async () => {
     setLoading(true);
     try {
-      const nextPage = await fetchAgchainBenchmarks(pagination.limit, pagination.offset);
+      const nextPage = await fetchAgchainProjectRegistry(pagination.limit, pagination.offset);
       setItems(nextPage.items);
       setPagination({
         total: nextPage.total,

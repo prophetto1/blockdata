@@ -5,6 +5,7 @@ import path from 'path'
 import { execFile } from 'node:child_process'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { fileURLToPath } from 'node:url'
+import { platformApiDevControlPlugin } from './dev-server/platformApiDevControl'
 
 function superuserToolsPlugin() {
   return {
@@ -61,7 +62,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
 
   return {
-    plugins: [react(), tailwindcss(), superuserToolsPlugin()],
+    plugins: [react(), tailwindcss(), superuserToolsPlugin(), platformApiDevControlPlugin({ projectRoot: path.resolve(__dirname, '..') })],
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {

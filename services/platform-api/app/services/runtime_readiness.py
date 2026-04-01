@@ -22,6 +22,7 @@ from app.workers.conversion_pool import get_conversion_pool
 logger = logging.getLogger("platform-api.runtime-readiness")
 
 SurfaceId = Literal["shared", "blockdata", "agchain"]
+CheckFactory = Callable[[Settings, str], dict]
 
 
 def _utc_now_iso() -> str:
@@ -57,8 +58,45 @@ def _make_check(
     }
 
 
+def _make_unknown_check(
+    *,
+    check_id: str,
+    category: str,
+    label: str,
+    exc: Exception,
+) -> dict:
+    return _make_check(
+        check_id=check_id,
+        category=category,
+        status="unknown",
+        label=label,
+        summary=f"{label} could not be evaluated safely.",
+        evidence={"error_type": type(exc).__name__},
+        remediation="Inspect platform-api logs and rerun the readiness snapshot.",
+    )
+
+
 def check_shared_platform_api_ready(_settings: Settings) -> dict:
-    pool_status = get_conversion_pool().status()
+    try:
+        pool_status = get_conversion_pool().status()
+    except Exception as exc:
+        logger.warning(
+            "Failed to inspect conversion pool status for runtime readiness",
+            exc_info=exc,
+        )
+        return _make_check(
+            check_id="shared.platform_api.ready",
+            category="process",
+            status="unknown",
+            label="Platform API readiness",
+            summary="Platform API readiness could not be evaluated safely.",
+            evidence={
+                "ready": False,
+                "saturated": None,
+                "error_type": type(exc).__name__,
+            },
+            remediation="Verify conversion pool availability and rerun the readiness snapshot.",
+        )
     saturated = bool(pool_status.get("saturated"))
     return _make_check(
         check_id="shared.platform_api.ready",
@@ -344,56 +382,134 @@ def check_agchain_models_targets(_settings: Settings, *, actor_id: str) -> dict:
 def _execute_check(
     *,
     surface: SurfaceId,
-    check_factory: Callable[[Settings, str], dict],
+    check_id: str,
+    category: str,
+    label: str,
+    check_factory: CheckFactory,
     settings: Settings,
     actor_id: str,
 ) -> dict:
     started = perf_counter()
-    with tracer.start_as_current_span("admin.runtime.readiness.check") as span:
-        check = check_factory(settings, actor_id)
-        duration_ms = (perf_counter() - started) * 1000.0
-        set_span_attributes(
-            span,
-            {
-                "surface": surface,
-                "check.id": check["id"],
-                "check.category": check["category"],
-                "status": check["status"],
-            },
+    try:
+        with tracer.start_as_current_span("admin.runtime.readiness.check") as span:
+            check = check_factory(settings, actor_id)
+            duration_ms = (perf_counter() - started) * 1000.0
+            set_span_attributes(
+                span,
+                {
+                    "surface": surface,
+                    "check.id": check["id"],
+                    "check.category": check["category"],
+                    "status": check["status"],
+                },
+            )
+            record_runtime_readiness_check(
+                surface=surface,
+                check_id=check["id"],
+                check_category=check["category"],
+                status=check["status"],
+                duration_ms=duration_ms,
+            )
+            return check
+    except Exception as exc:
+        logger.exception(
+            "Runtime readiness check failed",
+            extra={"surface": surface, "check_id": check_id},
         )
-        record_runtime_readiness_check(
-            surface=surface,
-            check_id=check["id"],
-            check_category=check["category"],
-            status=check["status"],
-            duration_ms=duration_ms,
+        return _make_unknown_check(
+            check_id=check_id,
+            category=category,
+            label=label,
+            exc=exc,
         )
-        return check
 
 
 def _surface_checks(surface: SurfaceId, settings: Settings, actor_id: str) -> list[dict]:
-    registry: dict[SurfaceId, list[Callable[[Settings, str], dict]]] = {
+    registry: dict[SurfaceId, list[tuple[str, str, str, CheckFactory]]] = {
         "shared": [
-            lambda current_settings, _actor_id: check_shared_platform_api_ready(current_settings),
-            lambda current_settings, _actor_id: check_shared_supabase_admin_connectivity(current_settings),
-            lambda current_settings, _actor_id: check_shared_background_workers_config(current_settings),
-            lambda current_settings, _actor_id: check_shared_observability_telemetry_config(current_settings),
+            (
+                "shared.platform_api.ready",
+                "process",
+                "Platform API readiness",
+                lambda current_settings, _actor_id: check_shared_platform_api_ready(current_settings),
+            ),
+            (
+                "shared.supabase.admin_connectivity",
+                "connectivity",
+                "Supabase admin connectivity",
+                lambda current_settings, _actor_id: check_shared_supabase_admin_connectivity(current_settings),
+            ),
+            (
+                "shared.background_workers.config",
+                "config",
+                "Background workers config",
+                lambda current_settings, _actor_id: check_shared_background_workers_config(current_settings),
+            ),
+            (
+                "shared.observability.telemetry_config",
+                "observability",
+                "Telemetry configuration",
+                lambda current_settings, _actor_id: check_shared_observability_telemetry_config(current_settings),
+            ),
         ],
         "blockdata": [
-            lambda current_settings, _actor_id: check_blockdata_storage_bucket_config(current_settings),
-            lambda current_settings, _actor_id: check_blockdata_storage_signed_url_signing(current_settings),
-            lambda current_settings, _actor_id: check_blockdata_storage_bucket_cors(current_settings),
-            lambda current_settings, _actor_id: check_blockdata_pipeline_definitions(current_settings),
+            (
+                "blockdata.storage.bucket_config",
+                "config",
+                "Storage bucket config",
+                lambda current_settings, _actor_id: check_blockdata_storage_bucket_config(current_settings),
+            ),
+            (
+                "blockdata.storage.signed_url_signing",
+                "credential",
+                "Signed upload URL signing",
+                lambda current_settings, _actor_id: check_blockdata_storage_signed_url_signing(current_settings),
+            ),
+            (
+                "blockdata.storage.bucket_cors",
+                "connectivity",
+                "Bucket CORS",
+                lambda current_settings, _actor_id: check_blockdata_storage_bucket_cors(current_settings),
+            ),
+            (
+                "blockdata.pipeline.definitions",
+                "product",
+                "Pipeline definitions",
+                lambda current_settings, _actor_id: check_blockdata_pipeline_definitions(current_settings),
+            ),
         ],
         "agchain": [
-            lambda current_settings, current_actor_id: check_agchain_benchmarks_catalog(current_settings, actor_id=current_actor_id),
-            lambda current_settings, _actor_id: check_agchain_models_providers(current_settings),
-            lambda current_settings, current_actor_id: check_agchain_models_targets(current_settings, actor_id=current_actor_id),
+            (
+                "agchain.benchmarks.catalog",
+                "product",
+                "Benchmarks catalog",
+                lambda current_settings, current_actor_id: check_agchain_benchmarks_catalog(current_settings, actor_id=current_actor_id),
+            ),
+            (
+                "agchain.models.providers",
+                "product",
+                "Model providers",
+                lambda current_settings, _actor_id: check_agchain_models_providers(current_settings),
+            ),
+            (
+                "agchain.models.targets",
+                "product",
+                "Model targets",
+                lambda current_settings, current_actor_id: check_agchain_models_targets(current_settings, actor_id=current_actor_id),
+            ),
         ],
     }
     return [
-        _execute_check(surface=surface, check_factory=check_factory, settings=settings, actor_id=actor_id)
-        for check_factory in registry[surface]
+        _execute_check(
+            surface=surface,
+            check_id=check_id,
+            category=category,
+            label=label,
+            check_factory=check_factory,
+            settings=settings,
+            actor_id=actor_id,
+        )
+        for check_id, category, label, check_factory in registry[surface]
     ]
 
 
