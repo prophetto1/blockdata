@@ -75,7 +75,7 @@ describe('usePlatformApiDevRecovery', () => {
   it('tracks in-flight recovery state and triggers the page refresh callback after success', async () => {
     loadPlatformApiDevRecoveryStatusMock.mockResolvedValue(statusPayload);
 
-    let resolveRecovery: ((value: typeof recoveryPayload) => void) | null = null;
+    let resolveRecovery!: (value: typeof recoveryPayload) => void;
     const recoveryPromise = new Promise<typeof recoveryPayload>((resolve) => {
       resolveRecovery = resolve;
     });
@@ -101,7 +101,7 @@ describe('usePlatformApiDevRecovery', () => {
       expect(result.current.recovering).toBe(true);
     });
 
-    resolveRecovery?.(recoveryPayload);
+    resolveRecovery(recoveryPayload);
 
     await waitFor(() => {
       expect(result.current.recovering).toBe(false);
