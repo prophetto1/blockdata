@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from opentelemetry import metrics, trace
 from pydantic import BaseModel, Field
 
-from app.auth.dependencies import require_user_auth
+from app.auth.dependencies import require_superuser, require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.agchain.benchmark_registry import (
     create_benchmark,
@@ -19,6 +19,12 @@ from app.domain.agchain.benchmark_registry import (
     list_benchmarks,
     reorder_benchmark_steps,
     update_benchmark_step,
+)
+from app.domain.agchain.task_registry import (
+    create_benchmark_version,
+    get_benchmark_version,
+    list_benchmark_versions,
+    validate_benchmark_version,
 )
 from app.observability.contract import safe_attributes, set_span_attributes
 
@@ -31,12 +37,18 @@ benchmarks_list_counter = meter.create_counter("platform.agchain.benchmarks.list
 benchmarks_create_counter = meter.create_counter("platform.agchain.benchmarks.create.count")
 benchmarks_get_counter = meter.create_counter("platform.agchain.benchmarks.get.count")
 benchmarks_steps_get_counter = meter.create_counter("platform.agchain.benchmarks.steps.get.count")
+benchmarks_versions_list_counter = meter.create_counter("platform.agchain.benchmarks.versions.list.count")
+benchmarks_versions_create_counter = meter.create_counter("platform.agchain.benchmarks.versions.create.count")
+benchmarks_versions_get_counter = meter.create_counter("platform.agchain.benchmarks.versions.get.count")
+benchmarks_versions_validate_counter = meter.create_counter("platform.agchain.benchmarks.versions.validate.count")
 benchmarks_steps_create_counter = meter.create_counter("platform.agchain.benchmarks.steps.create.count")
 benchmarks_steps_update_counter = meter.create_counter("platform.agchain.benchmarks.steps.update.count")
 benchmarks_steps_reorder_counter = meter.create_counter("platform.agchain.benchmarks.steps.reorder.count")
 benchmarks_steps_delete_counter = meter.create_counter("platform.agchain.benchmarks.steps.delete.count")
 
 benchmarks_list_duration_ms = meter.create_histogram("platform.agchain.benchmarks.list.duration_ms")
+benchmarks_versions_list_duration_ms = meter.create_histogram("platform.agchain.benchmarks.versions.list.duration_ms")
+benchmarks_versions_write_duration_ms = meter.create_histogram("platform.agchain.benchmarks.versions.write.duration_ms")
 benchmarks_steps_get_duration_ms = meter.create_histogram("platform.agchain.benchmarks.steps.get.duration_ms")
 benchmarks_steps_write_duration_ms = meter.create_histogram("platform.agchain.benchmarks.steps.write.duration_ms")
 
@@ -80,6 +92,41 @@ class BenchmarkStepUpdateRequest(BaseModel):
 
 class BenchmarkStepReorderRequest(BaseModel):
     ordered_step_ids: list[str] = Field(default_factory=list)
+
+
+class BenchmarkVersionCreateRequest(BaseModel):
+    version_label: str = Field(min_length=1)
+    dataset_version_id: str = Field(min_length=1)
+    task_name: str | None = None
+    task_file_ref: str | None = None
+    task_definition_jsonb: dict[str, Any] | None = None
+    solver_plan_jsonb: dict[str, Any] = Field(default_factory=dict)
+    scorer_refs_jsonb: list[dict[str, Any]] = Field(default_factory=list)
+    tool_refs_jsonb: list[dict[str, Any]] = Field(default_factory=list)
+    sandbox_profile_id: str | None = None
+    sandbox_overrides_jsonb: dict[str, Any] = Field(default_factory=dict)
+    model_roles_jsonb: dict[str, Any] = Field(default_factory=dict)
+    generate_config_jsonb: dict[str, Any] = Field(default_factory=dict)
+    eval_config_jsonb: dict[str, Any] = Field(default_factory=dict)
+    publish: bool = False
+
+
+class BenchmarkVersionValidateRequest(BaseModel):
+    benchmark_version_id: str | None = None
+    version_label: str | None = None
+    dataset_version_id: str | None = None
+    task_name: str | None = None
+    task_file_ref: str | None = None
+    task_definition_jsonb: dict[str, Any] | None = None
+    solver_plan_jsonb: dict[str, Any] = Field(default_factory=dict)
+    scorer_refs_jsonb: list[dict[str, Any]] = Field(default_factory=list)
+    tool_refs_jsonb: list[dict[str, Any]] = Field(default_factory=list)
+    sandbox_profile_id: str | None = None
+    sandbox_overrides_jsonb: dict[str, Any] = Field(default_factory=dict)
+    model_roles_jsonb: dict[str, Any] = Field(default_factory=dict)
+    generate_config_jsonb: dict[str, Any] = Field(default_factory=dict)
+    eval_config_jsonb: dict[str, Any] = Field(default_factory=dict)
+
 
 @router.get("", summary="List AG chain benchmarks")
 async def list_benchmarks_route(
@@ -159,6 +206,103 @@ async def get_benchmark_route(
         set_span_attributes(span, attrs)
         benchmarks_get_counter.add(1, safe_attributes(attrs))
         return result
+
+
+@router.get("/{benchmark_slug}/versions", summary="List AG chain benchmark versions")
+async def list_benchmark_versions_route(
+    benchmark_slug: str,
+    limit: int = Query(default=25, ge=1, le=100),
+    cursor: str | None = Query(default=None),
+    offset: int = Query(default=0, ge=0),
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    start = time.perf_counter()
+    with tracer.start_as_current_span("agchain.benchmarks.versions.list") as span:
+        result = list_benchmark_versions(
+            user_id=auth.user_id,
+            benchmark_slug=benchmark_slug,
+            limit=limit,
+            cursor=cursor,
+            offset=offset,
+        )
+        duration_ms = max(0, int((time.perf_counter() - start) * 1000))
+        attrs = {
+            "row_count": len(result.get("items") or []),
+            "latency_ms": duration_ms,
+        }
+        set_span_attributes(span, attrs)
+        benchmarks_versions_list_counter.add(1, safe_attributes(attrs))
+        benchmarks_versions_list_duration_ms.record(duration_ms, safe_attributes(attrs))
+        return result
+
+
+@router.post("/{benchmark_slug}/versions", summary="Create one AG chain benchmark version")
+async def create_benchmark_version_route(
+    benchmark_slug: str,
+    body: BenchmarkVersionCreateRequest,
+    auth: AuthPrincipal = Depends(require_superuser),
+):
+    start = time.perf_counter()
+    with tracer.start_as_current_span("agchain.benchmarks.versions.create") as span:
+        result = create_benchmark_version(
+            user_id=auth.user_id,
+            benchmark_slug=benchmark_slug,
+            payload=body.model_dump(),
+        )
+        duration_ms = max(0, int((time.perf_counter() - start) * 1000))
+        attrs = {
+            "result": "created",
+            "latency_ms": duration_ms,
+        }
+        set_span_attributes(span, attrs)
+        benchmarks_versions_create_counter.add(1, safe_attributes(attrs))
+        benchmarks_versions_write_duration_ms.record(duration_ms, safe_attributes(attrs))
+        return {"ok": True, **result}
+
+
+@router.get("/{benchmark_slug}/versions/{benchmark_version_id}", summary="Get one AG chain benchmark version")
+async def get_benchmark_version_route(
+    benchmark_slug: str,
+    benchmark_version_id: str,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    with tracer.start_as_current_span("agchain.benchmarks.versions.get") as span:
+        result = get_benchmark_version(
+            user_id=auth.user_id,
+            benchmark_slug=benchmark_slug,
+            benchmark_version_id=benchmark_version_id,
+        )
+        attrs = {
+            "status": (result.get("benchmark_version") or {}).get("version_status"),
+            "project_id_present": bool((result.get("benchmark") or {}).get("project_id")),
+        }
+        set_span_attributes(span, attrs)
+        benchmarks_versions_get_counter.add(1, safe_attributes(attrs))
+        return result
+
+
+@router.post("/{benchmark_slug}/validate", summary="Validate one AG chain benchmark version")
+async def validate_benchmark_version_route(
+    benchmark_slug: str,
+    body: BenchmarkVersionValidateRequest,
+    auth: AuthPrincipal = Depends(require_superuser),
+):
+    start = time.perf_counter()
+    with tracer.start_as_current_span("agchain.benchmarks.versions.validate") as span:
+        result = validate_benchmark_version(
+            user_id=auth.user_id,
+            benchmark_slug=benchmark_slug,
+            payload=body.model_dump(exclude_none=True, exclude_defaults=True),
+        )
+        duration_ms = max(0, int((time.perf_counter() - start) * 1000))
+        attrs = {
+            "result": result.get("compatibility_summary", {}).get("validation_status", "unknown"),
+            "latency_ms": duration_ms,
+        }
+        set_span_attributes(span, attrs)
+        benchmarks_versions_validate_counter.add(1, safe_attributes(attrs))
+        benchmarks_versions_write_duration_ms.record(duration_ms, safe_attributes(attrs))
+        return {"ok": True, **result}
 
 
 @router.get("/{benchmark_slug}/steps", summary="Get ordered benchmark steps")

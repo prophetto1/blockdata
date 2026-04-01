@@ -1116,7 +1116,7 @@ No migration owner should invent additional phase-1 columns beyond the tables an
 
 - `public.agchain_datasets`
   - `dataset_id uuid primary key default gen_random_uuid()`
-  - `project_id uuid not null references public.projects(project_id) on delete cascade`
+  - `project_id uuid not null references public.user_projects(project_id) on delete cascade`
   - `slug text not null`
   - `name text not null`
   - `description text not null default ''`
@@ -1191,7 +1191,7 @@ No migration owner should invent additional phase-1 columns beyond the tables an
 
 - `public.agchain_scorers`
   - `scorer_id uuid primary key default gen_random_uuid()`
-  - `project_id uuid not null references public.projects(project_id) on delete cascade`
+  - `project_id uuid not null references public.user_projects(project_id) on delete cascade`
   - `scorer_name text not null`
   - `display_name text not null`
   - `description text not null default ''`
@@ -1217,7 +1217,7 @@ No migration owner should invent additional phase-1 columns beyond the tables an
   - unique `(scorer_id, version_label)`
 - `public.agchain_tools`
   - `tool_id uuid primary key default gen_random_uuid()`
-  - `project_id uuid not null references public.projects(project_id) on delete cascade`
+  - `project_id uuid not null references public.user_projects(project_id) on delete cascade`
   - `tool_name text not null`
   - `display_name text not null`
   - `description text not null default ''`
@@ -1244,7 +1244,7 @@ No migration owner should invent additional phase-1 columns beyond the tables an
   - unique `(tool_id, version_label)`
 - `public.agchain_sandbox_profiles`
   - `sandbox_profile_id uuid primary key default gen_random_uuid()`
-  - `project_id uuid not null references public.projects(project_id) on delete cascade`
+  - `project_id uuid not null references public.user_projects(project_id) on delete cascade`
   - `provider text not null`
   - `profile_name text not null`
   - `display_name text not null`
@@ -1293,7 +1293,7 @@ No migration owner should invent additional phase-1 columns beyond the tables an
 #### `20260331145000_agchain_inspect_runs_logs_operations.sql`
 
 - `public.agchain_runs` additive columns in this migration
-  - `project_id uuid null references public.projects(project_id) on delete set null`
+  - `project_id uuid null references public.user_projects(project_id) on delete set null`
   - `dataset_version_id uuid null references public.agchain_dataset_versions(dataset_version_id) on delete set null`
   - `sandbox_profile_id uuid null references public.agchain_sandbox_profiles(sandbox_profile_id) on delete set null`
   - `retry_of_run_id uuid null references public.agchain_runs(run_id) on delete set null`
@@ -1310,7 +1310,7 @@ No migration owner should invent additional phase-1 columns beyond the tables an
   - `usage_summary_jsonb jsonb not null default '{}'::jsonb`
 - `public.agchain_operations`
   - `operation_id uuid primary key default gen_random_uuid()`
-  - `project_id uuid not null references public.projects(project_id) on delete cascade`
+  - `project_id uuid not null references public.user_projects(project_id) on delete cascade`
   - `operation_type text not null`
   - `target_kind text not null`
   - `target_id uuid null`

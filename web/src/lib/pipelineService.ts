@@ -64,6 +64,7 @@ export type PipelineJobSummary = {
   source_set_id: string;
   status: string;
   stage: string;
+  started_at?: string | null;
 };
 
 export type PipelineUploadResult = {

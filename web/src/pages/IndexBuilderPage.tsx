@@ -1,150 +1,134 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { IconPlus } from '@tabler/icons-react';
-import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Button } from '@/components/ui/button';
-import { PipelineRunsTable } from '@/components/pipelines/PipelineRunsTable';
-import {
-  PipelineRunDetailPanel,
-  type PipelineRunDetailData,
-} from '@/components/pipelines/PipelineRunDetailPanel';
-import { PipelineNewRunForm } from '@/components/pipelines/PipelineNewRunForm';
+import { useIndexBuilder } from '@/hooks/useIndexBuilder';
+import { IndexJobsList } from '@/components/pipelines/IndexJobsList';
+import { IndexJobHeader } from '@/components/pipelines/IndexJobHeader';
+import { IndexJobFilesTab } from '@/components/pipelines/IndexJobFilesTab';
+import { IndexJobConfigTab } from '@/components/pipelines/IndexJobConfigTab';
+import { IndexJobRunsTab } from '@/components/pipelines/IndexJobRunsTab';
+import { IndexJobArtifactsTab } from '@/components/pipelines/IndexJobArtifactsTab';
 
-/* ------------------------------------------------------------------ */
-/*  Mock data — replace with real API wiring later                     */
-/* ------------------------------------------------------------------ */
-
-const MOCK_RUNS_FULL: PipelineRunDetailData[] = [
-  {
-    job_id: 'job-001',
-    label: 'Legal corpus v2',
-    status: 'complete',
-    created_at: '2026-03-30T14:22:00Z',
-    stage: 'packaging',
-    section_count: 47,
-    chunk_count: 312,
-    deliverables: [
-      { deliverable_kind: 'lexical_sqlite', filename: 'asset.lexical.sqlite' },
-      { deliverable_kind: 'semantic_zip', filename: 'asset.semantic.zip' },
-    ],
-  },
-  {
-    job_id: 'job-002',
-    label: 'Onboarding docs',
-    status: 'running',
-    created_at: '2026-03-30T15:01:00Z',
-    stage: 'embedding',
-    deliverables: [],
-  },
-  {
-    job_id: 'job-003',
-    label: 'API reference batch',
-    status: 'failed',
-    created_at: '2026-03-30T12:45:00Z',
-    stage: 'embedding',
-    failure_stage: 'embedding',
-    error_message: 'Embedding API returned 401: invalid API key.',
-    deliverables: [],
-  },
-  {
-    job_id: 'job-004',
-    label: 'Internal wiki export',
-    status: 'queued',
-    created_at: '2026-03-30T15:10:00Z',
-    stage: 'loading_sources',
-    deliverables: [],
-  },
-  {
-    job_id: 'job-005',
-    label: 'Compliance handbook',
-    status: 'draft',
-    created_at: '2026-03-30T15:30:00Z',
-    stage: '',
-    deliverables: [],
-    files: [
-      { source_uid: 'src-a', filename: 'handbook-part1.md', byte_size: 24576 },
-      { source_uid: 'src-b', filename: 'handbook-part2.md', byte_size: 18432 },
-      { source_uid: 'src-c', filename: 'appendix-a.md', byte_size: 8192 },
-    ],
-  },
+const TAB_LABELS = [
+  { id: 'files' as const, label: 'Files' },
+  { id: 'config' as const, label: 'Config' },
+  { id: 'runs' as const, label: 'Runs' },
+  { id: 'artifacts' as const, label: 'Artifacts' },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
-
-type RightPanelState =
-  | { mode: 'empty' }
-  | { mode: 'new-run' }
-  | { mode: 'detail'; jobId: string };
-
 export default function IndexBuilderPage() {
-  useShellHeaderTitle({ breadcrumbs: ['Pipeline Services', 'Index Builder'] });
+  const ib = useIndexBuilder();
 
-  const [rightPanel, setRightPanel] = useState<RightPanelState>({ mode: 'empty' });
-  const selectedJobId = rightPanel.mode === 'detail' ? rightPanel.jobId : null;
-
-  const selectedRun = selectedJobId
-    ? MOCK_RUNS_FULL.find((r) => r.job_id === selectedJobId) ?? null
-    : null;
+  // Auto-tab-switch: when selected job transitions to running, switch to Runs tab
+  useEffect(() => {
+    if (ib.selectedJob?.status === 'running') {
+      ib.setActiveTab('runs');
+    }
+  }, [ib.selectedJob?.status]);
 
   return (
     <div className="flex h-full min-h-0 gap-3 p-3">
-      {/* Left column — 34% */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-lg border border-border bg-card">
-        {rightPanel.mode === 'empty' ? (
+      {/* Left pane — selected job detail (66%) */}
+      <div className="flex min-h-0 min-w-0 flex-[2] flex-col rounded-lg border border-border bg-card">
+        {!ib.selectedJob ? (
+          /* Empty state */
           <div className="flex flex-1 flex-col px-5 py-6">
             <h3 className="text-base font-semibold text-foreground">Index Builder</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Upload owned markdown documents, lock them into an ordered processing set, and queue
-              a backend job that consolidates, structures, and packages retrieval-ready artifacts.
-              Each completed run produces a lexical SQLite index and a semantic embeddings archive
-              for downstream search and RAG workflows.
+              Upload markdown files, configure processing, and generate search-ready artifacts.
             </p>
-            <dl className="mt-4 space-y-2 text-xs">
-              <div>
-                <dt className="font-medium text-muted-foreground">Outputs</dt>
-                <dd className="mt-0.5 text-foreground">SQLite full-text index + semantic embeddings archive</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-muted-foreground">Source types</dt>
-                <dd className="mt-0.5 text-foreground">Markdown (.md, .markdown)</dd>
-              </div>
-            </dl>
+            <ul className="mt-4 space-y-1.5 text-xs text-muted-foreground">
+              <li>Accepts Markdown (.md, .markdown)</li>
+              <li>Produces lexical SQLite + semantic archive</li>
+              <li>Runs can be monitored step-by-step</li>
+            </ul>
             <div className="mt-6">
-              <Button type="button" size="sm" onClick={() => setRightPanel({ mode: 'new-run' })}>
+              <Button type="button" size="sm" onClick={ib.createNewJob}>
                 <IconPlus size={14} />
-                New Run
+                New Index Job
               </Button>
             </div>
           </div>
-        ) : null}
+        ) : (
+          /* Selected job detail */
+          <div className="flex min-h-0 flex-1 flex-col">
+            <IndexJobHeader
+              name={ib.selectedJob.name}
+              status={ib.selectedJob.status}
+              hasUnsavedChanges={ib.hasUnsavedChanges}
+              createdAt={ib.selectedJob.createdAt}
+              updatedAt={ib.selectedJob.updatedAt}
+              lastRunAt={ib.selectedJob.lastRunAt}
+              memberCount={ib.selectedJob.memberCount}
+              onNameChange={ib.setDraftName}
+              onSaveDraft={() => { void ib.saveDraft(); }}
+              onStartRun={() => { void ib.startRun(); }}
+              onRetryRun={() => { void ib.retryRun(); }}
+              onDiscard={() => ib.selectJob(ib.selectedJobId === '__new__' ? '' : ib.selectedJobId!)}
+              isSaving={ib.pipelineSourceSet.isPersisting}
+              isTriggering={ib.pipelineJob.isTriggering}
+            />
 
-        {rightPanel.mode === 'new-run' ? (
-          <PipelineNewRunForm
-            onSave={(label, files) => {
-              // wiring TBD — would upload files, create source set as draft, add row to table
-              console.log('Save draft:', label, files);
-            }}
-          />
-        ) : null}
+            {/* Tab bar */}
+            <div className="flex border-b border-border">
+              {TAB_LABELS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => ib.setActiveTab(tab.id)}
+                  className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+                    ib.activeTab === tab.id
+                      ? 'border-b-2 border-primary text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-        {rightPanel.mode === 'detail' && selectedRun ? (
-          <PipelineRunDetailPanel
-            run={selectedRun}
-            onStart={() => {
-              // wiring TBD — would create job from draft source set
-              console.log('Start run:', selectedRun.job_id);
-            }}
-          />
-        ) : null}
+            {/* Tab content */}
+            <div className="flex min-h-0 flex-1 flex-col">
+              {ib.activeTab === 'files' ? (
+                <IndexJobFilesTab
+                  sources={ib.pipelineSourceSet.sources}
+                  selectedSourceUids={ib.pipelineSourceSet.selectedSourceUids}
+                  sourcesLoading={ib.pipelineSourceSet.sourcesLoading}
+                  sourcesError={ib.pipelineSourceSet.sourcesError}
+                  onToggleSource={ib.pipelineSourceSet.toggleSource}
+                  onUpload={ib.handleUpload}
+                  onRemoveSource={ib.pipelineSourceSet.removeSource}
+                />
+              ) : null}
+              {ib.activeTab === 'config' ? <IndexJobConfigTab /> : null}
+              {ib.activeTab === 'runs' ? (
+                <IndexJobRunsTab
+                  job={ib.pipelineJob.job}
+                  isPolling={ib.pipelineJob.isPolling}
+                  jobLoading={ib.pipelineJob.jobLoading}
+                  jobError={ib.pipelineJob.jobError}
+                />
+              ) : null}
+              {ib.activeTab === 'artifacts' ? (
+                <IndexJobArtifactsTab
+                  job={ib.pipelineJob.job}
+                  onDownload={ib.handleDownload}
+                  downloadError={ib.downloadError}
+                  downloadingKind={ib.downloadingKind}
+                />
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Right column — 66% */}
-      <div className="flex min-h-0 min-w-0 flex-[2] flex-col">
-        <PipelineRunsTable
-          runs={MOCK_RUNS_FULL}
-          selectedJobId={selectedJobId}
-          onSelectRun={(jobId) => setRightPanel({ mode: 'detail', jobId })}
+      {/* Right pane — job list (34%) */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <IndexJobsList
+          jobs={ib.indexJobs}
+          selectedJobId={ib.selectedJobId}
+          onSelectJob={(id) => { void ib.selectJob(id); }}
+          onNewJob={ib.createNewJob}
         />
       </div>
     </div>

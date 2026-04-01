@@ -23,6 +23,13 @@ _worker_stop_event: asyncio.Event | None = None
 _OPERATION_HANDLERS: dict[str, Callable[..., dict[str, Any] | None]] = {}
 
 
+def register_operation_handler(
+    operation_type: str,
+    handler: Callable[..., dict[str, Any] | None],
+) -> None:
+    _OPERATION_HANDLERS[operation_type] = handler
+
+
 def _worker_identity() -> str:
     return f"{socket.gethostname()}:{os.getpid()}"
 
@@ -147,4 +154,3 @@ def stop_agchain_operations_worker() -> None:
     task.cancel()
     _worker_task = None
     _worker_stop_event = None
-

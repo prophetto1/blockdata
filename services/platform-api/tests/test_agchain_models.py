@@ -191,6 +191,34 @@ def test_list_models_returns_paginated_envelope(client):
     )
 
 
+def test_list_models_omits_null_filter_attrs_from_metrics(client):
+    with (
+        patch("app.api.routes.agchain_models.list_model_targets") as mock_list,
+        patch("app.api.routes.agchain_models.models_list_counter.add") as mock_counter_add,
+        patch("app.api.routes.agchain_models.models_list_duration_ms.record") as mock_duration_record,
+    ):
+        mock_list.return_value = {
+            "items": [],
+            "total": 0,
+            "limit": 50,
+            "offset": 0,
+        }
+
+        response = client.get("/agchain/models")
+
+    assert response.status_code == 200
+    mock_counter_add.assert_called_once()
+    mock_duration_record.assert_called_once()
+    counter_attrs = mock_counter_add.call_args.args[1]
+    duration_attrs = mock_duration_record.call_args.args[1]
+    assert counter_attrs["filter.provider_slug_present"] is False
+    assert "filter.compatibility" not in counter_attrs
+    assert "filter.health_status" not in counter_attrs
+    assert duration_attrs["filter.provider_slug_present"] is False
+    assert "filter.compatibility" not in duration_attrs
+    assert "filter.health_status" not in duration_attrs
+
+
 def test_get_model_returns_detail_and_recent_health_checks(client):
     row = {
         "model_target_id": MODEL_ID,
@@ -336,7 +364,10 @@ def test_refresh_health_writes_history_and_updates_status(superuser_client):
 
 
 def test_connect_key_returns_masked_suffix_for_authenticated_user(client):
-    with patch("app.api.routes.agchain_models.connect_model_key", create=True) as mock_connect:
+    with (
+        patch("app.api.routes.agchain_models.connect_model_key", create=True) as mock_connect,
+        patch("app.api.routes.agchain_models.logger.info") as mock_log,
+    ):
         mock_connect.return_value = {
             "provider_slug": "openai",
             "key_suffix": "c123",
@@ -351,6 +382,15 @@ def test_connect_key_returns_masked_suffix_for_authenticated_user(client):
     assert response.status_code == 200
     assert response.json() == {"ok": True, "key_suffix": "c123", "credential_status": "ready"}
     mock_connect.assert_called_once_with(user_id="user-1", model_target_id=MODEL_ID, api_key="sk-test-abc123")
+    mock_log.assert_called_once_with(
+        "agchain.models.key_connected",
+        extra={
+            "model_target_id": MODEL_ID,
+            "provider_slug": "openai",
+            "key_suffix": "c123",
+            "result": "ok",
+        },
+    )
 
 
 def test_connect_key_rejects_unauthenticated(unauthenticated_client):
@@ -377,7 +417,10 @@ def test_connect_key_rejects_non_api_key_auth_kind(client):
 
 
 def test_disconnect_key_returns_missing_for_authenticated_user(client):
-    with patch("app.api.routes.agchain_models.disconnect_model_key", create=True) as mock_disconnect:
+    with (
+        patch("app.api.routes.agchain_models.disconnect_model_key", create=True) as mock_disconnect,
+        patch("app.api.routes.agchain_models.logger.info") as mock_log,
+    ):
         mock_disconnect.return_value = {
             "provider_slug": "openai",
             "credential_status": "missing",
@@ -388,6 +431,14 @@ def test_disconnect_key_returns_missing_for_authenticated_user(client):
     assert response.status_code == 200
     assert response.json() == {"ok": True, "credential_status": "missing"}
     mock_disconnect.assert_called_once_with(user_id="user-1", model_target_id=MODEL_ID)
+    mock_log.assert_called_once_with(
+        "agchain.models.key_disconnected",
+        extra={
+            "model_target_id": MODEL_ID,
+            "provider_slug": "openai",
+            "result": "ok",
+        },
+    )
 
 
 class _RegistryQuery:

@@ -176,7 +176,7 @@ describe('AgchainModelsPage', () => {
         return Promise.resolve(jsonResponse({ items: providerItems }));
       }
 
-      if (path === '/agchain/models' || path === '/agchain/models?limit=50&offset=0') {
+      if (path === '/agchain/models?limit=50&offset=0') {
         return Promise.resolve(
           jsonResponse({
             items: buildModelList(),
@@ -281,7 +281,7 @@ describe('AgchainModelsPage', () => {
     expect(within(panel).getByText('Recent health checks')).toBeInTheDocument();
   });
 
-  it('requests the model list with pagination defaults', async () => {
+  it('requests the formalized paginated model list contract', async () => {
     render(
       <MemoryRouter>
         <AgchainModelsPage />

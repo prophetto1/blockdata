@@ -589,3 +589,367 @@ def test_benchmark_reorder_atomic_rpc_migration_exists():
     normalized = " ".join(matches[0].read_text(encoding="utf-8").split())
     assert "CREATE OR REPLACE FUNCTION public.reorder_agchain_benchmark_steps_atomic(" in normalized
     assert "ordered_step_ids must contain each step exactly once" in normalized
+
+
+def test_component_registries_migration_exists_with_user_project_fks():
+    matches = sorted(MIGRATIONS_DIR.glob("*_agchain_inspect_component_registries.sql"))
+    assert len(matches) == 1
+
+    normalized = " ".join(matches[0].read_text(encoding="utf-8").split())
+    assert "CREATE TABLE IF NOT EXISTS public.agchain_scorers (" in normalized
+    assert "CREATE TABLE IF NOT EXISTS public.agchain_tools (" in normalized
+    assert "CREATE TABLE IF NOT EXISTS public.agchain_sandbox_profiles (" in normalized
+    assert "CREATE TABLE IF NOT EXISTS public.agchain_benchmark_version_scorers (" in normalized
+    assert "CREATE TABLE IF NOT EXISTS public.agchain_benchmark_version_tools (" in normalized
+    assert "REFERENCES public.user_projects(project_id) ON DELETE CASCADE" in normalized
+    assert "ADD COLUMN IF NOT EXISTS task_definition_jsonb JSONB" in normalized
+    assert "ADD COLUMN IF NOT EXISTS validation_summary_jsonb JSONB" in normalized
+
+
+def test_list_benchmark_versions_returns_paged_rows(client):
+    with patch("app.api.routes.agchain_benchmarks.list_benchmark_versions") as mock_list:
+        mock_list.return_value = {
+            "items": [
+                {
+                    "benchmark_version_id": "version-2",
+                    "version_label": "v0.2.0",
+                    "version_status": "draft",
+                    "dataset_version_id": "dataset-version-2",
+                    "validation_status": "warn",
+                    "scorer_count": 2,
+                    "tool_count": 1,
+                    "created_at": "2026-03-31T10:00:00Z",
+                    "updated_at": "2026-03-31T10:30:00Z",
+                }
+            ],
+            "next_cursor": "cursor-2",
+        }
+
+        response = client.get(
+            "/agchain/benchmarks/legal-10/versions",
+            params={"limit": 10, "cursor": "cursor-1"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["benchmark_version_id"] == "version-2"
+    assert response.json()["next_cursor"] == "cursor-2"
+    mock_list.assert_called_once_with(
+        user_id="user-1",
+        benchmark_slug="legal-10",
+        limit=10,
+        cursor="cursor-1",
+        offset=0,
+    )
+
+
+def test_create_benchmark_version_returns_version_and_validation(superuser_client):
+    with patch("app.api.routes.agchain_benchmarks.create_benchmark_version") as mock_create:
+        mock_create.return_value = {
+            "benchmark_version": {
+                "benchmark_version_id": "version-2",
+                "version_label": "v0.2.0",
+                "version_status": "draft",
+                "dataset_version_id": "dataset-version-2",
+                "task_name": "legal_eval_v2",
+                "task_file_ref": None,
+                "task_definition_jsonb": {"steps": [{"step_id": "d1"}]},
+            },
+            "validation_summary": {
+                "validation_status": "warn",
+                "warning_count": 1,
+                "issue_count": 0,
+            },
+        }
+
+        response = superuser_client.post(
+            "/agchain/benchmarks/legal-10/versions",
+            json={
+                "version_label": "v0.2.0",
+                "dataset_version_id": "dataset-version-2",
+                "task_name": "legal_eval_v2",
+                "task_definition_jsonb": {"steps": [{"step_id": "d1"}]},
+                "solver_plan_jsonb": {"kind": "serial"},
+                "scorer_refs_jsonb": [{"scorer_version_id": "scorer-version-1"}],
+                "tool_refs_jsonb": [{"tool_version_id": "tool-version-1"}],
+                "sandbox_profile_id": "sandbox-1",
+                "sandbox_overrides_jsonb": {"cpu": "2"},
+                "model_roles_jsonb": {"evaluated": ["model-1"]},
+                "generate_config_jsonb": {"temperature": 0},
+                "eval_config_jsonb": {"max_samples": 25},
+                "publish": False,
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["ok"] is True
+    assert response.json()["benchmark_version"]["benchmark_version_id"] == "version-2"
+    assert response.json()["validation_summary"]["validation_status"] == "warn"
+    assert mock_create.call_args.kwargs["user_id"] == "user-1"
+    assert mock_create.call_args.kwargs["benchmark_slug"] == "legal-10"
+
+
+def test_get_benchmark_version_returns_runtime_detail(client):
+    with patch("app.api.routes.agchain_benchmarks.get_benchmark_version") as mock_get:
+        mock_get.return_value = {
+            "benchmark_version": {
+                "benchmark_version_id": "version-2",
+                "version_label": "v0.2.0",
+                "version_status": "draft",
+                "dataset_version_id": "dataset-version-2",
+                "task_name": "legal_eval_v2",
+                "task_file_ref": None,
+                "task_definition_jsonb": {"steps": [{"step_id": "d1"}]},
+            },
+            "dataset_version": {
+                "dataset_version_id": "dataset-version-2",
+                "version_label": "v2",
+            },
+            "scorer_refs": [{"scorer_version_id": "scorer-version-1", "position": 1}],
+            "tool_refs": [{"tool_version_id": "tool-version-1", "position": 1}],
+            "sandbox_profile": {"sandbox_profile_id": "sandbox-1"},
+            "model_roles": {"evaluated": ["model-1"]},
+            "generate_config": {"temperature": 0},
+            "eval_config": {"max_samples": 25},
+            "validation_summary": {"validation_status": "warn"},
+        }
+
+        response = client.get("/agchain/benchmarks/legal-10/versions/version-2")
+
+    assert response.status_code == 200
+    assert response.json()["benchmark_version"]["task_name"] == "legal_eval_v2"
+    assert response.json()["dataset_version"]["dataset_version_id"] == "dataset-version-2"
+    mock_get.assert_called_once_with(
+        user_id="user-1",
+        benchmark_slug="legal-10",
+        benchmark_version_id="version-2",
+    )
+
+
+def test_validate_benchmark_version_returns_summary(superuser_client):
+    with patch("app.api.routes.agchain_benchmarks.validate_benchmark_version") as mock_validate:
+        mock_validate.return_value = {
+            "issues": [],
+            "warnings": [{"code": "missing_scorer_alias", "message": "Alias not set"}],
+            "resolved_refs": {
+                "dataset_version_id": "dataset-version-2",
+                "scorer_version_ids": ["scorer-version-1"],
+            },
+            "compatibility_summary": {
+                "validation_status": "warn",
+                "task_definition_source": "resolved_from_steps",
+            },
+        }
+
+        response = superuser_client.post(
+            "/agchain/benchmarks/legal-10/validate",
+            json={"benchmark_version_id": "version-2"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["ok"] is True
+    assert response.json()["compatibility_summary"]["validation_status"] == "warn"
+    mock_validate.assert_called_once_with(
+        user_id="user-1",
+        benchmark_slug="legal-10",
+        payload={"benchmark_version_id": "version-2"},
+    )
+
+
+def test_get_benchmark_version_synthesizes_runtime_task_definition_for_legacy_version():
+    from app.domain.agchain.task_registry import get_benchmark_version
+
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                    "plan_family": "custom",
+                    "step_count": 2,
+                    "validation_status": "unknown",
+                    "validation_issue_count": 0,
+                    "dataset_version_id": "dataset-version-1",
+                    "task_name": "legal_eval_v1",
+                    "task_file_ref": None,
+                    "task_definition_jsonb": None,
+                    "solver_plan_jsonb": {"kind": "serial"},
+                    "sandbox_profile_id": None,
+                    "sandbox_overrides_jsonb": {},
+                    "model_roles_jsonb": {"evaluated": ["model-1"]},
+                    "generate_config_jsonb": {"temperature": 0},
+                    "eval_config_jsonb": {"max_samples": 10},
+                    "validation_summary_jsonb": {},
+                }
+            ],
+            "agchain_benchmark_steps": [
+                {
+                    "benchmark_step_id": "step-1",
+                    "benchmark_version_id": "version-1",
+                    "step_order": 1,
+                    "step_id": "d1",
+                    "display_name": "Issue Spotting",
+                    "step_kind": "model",
+                    "api_call_boundary": "own_call",
+                    "inject_payloads": ["p1"],
+                    "scoring_mode": "none",
+                    "output_contract": "irac_outline_v1",
+                    "scorer_ref": None,
+                    "judge_prompt_ref": None,
+                    "judge_grades_step_ids": [],
+                    "enabled": True,
+                    "step_config_jsonb": {"system_prompt_ref": "issue_spotting_v1"},
+                    "updated_at": "2026-03-31T10:05:00Z",
+                },
+                {
+                    "benchmark_step_id": "step-2",
+                    "benchmark_version_id": "version-1",
+                    "step_order": 2,
+                    "step_id": "j1",
+                    "display_name": "Judge",
+                    "step_kind": "judge",
+                    "api_call_boundary": "own_call",
+                    "inject_payloads": [],
+                    "scoring_mode": "judge",
+                    "output_contract": "judge_pair_v1",
+                    "scorer_ref": None,
+                    "judge_prompt_ref": "judge_prompt_v1",
+                    "judge_grades_step_ids": ["d1"],
+                    "enabled": True,
+                    "step_config_jsonb": {"temperature": 0},
+                    "updated_at": "2026-03-31T10:06:00Z",
+                },
+            ],
+            "agchain_benchmark_model_targets": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "model_target_id": "model-1",
+                    "selection_role": "evaluated",
+                }
+            ],
+            "agchain_benchmark_version_scorers": [],
+            "agchain_benchmark_version_tools": [],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.task_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.task_registry.require_project_access",
+            return_value={"project_id": "project-1", "membership_role": "project_viewer"},
+        ),
+    ):
+        payload = get_benchmark_version(
+            user_id="user-1",
+            benchmark_slug="legal-10",
+            benchmark_version_id="version-1",
+        )
+
+    runtime = payload["benchmark_version"]["task_definition_jsonb"]
+    assert runtime["dataset_version_id"] == "dataset-version-1"
+    assert [step["step_id"] for step in runtime["steps"]] == ["d1", "j1"]
+    assert payload["model_roles"] == {"evaluated": ["model-1"]}
+
+
+def test_validate_benchmark_version_refreshes_runtime_snapshot_from_steps():
+    from app.domain.agchain.task_registry import validate_benchmark_version
+
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                    "plan_family": "custom",
+                    "step_count": 1,
+                    "validation_status": "unknown",
+                    "validation_issue_count": 0,
+                    "dataset_version_id": "dataset-version-1",
+                    "task_name": "legal_eval_v1",
+                    "task_file_ref": None,
+                    "task_definition_jsonb": None,
+                    "solver_plan_jsonb": {"kind": "serial"},
+                    "sandbox_profile_id": None,
+                    "sandbox_overrides_jsonb": {},
+                    "model_roles_jsonb": {"evaluated": ["model-1"]},
+                    "generate_config_jsonb": {"temperature": 0},
+                    "eval_config_jsonb": {"max_samples": 10},
+                    "validation_summary_jsonb": {},
+                }
+            ],
+            "agchain_benchmark_steps": [
+                {
+                    "benchmark_step_id": "step-1",
+                    "benchmark_version_id": "version-1",
+                    "step_order": 1,
+                    "step_id": "d1",
+                    "display_name": "Issue Spotting",
+                    "step_kind": "model",
+                    "api_call_boundary": "own_call",
+                    "inject_payloads": ["p1"],
+                    "scoring_mode": "none",
+                    "output_contract": "irac_outline_v1",
+                    "scorer_ref": None,
+                    "judge_prompt_ref": None,
+                    "judge_grades_step_ids": [],
+                    "enabled": True,
+                    "step_config_jsonb": {"system_prompt_ref": "issue_spotting_v1"},
+                    "updated_at": "2026-03-31T10:05:00Z",
+                }
+            ],
+            "agchain_benchmark_model_targets": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "model_target_id": "model-1",
+                    "selection_role": "evaluated",
+                }
+            ],
+            "agchain_benchmark_version_scorers": [],
+            "agchain_benchmark_version_tools": [],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.task_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.task_registry.require_project_write_access",
+            return_value={"project_id": "project-1", "membership_role": "project_admin"},
+        ),
+    ):
+        payload = validate_benchmark_version(
+            user_id="user-1",
+            benchmark_slug="legal-10",
+            payload={"benchmark_version_id": "version-1"},
+        )
+
+    assert payload["compatibility_summary"]["validation_status"] == "pass"
+    version_updates = [call for call in admin.update_calls if call[0] == "agchain_benchmark_versions"]
+    assert version_updates, "expected benchmark version update"
+    updated_payload = version_updates[0][1]
+    assert updated_payload["task_definition_jsonb"]["steps"][0]["step_id"] == "d1"
+    assert updated_payload["validation_summary_jsonb"]["validation_status"] == "pass"

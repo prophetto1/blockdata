@@ -100,6 +100,8 @@ class Settings:
     agchain_operations_worker_poll_interval_seconds: int = 5
     agchain_operations_worker_batch_size: int = 5
     agchain_operations_worker_lease_seconds: int = 60
+    agchain_dataset_preview_sync_threshold: int = 200
+    agchain_dataset_materialization_sync_threshold: int = 200
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -140,6 +142,12 @@ class Settings:
             ),
             agchain_operations_worker_lease_seconds=int(
                 os.environ.get("AGCHAIN_OPERATIONS_WORKER_LEASE_SECONDS", "60")
+            ),
+            agchain_dataset_preview_sync_threshold=int(
+                os.environ.get("AGCHAIN_DATASET_PREVIEW_SYNC_THRESHOLD", "200")
+            ),
+            agchain_dataset_materialization_sync_threshold=int(
+                os.environ.get("AGCHAIN_DATASET_MATERIALIZATION_SYNC_THRESHOLD", "200")
             ),
         )
 

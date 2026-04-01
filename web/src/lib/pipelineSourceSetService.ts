@@ -12,6 +12,7 @@ export type PipelineSourceSet = {
   label: string;
   member_count: number;
   total_bytes: number;
+  created_at?: string;
   updated_at?: string;
   items: PipelineSourceSetItem[];
   latest_job: PipelineJobSummary | null;

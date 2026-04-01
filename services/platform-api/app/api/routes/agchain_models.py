@@ -117,9 +117,10 @@ async def list_models(
             "row_count": len(payload["items"]),
             "latency_ms": duration_ms,
         }
+        metric_attrs = {key: value for key, value in safe_attributes(attrs).items() if value is not None}
         set_span_attributes(span, attrs)
-        models_list_counter.add(1, safe_attributes(attrs))
-        models_list_duration_ms.record(duration_ms, safe_attributes(attrs))
+        models_list_counter.add(1, metric_attrs)
+        models_list_duration_ms.record(duration_ms, metric_attrs)
         return payload
 
 
@@ -220,6 +221,7 @@ async def connect_model_key_route(
                 "model_target_id": model_target_id_str,
                 "provider_slug": outcome["provider_slug"],
                 "key_suffix": outcome["key_suffix"],
+                "result": "ok",
             },
         )
         return {"ok": True, "key_suffix": outcome["key_suffix"], "credential_status": outcome["credential_status"]}
@@ -238,7 +240,11 @@ async def disconnect_model_key_route(
         models_disconnect_key_counter.add(1, safe_attributes(attrs))
         logger.info(
             "agchain.models.key_disconnected",
-            extra={"model_target_id": model_target_id_str, "provider_slug": outcome["provider_slug"]},
+            extra={
+                "model_target_id": model_target_id_str,
+                "provider_slug": outcome["provider_slug"],
+                "result": "ok",
+            },
         )
         return {"ok": True, "credential_status": outcome["credential_status"]}
 

@@ -4,20 +4,27 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import IndexBuilderPage from './IndexBuilderPage';
 
-const platformApiFetchMock = vi.fn();
-const useShellHeaderTitleMock = vi.fn();
-const uploadPipelineSourceMock = vi.fn();
-const downloadPipelineDeliverableMock = vi.fn();
-const usePipelineSourceSetMock = vi.fn();
-const usePipelineJobMock = vi.fn();
-const refreshPipelineSourcesMock = vi.fn();
-const persistSourceSetMock = vi.fn();
-const triggerJobMock = vi.fn();
+/* ------------------------------------------------------------------ */
+/*  Mocks                                                              */
+/* ------------------------------------------------------------------ */
 
+const useShellHeaderTitleMock = vi.fn();
+vi.mock('@/components/common/useShellHeaderTitle', () => ({
+  useShellHeaderTitle: (...args: unknown[]) => useShellHeaderTitleMock(...args),
+}));
+
+const useProjectFocusMock = vi.fn();
+vi.mock('@/hooks/useProjectFocus', () => ({
+  useProjectFocus: () => useProjectFocusMock(),
+}));
+
+const platformApiFetchMock = vi.fn();
 vi.mock('@/lib/platformApi', () => ({
   platformApiFetch: (...args: unknown[]) => platformApiFetchMock(...args),
 }));
 
+const uploadPipelineSourceMock = vi.fn();
+const downloadPipelineDeliverableMock = vi.fn();
 vi.mock('@/lib/pipelineService', async () => {
   const actual = await vi.importActual<typeof import('@/lib/pipelineService')>('@/lib/pipelineService');
   return {
@@ -27,23 +34,28 @@ vi.mock('@/lib/pipelineService', async () => {
   };
 });
 
-vi.mock('@/hooks/usePipelineJob', () => ({
-  usePipelineJob: (...args: unknown[]) => usePipelineJobMock(...args),
-}));
-
+const usePipelineSourceSetMock = vi.fn();
 vi.mock('@/hooks/usePipelineSourceSet', () => ({
   usePipelineSourceSet: (...args: unknown[]) => usePipelineSourceSetMock(...args),
 }));
 
-vi.mock('@/components/common/useShellHeaderTitle', () => ({
-  useShellHeaderTitle: (...args: unknown[]) => useShellHeaderTitleMock(...args),
+const usePipelineJobMock = vi.fn();
+vi.mock('@/hooks/usePipelineJob', () => ({
+  usePipelineJob: (...args: unknown[]) => usePipelineJobMock(...args),
 }));
 
-const useProjectFocusMock = vi.fn();
+const listPipelineSourceSetsMock = vi.fn();
+vi.mock('@/lib/pipelineSourceSetService', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/pipelineSourceSetService')>('@/lib/pipelineSourceSetService');
+  return {
+    ...actual,
+    listPipelineSourceSets: (...args: unknown[]) => listPipelineSourceSetsMock(...args),
+  };
+});
 
-vi.mock('@/hooks/useProjectFocus', () => ({
-  useProjectFocus: () => useProjectFocusMock(),
-}));
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
 
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === 'undefined') {
@@ -52,6 +64,13 @@ beforeAll(() => {
       unobserve() {}
       disconnect() {}
     } as unknown as typeof ResizeObserver;
+  }
+  if (typeof globalThis.IntersectionObserver === 'undefined') {
+    globalThis.IntersectionObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof IntersectionObserver;
   }
 });
 
@@ -66,9 +85,65 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function renderAt(pathname: string) {
+function defaultSourceSetHook() {
+  return {
+    sources: [],
+    sourcesLoading: false,
+    sourcesError: null,
+    sourceSetLabel: '',
+    selectedSourceUids: [],
+    selectedSources: [],
+    activeSourceSetId: null,
+    sourceSetError: null,
+    isPersisting: false,
+    setSourceSetLabel: vi.fn(),
+    toggleSource: vi.fn(),
+    moveSource: vi.fn(),
+    removeSource: vi.fn(),
+    refreshSources: vi.fn(),
+    refreshSourceSet: vi.fn(),
+    resetSelection: vi.fn(),
+    loadSourceSet: vi.fn(),
+    persistSourceSet: vi.fn(),
+  };
+}
+
+function defaultJobHook() {
+  return {
+    job: null,
+    jobLoading: false,
+    jobError: null,
+    triggerError: null,
+    isTriggering: false,
+    isPolling: false,
+    refreshLatestJob: vi.fn(),
+    triggerJob: vi.fn(),
+  };
+}
+
+function setupDefaults() {
+  useProjectFocusMock.mockReturnValue({ resolvedProjectId: 'project-1' });
+  usePipelineSourceSetMock.mockReturnValue(defaultSourceSetHook());
+  usePipelineJobMock.mockReturnValue(defaultJobHook());
+  listPipelineSourceSetsMock.mockResolvedValue([]);
+  platformApiFetchMock.mockResolvedValue(
+    jsonResponse({
+      items: [
+        {
+          pipeline_kind: 'markdown_index_builder',
+          label: 'Index Builder',
+          supports_manual_trigger: true,
+          eligible_source_types: ['md', 'markdown'],
+          deliverable_kinds: ['lexical_sqlite', 'semantic_zip'],
+        },
+      ],
+    }),
+  );
+}
+
+function renderPage() {
   render(
-    <MemoryRouter initialEntries={[pathname]}>
+    <MemoryRouter initialEntries={['/app/pipeline-services/index-builder']}>
       <Routes>
         <Route path="/app/pipeline-services/index-builder" element={<IndexBuilderPage />} />
       </Routes>
@@ -76,243 +151,212 @@ function renderAt(pathname: string) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Tests                                                              */
+/* ------------------------------------------------------------------ */
+
 describe('IndexBuilderPage', () => {
   beforeEach(() => {
-    window.localStorage.clear();
-    platformApiFetchMock.mockReset();
-    useShellHeaderTitleMock.mockReset();
-    uploadPipelineSourceMock.mockReset();
-    downloadPipelineDeliverableMock.mockReset();
-    usePipelineSourceSetMock.mockReset();
-    usePipelineJobMock.mockReset();
-    refreshPipelineSourcesMock.mockReset();
-    persistSourceSetMock.mockReset();
-    triggerJobMock.mockReset();
-    useProjectFocusMock.mockReset();
-    useProjectFocusMock.mockReturnValue({ resolvedProjectId: null });
-    usePipelineSourceSetMock.mockReturnValue({
-      sources: [],
-      sourcesLoading: false,
-      sourcesError: null,
-      sourceSetLabel: 'Release corpus',
-      selectedSourceUids: [],
-      selectedSources: [],
-      activeSourceSetId: null,
-      sourceSetError: null,
-      isPersisting: false,
-      setSourceSetLabel: vi.fn(),
-      toggleSource: vi.fn(),
-      moveSource: vi.fn(),
-      removeSource: vi.fn(),
-      refreshSources: refreshPipelineSourcesMock,
-      refreshSourceSet: vi.fn(),
-      persistSourceSet: persistSourceSetMock,
-    });
-    usePipelineJobMock.mockReturnValue({
-      job: null,
-      jobLoading: false,
-      jobError: null,
-      triggerError: null,
-      isTriggering: false,
-      isPolling: false,
-      refreshLatestJob: vi.fn(),
-      triggerJob: triggerJobMock,
-    });
-    platformApiFetchMock.mockResolvedValue(
-      jsonResponse({
-        items: [
-          {
-            pipeline_kind: 'markdown_index_builder',
-            label: 'Index Builder',
-            supports_manual_trigger: true,
-            eligible_source_types: ['md', 'markdown'],
-            deliverable_kinds: ['lexical_sqlite', 'semantic_zip'],
-          },
-        ],
-      }),
-    );
+    vi.clearAllMocks();
+    setupDefaults();
   });
 
-  it('renders the dedicated Index Builder workbench with service-local tabs', async () => {
-    renderAt('/app/pipeline-services/index-builder');
-
+  it('renders empty state with intro card and New Index Job button', async () => {
+    renderPage();
     expect(await screen.findByRole('heading', { name: 'Index Builder' })).toBeInTheDocument();
-    expect(screen.getByText('Runs & Downloads')).toBeInTheDocument();
-    expect(screen.queryByText('Service Overview')).not.toBeInTheDocument();
-    expect(useShellHeaderTitleMock).toHaveBeenCalledWith({
-      breadcrumbs: ['Pipeline Services', 'Index Builder'],
-    });
+    expect(screen.getByText(/upload markdown files/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /new index job/i }).length).toBeGreaterThan(0);
   });
 
-  it('uploads multiple markdown files without auto-starting a job', async () => {
-    useProjectFocusMock.mockReturnValue({ resolvedProjectId: 'project-1' });
-    usePipelineSourceSetMock.mockReturnValue({
-      sources: [
-        {
-          source_uid: 'source-1',
-          project_id: 'project-1',
-          doc_title: 'Guide.md',
-          source_type: 'md',
-        },
-      ],
-      sourcesLoading: false,
-      sourcesError: null,
-      sourceSetLabel: 'Release corpus',
-      selectedSourceUids: ['source-1'],
-      selectedSources: [
-        {
-          source_uid: 'source-1',
-          project_id: 'project-1',
-          doc_title: 'Guide.md',
-          source_type: 'md',
-        },
-      ],
-      activeSourceSetId: null,
-      sourceSetError: null,
-      isPersisting: false,
-      setSourceSetLabel: vi.fn(),
-      toggleSource: vi.fn(),
-      moveSource: vi.fn(),
-      removeSource: vi.fn(),
-      refreshSources: refreshPipelineSourcesMock,
-      refreshSourceSet: vi.fn(),
-      persistSourceSet: persistSourceSetMock,
-    });
-    uploadPipelineSourceMock
-      .mockResolvedValueOnce({
-        sourceUid: 'source-2',
-        reservation: {
-          reservation_id: 'res-1',
-          signed_upload_url: 'https://upload.example/res-1',
-        },
-        completed: {
-          storage_object_id: 'obj-1',
-          object_key: 'users/user-1/pipeline-services/index-builder/projects/project-1/sources/source-2/source/uploaded.md',
-          byte_size: 9,
-        },
-      })
-      .mockResolvedValueOnce({
-        sourceUid: 'source-3',
-        reservation: {
-          reservation_id: 'res-2',
-          signed_upload_url: 'https://upload.example/res-2',
-        },
-        completed: {
-          storage_object_id: 'obj-2',
-          object_key: 'users/user-1/pipeline-services/index-builder/projects/project-1/sources/source-3/source/notes.md',
-          byte_size: 9,
-        },
-      });
-
-    renderAt('/app/pipeline-services/index-builder');
-
-    const input = await screen.findByLabelText('Add markdown files');
-    fireEvent.change(input, {
-      target: {
-        files: [
-          new File(['# Upload'], 'uploaded.md', { type: 'text/markdown' }),
-          new File(['# Notes'], 'notes.md', { type: 'text/markdown' }),
-        ],
-      },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Upload files' }));
-
-    await waitFor(() => {
-      expect(uploadPipelineSourceMock).toHaveBeenNthCalledWith(1, {
-        projectId: 'project-1',
-        serviceSlug: 'index-builder',
-        file: expect.any(File),
-      });
-    });
-    await waitFor(() => {
-      expect(uploadPipelineSourceMock).toHaveBeenNthCalledWith(2, {
-        projectId: 'project-1',
-        serviceSlug: 'index-builder',
-        file: expect.any(File),
-      });
-    });
-    await waitFor(() => {
-      expect(refreshPipelineSourcesMock).toHaveBeenCalled();
-    });
-    expect(triggerJobMock).not.toHaveBeenCalled();
-  });
-
-  it('persists the selected source set before triggering a pipeline job and switches to Runs & Downloads', async () => {
-    useProjectFocusMock.mockReturnValue({ resolvedProjectId: 'project-1' });
-    usePipelineSourceSetMock.mockReturnValue({
-      sources: [
-        {
-          source_uid: 'source-1',
-          project_id: 'project-1',
-          doc_title: 'Guide.md',
-          source_type: 'md',
-        },
-      ],
-      sourcesLoading: false,
-      sourcesError: null,
-      sourceSetLabel: 'Release corpus',
-      selectedSourceUids: ['source-1'],
-      selectedSources: [
-        {
-          source_uid: 'source-1',
-          project_id: 'project-1',
-          doc_title: 'Guide.md',
-          source_type: 'md',
-        },
-      ],
-      activeSourceSetId: null,
-      sourceSetError: null,
-      isPersisting: false,
-      setSourceSetLabel: vi.fn(),
-      toggleSource: vi.fn(),
-      moveSource: vi.fn(),
-      removeSource: vi.fn(),
-      refreshSources: refreshPipelineSourcesMock,
-      refreshSourceSet: vi.fn(),
-      persistSourceSet: persistSourceSetMock.mockResolvedValue({
+  it('renders Index Jobs list with correct heading', async () => {
+    listPipelineSourceSetsMock.mockResolvedValue([
+      {
         source_set_id: 'set-1',
         project_id: 'project-1',
-        label: 'Release corpus',
+        label: 'Legal corpus v2',
+        member_count: 3,
+        total_bytes: 50000,
+        created_at: '2026-03-30T08:00:00Z',
+        updated_at: '2026-03-30T08:30:00Z',
+        latest_job: { job_id: 'job-1', pipeline_kind: 'markdown_index_builder', source_set_id: 'set-1', status: 'complete', stage: 'packaging', started_at: '2026-03-30T08:10:00Z' },
+      },
+      {
+        source_set_id: 'set-2',
+        project_id: 'project-1',
+        label: 'Onboarding docs',
         member_count: 1,
-        total_bytes: 128,
+        total_bytes: 12000,
+        created_at: '2026-03-30T09:00:00Z',
+        updated_at: '2026-03-30T09:05:00Z',
+        latest_job: null,
+      },
+    ]);
+    renderPage();
+    expect(await screen.findByText('Index Jobs')).toBeInTheDocument();
+    expect(await screen.findByText('Legal corpus v2')).toBeInTheDocument();
+    expect(screen.getByText('Onboarding docs')).toBeInTheDocument();
+  });
+
+  it('selecting a job populates the detail pane', async () => {
+    listPipelineSourceSetsMock.mockResolvedValue([
+      {
+        source_set_id: 'set-1',
+        project_id: 'project-1',
+        label: 'Legal corpus v2',
+        member_count: 3,
+        total_bytes: 50000,
+        created_at: '2026-03-30T08:00:00Z',
+        updated_at: '2026-03-30T08:30:00Z',
+        latest_job: { job_id: 'job-1', pipeline_kind: 'markdown_index_builder', source_set_id: 'set-1', status: 'complete', stage: 'packaging', started_at: '2026-03-30T08:10:00Z' },
+      },
+    ]);
+    const loadSourceSetMock = vi.fn().mockResolvedValue({
+      source_set_id: 'set-1',
+      label: 'Legal corpus v2',
+      member_count: 3,
+      total_bytes: 50000,
+      items: [],
+      latest_job: null,
+    });
+    usePipelineSourceSetMock.mockReturnValue({
+      ...defaultSourceSetHook(),
+      loadSourceSet: loadSourceSetMock,
+    });
+    renderPage();
+    const row = await screen.findByText('Legal corpus v2');
+    fireEvent.click(row);
+    await waitFor(() => {
+      expect(loadSourceSetMock).toHaveBeenCalledWith('set-1');
+    });
+  });
+
+  it('creating a new job shows draft state with Save draft button and Files tab', async () => {
+    renderPage();
+    const newJobButtons = await screen.findAllByRole('button', { name: /new index job/i });
+    fireEvent.click(newJobButtons[0]);
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Untitled index job')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Draft')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save draft/i })).toBeInTheDocument();
+    expect(screen.getByText('Files')).toBeInTheDocument();
+  });
+
+  it('save draft calls persistSourceSet', async () => {
+    const persistMock = vi.fn().mockResolvedValue({
+      source_set_id: 'set-new',
+      project_id: 'project-1',
+      label: 'Untitled index job',
+      member_count: 0,
+      total_bytes: 0,
+      items: [],
+      latest_job: null,
+    });
+    usePipelineSourceSetMock.mockReturnValue({
+      ...defaultSourceSetHook(),
+      persistSourceSet: persistMock,
+    });
+    renderPage();
+    const newJobButtons = await screen.findAllByRole('button', { name: /new index job/i });
+    fireEvent.click(newJobButtons[0]);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save draft/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save draft/i }));
+    await waitFor(() => {
+      expect(persistMock).toHaveBeenCalled();
+    });
+  });
+
+  it('unsaved changes on a saved job shows Save and start', async () => {
+    listPipelineSourceSetsMock.mockResolvedValue([
+      {
+        source_set_id: 'set-1',
+        project_id: 'project-1',
+        label: 'Legal corpus v2',
+        member_count: 3,
+        total_bytes: 50000,
+        created_at: '2026-03-30T08:00:00Z',
+        updated_at: '2026-03-30T08:30:00Z',
+        latest_job: null,
+      },
+    ]);
+    usePipelineSourceSetMock.mockReturnValue({
+      ...defaultSourceSetHook(),
+      loadSourceSet: vi.fn().mockResolvedValue({
+        source_set_id: 'set-1',
+        label: 'Legal corpus v2',
+        member_count: 3,
+        total_bytes: 50000,
         items: [],
         latest_job: null,
       }),
     });
-
-    renderAt('/app/pipeline-services/index-builder');
-
-    expect(screen.queryByRole('heading', { name: 'Processing' })).not.toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('button', { name: 'Start processing' }));
-
+    renderPage();
+    const row = await screen.findByText('Legal corpus v2');
+    fireEvent.click(row);
     await waitFor(() => {
-      expect(persistSourceSetMock).toHaveBeenCalled();
+      expect(screen.getByDisplayValue('Legal corpus v2')).toBeInTheDocument();
     });
+    // Edit the name to trigger unsaved changes
+    const nameInput = screen.getByDisplayValue('Legal corpus v2');
+    fireEvent.change(nameInput, { target: { value: 'Legal corpus v3' } });
     await waitFor(() => {
-      expect(triggerJobMock).toHaveBeenCalledWith('set-1');
+      expect(screen.getByText('Unsaved changes')).toBeInTheDocument();
     });
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Processing' })).toBeInTheDocument();
-    });
-    expect(screen.getByText('Active source set')).toBeInTheDocument();
-    expect(screen.getAllByText('Release corpus').length).toBeGreaterThan(0);
-    expect(screen.getByRole('heading', { name: 'Deliverables' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save and start/i })).toBeInTheDocument();
   });
 
-  it('ignores legacy workbench state keyed to the old shared Pipeline Services tabs', async () => {
-    window.localStorage.setItem('pipeline-services-index-builder-v1', JSON.stringify([
+  it('artifacts tab shows deliverables for completed job', async () => {
+    listPipelineSourceSetsMock.mockResolvedValue([
       {
-        id: 'pane-pipeline-services',
-        tabs: ['pipeline-services-catalog', 'pipeline-services-overview'],
-        activeTab: 'pipeline-services-overview',
-        width: 100,
+        source_set_id: 'set-1',
+        project_id: 'project-1',
+        label: 'Legal corpus v2',
+        member_count: 3,
+        total_bytes: 50000,
+        created_at: '2026-03-30T08:00:00Z',
+        updated_at: '2026-03-30T08:30:00Z',
+        latest_job: { job_id: 'job-1', pipeline_kind: 'markdown_index_builder', source_set_id: 'set-1', status: 'complete', stage: 'packaging', started_at: '2026-03-30T08:10:00Z' },
       },
-    ]));
-
-    renderAt('/app/pipeline-services/index-builder');
-
-    expect(await screen.findByRole('heading', { name: 'Index Builder' })).toBeInTheDocument();
-    expect(screen.getByText('Runs & Downloads')).toBeInTheDocument();
-    expect(screen.queryByText('Service Overview')).not.toBeInTheDocument();
+    ]);
+    usePipelineSourceSetMock.mockReturnValue({
+      ...defaultSourceSetHook(),
+      loadSourceSet: vi.fn().mockResolvedValue({
+        source_set_id: 'set-1',
+        label: 'Legal corpus v2',
+        member_count: 3,
+        total_bytes: 50000,
+        items: [],
+        latest_job: null,
+      }),
+    });
+    usePipelineJobMock.mockReturnValue({
+      ...defaultJobHook(),
+      job: {
+        job_id: 'job-1',
+        pipeline_kind: 'markdown_index_builder',
+        source_set_id: 'set-1',
+        status: 'complete',
+        stage: 'packaging',
+        deliverables: [
+          { deliverable_kind: 'lexical_sqlite', filename: 'asset.lexical.sqlite', content_type: 'application/octet-stream', byte_size: 102400, created_at: '2026-03-30T08:20:00Z' },
+          { deliverable_kind: 'semantic_zip', filename: 'asset.semantic.zip', content_type: 'application/zip', byte_size: 204800, created_at: '2026-03-30T08:20:00Z' },
+        ],
+      },
+    });
+    renderPage();
+    const row = await screen.findByText('Legal corpus v2');
+    fireEvent.click(row);
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Legal corpus v2')).toBeInTheDocument();
+    });
+    // Click Artifacts tab
+    fireEvent.click(screen.getByText('Artifacts'));
+    await waitFor(() => {
+      expect(screen.getByText('asset.lexical.sqlite')).toBeInTheDocument();
+    });
+    expect(screen.getByText('asset.semantic.zip')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /download/i }).length).toBe(2);
   });
 });

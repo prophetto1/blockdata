@@ -135,6 +135,26 @@ export function usePipelineSourceSet({
     setSelectedSourceUids((current) => current.filter((item) => item !== sourceUid));
   }, []);
 
+  const resetSelection = useCallback(() => {
+    setSelectedSourceUids([]);
+    setActiveSourceSetId(null);
+    setSourceSetLabel('');
+    setSourceSetError(null);
+  }, []);
+
+  const loadSourceSet = useCallback(async (sourceSetId: string) => {
+    if (!pipelineKind) return null;
+    try {
+      setSourceSetError(null);
+      const detail = await getPipelineSourceSet({ pipelineKind, sourceSetId });
+      hydrateSourceSet(detail);
+      return detail;
+    } catch (error) {
+      setSourceSetError(toErrorMessage(error, 'Unable to load the selected source set.'));
+      return null;
+    }
+  }, [hydrateSourceSet, pipelineKind]);
+
   const persistSourceSet = useCallback(async () => {
     if (!projectId || !pipelineKind) {
       throw new Error('Select a project before starting processing.');
@@ -190,6 +210,8 @@ export function usePipelineSourceSet({
     removeSource,
     refreshSources,
     refreshSourceSet,
+    resetSelection,
+    loadSourceSet,
     persistSourceSet,
   };
 }
