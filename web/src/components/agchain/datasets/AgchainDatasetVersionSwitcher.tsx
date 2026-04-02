@@ -1,5 +1,4 @@
 import type { AgchainDatasetVersionSummary } from '@/lib/agchainDatasets';
-import { Badge } from '@/components/ui/badge';
 
 type AgchainDatasetVersionSwitcherProps = {
   versions: AgchainDatasetVersionSummary[];
@@ -7,19 +6,11 @@ type AgchainDatasetVersionSwitcherProps = {
   onSelect: (versionId: string) => void;
 };
 
-const VALIDATION_BADGE: Record<string, 'green' | 'yellow' | 'red' | 'gray'> = {
-  pass: 'green',
-  warn: 'yellow',
-  fail: 'red',
-  unknown: 'gray',
-};
-
 export function AgchainDatasetVersionSwitcher({
   versions,
   selectedVersionId,
   onSelect,
 }: AgchainDatasetVersionSwitcherProps) {
-  const selected = versions.find((v) => v.dataset_version_id === selectedVersionId);
 
   return (
     <div className="relative">

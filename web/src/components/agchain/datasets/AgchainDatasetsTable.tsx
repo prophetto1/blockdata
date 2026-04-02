@@ -9,9 +9,9 @@ type AgchainDatasetsTableProps = {
   loading: boolean;
 };
 
-const SOURCE_TYPE_BADGE: Record<string, 'blue' | 'purple' | 'green' | 'orange'> = {
+const SOURCE_TYPE_BADGE: Record<string, 'blue' | 'violet' | 'green' | 'orange'> = {
   csv: 'blue',
-  json: 'purple',
+  json: 'violet',
   jsonl: 'blue',
   huggingface: 'green',
 };

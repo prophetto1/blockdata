@@ -307,11 +307,6 @@ async function parseJsonResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function trimToNull(value: string | null | undefined): string | null {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
 // ---------------------------------------------------------------------------
 // Service functions — 17 dataset routes + 1 shared operations route
 // ---------------------------------------------------------------------------

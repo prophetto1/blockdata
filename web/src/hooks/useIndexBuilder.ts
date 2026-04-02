@@ -6,7 +6,6 @@ import { useResolvedPipelineService } from '@/pages/usePipelineServicesOverview'
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import {
   listPipelineSourceSets,
-  type PipelineSourceSetSummary,
 } from '@/lib/pipelineSourceSetService';
 import {
   uploadPipelineSource,
@@ -15,7 +14,6 @@ import {
 } from '@/lib/pipelineService';
 import {
   deriveIndexJobStatus,
-  type IndexJobStatus,
   type IndexJobViewModel,
 } from '@/lib/indexJobStatus';
 

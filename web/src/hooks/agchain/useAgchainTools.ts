@@ -110,7 +110,7 @@ export function useAgchainTools() {
     async function loadDetail() {
       setDetailLoading(true);
       try {
-        const detail = await fetchAgchainToolDetail(projectId, selectedToolId);
+        const detail = await fetchAgchainToolDetail(projectId!, selectedToolId!);
         if (!cancelled) {
           setSelectedDetail(detail);
           setDetailError(null);

@@ -7,7 +7,7 @@ import { AgchainDatasetValidationPanel } from '@/components/agchain/datasets/Agc
 import { useAgchainDatasetDraft } from '@/hooks/agchain/useAgchainDatasetDraft';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { AgchainFieldSpec, AgchainDatasetSourceConfig } from '@/lib/agchainDatasets';
+import type { AgchainFieldSpec } from '@/lib/agchainDatasets';
 
 export default function AgchainDatasetVersionDraftPage() {
   const { datasetId, draftId } = useParams<{ datasetId: string; draftId: string }>();
