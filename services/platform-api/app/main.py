@@ -201,7 +201,11 @@ def create_app() -> FastAPI:
     from app.api.routes.agchain_benchmarks import router as agchain_benchmarks_router
     app.include_router(agchain_benchmarks_router)
 
-    # 5n. AG chain operations surface (user-scoped, before plugin catch-all)
+    # 5n. AG chain tools surface (user-scoped, before plugin catch-all)
+    from app.api.routes.agchain_tools import router as agchain_tools_router
+    app.include_router(agchain_tools_router)
+
+    # 5o. AG chain operations surface (user-scoped, before plugin catch-all)
     from app.api.routes.agchain_operations import router as agchain_operations_router
     app.include_router(agchain_operations_router)
 

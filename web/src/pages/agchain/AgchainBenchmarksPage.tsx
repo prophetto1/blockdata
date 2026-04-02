@@ -1,3 +1,4 @@
+import { AgchainBenchmarkToolBag } from '@/components/agchain/benchmarks/AgchainBenchmarkToolBag';
 import { Link, useLocation } from 'react-router-dom';
 import { AgchainBenchmarkStepInspector } from '@/components/agchain/benchmarks/AgchainBenchmarkStepInspector';
 import { AgchainBenchmarkStepsList } from '@/components/agchain/benchmarks/AgchainBenchmarkStepsList';
@@ -33,12 +34,21 @@ export default function AgchainBenchmarksPage() {
     mutating,
     error,
     dirtyOrder,
+    toolRefs,
+    resolvedTools,
+    availableTools,
+    dirtyToolBag,
     selectStep,
     moveStep,
     saveOrder,
     createStep,
     updateSelectedStep,
     deleteSelectedStep,
+    addToolRef,
+    updateToolRef,
+    moveToolRef,
+    removeToolRef,
+    saveToolBag,
     focusedProject,
     hasProjectFocus,
   } = useAgchainBenchmarkSteps();
@@ -96,25 +106,42 @@ export default function AgchainBenchmarksPage() {
       ) : null}
 
       {activeHash === '#steps' ? (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(24rem,1fr)]">
-          <AgchainBenchmarkStepsList
-            steps={steps}
-            selectedStepId={selectedStepId}
-            canEdit={canEdit}
+        <div className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(24rem,1fr)]">
+            <AgchainBenchmarkStepsList
+              steps={steps}
+              selectedStepId={selectedStepId}
+              canEdit={canEdit}
+              loading={loading}
+              mutating={mutating}
+              dirtyOrder={dirtyOrder}
+              onSelect={selectStep}
+              onMove={moveStep}
+              onSaveOrder={saveOrder}
+            />
+            <AgchainBenchmarkStepInspector
+              selectedStep={selectedStep}
+              canEdit={canEdit}
+              loading={loading}
+              mutating={mutating}
+              onSave={updateSelectedStep}
+              onDelete={deleteSelectedStep}
+            />
+          </div>
+
+          <AgchainBenchmarkToolBag
+            toolRefs={toolRefs}
+            resolvedTools={resolvedTools}
+            availableTools={availableTools}
+            canEdit={canEdit && currentVersion?.version_status === 'draft'}
             loading={loading}
             mutating={mutating}
-            dirtyOrder={dirtyOrder}
-            onSelect={selectStep}
-            onMove={moveStep}
-            onSaveOrder={saveOrder}
-          />
-          <AgchainBenchmarkStepInspector
-            selectedStep={selectedStep}
-            canEdit={canEdit}
-            loading={loading}
-            mutating={mutating}
-            onSave={updateSelectedStep}
-            onDelete={deleteSelectedStep}
+            dirty={dirtyToolBag}
+            onAdd={addToolRef}
+            onChange={updateToolRef}
+            onMove={moveToolRef}
+            onRemove={removeToolRef}
+            onSave={saveToolBag}
           />
         </div>
       ) : (

@@ -209,66 +209,67 @@ def _sample_summary(canonical_sample: dict[str, Any]) -> dict[str, Any]:
 
 
 def project_dataset_validation(*, canonical_samples: list[dict[str, Any]]) -> dict[str, Any]:
-    duplicate_ids: dict[str, int] = {}
-    missing_field_issues: list[dict[str, Any]] = []
-    duplicate_id_issues: list[dict[str, Any]] = []
-    unsupported_payload_issues: list[dict[str, Any]] = []
+    with tracer.start_as_current_span("agchain.inspect.dataset.validation.project"):
+        duplicate_ids: dict[str, int] = {}
+        missing_field_issues: list[dict[str, Any]] = []
+        duplicate_id_issues: list[dict[str, Any]] = []
+        unsupported_payload_issues: list[dict[str, Any]] = []
 
-    for sample in canonical_samples:
-        sample_id = sample.get("id")
-        if isinstance(sample_id, str):
-            duplicate_ids[sample_id] = duplicate_ids.get(sample_id, 0) + 1
-        if sample.get("input") is None and not _as_list(sample.get("messages")):
-            missing_field_issues.append({"sample_id": sample_id, "field": "input"})
-        sandbox = sample.get("sandbox")
-        if sandbox is not None and not isinstance(sandbox, dict):
-            unsupported_payload_issues.append({"sample_id": sample_id, "field": "sandbox"})
+        for sample in canonical_samples:
+            sample_id = sample.get("id")
+            if isinstance(sample_id, str):
+                duplicate_ids[sample_id] = duplicate_ids.get(sample_id, 0) + 1
+            if sample.get("input") is None and not _as_list(sample.get("messages")):
+                missing_field_issues.append({"sample_id": sample_id, "field": "input"})
+            sandbox = sample.get("sandbox")
+            if sandbox is not None and not isinstance(sandbox, dict):
+                unsupported_payload_issues.append({"sample_id": sample_id, "field": "sandbox"})
 
-    for sample_id, count in duplicate_ids.items():
-        if count > 1:
-            duplicate_id_issues.append({"sample_id": sample_id, "count": count})
+        for sample_id, count in duplicate_ids.items():
+            if count > 1:
+                duplicate_id_issues.append({"sample_id": sample_id, "count": count})
 
-    issue_groups = []
-    if duplicate_id_issues:
-        issue_groups.append(
-            {
-                "key": "duplicate_id",
-                "label": "Duplicate sample ids",
-                "count": len(duplicate_id_issues),
-                "issues": duplicate_id_issues,
-            }
-        )
-    if missing_field_issues:
-        issue_groups.append(
-            {
-                "key": "missing_required_fields",
-                "label": "Missing required fields",
-                "count": len(missing_field_issues),
-                "issues": missing_field_issues,
-            }
-        )
-    if unsupported_payload_issues:
-        issue_groups.append(
-            {
-                "key": "unsupported_payload",
-                "label": "Unsupported payload fields",
-                "count": len(unsupported_payload_issues),
-                "issues": unsupported_payload_issues,
-            }
-        )
+        issue_groups = []
+        if duplicate_id_issues:
+            issue_groups.append(
+                {
+                    "key": "duplicate_id",
+                    "label": "Duplicate sample ids",
+                    "count": len(duplicate_id_issues),
+                    "issues": duplicate_id_issues,
+                }
+            )
+        if missing_field_issues:
+            issue_groups.append(
+                {
+                    "key": "missing_required_fields",
+                    "label": "Missing required fields",
+                    "count": len(missing_field_issues),
+                    "issues": missing_field_issues,
+                }
+            )
+        if unsupported_payload_issues:
+            issue_groups.append(
+                {
+                    "key": "unsupported_payload",
+                    "label": "Unsupported payload fields",
+                    "count": len(unsupported_payload_issues),
+                    "issues": unsupported_payload_issues,
+                }
+            )
 
-    warning_count = sum(group["count"] for group in issue_groups)
-    return {
-        "validation_status": "pass" if warning_count == 0 else "warn",
-        "issue_groups": issue_groups,
-        "warning_counts": {
-            "warning_count": warning_count,
-            "duplicate_id_count": len(duplicate_id_issues),
-            "missing_field_count": len(missing_field_issues),
-            "unsupported_payload_count": len(unsupported_payload_issues),
-        },
-        "generated_at": _now_iso(),
-    }
+        warning_count = sum(group["count"] for group in issue_groups)
+        return {
+            "validation_status": "pass" if warning_count == 0 else "warn",
+            "issue_groups": issue_groups,
+            "warning_counts": {
+                "warning_count": warning_count,
+                "duplicate_id_count": len(duplicate_id_issues),
+                "missing_field_count": len(missing_field_issues),
+                "unsupported_payload_count": len(unsupported_payload_issues),
+            },
+            "generated_at": _now_iso(),
+        }
 
 
 def _field_resolution_summary(

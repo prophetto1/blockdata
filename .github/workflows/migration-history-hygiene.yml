@@ -26,3 +26,57 @@ jobs:
           fi
 
           echo "No duplicate migration timestamps found."
+
+  check-immutable-migration-history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Immutable migration history
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            git fetch origin "${GITHUB_BASE_REF}" --depth=1
+            diff_range="origin/${GITHUB_BASE_REF}...HEAD"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            diff_range="HEAD^...HEAD"
+          else
+            diff_range="HEAD"
+          fi
+
+          changed=$(
+            git diff --name-status "$diff_range" -- supabase/migrations \
+              | awk '$2 ~ /\.sql$/ { print }'
+          )
+
+          if [ -z "$changed" ]; then
+            echo "No migration history edits detected."
+            exit 0
+          fi
+
+          echo "$changed"
+
+          invalid=$(
+            echo "$changed" | awk '$1 != "A" { print }'
+          )
+
+          if [ -n "$invalid" ]; then
+            echo "Only new migration files may be added. Existing migration files are immutable."
+            echo "$invalid"
+            exit 1
+          fi
+
+          echo "Migration history changes are additive-only."
+
+  check-db-workflow-guardrails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify DB workflow guardrails
+        run: npm run test:workflow-guardrails

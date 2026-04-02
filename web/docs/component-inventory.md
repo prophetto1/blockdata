@@ -1,10 +1,10 @@
 # Component Inventory
 
-Generated: 2026-04-01T08:04:57.455Z
+Generated: 2026-04-02T00:55:35.585Z
 Scope: auth
 
 Pages scanned: 55
-Unique component usages: 437
+Unique component usages: 440
 
 ## Category Totals
 
@@ -13,7 +13,7 @@ Unique component usages: 437
 | ark-ui | 153 |
 | external-package | 23 |
 | in-file component | 20 |
-| local-components | 140 |
+| local-components | 143 |
 | local-pages | 2 |
 | relative-local | 24 |
 | tabler-icons | 75 |
@@ -174,15 +174,18 @@ Component usages: 38
 
 ## src/pages/IndexBuilderPage.tsx
 
-Component usages: 5
+Component usages: 8
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
 | `IconPlus` | `@tabler/icons-react` | tabler-icons | IconPlus comes from @tabler/icons-react (named import of IconPlus) |
-| `PipelineNewRunForm` | `@/components/pipelines/PipelineNewRunForm` | local-components | PipelineNewRunForm comes from @/components/pipelines/PipelineNewRunForm (named import of PipelineNewRunForm) |
-| `PipelineRunDetailPanel` | `@/components/pipelines/PipelineRunDetailPanel` | local-components | PipelineRunDetailPanel comes from @/components/pipelines/PipelineRunDetailPanel (named import of PipelineRunDetailPanel) |
-| `PipelineRunsTable` | `@/components/pipelines/PipelineRunsTable` | local-components | PipelineRunsTable comes from @/components/pipelines/PipelineRunsTable (named import of PipelineRunsTable) |
+| `IndexJobArtifactsTab` | `@/components/pipelines/IndexJobArtifactsTab` | local-components | IndexJobArtifactsTab comes from @/components/pipelines/IndexJobArtifactsTab (named import of IndexJobArtifactsTab) |
+| `IndexJobConfigTab` | `@/components/pipelines/IndexJobConfigTab` | local-components | IndexJobConfigTab comes from @/components/pipelines/IndexJobConfigTab (named import of IndexJobConfigTab) |
+| `IndexJobFilesTab` | `@/components/pipelines/IndexJobFilesTab` | local-components | IndexJobFilesTab comes from @/components/pipelines/IndexJobFilesTab (named import of IndexJobFilesTab) |
+| `IndexJobHeader` | `@/components/pipelines/IndexJobHeader` | local-components | IndexJobHeader comes from @/components/pipelines/IndexJobHeader (named import of IndexJobHeader) |
+| `IndexJobRunsTab` | `@/components/pipelines/IndexJobRunsTab` | local-components | IndexJobRunsTab comes from @/components/pipelines/IndexJobRunsTab (named import of IndexJobRunsTab) |
+| `IndexJobsList` | `@/components/pipelines/IndexJobsList` | local-components | IndexJobsList comes from @/components/pipelines/IndexJobsList (named import of IndexJobsList) |
 
 ## src/pages/kestra/LogsPage.tsx
 

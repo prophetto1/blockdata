@@ -1,7 +1,8 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import * as agchainBenchmarkContracts from '@/lib/agchainBenchmarks';
+import type { AgchainToolRegistryRow } from '@/lib/agchainTools';
 import type {
   AgchainBenchmarkDetail,
   AgchainBenchmarkRegistryRow,
@@ -95,6 +96,40 @@ const WORKBENCH_DETAIL: AgchainBenchmarkWorkbenchDetail = {
   },
 };
 
+const AVAILABLE_TOOLS: AgchainToolRegistryRow[] = [
+  {
+    tool_ref: 'builtin:web_search',
+    tool_id: null,
+    tool_name: 'web_search',
+    display_name: 'Web Search',
+    description: 'Search the web.',
+    source_kind: 'builtin',
+    scope_kind: 'system',
+    read_only: true,
+    approval_mode: 'auto',
+    latest_version: null,
+    updated_at: null,
+  },
+  {
+    tool_ref: 'custom:tool-version-1',
+    tool_id: 'tool-1',
+    tool_name: 'custom_lookup',
+    display_name: 'Custom Lookup',
+    description: 'Project tool.',
+    source_kind: 'custom',
+    scope_kind: 'project',
+    read_only: false,
+    approval_mode: 'manual',
+    latest_version: {
+      tool_version_id: 'tool-version-1',
+      version_label: 'v1',
+      status: 'published',
+      parallel_calls_allowed: false,
+    },
+    updated_at: '2026-04-01T09:00:00Z',
+  },
+];
+
 afterEach(() => {
   cleanup();
 });
@@ -148,12 +183,48 @@ describe('AgchainBenchmarksPage', () => {
       mutating: false,
       error: null,
       dirtyOrder: false,
+      toolRefs: [
+        {
+          position: 1,
+          tool_ref: 'builtin:web_search',
+          source_kind: 'builtin',
+          tool_version_id: null,
+          alias: null,
+          config_overrides_jsonb: {},
+          display_name: 'Web Search',
+        },
+      ],
+      resolvedTools: [
+        {
+          position: 1,
+          tool_ref: 'builtin:web_search',
+          source_kind: 'builtin',
+          tool_version_id: null,
+          alias: null,
+          display_name: 'Web Search',
+          runtime_name: 'web_search',
+          approval_mode: 'auto',
+          parallel_calls_allowed: false,
+          input_schema_jsonb: {},
+          output_schema_jsonb: {},
+          config_overrides_jsonb: {},
+          missing_secret_slots: [],
+          resolution_status: 'resolved',
+        },
+      ],
+      availableTools: AVAILABLE_TOOLS,
+      dirtyToolBag: false,
       selectStep: vi.fn(),
       moveStep: vi.fn(),
       saveOrder: vi.fn(),
       createStep: vi.fn(),
       updateSelectedStep: vi.fn(),
       deleteSelectedStep: vi.fn(),
+      addToolRef: vi.fn(),
+      updateToolRef: vi.fn(),
+      moveToolRef: vi.fn(),
+      removeToolRef: vi.fn(),
+      saveToolBag: vi.fn(),
       focusedProject: PROJECT_ROW,
       hasProjectFocus: true,
     });
@@ -176,8 +247,92 @@ describe('AgchainBenchmarksPage', () => {
     expect(screen.getByText(/legal evals owns this benchmark definition page/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New Step' })).toBeInTheDocument();
     expect(screen.getByText('Issue Spotting')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Tool Bag' })).toBeInTheDocument();
+    expect(screen.getAllByText('Web Search').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Save Tool Bag' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'New Project' })).not.toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Benchmark' })).not.toBeInTheDocument();
+  });
+
+  it('wires the tool bag controls through the benchmark workbench hook', () => {
+    const addToolRef = vi.fn();
+    const saveToolBag = vi.fn();
+    const updateToolRef = vi.fn();
+
+    useAgchainBenchmarkStepsMock.mockReturnValue({
+      benchmark: WORKBENCH_DETAIL.benchmark,
+      currentVersion: WORKBENCH_DETAIL.current_version,
+      counts: WORKBENCH_DETAIL.counts,
+      steps: [],
+      selectedStepId: null,
+      selectedStep: null,
+      canEdit: true,
+      loading: false,
+      mutating: false,
+      error: null,
+      dirtyOrder: false,
+      toolRefs: [
+        {
+          position: 1,
+          tool_ref: 'builtin:web_search',
+          source_kind: 'builtin',
+          tool_version_id: null,
+          alias: null,
+          config_overrides_jsonb: {},
+          display_name: 'Web Search',
+        },
+      ],
+      resolvedTools: [
+        {
+          position: 1,
+          tool_ref: 'builtin:web_search',
+          source_kind: 'builtin',
+          tool_version_id: null,
+          alias: null,
+          display_name: 'Web Search',
+          runtime_name: 'web_search',
+          approval_mode: 'auto',
+          parallel_calls_allowed: false,
+          input_schema_jsonb: {},
+          output_schema_jsonb: {},
+          config_overrides_jsonb: {},
+          missing_secret_slots: [],
+          resolution_status: 'resolved',
+        },
+      ],
+      availableTools: AVAILABLE_TOOLS,
+      dirtyToolBag: true,
+      selectStep: vi.fn(),
+      moveStep: vi.fn(),
+      saveOrder: vi.fn(),
+      createStep: vi.fn(),
+      updateSelectedStep: vi.fn(),
+      deleteSelectedStep: vi.fn(),
+      addToolRef,
+      updateToolRef,
+      moveToolRef: vi.fn(),
+      removeToolRef: vi.fn(),
+      saveToolBag,
+      focusedProject: PROJECT_ROW,
+      hasProjectFocus: true,
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainBenchmarksPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add tool' }));
+    expect(addToolRef).toHaveBeenCalledTimes(1);
+
+    fireEvent.change(screen.getByLabelText('Alias'), {
+      target: { value: 'primary_tool' },
+    });
+    expect(updateToolRef).toHaveBeenCalledWith(1, { alias: 'primary_tool' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save Tool Bag' }));
+    expect(saveToolBag).toHaveBeenCalledTimes(1);
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {
@@ -193,12 +348,21 @@ describe('AgchainBenchmarksPage', () => {
       mutating: false,
       error: null,
       dirtyOrder: false,
+      toolRefs: [],
+      resolvedTools: [],
+      availableTools: [],
+      dirtyToolBag: false,
       selectStep: vi.fn(),
       moveStep: vi.fn(),
       saveOrder: vi.fn(),
       createStep: vi.fn(),
       updateSelectedStep: vi.fn(),
       deleteSelectedStep: vi.fn(),
+      addToolRef: vi.fn(),
+      updateToolRef: vi.fn(),
+      moveToolRef: vi.fn(),
+      removeToolRef: vi.fn(),
+      saveToolBag: vi.fn(),
       focusedProject: null,
       hasProjectFocus: false,
     });

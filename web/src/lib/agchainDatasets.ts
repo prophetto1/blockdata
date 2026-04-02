@@ -1,3 +1,4 @@
+import { platformApiFetch } from '@/lib/platformApi';
 import type { AgchainOperationStatus } from '@/lib/agchainRuns';
 
 type JsonObject = Record<string, unknown>;
@@ -288,3 +289,273 @@ export type AgchainDatasetDraftPreviewResponse =
 export type AgchainDatasetDraftCommitResponse =
   | AgchainDatasetDraftCommitSuccessResponse
   | AgchainOperationStatus;
+
+// ---------------------------------------------------------------------------
+// Fetch helpers
+// ---------------------------------------------------------------------------
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    const message =
+      (errorBody as { detail?: string; error?: string }).detail ??
+      (errorBody as { detail?: string; error?: string }).error ??
+      `HTTP ${response.status}`;
+    throw new Error(message);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function trimToNull(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+// ---------------------------------------------------------------------------
+// Service functions — 17 dataset routes + 1 shared operations route
+// ---------------------------------------------------------------------------
+
+// 1. GET /agchain/datasets
+export async function listDatasets(
+  projectId: string,
+  params?: { cursor?: string | null; search?: string | null; source_type?: string | null; validation_status?: string | null },
+): Promise<AgchainDatasetListResponse> {
+  const qs = new URLSearchParams({ project_id: projectId });
+  if (params?.cursor) qs.set('cursor', params.cursor);
+  if (params?.search) qs.set('search', params.search);
+  if (params?.source_type) qs.set('source_type', params.source_type);
+  if (params?.validation_status) qs.set('validation_status', params.validation_status);
+  const response = await platformApiFetch(`/agchain/datasets?${qs.toString()}`);
+  return parseJsonResponse<AgchainDatasetListResponse>(response);
+}
+
+// 2. GET /agchain/datasets/new/bootstrap
+export async function getDatasetBootstrap(
+  projectId?: string | null,
+): Promise<AgchainDatasetBootstrapResponse> {
+  const qs = new URLSearchParams();
+  if (projectId) qs.set('project_id', projectId);
+  const query = qs.toString();
+  const response = await platformApiFetch(`/agchain/datasets/new/bootstrap${query ? `?${query}` : ''}`);
+  return parseJsonResponse<AgchainDatasetBootstrapResponse>(response);
+}
+
+// 3. POST /agchain/datasets/new/preview
+export async function previewNewDataset(
+  body: AgchainDatasetPreviewRequest,
+): Promise<AgchainDatasetPreviewResponse> {
+  const response = await platformApiFetch('/agchain/datasets/new/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return parseJsonResponse<AgchainDatasetPreviewResponse>(response);
+}
+
+// 4. POST /agchain/datasets
+export async function createDataset(
+  body: AgchainDatasetCreateRequest,
+): Promise<AgchainDatasetCreateResponse> {
+  const response = await platformApiFetch('/agchain/datasets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return parseJsonResponse<AgchainDatasetCreateResponse>(response);
+}
+
+// 5. GET /agchain/datasets/{dataset_id}/detail
+export async function getDatasetDetail(
+  datasetId: string,
+  projectId: string,
+  versionId?: string | null,
+): Promise<AgchainDatasetDetailResponse> {
+  const qs = new URLSearchParams({ project_id: projectId });
+  if (versionId) qs.set('version_id', versionId);
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/detail?${qs.toString()}`,
+  );
+  return parseJsonResponse<AgchainDatasetDetailResponse>(response);
+}
+
+// 6. GET /agchain/datasets/{dataset_id}/versions
+export async function listDatasetVersions(
+  datasetId: string,
+  projectId: string,
+  params?: { cursor?: string | null },
+): Promise<AgchainDatasetVersionsResponse> {
+  const qs = new URLSearchParams({ project_id: projectId });
+  if (params?.cursor) qs.set('cursor', params.cursor);
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/versions?${qs.toString()}`,
+  );
+  return parseJsonResponse<AgchainDatasetVersionsResponse>(response);
+}
+
+// 7. GET /agchain/datasets/{dataset_id}/versions/{id}/source
+export async function getDatasetVersionSource(
+  datasetId: string,
+  versionId: string,
+): Promise<AgchainDatasetSourceResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/versions/${encodeURIComponent(versionId)}/source`,
+  );
+  return parseJsonResponse<AgchainDatasetSourceResponse>(response);
+}
+
+// 8. GET /agchain/datasets/{dataset_id}/versions/{id}/mapping
+export async function getDatasetVersionMapping(
+  datasetId: string,
+  versionId: string,
+): Promise<AgchainDatasetMappingResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/versions/${encodeURIComponent(versionId)}/mapping`,
+  );
+  return parseJsonResponse<AgchainDatasetMappingResponse>(response);
+}
+
+// 9. GET /agchain/datasets/{dataset_id}/versions/{id}/validation
+export async function getDatasetVersionValidation(
+  datasetId: string,
+  versionId: string,
+): Promise<AgchainDatasetVersionValidationResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/versions/${encodeURIComponent(versionId)}/validation`,
+  );
+  return parseJsonResponse<AgchainDatasetVersionValidationResponse>(response);
+}
+
+// 10. POST /agchain/datasets/{dataset_id}/versions/{id}/preview
+export async function previewDatasetVersion(
+  datasetId: string,
+  versionId: string,
+  body: { refresh?: boolean },
+): Promise<AgchainDatasetVersionPreviewResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/versions/${encodeURIComponent(versionId)}/preview`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
+  return parseJsonResponse<AgchainDatasetVersionPreviewResponse>(response);
+}
+
+// 11. GET /agchain/datasets/{dataset_id}/versions/{id}/samples
+export async function listDatasetSamples(
+  datasetId: string,
+  versionId: string,
+  projectId: string,
+  params?: { cursor?: string | null; search?: string | null; parse_status?: string | null },
+): Promise<AgchainDatasetSamplesResponse> {
+  const qs = new URLSearchParams({ project_id: projectId });
+  if (params?.cursor) qs.set('cursor', params.cursor);
+  if (params?.search) qs.set('search', params.search);
+  if (params?.parse_status) qs.set('parse_status', params.parse_status);
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/versions/${encodeURIComponent(versionId)}/samples?${qs.toString()}`,
+  );
+  return parseJsonResponse<AgchainDatasetSamplesResponse>(response);
+}
+
+// 12. GET /agchain/datasets/{dataset_id}/versions/{id}/samples/{sample_id}
+export async function getDatasetSampleDetail(
+  datasetId: string,
+  versionId: string,
+  sampleId: string,
+): Promise<AgchainDatasetSampleResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/versions/${encodeURIComponent(versionId)}/samples/${encodeURIComponent(sampleId)}`,
+  );
+  return parseJsonResponse<AgchainDatasetSampleResponse>(response);
+}
+
+// 13. POST /agchain/datasets/{dataset_id}/version-drafts
+export async function createDatasetVersionDraft(
+  datasetId: string,
+  body: AgchainDatasetDraftCreateRequest,
+): Promise<AgchainDatasetDraftCreateResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/version-drafts`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
+  return parseJsonResponse<AgchainDatasetDraftCreateResponse>(response);
+}
+
+// 14. GET /agchain/datasets/{dataset_id}/version-drafts/{draft_id}
+export async function getDatasetVersionDraft(
+  datasetId: string,
+  draftId: string,
+): Promise<AgchainDatasetDraftResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/version-drafts/${encodeURIComponent(draftId)}`,
+  );
+  return parseJsonResponse<AgchainDatasetDraftResponse>(response);
+}
+
+// 15. PATCH /agchain/datasets/{dataset_id}/version-drafts/{draft_id}
+export async function updateDatasetVersionDraft(
+  datasetId: string,
+  draftId: string,
+  body: Partial<AgchainDatasetDraftWriteRequest>,
+): Promise<AgchainDatasetDraftResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/version-drafts/${encodeURIComponent(draftId)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
+  return parseJsonResponse<AgchainDatasetDraftResponse>(response);
+}
+
+// 16. POST /agchain/datasets/{dataset_id}/version-drafts/{draft_id}/preview
+export async function previewDatasetVersionDraft(
+  datasetId: string,
+  draftId: string,
+  body: Partial<AgchainDatasetDraftWriteRequest>,
+): Promise<AgchainDatasetDraftPreviewResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/version-drafts/${encodeURIComponent(draftId)}/preview`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
+  return parseJsonResponse<AgchainDatasetDraftPreviewResponse>(response);
+}
+
+// 17. POST /agchain/datasets/{dataset_id}/version-drafts/{draft_id}/commit
+export async function commitDatasetVersionDraft(
+  datasetId: string,
+  draftId: string,
+  body: { commit_message?: string | null },
+): Promise<AgchainDatasetDraftCommitResponse> {
+  const response = await platformApiFetch(
+    `/agchain/datasets/${encodeURIComponent(datasetId)}/version-drafts/${encodeURIComponent(draftId)}/commit`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    },
+  );
+  return parseJsonResponse<AgchainDatasetDraftCommitResponse>(response);
+}
+
+// 18. GET /agchain/operations/{operation_id} (shared, not dataset-specific)
+export async function getOperationStatus(
+  operationId: string,
+): Promise<AgchainOperationStatus> {
+  const response = await platformApiFetch(
+    `/agchain/operations/${encodeURIComponent(operationId)}`,
+  );
+  return parseJsonResponse<AgchainOperationStatus>(response);
+}

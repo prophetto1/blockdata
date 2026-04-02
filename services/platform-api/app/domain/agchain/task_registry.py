@@ -16,6 +16,8 @@ from app.domain.agchain.benchmark_registry import (
 from app.domain.agchain.project_access import require_project_access, require_project_write_access
 from app.infra.supabase_client import get_supabase_admin
 
+from .tool_resolution import normalize_pinned_tool_ref_binding, resolve_tool_bindings
+
 
 def _load_benchmark_and_project(
     *,
@@ -70,7 +72,54 @@ def _load_join_rows(*, sb, table_name: str, benchmark_version_id: str) -> list[d
         .order("position")
         .execute()
     )
-    return result.data or []
+    rows = result.data or []
+    if table_name == "agchain_benchmark_version_tools":
+        return [_normalize_tool_ref_row(row) for row in rows]
+    return rows
+
+
+def _source_kind_for_tool_ref(tool_ref: str) -> str | None:
+    prefix = tool_ref.split(":", 1)[0]
+    if prefix == "mcp":
+        return "mcp_server"
+    return prefix if prefix in {"builtin", "custom", "bridged"} else None
+
+
+def _normalize_tool_ref_row(row: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(row)
+    tool_ref = normalized.get("tool_ref")
+    tool_version_id = normalized.get("tool_version_id")
+
+    if isinstance(tool_ref, str) and tool_ref:
+        return normalize_pinned_tool_ref_binding(normalized)
+
+    if isinstance(tool_version_id, str) and tool_version_id:
+        return normalize_pinned_tool_ref_binding({**normalized, "tool_ref": f"custom:{tool_version_id}"})
+
+    return normalized
+
+
+def _merge_tool_binding_summaries(
+    bindings: list[dict[str, Any]],
+    resolved_items: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    by_position = {int(item.get("position") or 0): item for item in resolved_items}
+    merged: list[dict[str, Any]] = []
+    for index, binding in enumerate(bindings, start=1):
+        position = int(binding.get("position") or index)
+        resolved = by_position.get(position, {})
+        merged.append(
+            {
+                "position": position,
+                "tool_ref": binding.get("tool_ref"),
+                "source_kind": binding.get("source_kind"),
+                "tool_version_id": binding.get("tool_version_id"),
+                "alias": binding.get("alias"),
+                "config_overrides_jsonb": binding.get("config_overrides_jsonb") or {},
+                "display_name": resolved.get("display_name"),
+            }
+        )
+    return merged
 
 
 def _load_model_targets(*, sb, benchmark_version_id: str) -> list[dict[str, Any]]:
@@ -312,10 +361,15 @@ def create_benchmark_version(*, user_id: str, benchmark_slug: str, payload: dict
         ).execute()
 
     for position, ref in enumerate(payload.get("tool_refs_jsonb") or [], start=1):
+        tool_version_id = ref.get("tool_version_id")
+        tool_ref = ref.get("tool_ref")
+        if not tool_ref and tool_version_id:
+            tool_ref = f"custom:{tool_version_id}"
         sb.table("agchain_benchmark_version_tools").insert(
             {
                 "benchmark_version_id": version["benchmark_version_id"],
-                "tool_version_id": ref.get("tool_version_id"),
+                "tool_version_id": tool_version_id,
+                "tool_ref": tool_ref,
                 "position": position,
                 "alias": ref.get("alias"),
                 "config_overrides_jsonb": ref.get("config_overrides_jsonb") or {},
@@ -369,6 +423,13 @@ def get_benchmark_version(*, user_id: str, benchmark_slug: str, benchmark_versio
         tool_refs=tool_refs,
         model_targets=model_targets,
     )
+    resolved_tool_items = resolve_tool_bindings(
+        sb=sb,
+        user_id=user_id,
+        project_id=str(benchmark["project_id"]),
+        bindings=tool_refs,
+    )
+    tool_ref_summaries = _merge_tool_binding_summaries(tool_refs, resolved_tool_items)
 
     return {
         "benchmark": _normalize_benchmark(benchmark),
@@ -385,12 +446,87 @@ def get_benchmark_version(*, user_id: str, benchmark_slug: str, benchmark_versio
         },
         "dataset_version": _load_dataset_version(sb=sb, dataset_version_id=version.get("dataset_version_id")),
         "scorer_refs": scorer_refs,
-        "tool_refs": tool_refs,
+        "tool_refs": tool_ref_summaries,
         "sandbox_profile": _load_sandbox_profile(sb=sb, sandbox_profile_id=version.get("sandbox_profile_id")),
         "model_roles": version.get("model_roles_jsonb") or {},
         "generate_config": version.get("generate_config_jsonb") or {},
         "eval_config": version.get("eval_config_jsonb") or {},
         "validation_summary": version.get("validation_summary_jsonb") or {},
+    }
+
+
+def get_benchmark_tools(*, user_id: str, benchmark_slug: str, benchmark_version_id: str) -> dict[str, Any]:
+    sb = get_supabase_admin()
+    benchmark, _ = _load_benchmark_and_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=False)
+    _load_version_row(sb=sb, benchmark_id=benchmark["benchmark_id"], benchmark_version_id=benchmark_version_id)
+    tool_refs = _load_join_rows(
+        sb=sb,
+        table_name="agchain_benchmark_version_tools",
+        benchmark_version_id=benchmark_version_id,
+    )
+    resolved_items = resolve_tool_bindings(
+        sb=sb,
+        user_id=user_id,
+        project_id=str(benchmark["project_id"]),
+        bindings=tool_refs,
+    )
+    return {"tool_refs": _merge_tool_binding_summaries(tool_refs, resolved_items)}
+
+
+def replace_benchmark_tools(
+    *,
+    user_id: str,
+    benchmark_slug: str,
+    benchmark_version_id: str,
+    tool_refs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    sb = get_supabase_admin()
+    benchmark, _ = _load_benchmark_and_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=True)
+    version = _load_version_row(sb=sb, benchmark_id=benchmark["benchmark_id"], benchmark_version_id=benchmark_version_id)
+    if version.get("version_status") != "draft":
+        raise HTTPException(status_code=409, detail="Only draft benchmark versions can replace tool refs")
+
+    normalized_tool_refs = [
+        normalize_pinned_tool_ref_binding({**row, "position": index})
+        for index, row in enumerate(tool_refs, start=1)
+    ]
+    sb.table("agchain_benchmark_version_tools").delete().eq("benchmark_version_id", benchmark_version_id).execute()
+    for binding in normalized_tool_refs:
+        sb.table("agchain_benchmark_version_tools").insert(
+            {
+                "benchmark_version_id": benchmark_version_id,
+                "tool_version_id": binding.get("tool_version_id"),
+                "tool_ref": binding["tool_ref"],
+                "position": binding["position"],
+                "alias": binding.get("alias"),
+                "config_overrides_jsonb": binding.get("config_overrides_jsonb") or {},
+            }
+        ).execute()
+    resolved_items = resolve_tool_bindings(
+        sb=sb,
+        user_id=user_id,
+        project_id=str(benchmark["project_id"]),
+        bindings=normalized_tool_refs,
+    )
+    return {"tool_refs": _merge_tool_binding_summaries(normalized_tool_refs, resolved_items)}
+
+
+def get_resolved_benchmark_tools(*, user_id: str, benchmark_slug: str, benchmark_version_id: str) -> dict[str, Any]:
+    sb = get_supabase_admin()
+    benchmark, _ = _load_benchmark_and_project(sb=sb, user_id=user_id, benchmark_slug=benchmark_slug, write=False)
+    _load_version_row(sb=sb, benchmark_id=benchmark["benchmark_id"], benchmark_version_id=benchmark_version_id)
+    tool_refs = _load_join_rows(
+        sb=sb,
+        table_name="agchain_benchmark_version_tools",
+        benchmark_version_id=benchmark_version_id,
+    )
+    return {
+        "items": resolve_tool_bindings(
+            sb=sb,
+            user_id=user_id,
+            project_id=str(benchmark["project_id"]),
+            bindings=tool_refs,
+        )
     }
 
 

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS public.pipeline_source_sets (
   source_set_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   pipeline_kind TEXT NOT NULL,
   owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  project_id UUID NOT NULL REFERENCES public.projects(project_id) ON DELETE CASCADE,
+  project_id UUID NOT NULL REFERENCES public.user_projects(project_id) ON DELETE CASCADE,
   label TEXT NOT NULL,
   member_count INTEGER NOT NULL DEFAULT 0 CHECK (member_count >= 0),
   total_bytes BIGINT NOT NULL DEFAULT 0 CHECK (total_bytes >= 0),

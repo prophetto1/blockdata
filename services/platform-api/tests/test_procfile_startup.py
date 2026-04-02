@@ -94,3 +94,4 @@ def test_root_package_json_exposes_platform_api_dev_script() -> None:
 
     assert "platform-api:dev" in package.get("scripts", {})
     assert "start-platform-api.ps1" in package["scripts"]["platform-api:dev"]
+    assert "-NoReload" in package["scripts"]["platform-api:dev"]

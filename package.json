@@ -1,8 +1,9 @@
 {
   "scripts": {
     "capture-server": "node scripts/capture-server.mjs",
-    "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1",
-    "platform-api:recover": "powershell -ExecutionPolicy Bypass -File scripts/platform-api-dev-control.ps1 -Action recover"
+    "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1 -NoReload",
+    "platform-api:recover": "powershell -ExecutionPolicy Bypass -File scripts/platform-api-dev-control.ps1 -Action recover",
+    "test:workflow-guardrails": "node --test scripts/tests/supabase-db-workflows.test.mjs"
   },
   "dependencies": {
     "pg": "^8.19.0",

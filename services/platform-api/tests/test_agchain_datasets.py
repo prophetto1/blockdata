@@ -1258,3 +1258,30 @@ def test_dataset_version_draft_lifecycle_persists_and_commits_new_version():
     draft_row = admin.tables["agchain_dataset_version_drafts"][0]
     assert draft_row["draft_status"] == "committed"
     assert draft_row["dirty_state_jsonb"]["committed_version_id"] == committed["version"]["dataset_version_id"]
+
+
+def test_project_dataset_validation_starts_validation_project_span():
+    with patch(
+        "app.domain.agchain.inspect_dataset_materializer._load_source_records",
+        return_value=[
+            {
+                "prompt": "Summarize the contract.",
+                "answer": "A short summary",
+            }
+        ],
+    ), patch(
+        "app.domain.agchain.inspect_dataset_materializer.tracer"
+    ) as mock_tracer:
+        mock_tracer.start_as_current_span.return_value.__enter__ = lambda s: s
+        mock_tracer.start_as_current_span.return_value.__exit__ = lambda s, *a: None
+        preview_dataset_source(
+            source_type="jsonl",
+            source_uri="gs://bucket/legal.jsonl",
+            source_upload_id=None,
+            source_config_jsonb=_new_preview_body()["source_config_jsonb"],
+            field_spec_jsonb=_new_preview_body()["field_spec_jsonb"],
+            materialization_options_jsonb=_new_preview_body()["materialization_options_jsonb"],
+        )
+
+    span_names = [call.args[0] for call in mock_tracer.start_as_current_span.call_args_list]
+    assert "agchain.inspect.dataset.validation.project" in span_names

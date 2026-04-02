@@ -121,7 +121,7 @@ RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $function$
+AS $$
 DECLARE
   v_project_id UUID;
   v_benchmark_id UUID;
@@ -240,7 +240,7 @@ BEGIN
     'primary_benchmark_slug', v_benchmark_slug
   );
 END;
-$function$;
+$$;
 
 GRANT EXECUTE ON FUNCTION public.create_agchain_project_atomic(
   UUID,

@@ -1,11 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import AgchainDatasetsPage from './AgchainDatasetsPage';
 import AgchainParametersPage from './AgchainParametersPage';
 import AgchainPromptsPage from './AgchainPromptsPage';
 import AgchainScorersPage from './AgchainScorersPage';
-import AgchainToolsPage from './AgchainToolsPage';
 
 const useAgchainProjectFocusMock = vi.fn();
 
@@ -31,21 +29,13 @@ describe('AGChain level-one placeholder pages', () => {
     });
   });
 
-  it('shows the focused project ownership on datasets, prompts, scorers, parameters, and tools pages', () => {
+  it('shows the focused project ownership on prompts, scorers, and parameters pages', () => {
     const { rerender } = render(
-      <MemoryRouter>
-        <AgchainDatasetsPage />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole('heading', { name: 'Datasets' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this datasets page/i)).toBeInTheDocument();
-
-    rerender(
       <MemoryRouter>
         <AgchainPromptsPage />
       </MemoryRouter>,
     );
+
     expect(screen.getByRole('heading', { name: 'Prompts' })).toBeInTheDocument();
     expect(screen.getByText(/legal-10 owns this prompts page/i)).toBeInTheDocument();
 
@@ -64,15 +54,6 @@ describe('AGChain level-one placeholder pages', () => {
     );
     expect(screen.getByRole('heading', { name: 'Parameters' })).toBeInTheDocument();
     expect(screen.getByText(/legal-10 owns this parameters page/i)).toBeInTheDocument();
-
-    rerender(
-      <MemoryRouter>
-        <AgchainToolsPage />
-      </MemoryRouter>,
-    );
-    expect(screen.getByRole('heading', { name: 'Tools' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this tools page/i)).toBeInTheDocument();
-    expect(screen.getAllByText('Project-scoped placeholder surface').length).toBeGreaterThan(0);
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {
@@ -83,7 +64,7 @@ describe('AGChain level-one placeholder pages', () => {
 
     render(
       <MemoryRouter>
-        <AgchainDatasetsPage />
+        <AgchainPromptsPage />
       </MemoryRouter>,
     );
 

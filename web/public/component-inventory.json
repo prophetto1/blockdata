@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-01T08:04:57.439Z",
+  "generatedAt": "2026-04-02T00:55:35.580Z",
   "scope": "auth",
   "pages": [
     {
@@ -745,9 +745,9 @@
     },
     {
       "page": "src/pages/IndexBuilderPage.tsx",
-      "componentCount": 5,
+      "componentCount": 8,
       "categoryCounts": {
-        "local-components": 4,
+        "local-components": 7,
         "tabler-icons": 1
       },
       "components": [
@@ -770,31 +770,58 @@
           "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
         },
         {
-          "component": "PipelineNewRunForm",
-          "usedAs": "PipelineNewRunForm",
-          "source": "@/components/pipelines/PipelineNewRunForm",
+          "component": "IndexJobArtifactsTab",
+          "usedAs": "IndexJobArtifactsTab",
+          "source": "@/components/pipelines/IndexJobArtifactsTab",
           "importKind": "named",
-          "importedAs": "PipelineNewRunForm",
+          "importedAs": "IndexJobArtifactsTab",
           "category": "local-components",
-          "definition": "PipelineNewRunForm comes from @/components/pipelines/PipelineNewRunForm (named import of PipelineNewRunForm)"
+          "definition": "IndexJobArtifactsTab comes from @/components/pipelines/IndexJobArtifactsTab (named import of IndexJobArtifactsTab)"
         },
         {
-          "component": "PipelineRunDetailPanel",
-          "usedAs": "PipelineRunDetailPanel",
-          "source": "@/components/pipelines/PipelineRunDetailPanel",
+          "component": "IndexJobConfigTab",
+          "usedAs": "IndexJobConfigTab",
+          "source": "@/components/pipelines/IndexJobConfigTab",
           "importKind": "named",
-          "importedAs": "PipelineRunDetailPanel",
+          "importedAs": "IndexJobConfigTab",
           "category": "local-components",
-          "definition": "PipelineRunDetailPanel comes from @/components/pipelines/PipelineRunDetailPanel (named import of PipelineRunDetailPanel)"
+          "definition": "IndexJobConfigTab comes from @/components/pipelines/IndexJobConfigTab (named import of IndexJobConfigTab)"
         },
         {
-          "component": "PipelineRunsTable",
-          "usedAs": "PipelineRunsTable",
-          "source": "@/components/pipelines/PipelineRunsTable",
+          "component": "IndexJobFilesTab",
+          "usedAs": "IndexJobFilesTab",
+          "source": "@/components/pipelines/IndexJobFilesTab",
           "importKind": "named",
-          "importedAs": "PipelineRunsTable",
+          "importedAs": "IndexJobFilesTab",
           "category": "local-components",
-          "definition": "PipelineRunsTable comes from @/components/pipelines/PipelineRunsTable (named import of PipelineRunsTable)"
+          "definition": "IndexJobFilesTab comes from @/components/pipelines/IndexJobFilesTab (named import of IndexJobFilesTab)"
+        },
+        {
+          "component": "IndexJobHeader",
+          "usedAs": "IndexJobHeader",
+          "source": "@/components/pipelines/IndexJobHeader",
+          "importKind": "named",
+          "importedAs": "IndexJobHeader",
+          "category": "local-components",
+          "definition": "IndexJobHeader comes from @/components/pipelines/IndexJobHeader (named import of IndexJobHeader)"
+        },
+        {
+          "component": "IndexJobRunsTab",
+          "usedAs": "IndexJobRunsTab",
+          "source": "@/components/pipelines/IndexJobRunsTab",
+          "importKind": "named",
+          "importedAs": "IndexJobRunsTab",
+          "category": "local-components",
+          "definition": "IndexJobRunsTab comes from @/components/pipelines/IndexJobRunsTab (named import of IndexJobRunsTab)"
+        },
+        {
+          "component": "IndexJobsList",
+          "usedAs": "IndexJobsList",
+          "source": "@/components/pipelines/IndexJobsList",
+          "importKind": "named",
+          "importedAs": "IndexJobsList",
+          "category": "local-components",
+          "definition": "IndexJobsList comes from @/components/pipelines/IndexJobsList (named import of IndexJobsList)"
         }
       ]
     },
@@ -4479,10 +4506,10 @@
       ]
     }
   ],
-  "totalComponentUsages": 437,
+  "totalComponentUsages": 440,
   "categoryTotals": {
     "local-pages": 2,
-    "local-components": 140,
+    "local-components": 143,
     "tabler-icons": 75,
     "in-file component": 20,
     "ark-ui": 153,

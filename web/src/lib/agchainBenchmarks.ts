@@ -103,6 +103,33 @@ export type AgchainBenchmarkVersionDetail = {
   validation_summary: Record<string, unknown>;
 };
 
+export type AgchainBenchmarkToolBinding = {
+  position: number;
+  tool_ref: string;
+  source_kind: string | null;
+  tool_version_id: string | null;
+  alias: string | null;
+  config_overrides_jsonb: Record<string, unknown>;
+  display_name: string | null;
+};
+
+export type AgchainResolvedBenchmarkTool = {
+  position: number;
+  tool_ref: string;
+  source_kind: string | null;
+  tool_version_id: string | null;
+  alias: string | null;
+  display_name: string | null;
+  runtime_name: string | null;
+  approval_mode: string;
+  parallel_calls_allowed: boolean;
+  input_schema_jsonb: Record<string, unknown>;
+  output_schema_jsonb: Record<string, unknown>;
+  config_overrides_jsonb: Record<string, unknown>;
+  missing_secret_slots: Array<Record<string, unknown>>;
+  resolution_status: string;
+};
+
 export type AgchainBenchmarkDetail = {
   benchmark: AgchainBenchmarkSummary;
   current_draft_version: AgchainBenchmarkVersionSummary | null;
@@ -253,6 +280,14 @@ type BenchmarkStepReorderResponse = {
 type BenchmarkStepDeleteResponse = {
   ok: boolean;
   deleted_step_id: string;
+};
+
+type BenchmarkToolsResponse = {
+  tool_refs: AgchainBenchmarkToolBinding[];
+};
+
+type ResolvedBenchmarkToolsResponse = {
+  items: AgchainResolvedBenchmarkTool[];
 };
 
 function trimToNull(value: string | null | undefined): string | null {
@@ -477,6 +512,51 @@ export async function fetchAgchainBenchmarkVersionDetail(
     `/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}/versions/${encodeURIComponent(benchmarkVersionId)}`,
   );
   return parseJsonResponse<AgchainBenchmarkVersionDetail>(response);
+}
+
+export async function fetchAgchainBenchmarkToolBag(
+  benchmarkSlug: string,
+  benchmarkVersionId: string,
+): Promise<AgchainBenchmarkToolBinding[]> {
+  const params = new URLSearchParams({ benchmark_version_id: benchmarkVersionId });
+  const response = await platformApiFetch(
+    `/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}/tools?${params.toString()}`,
+  );
+  const data = await parseJsonResponse<BenchmarkToolsResponse>(response);
+  return data.tool_refs ?? [];
+}
+
+export async function replaceAgchainBenchmarkToolBag(
+  benchmarkSlug: string,
+  benchmarkVersionId: string,
+  toolRefs: Array<{
+    tool_ref: string;
+    tool_version_id: string | null;
+    alias: string | null;
+    config_overrides_jsonb?: Record<string, unknown>;
+  }>,
+): Promise<AgchainBenchmarkToolBinding[]> {
+  const response = await platformApiFetch(`/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}/tools`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      benchmark_version_id: benchmarkVersionId,
+      tool_refs: toolRefs,
+    }),
+  });
+  const data = await parseJsonResponse<BenchmarkToolsResponse>(response);
+  return data.tool_refs ?? [];
+}
+
+export async function fetchAgchainResolvedBenchmarkTools(
+  benchmarkSlug: string,
+  benchmarkVersionId: string,
+): Promise<AgchainResolvedBenchmarkTool[]> {
+  const response = await platformApiFetch(
+    `/agchain/benchmarks/${encodeURIComponent(benchmarkSlug)}/versions/${encodeURIComponent(benchmarkVersionId)}/tools/resolved`,
+  );
+  const data = await parseJsonResponse<ResolvedBenchmarkToolsResponse>(response);
+  return data.items ?? [];
 }
 
 export async function validateAgchainBenchmark(benchmarkSlug: string): Promise<AgchainBenchmarkValidationResponse> {

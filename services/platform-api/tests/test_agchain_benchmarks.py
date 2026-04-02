@@ -383,10 +383,16 @@ class _RegistryQuery:
         self._payload = payload
         return self
 
+    def delete(self):
+        self._operation = "delete"
+        self._payload = None
+        return self
+
     def execute(self):
         self._admin.calls.append((self._table_name, self._operation, dict(self._filters), dict(self._in_filters)))
 
         if self._operation == "insert":
+            self._admin.insert_calls.append((self._table_name, self._payload))
             if self._table_name == "agchain_benchmarks" and self._admin.raise_duplicate_slug:
                 raise Exception('duplicate key value violates unique constraint "agchain_benchmarks_owner_user_id_benchmark_slug_key"')
             return type("R", (), {"data": self._admin.insert_results.get(self._table_name, [])})()
@@ -394,6 +400,20 @@ class _RegistryQuery:
         if self._operation == "update":
             self._admin.update_calls.append((self._table_name, self._payload, dict(self._filters)))
             return type("R", (), {"data": []})()
+
+        if self._operation == "delete":
+            deleted = []
+            kept = []
+            for row in self._admin.tables.get(self._table_name, []):
+                if all(row.get(key) == value for key, value in self._filters.items()) and all(
+                    row.get(key) in values for key, values in self._in_filters.items()
+                ):
+                    deleted.append(row)
+                else:
+                    kept.append(row)
+            self._admin.tables[self._table_name] = kept
+            self._admin.delete_calls.append((self._table_name, dict(self._filters)))
+            return type("R", (), {"data": deleted})()
 
         rows = list(self._admin.tables.get(self._table_name, []))
         rows = [
@@ -412,7 +432,9 @@ class _RegistryAdmin:
         self.insert_results = insert_results or {}
         self.raise_duplicate_slug = raise_duplicate_slug
         self.calls: list[tuple[str, str, dict[str, object], dict[str, set[object]]]] = []
+        self.insert_calls: list[tuple[str, object]] = []
         self.update_calls: list[tuple[str, object, dict[str, object]]] = []
+        self.delete_calls: list[tuple[str, dict[str, object]]] = []
         self.rpc_calls: list[tuple[str, dict[str, object]]] = []
 
     def table(self, name):
@@ -606,6 +628,18 @@ def test_component_registries_migration_exists_with_user_project_fks():
     assert "ADD COLUMN IF NOT EXISTS validation_summary_jsonb JSONB" in normalized
 
 
+def test_tools_runtime_refs_migration_exists():
+    matches = sorted(MIGRATIONS_DIR.glob("*_agchain_tools_runtime_refs.sql"))
+    assert len(matches) == 1
+
+    normalized = " ".join(matches[0].read_text(encoding="utf-8").split())
+    assert "ALTER TABLE public.agchain_tools ADD COLUMN IF NOT EXISTS source_kind TEXT NOT NULL DEFAULT 'custom'" in normalized
+    assert "ALTER TABLE public.agchain_benchmark_version_tools ADD COLUMN IF NOT EXISTS tool_ref TEXT" in normalized
+    assert "UPDATE public.agchain_benchmark_version_tools SET tool_ref = 'custom:' || tool_version_id::text" in normalized
+    assert "ALTER TABLE public.agchain_benchmark_version_tools ALTER COLUMN tool_ref SET NOT NULL" in normalized
+    assert "ALTER TABLE public.agchain_benchmark_version_tools ALTER COLUMN tool_version_id DROP NOT NULL" in normalized
+
+
 def test_list_benchmark_versions_returns_paged_rows(client):
     with patch("app.api.routes.agchain_benchmarks.list_benchmark_versions") as mock_list:
         mock_list.return_value = {
@@ -719,6 +753,117 @@ def test_get_benchmark_version_returns_runtime_detail(client):
     assert response.json()["benchmark_version"]["task_name"] == "legal_eval_v2"
     assert response.json()["dataset_version"]["dataset_version_id"] == "dataset-version-2"
     mock_get.assert_called_once_with(
+        user_id="user-1",
+        benchmark_slug="legal-10",
+        benchmark_version_id="version-2",
+    )
+
+
+def test_get_benchmark_tools_route_returns_normalized_tool_refs(client):
+    with patch("app.api.routes.agchain_benchmarks.get_benchmark_tools") as mock_get_tools:
+        mock_get_tools.return_value = {
+            "tool_refs": [
+                {
+                    "position": 1,
+                    "tool_ref": "builtin:web_search",
+                    "source_kind": "builtin",
+                    "tool_version_id": None,
+                    "alias": None,
+                    "config_overrides_jsonb": {},
+                    "display_name": "Web Search",
+                }
+            ]
+        }
+
+        response = client.get(
+            "/agchain/benchmarks/legal-10/tools",
+            params={"benchmark_version_id": "version-2"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["tool_refs"][0]["tool_ref"] == "builtin:web_search"
+    mock_get_tools.assert_called_once_with(
+        user_id="user-1",
+        benchmark_slug="legal-10",
+        benchmark_version_id="version-2",
+    )
+
+
+def test_replace_benchmark_tool_refs_route_returns_ordered_refs(client):
+    with patch("app.api.routes.agchain_benchmarks.replace_benchmark_tools") as mock_replace_tools:
+        mock_replace_tools.return_value = {
+            "tool_refs": [
+                {
+                    "position": 1,
+                    "tool_ref": "custom:tool-version-1",
+                    "source_kind": "custom",
+                    "tool_version_id": "tool-version-1",
+                    "alias": "primary_tool",
+                    "config_overrides_jsonb": {"timeout": 3},
+                    "display_name": "Custom Lookup",
+                }
+            ]
+        }
+
+        response = client.put(
+            "/agchain/benchmarks/legal-10/tools",
+            json={
+                "benchmark_version_id": "version-2",
+                "tool_refs": [
+                    {
+                        "tool_ref": "custom:tool-version-1",
+                        "tool_version_id": "tool-version-1",
+                        "alias": "primary_tool",
+                        "config_overrides_jsonb": {"timeout": 3},
+                    }
+                ],
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["tool_refs"][0]["tool_ref"] == "custom:tool-version-1"
+    mock_replace_tools.assert_called_once_with(
+        user_id="user-1",
+        benchmark_slug="legal-10",
+        benchmark_version_id="version-2",
+        tool_refs=[
+            {
+                "tool_ref": "custom:tool-version-1",
+                "tool_version_id": "tool-version-1",
+                "alias": "primary_tool",
+                "config_overrides_jsonb": {"timeout": 3},
+            }
+        ],
+    )
+
+
+def test_get_resolved_benchmark_tools_route_returns_manifest_items(client):
+    with patch("app.api.routes.agchain_benchmarks.get_resolved_benchmark_tools") as mock_get_resolved:
+        mock_get_resolved.return_value = {
+            "items": [
+                {
+                    "position": 1,
+                    "tool_ref": "builtin:web_search",
+                    "source_kind": "builtin",
+                    "alias": None,
+                    "display_name": "Web Search",
+                    "runtime_name": "web_search",
+                    "approval_mode": "auto",
+                    "parallel_calls_allowed": False,
+                    "input_schema_jsonb": {},
+                    "output_schema_jsonb": {},
+                    "config_overrides_jsonb": {},
+                    "missing_secret_slots": [],
+                    "resolution_status": "resolved",
+                }
+            ]
+        }
+
+        response = client.get("/agchain/benchmarks/legal-10/versions/version-2/tools/resolved")
+
+    assert response.status_code == 200
+    assert response.json()["items"][0]["resolution_status"] == "resolved"
+    mock_get_resolved.assert_called_once_with(
         user_id="user-1",
         benchmark_slug="legal-10",
         benchmark_version_id="version-2",
@@ -863,6 +1008,205 @@ def test_get_benchmark_version_synthesizes_runtime_task_definition_for_legacy_ve
     assert payload["model_roles"] == {"evaluated": ["model-1"]}
 
 
+def test_get_benchmark_version_normalizes_legacy_tool_refs_to_pinned_runtime_refs():
+    from app.domain.agchain.task_registry import get_benchmark_version
+
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                    "plan_family": "custom",
+                    "step_count": 1,
+                    "validation_status": "unknown",
+                    "validation_issue_count": 0,
+                    "dataset_version_id": "dataset-version-1",
+                    "task_name": "legal_eval_v1",
+                    "task_file_ref": None,
+                    "task_definition_jsonb": None,
+                    "solver_plan_jsonb": {"kind": "serial"},
+                    "sandbox_profile_id": None,
+                    "sandbox_overrides_jsonb": {},
+                    "model_roles_jsonb": {"evaluated": ["model-1"]},
+                    "generate_config_jsonb": {"temperature": 0},
+                    "eval_config_jsonb": {"max_samples": 10},
+                    "validation_summary_jsonb": {},
+                }
+            ],
+            "agchain_benchmark_steps": [
+                {
+                    "benchmark_step_id": "step-1",
+                    "benchmark_version_id": "version-1",
+                    "step_order": 1,
+                    "step_id": "d1",
+                    "display_name": "Issue Spotting",
+                    "step_kind": "model",
+                    "api_call_boundary": "own_call",
+                    "inject_payloads": ["p1"],
+                    "scoring_mode": "none",
+                    "output_contract": "irac_outline_v1",
+                    "scorer_ref": None,
+                    "judge_prompt_ref": None,
+                    "judge_grades_step_ids": [],
+                    "enabled": True,
+                    "step_config_jsonb": {"system_prompt_ref": "issue_spotting_v1"},
+                    "updated_at": "2026-03-31T10:05:00Z",
+                }
+            ],
+            "agchain_benchmark_model_targets": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "model_target_id": "model-1",
+                    "selection_role": "evaluated",
+                }
+            ],
+            "agchain_benchmark_version_scorers": [],
+            "agchain_benchmark_version_tools": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "tool_version_id": "tool-version-1",
+                    "position": 1,
+                    "alias": "primary_tool",
+                    "config_overrides_jsonb": {"timeout": 3},
+                }
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.task_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.task_registry.require_project_access",
+            return_value={"project_id": "project-1", "membership_role": "project_viewer"},
+        ),
+    ):
+        payload = get_benchmark_version(
+            user_id="user-1",
+            benchmark_slug="legal-10",
+            benchmark_version_id="version-1",
+        )
+
+    assert payload["tool_refs"][0]["tool_ref"] == "custom:tool-version-1"
+    assert payload["tool_refs"][0]["source_kind"] == "custom"
+    assert payload["benchmark_version"]["task_definition_jsonb"]["tool_refs_jsonb"][0]["tool_ref"] == "custom:tool-version-1"
+
+
+def test_get_benchmark_version_tool_refs_include_resolved_display_metadata():
+    from app.domain.agchain.task_registry import get_benchmark_version
+
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                    "plan_family": "custom",
+                    "step_count": 1,
+                    "validation_status": "unknown",
+                    "validation_issue_count": 0,
+                    "dataset_version_id": "dataset-version-1",
+                    "task_name": "legal_eval_v1",
+                    "task_file_ref": None,
+                    "task_definition_jsonb": None,
+                    "solver_plan_jsonb": {"kind": "serial"},
+                    "sandbox_profile_id": None,
+                    "sandbox_overrides_jsonb": {},
+                    "model_roles_jsonb": {"evaluated": ["model-1"]},
+                    "generate_config_jsonb": {"temperature": 0},
+                    "eval_config_jsonb": {"max_samples": 10},
+                    "validation_summary_jsonb": {},
+                }
+            ],
+            "agchain_benchmark_steps": [],
+            "agchain_benchmark_model_targets": [],
+            "agchain_benchmark_version_scorers": [],
+            "agchain_benchmark_version_tools": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "tool_version_id": "tool-version-1",
+                    "tool_ref": "custom:tool-version-1",
+                    "position": 1,
+                    "alias": "primary_tool",
+                    "config_overrides_jsonb": {"timeout": 3},
+                }
+            ],
+            "agchain_tools": [
+                {
+                    "tool_id": "tool-1",
+                    "project_id": "project-1",
+                    "tool_name": "custom_lookup",
+                    "display_name": "Custom Lookup",
+                    "description": "Project tool.",
+                    "source_kind": "custom",
+                    "approval_mode": "manual",
+                    "latest_version_id": "tool-version-1",
+                    "archived_at": None,
+                    "updated_at": "2026-04-01T08:00:00Z",
+                }
+            ],
+            "agchain_tool_versions": [
+                {
+                    "tool_version_id": "tool-version-1",
+                    "tool_id": "tool-1",
+                    "version_label": "v1",
+                    "status": "published",
+                    "input_schema_jsonb": {"type": "object"},
+                    "output_schema_jsonb": {"type": "string"},
+                    "tool_config_jsonb": {
+                        "implementation_kind": "python_callable",
+                        "implementation_ref": "pkg.tools.custom_lookup",
+                    },
+                    "parallel_calls_allowed": False,
+                    "created_at": "2026-04-01T08:00:00Z",
+                }
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.task_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.task_registry.require_project_access",
+            return_value={"project_id": "project-1", "membership_role": "project_viewer"},
+        ),
+    ):
+        payload = get_benchmark_version(
+            user_id="user-1",
+            benchmark_slug="legal-10",
+            benchmark_version_id="version-1",
+        )
+
+    assert payload["tool_refs"][0]["display_name"] == "Custom Lookup"
+    assert payload["tool_refs"][0]["tool_version_id"] == "tool-version-1"
+
+
 def test_validate_benchmark_version_refreshes_runtime_snapshot_from_steps():
     from app.domain.agchain.task_registry import validate_benchmark_version
 
@@ -953,3 +1297,300 @@ def test_validate_benchmark_version_refreshes_runtime_snapshot_from_steps():
     updated_payload = version_updates[0][1]
     assert updated_payload["task_definition_jsonb"]["steps"][0]["step_id"] == "d1"
     assert updated_payload["validation_summary_jsonb"]["validation_status"] == "pass"
+
+
+def test_create_benchmark_version_persists_pinned_tool_refs():
+    from app.domain.agchain.task_registry import create_benchmark_version
+
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [],
+        },
+        insert_results={
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-2",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.2.0",
+                    "version_status": "draft",
+                    "dataset_version_id": "dataset-version-2",
+                }
+            ]
+        },
+    )
+
+    with (
+        patch("app.domain.agchain.task_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.task_registry.require_project_write_access",
+            return_value={"project_id": "project-1", "membership_role": "project_admin"},
+        ),
+        patch(
+            "app.domain.agchain.task_registry.validate_benchmark_version",
+            return_value={"compatibility_summary": {"validation_status": "pass"}},
+        ),
+        patch(
+            "app.domain.agchain.task_registry.get_benchmark_version",
+            return_value={"benchmark_version": {"benchmark_version_id": "version-2"}},
+        ),
+    ):
+        create_benchmark_version(
+            user_id="user-1",
+            benchmark_slug="legal-10",
+            payload={
+                "version_label": "v0.2.0",
+                "dataset_version_id": "dataset-version-2",
+                "tool_refs_jsonb": [
+                    {
+                        "tool_ref": "custom:tool-version-1",
+                        "tool_version_id": "tool-version-1",
+                        "alias": "primary_tool",
+                        "config_overrides_jsonb": {"timeout": 3},
+                    }
+                ],
+            },
+        )
+
+    tool_inserts = [payload for table, payload in admin.insert_calls if table == "agchain_benchmark_version_tools"]
+    assert len(tool_inserts) == 1
+    assert tool_inserts[0]["tool_ref"] == "custom:tool-version-1"
+    assert tool_inserts[0]["tool_version_id"] == "tool-version-1"
+
+
+def test_replace_benchmark_tool_refs_reject_mismatched_pinned_tool_ref():
+    from app.domain.agchain.task_registry import replace_benchmark_tools
+
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                }
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.task_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.task_registry.require_project_write_access",
+            return_value={"project_id": "project-1", "membership_role": "project_editor"},
+        ),
+    ):
+        with pytest.raises(HTTPException, match="tool_version_id must match the pinned tool_ref"):
+            replace_benchmark_tools(
+                user_id="user-1",
+                benchmark_slug="legal-10",
+                benchmark_version_id="version-1",
+                tool_refs=[
+                    {
+                        "tool_ref": "custom:tool-version-1",
+                        "tool_version_id": "tool-version-2",
+                    }
+                ],
+            )
+
+
+def test_replace_benchmark_tool_refs_rewrite_ordered_rows_for_draft_version():
+    from app.domain.agchain.task_registry import replace_benchmark_tools
+
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                }
+            ],
+            "agchain_benchmark_version_tools": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "tool_ref": "builtin:web_search",
+                    "tool_version_id": None,
+                    "position": 1,
+                    "alias": None,
+                    "config_overrides_jsonb": {},
+                }
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.task_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.task_registry.require_project_write_access",
+            return_value={"project_id": "project-1", "membership_role": "project_editor"},
+        ),
+    ):
+        payload = replace_benchmark_tools(
+            user_id="user-1",
+            benchmark_slug="legal-10",
+            benchmark_version_id="version-1",
+            tool_refs=[
+                {
+                    "tool_ref": "builtin:web_search",
+                    "alias": None,
+                    "config_overrides_jsonb": {},
+                },
+                {
+                    "tool_ref": "custom:tool-version-1",
+                    "tool_version_id": "tool-version-1",
+                    "alias": "primary_tool",
+                    "config_overrides_jsonb": {"timeout": 3},
+                },
+            ],
+        )
+
+    assert [row["tool_ref"] for row in payload["tool_refs"]] == ["builtin:web_search", "custom:tool-version-1"]
+    assert admin.delete_calls[0][0] == "agchain_benchmark_version_tools"
+    tool_inserts = [payload for table, payload in admin.insert_calls if table == "agchain_benchmark_version_tools"]
+    assert [row["position"] for row in tool_inserts] == [1, 2]
+
+
+def test_get_resolved_benchmark_tools_returns_ordered_manifest_items():
+    from app.domain.agchain.task_registry import get_resolved_benchmark_tools
+
+    admin = _RegistryAdmin(
+        tables={
+            "agchain_benchmarks": [
+                {
+                    "benchmark_id": "benchmark-1",
+                    "project_id": "project-1",
+                    "benchmark_slug": "legal-10",
+                    "benchmark_name": "Legal-10",
+                    "description": "Legal analysis benchmark.",
+                    "current_draft_version_id": "version-1",
+                    "current_published_version_id": None,
+                }
+            ],
+            "agchain_benchmark_versions": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "benchmark_id": "benchmark-1",
+                    "version_label": "v0.1.0",
+                    "version_status": "draft",
+                }
+            ],
+            "agchain_benchmark_version_tools": [
+                {
+                    "benchmark_version_id": "version-1",
+                    "tool_ref": "builtin:web_search",
+                    "tool_version_id": None,
+                    "position": 1,
+                    "alias": None,
+                    "config_overrides_jsonb": {},
+                },
+                {
+                    "benchmark_version_id": "version-1",
+                    "tool_ref": "custom:tool-version-1",
+                    "tool_version_id": "tool-version-1",
+                    "position": 2,
+                    "alias": "primary_tool",
+                    "config_overrides_jsonb": {"timeout": 3},
+                },
+            ],
+            "agchain_tools": [
+                {
+                    "tool_id": "tool-1",
+                    "project_id": "project-1",
+                    "tool_name": "custom_lookup",
+                    "display_name": "Custom Lookup",
+                    "description": "Project tool.",
+                    "source_kind": "custom",
+                    "approval_mode": "manual",
+                    "latest_version_id": "tool-version-1",
+                    "archived_at": None,
+                    "updated_at": "2026-04-01T08:00:00Z",
+                }
+            ],
+            "agchain_tool_versions": [
+                {
+                    "tool_version_id": "tool-version-1",
+                    "tool_id": "tool-1",
+                    "version_label": "v1",
+                    "status": "published",
+                    "input_schema_jsonb": {"type": "object"},
+                    "output_schema_jsonb": {"type": "string"},
+                    "tool_config_jsonb": {
+                        "implementation_kind": "python_callable",
+                        "implementation_ref": "pkg.tools.custom_lookup",
+                        "secret_slots": [
+                            {
+                                "slot_key": "openai_api_key",
+                                "value_kind": "api_key",
+                                "required": True,
+                                "default_secret_name_hint": "OPENAI_API_KEY",
+                            }
+                        ],
+                    },
+                    "parallel_calls_allowed": False,
+                    "created_at": "2026-04-01T08:00:00Z",
+                }
+            ],
+            "user_variables": [
+                {
+                    "id": "secret-1",
+                    "user_id": "user-1",
+                    "name": "OPENAI_API_KEY",
+                    "value_kind": "api_key",
+                }
+            ],
+        }
+    )
+
+    with (
+        patch("app.domain.agchain.task_registry.get_supabase_admin", return_value=admin),
+        patch(
+            "app.domain.agchain.task_registry.require_project_access",
+            return_value={"project_id": "project-1", "membership_role": "project_viewer"},
+        ),
+    ):
+        payload = get_resolved_benchmark_tools(
+            user_id="user-1",
+            benchmark_slug="legal-10",
+            benchmark_version_id="version-1",
+        )
+
+    assert [item["tool_ref"] for item in payload["items"]] == ["builtin:web_search", "custom:tool-version-1"]
+    assert payload["items"][0]["runtime_name"] == "web_search"
+    assert payload["items"][1]["display_name"] == "Custom Lookup"
+    assert payload["items"][1]["resolution_status"] == "resolved"
+    assert payload["items"][1]["missing_secret_slots"] == []

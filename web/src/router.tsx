@@ -310,7 +310,24 @@ export const router = createBrowserRouter([
               },
               {
                 path: 'datasets',
-                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetsPage')).default }),
+                children: [
+                  {
+                    index: true,
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetsPage')).default }),
+                  },
+                  {
+                    path: 'new',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetCreatePage')).default }),
+                  },
+                  {
+                    path: ':datasetId',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetDetailPage')).default }),
+                  },
+                  {
+                    path: ':datasetId/versions/new/:draftId',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetVersionDraftPage')).default }),
+                  },
+                ],
               },
               {
                 path: 'prompts',

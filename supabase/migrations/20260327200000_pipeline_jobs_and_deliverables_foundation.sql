@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS public.pipeline_jobs (
   job_id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   pipeline_kind       TEXT NOT NULL,
   owner_id            UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  project_id          UUID REFERENCES public.projects(project_id) ON DELETE CASCADE,
+  project_id          UUID REFERENCES public.user_projects(project_id) ON DELETE CASCADE,
   source_uid          TEXT NOT NULL REFERENCES public.source_documents(source_uid) ON DELETE CASCADE,
   status              TEXT NOT NULL DEFAULT 'queued'
     CHECK (status IN ('queued', 'running', 'complete', 'failed')),

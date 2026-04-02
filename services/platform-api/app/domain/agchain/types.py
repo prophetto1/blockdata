@@ -58,6 +58,33 @@ class AgchainDatasetSourceConfig(AgchainContractModel):
     extra_kwargs: JsonObject = Field(default_factory=dict)
 
 
+class AgchainToolRefBinding(AgchainContractModel):
+    position: int | None = None
+    tool_ref: str
+    tool_version_id: str | None = None
+    source_kind: str | None = None
+    alias: str | None = None
+    display_name: str | None = None
+    config_overrides_jsonb: JsonObject = Field(default_factory=dict)
+
+
+class AgchainResolvedToolManifestItem(AgchainContractModel):
+    position: int
+    tool_ref: str
+    source_kind: str
+    tool_version_id: str | None = None
+    alias: str | None = None
+    display_name: str
+    runtime_name: str | None = None
+    approval_mode: str = "manual"
+    parallel_calls_allowed: bool = False
+    input_schema_jsonb: JsonObject = Field(default_factory=dict)
+    output_schema_jsonb: JsonObject = Field(default_factory=dict)
+    config_overrides_jsonb: JsonObject = Field(default_factory=dict)
+    missing_secret_slots: JsonList = Field(default_factory=list)
+    resolution_status: str
+
+
 class AgchainTaskDefinition(AgchainContractModel):
     dataset_version_id: str
     task_name: str | None = None
@@ -65,7 +92,7 @@ class AgchainTaskDefinition(AgchainContractModel):
     task_definition_jsonb: JsonObject | None = None
     solver_plan_jsonb: JsonObject = Field(default_factory=dict)
     scorer_refs_jsonb: list[JsonObject] = Field(default_factory=list)
-    tool_refs_jsonb: list[JsonObject] = Field(default_factory=list)
+    tool_refs_jsonb: list[AgchainToolRefBinding] = Field(default_factory=list)
     sandbox_profile_id: str | None = None
     sandbox_overrides_jsonb: JsonObject = Field(default_factory=dict)
     model_roles_jsonb: JsonObject = Field(default_factory=dict)

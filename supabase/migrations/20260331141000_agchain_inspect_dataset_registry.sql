@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS public.agchain_datasets (
   dataset_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES public.projects(project_id) ON DELETE CASCADE,
+  project_id UUID NOT NULL REFERENCES public.user_projects(project_id) ON DELETE CASCADE,
   slug TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',

@@ -1,0 +1,39 @@
+name: Supabase DB Validation
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/supabase-db-validate.yml'
+      - '.github/workflows/supabase-db-deploy.yml'
+      - '.github/workflows/migration-history-hygiene.yml'
+      - 'scripts/tests/supabase-db-workflows.test.mjs'
+      - 'package.json'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Verify DB workflow guardrails
+        run: npm run test:workflow-guardrails
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local development setup
+        run: supabase db start
+
+      - name: Replay migrations from scratch
+        run: supabase db reset

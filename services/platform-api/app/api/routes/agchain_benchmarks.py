@@ -22,8 +22,11 @@ from app.domain.agchain.benchmark_registry import (
 )
 from app.domain.agchain.task_registry import (
     create_benchmark_version,
+    get_benchmark_tools,
     get_benchmark_version,
+    get_resolved_benchmark_tools,
     list_benchmark_versions,
+    replace_benchmark_tools,
     validate_benchmark_version,
 )
 from app.observability.contract import safe_attributes, set_span_attributes
@@ -41,6 +44,8 @@ benchmarks_versions_list_counter = meter.create_counter("platform.agchain.benchm
 benchmarks_versions_create_counter = meter.create_counter("platform.agchain.benchmarks.versions.create.count")
 benchmarks_versions_get_counter = meter.create_counter("platform.agchain.benchmarks.versions.get.count")
 benchmarks_versions_validate_counter = meter.create_counter("platform.agchain.benchmarks.versions.validate.count")
+benchmarks_tools_get_counter = meter.create_counter("platform.agchain.benchmarks.tools.get.count")
+benchmarks_tools_replace_counter = meter.create_counter("platform.agchain.benchmarks.tools.replace.count")
 benchmarks_steps_create_counter = meter.create_counter("platform.agchain.benchmarks.steps.create.count")
 benchmarks_steps_update_counter = meter.create_counter("platform.agchain.benchmarks.steps.update.count")
 benchmarks_steps_reorder_counter = meter.create_counter("platform.agchain.benchmarks.steps.reorder.count")
@@ -49,6 +54,8 @@ benchmarks_steps_delete_counter = meter.create_counter("platform.agchain.benchma
 benchmarks_list_duration_ms = meter.create_histogram("platform.agchain.benchmarks.list.duration_ms")
 benchmarks_versions_list_duration_ms = meter.create_histogram("platform.agchain.benchmarks.versions.list.duration_ms")
 benchmarks_versions_write_duration_ms = meter.create_histogram("platform.agchain.benchmarks.versions.write.duration_ms")
+benchmarks_tools_get_duration_ms = meter.create_histogram("platform.agchain.benchmarks.tools.get.duration_ms")
+benchmarks_tools_write_duration_ms = meter.create_histogram("platform.agchain.benchmarks.tools.write.duration_ms")
 benchmarks_steps_get_duration_ms = meter.create_histogram("platform.agchain.benchmarks.steps.get.duration_ms")
 benchmarks_steps_write_duration_ms = meter.create_histogram("platform.agchain.benchmarks.steps.write.duration_ms")
 
@@ -126,6 +133,11 @@ class BenchmarkVersionValidateRequest(BaseModel):
     model_roles_jsonb: dict[str, Any] = Field(default_factory=dict)
     generate_config_jsonb: dict[str, Any] = Field(default_factory=dict)
     eval_config_jsonb: dict[str, Any] = Field(default_factory=dict)
+
+
+class BenchmarkToolsReplaceRequest(BaseModel):
+    benchmark_version_id: str = Field(min_length=1)
+    tool_refs: list[dict[str, Any]] = Field(default_factory=list)
 
 
 @router.get("", summary="List AG chain benchmarks")
@@ -278,6 +290,92 @@ async def get_benchmark_version_route(
         }
         set_span_attributes(span, attrs)
         benchmarks_versions_get_counter.add(1, safe_attributes(attrs))
+        return result
+
+
+@router.get("/{benchmark_slug}/tools", summary="Get benchmark tool bag")
+async def get_benchmark_tools_route(
+    benchmark_slug: str,
+    benchmark_version_id: str = Query(...),
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    start = time.perf_counter()
+    with tracer.start_as_current_span("agchain.benchmarks.tools.get") as span:
+        result = get_benchmark_tools(
+            user_id=auth.user_id,
+            benchmark_slug=benchmark_slug,
+            benchmark_version_id=benchmark_version_id,
+        )
+        duration_ms = max(0, int((time.perf_counter() - start) * 1000))
+        attrs = {
+            "selection_count": len(result.get("tool_refs") or []),
+            "latency_ms": duration_ms,
+        }
+        set_span_attributes(span, attrs)
+        benchmarks_tools_get_counter.add(1, safe_attributes(attrs))
+        benchmarks_tools_get_duration_ms.record(duration_ms, safe_attributes(attrs))
+        return result
+
+
+@router.put("/{benchmark_slug}/tools", summary="Replace benchmark tool bag")
+async def replace_benchmark_tools_route(
+    benchmark_slug: str,
+    body: BenchmarkToolsReplaceRequest,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    start = time.perf_counter()
+    with tracer.start_as_current_span("agchain.benchmarks.tools.replace") as span:
+        result = replace_benchmark_tools(
+            user_id=auth.user_id,
+            benchmark_slug=benchmark_slug,
+            benchmark_version_id=body.benchmark_version_id,
+            tool_refs=body.tool_refs,
+        )
+        duration_ms = max(0, int((time.perf_counter() - start) * 1000))
+        attrs = {
+            "selection_count": len(result.get("tool_refs") or []),
+            "result": "replaced",
+            "latency_ms": duration_ms,
+        }
+        set_span_attributes(span, attrs)
+        benchmarks_tools_replace_counter.add(1, safe_attributes(attrs))
+        benchmarks_tools_write_duration_ms.record(duration_ms, safe_attributes(attrs))
+        logger.info(
+            "agchain.benchmarks.tools_replaced",
+            extra=safe_attributes(
+                {
+                    "selection_count": len(result.get("tool_refs") or []),
+                    "result": "replaced",
+                }
+            ),
+        )
+        return result
+
+
+@router.get(
+    "/{benchmark_slug}/versions/{benchmark_version_id}/tools/resolved",
+    summary="Get resolved benchmark tool manifest",
+)
+async def get_resolved_benchmark_tools_route(
+    benchmark_slug: str,
+    benchmark_version_id: str,
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    start = time.perf_counter()
+    with tracer.start_as_current_span("agchain.benchmarks.tools.get") as span:
+        result = get_resolved_benchmark_tools(
+            user_id=auth.user_id,
+            benchmark_slug=benchmark_slug,
+            benchmark_version_id=benchmark_version_id,
+        )
+        duration_ms = max(0, int((time.perf_counter() - start) * 1000))
+        attrs = {
+            "tool_count": len(result.get("items") or []),
+            "latency_ms": duration_ms,
+        }
+        set_span_attributes(span, attrs)
+        benchmarks_tools_get_counter.add(1, safe_attributes(attrs))
+        benchmarks_tools_get_duration_ms.record(duration_ms, safe_attributes(attrs))
         return result
 
 

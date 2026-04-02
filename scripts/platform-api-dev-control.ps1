@@ -84,14 +84,49 @@ function Get-ProcessRecord {
   }
 }
 
+function Get-NetstatListenerOwningProcessId {
+  try {
+    $netstatOutput = netstat -ano 2>$null
+  } catch {
+    return $null
+  }
+
+  if (-not $netstatOutput) {
+    return $null
+  }
+
+  $escapedPort = [regex]::Escape([string]$Port)
+  foreach ($line in $netstatOutput) {
+    if ($line -match "^\s*TCP\s+\S+:$escapedPort\s+\S+\s+LISTENING\s+(\d+)\s*$") {
+      return [int]$matches[1]
+    }
+  }
+
+  return $null
+}
+
 function Get-ListenerRecord {
+  $owningProcess = $null
+  $source = $null
+
   try {
     $connection = Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction Stop | Select-Object -First 1
   } catch {
     $connection = $null
   }
 
-  if (-not $connection) {
+  if ($connection) {
+    $owningProcess = [int]$connection.OwningProcess
+    $source = "tcp_listener"
+  } else {
+    $netstatPid = Get-NetstatListenerOwningProcessId
+    if ($netstatPid) {
+      $owningProcess = [int]$netstatPid
+      $source = "netstat_listener"
+    }
+  }
+
+  if (-not $owningProcess) {
     return [ordered]@{
       running = $false
       pid = $null
@@ -102,15 +137,15 @@ function Get-ListenerRecord {
     }
   }
 
-  $processRecord = Get-ProcessRecord -ProcessId $connection.OwningProcess
+  $processRecord = Get-ProcessRecord -ProcessId $owningProcess
   if (-not $processRecord) {
     return [ordered]@{
       running = $true
-      pid = [int]$connection.OwningProcess
+      pid = $owningProcess
       started_at = $null
       command_line = $null
       parent_pid = $null
-      source = "tcp_listener"
+      source = $source
     }
   }
 
@@ -120,7 +155,7 @@ function Get-ListenerRecord {
     started_at = $processRecord.started_at
     command_line = $processRecord.command_line
     parent_pid = $processRecord.parent_pid
-    source = "tcp_listener"
+    source = $source
   }
 }
 
@@ -326,7 +361,7 @@ function Get-StopTargetIds {
     # Ignore CIM failures and stop the listener PID only.
   }
 
-  return @($targets.ToArray() | Sort-Object -Descending)
+  return @($targets | Sort-Object -Descending)
 }
 
 function Stop-Targets {
@@ -366,13 +401,14 @@ function Start-ApprovedBootstrap {
   $startArgs = @(
     "-ExecutionPolicy", "Bypass",
     "-File", $startScriptPath,
-    "-Port", "$Port"
+    "-Port", "$Port",
+    "-NoReload"
   )
 
   $startedProcess = Start-Process -FilePath $powershellExe -ArgumentList $startArgs -WorkingDirectory $repoRoot -WindowStyle Hidden -PassThru
   return [ordered]@{
     pid = [int]$startedProcess.Id
-    detail = "Started approved bootstrap via start-platform-api.ps1."
+    detail = "Started approved bootstrap via start-platform-api.ps1 -NoReload."
   }
 }
 

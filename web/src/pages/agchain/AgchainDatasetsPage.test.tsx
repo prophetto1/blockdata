@@ -1,19 +1,30 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import * as agchainDatasetContracts from '@/lib/agchainDatasets';
-import * as agchainRunContracts from '@/lib/agchainRuns';
-import type {
-  AgchainDatasetCreateResponse,
-  AgchainDatasetDetail,
-  AgchainDatasetDetailResponse,
-  AgchainDatasetListResponse,
-  AgchainDatasetListRow,
-  AgchainDatasetSourceConfig,
-  AgchainDatasetVersionSummary,
-} from '@/lib/agchainDatasets';
-import type { AgchainOperationStatus } from '@/lib/agchainRuns';
 import AgchainDatasetsPage from './AgchainDatasetsPage';
+
+beforeAll(() => {
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  }
+  if (typeof globalThis.IntersectionObserver === 'undefined') {
+    globalThis.IntersectionObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof IntersectionObserver;
+  }
+});
+
+const platformApiFetchMock = vi.fn();
+
+vi.mock('@/lib/platformApi', () => ({
+  platformApiFetch: (...args: unknown[]) => platformApiFetchMock(...args),
+}));
 
 const useAgchainProjectFocusMock = vi.fn();
 
@@ -21,124 +32,119 @@ vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
   useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
 }));
 
-const DATASET_ROW: AgchainDatasetListRow = {
-  dataset_id: 'dataset-1',
-  slug: 'legal-10-train',
-  name: 'Legal-10 Train',
-  description: 'Training split for the focused AGChain project.',
-  status: 'active',
-  source_type: 'jsonl',
-  latest_version_id: 'dataset-version-1',
-  latest_version_label: 'v1',
-  sample_count: 128,
-  validation_status: 'warn',
-  updated_at: '2026-03-31T16:45:00Z',
-};
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
-const SOURCE_CONFIG: AgchainDatasetSourceConfig = {
-  source_type: 'huggingface',
-  source_uri: 'hf://datasets/org/legal-10',
-  path: 'org/legal-10',
-  split: 'train',
-  trust: false,
-  cached: true,
-  extra_kwargs: {},
-};
-
-const OPERATION_STATUS: AgchainOperationStatus = {
-  operation_id: 'operation-1',
-  operation_type: 'dataset_preview',
-  status: 'queued',
-  poll_url: '/agchain/operations/operation-1',
-  cancel_url: '/agchain/operations/operation-1/cancel',
-  target_kind: 'dataset_version_draft',
-  target_id: 'draft-1',
-  attempt_count: 0,
-  progress: {},
-  last_error: null,
-  result: null,
-  created_at: '2026-03-31T16:45:00Z',
-  started_at: null,
-  heartbeat_at: null,
-  completed_at: null,
-};
-
-const DATASET_VERSION: AgchainDatasetVersionSummary = {
-  dataset_version_id: 'dataset-version-1',
-  version_label: 'v1',
-  created_at: '2026-03-31T16:45:00Z',
-  sample_count: 128,
-  checksum: 'sha256:dataset-version-1',
-  validation_status: 'warn',
-  base_version_id: null,
-};
-
-const DATASET_DETAIL: AgchainDatasetDetail = {
-  dataset_id: 'dataset-1',
-  slug: 'legal-10-train',
-  name: 'Legal-10 Train',
-  description: 'Training split for the focused AGChain project.',
-  tags: ['legal', 'train'],
-  status: 'active',
-  source_type: 'jsonl',
-  latest_version_id: 'dataset-version-1',
-  latest_version_label: 'v1',
-  sample_count: 128,
-  validation_status: 'warn',
-  updated_at: '2026-03-31T16:45:00Z',
-};
-
-const DATASET_LIST_RESPONSE: AgchainDatasetListResponse = {
-  items: [DATASET_ROW],
+const DATASET_LIST_RESPONSE = {
+  items: [
+    {
+      dataset_id: 'dataset-1',
+      slug: 'legal-qa',
+      name: 'Legal QA Dataset',
+      description: 'Legal evaluation samples.',
+      status: 'active',
+      source_type: 'csv',
+      latest_version_id: 'version-1',
+      latest_version_label: 'v3',
+      sample_count: 15302,
+      validation_status: 'pass',
+      updated_at: '2026-03-31T16:45:00Z',
+    },
+    {
+      dataset_id: 'dataset-2',
+      slug: 'financial-news',
+      name: 'Financial News Corpus',
+      description: 'Financial news dataset.',
+      status: 'active',
+      source_type: 'json',
+      latest_version_id: 'version-2',
+      latest_version_label: 'v1',
+      sample_count: 8350,
+      validation_status: 'warn',
+      updated_at: '2026-03-30T10:00:00Z',
+    },
+  ],
   next_cursor: null,
 };
 
-const DATASET_DETAIL_RESPONSE: AgchainDatasetDetailResponse = {
-  dataset: DATASET_DETAIL,
-  selected_version: DATASET_VERSION,
-  tab_counts: {
-    samples: 128,
-    versions: 1,
-    validation: 3,
-  },
-  warnings_summary: {
-    warning_count: 3,
-    duplicate_id_count: 0,
-    missing_field_count: 1,
-    unsupported_payload_count: 0,
-  },
-  available_actions: ['create_version_draft', 're_run_preview'],
-};
-
-const DATASET_CREATE_RESPONSE: AgchainDatasetCreateResponse = OPERATION_STATUS;
-
-afterEach(() => {
-  cleanup();
-});
-
 describe('AgchainDatasetsPage', () => {
   beforeEach(() => {
+    platformApiFetchMock.mockReset();
     useAgchainProjectFocusMock.mockReset();
     useAgchainProjectFocusMock.mockReturnValue({
       focusedProject: {
-        benchmark_id: 'benchmark-1',
+        project_id: 'project-1',
+        organization_id: 'org-1',
+        project_slug: 'legal-10',
+        project_name: 'Legal-10',
+        description: 'Three-step benchmark package for legal analysis.',
+        membership_role: 'owner',
+        updated_at: '2026-03-31T00:00:00Z',
+        primary_benchmark_slug: 'legal-10',
+        primary_benchmark_name: 'Legal-10',
         benchmark_slug: 'legal-10',
         benchmark_name: 'Legal-10',
-        description: 'Three-step benchmark package for legal analysis.',
+        href: '/app/agchain/overview?project=legal-10',
       },
       loading: false,
     });
+
+    platformApiFetchMock.mockImplementation((path: string) => {
+      if (path.startsWith('/agchain/datasets?')) {
+        return Promise.resolve(jsonResponse(DATASET_LIST_RESPONSE));
+      }
+      return Promise.reject(new Error(`Unhandled platformApiFetch call: ${path}`));
+    });
   });
 
-  it('renders the focused-project dataset placeholder while compiling against shared AGChain lib contracts', () => {
-    expect(agchainDatasetContracts).toBeTypeOf('object');
-    expect(agchainRunContracts).toBeTypeOf('object');
-    expect(DATASET_ROW.slug).toBe('legal-10-train');
-    expect(DATASET_LIST_RESPONSE.items).toHaveLength(1);
-    expect(DATASET_DETAIL_RESPONSE.selected_version?.dataset_version_id).toBe('dataset-version-1');
-    expect('operation_id' in DATASET_CREATE_RESPONSE).toBe(true);
-    expect(SOURCE_CONFIG.source_type).toBe('huggingface');
-    expect(OPERATION_STATUS.operation_type).toBe('dataset_preview');
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('renders a table with dataset rows', async () => {
+    render(
+      <MemoryRouter>
+        <AgchainDatasetsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Legal QA Dataset')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('legal-qa')).toBeInTheDocument();
+    expect(screen.getByText('Financial News Corpus')).toBeInTheDocument();
+    expect(screen.getByText('financial-news')).toBeInTheDocument();
+    expect(screen.getByText('15,302')).toBeInTheDocument();
+  });
+
+  it('renders the Add Dataset link', async () => {
+    render(
+      <MemoryRouter>
+        <AgchainDatasetsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Legal QA Dataset')).toBeInTheDocument();
+    });
+
+    const addLink = screen.getByRole('link', { name: /add dataset/i });
+    expect(addLink).toBeInTheDocument();
+    expect(addLink).toHaveAttribute('href', '/app/agchain/datasets/new');
+  });
+
+  it('shows empty state when no datasets exist', async () => {
+    platformApiFetchMock.mockImplementation((path: string) => {
+      if (path.startsWith('/agchain/datasets?')) {
+        return Promise.resolve(jsonResponse({ items: [], next_cursor: null }));
+      }
+      return Promise.reject(new Error(`Unhandled: ${path}`));
+    });
 
     render(
       <MemoryRouter>
@@ -146,8 +152,23 @@ describe('AgchainDatasetsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Datasets' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this datasets page/i)).toBeInTheDocument();
-    expect(screen.getByText('Project-scoped placeholder surface')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('No datasets yet')).toBeInTheDocument();
+    });
+  });
+
+  it('shows project selection prompt when no project is focused', () => {
+    useAgchainProjectFocusMock.mockReturnValue({
+      focusedProject: null,
+      loading: false,
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainDatasetsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/choose a project/i)).toBeInTheDocument();
   });
 });
