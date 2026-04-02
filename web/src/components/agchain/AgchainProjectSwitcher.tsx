@@ -27,12 +27,20 @@ export function AgchainProjectSwitcher() {
   const triggerLabel = focusedProject?.project_name
     ?? focusedProjectSlug
     ?? 'Select AGChain project';
+  const triggerDescription = focusedProject?.description
+    ?? (focusedProject?.benchmark_slug ? `Benchmark · ${focusedProject.benchmark_slug}` : null);
+  const triggerLeadingText = focusedProject?.project_name[0]?.toUpperCase()
+    ?? triggerLabel[0]?.toUpperCase()
+    ?? '?';
 
   return (
     <ProjectFocusSelectorPopover
       items={selectorItems}
       selectedItemId={focusedProjectSlug}
       triggerLabel={triggerLabel}
+      triggerDescription={triggerDescription}
+      triggerLeadingText={triggerLeadingText}
+      triggerVariant="sidebar-row"
       triggerTestId="agchain-project-context"
       triggerClassName="agchain-project-switcher-trigger"
       searchPlaceholder="Find project..."

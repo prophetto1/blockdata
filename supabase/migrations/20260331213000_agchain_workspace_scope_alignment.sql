@@ -107,151 +107,146 @@ ALTER TABLE public.agchain_benchmarks
 CREATE INDEX IF NOT EXISTS agchain_benchmarks_project_updated_idx
   ON public.agchain_benchmarks (project_id, updated_at DESC);
 
-CREATE OR REPLACE FUNCTION public.create_agchain_project_atomic(
-  p_user_id UUID,
-  p_organization_id UUID,
-  p_project_name TEXT,
-  p_project_slug TEXT,
-  p_description TEXT,
-  p_seed_initial_benchmark BOOLEAN DEFAULT true,
-  p_initial_benchmark_name TEXT DEFAULT NULL,
-  p_now TIMESTAMPTZ DEFAULT now()
-)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_project_id UUID;
-  v_benchmark_id UUID;
-  v_benchmark_version_id UUID;
-  v_benchmark_name TEXT;
-  v_benchmark_slug_base TEXT;
-  v_benchmark_slug TEXT;
-  v_benchmark_suffix INTEGER := 2;
+DO $create_project_rpc$
 BEGIN
-  INSERT INTO public.user_projects (
-    owner_id,
-    organization_id,
-    project_slug,
-    project_name,
-    description,
-    created_by,
-    updated_at
-  )
-  VALUES (
-    p_user_id,
-    p_organization_id,
-    p_project_slug,
-    p_project_name,
-    p_description,
-    p_user_id,
-    p_now
-  )
-  RETURNING project_id INTO v_project_id;
-
-  INSERT INTO public.agchain_project_memberships (
-    project_id,
-    organization_id,
-    user_id,
-    membership_role,
-    membership_status,
-    updated_at
-  )
-  VALUES (
-    v_project_id,
-    p_organization_id,
-    p_user_id,
-    'project_admin',
-    'active',
-    p_now
-  );
-
-  IF COALESCE(p_seed_initial_benchmark, true) THEN
-    v_benchmark_name := COALESCE(NULLIF(trim(p_initial_benchmark_name), ''), p_project_name);
-    v_benchmark_slug_base := NULLIF(
-      trim(BOTH '-' FROM regexp_replace(lower(v_benchmark_name), '[^a-z0-9]+', '-', 'g')),
-      ''
-    );
-    IF v_benchmark_slug_base IS NULL THEN
-      v_benchmark_slug_base := 'benchmark';
-    END IF;
-
-    v_benchmark_slug := v_benchmark_slug_base;
-    WHILE EXISTS (
-      SELECT 1
-      FROM public.agchain_benchmarks existing
-      WHERE existing.benchmark_slug = v_benchmark_slug
-    ) LOOP
-      v_benchmark_slug := left(
-        v_benchmark_slug_base,
-        greatest(1, 120 - length('-' || v_benchmark_suffix::text))
-      ) || '-' || v_benchmark_suffix::text;
-      v_benchmark_suffix := v_benchmark_suffix + 1;
-    END LOOP;
-
-    INSERT INTO public.agchain_benchmarks (
-      project_id,
-      benchmark_slug,
-      benchmark_name,
-      description,
-      owner_user_id,
-      updated_at
+  EXECUTE $sql$
+    CREATE OR REPLACE FUNCTION public.create_agchain_project_atomic(
+      p_user_id UUID,
+      p_organization_id UUID,
+      p_project_name TEXT,
+      p_project_slug TEXT,
+      p_description TEXT,
+      p_seed_initial_benchmark BOOLEAN DEFAULT true,
+      p_initial_benchmark_name TEXT DEFAULT NULL,
+      p_now TIMESTAMPTZ DEFAULT now()
     )
-    VALUES (
-      v_project_id,
-      v_benchmark_slug,
-      v_benchmark_name,
-      p_description,
-      p_user_id,
-      p_now
-    )
-    RETURNING benchmark_id INTO v_benchmark_id;
+    RETURNS JSONB
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    SET search_path = public
+    AS $body$
+    DECLARE
+      v_project_id UUID;
+      v_benchmark_id UUID;
+      v_benchmark_version_id UUID;
+      v_benchmark_name TEXT;
+      v_benchmark_slug_base TEXT;
+      v_benchmark_slug TEXT;
+      v_benchmark_suffix INTEGER := 2;
+    BEGIN
+      INSERT INTO public.user_projects (
+        owner_id,
+        organization_id,
+        project_slug,
+        project_name,
+        description,
+        created_by,
+        updated_at
+      )
+      VALUES (
+        p_user_id,
+        p_organization_id,
+        p_project_slug,
+        p_project_name,
+        p_description,
+        p_user_id,
+        p_now
+      )
+      RETURNING project_id INTO v_project_id;
 
-    INSERT INTO public.agchain_benchmark_versions (
-      benchmark_id,
-      version_label,
-      version_status,
-      plan_family,
-      created_by,
-      updated_at
-    )
-    VALUES (
-      v_benchmark_id,
-      'v0.1.0',
-      'draft',
-      'custom',
-      p_user_id,
-      p_now
-    )
-    RETURNING benchmark_version_id INTO v_benchmark_version_id;
+      INSERT INTO public.agchain_project_memberships (
+        project_id,
+        organization_id,
+        user_id,
+        membership_role,
+        membership_status,
+        updated_at
+      )
+      VALUES (
+        v_project_id,
+        p_organization_id,
+        p_user_id,
+        'project_admin',
+        'active',
+        p_now
+      );
 
-    UPDATE public.agchain_benchmarks
-    SET
-      current_draft_version_id = v_benchmark_version_id,
-      updated_at = p_now
-    WHERE benchmark_id = v_benchmark_id;
-  END IF;
+      IF COALESCE(p_seed_initial_benchmark, true) THEN
+        v_benchmark_name := COALESCE(NULLIF(trim(p_initial_benchmark_name), ''), p_project_name);
+        v_benchmark_slug_base := NULLIF(
+          trim(BOTH '-' FROM regexp_replace(lower(v_benchmark_name), '[^a-z0-9]+', '-', 'g')),
+          ''
+        );
+        IF v_benchmark_slug_base IS NULL THEN
+          v_benchmark_slug_base := 'benchmark';
+        END IF;
 
-  RETURN jsonb_build_object(
-    'project_id', v_project_id,
-    'project_slug', p_project_slug,
-    'primary_benchmark_slug', v_benchmark_slug
-  );
-END;
-$$;
+        v_benchmark_slug := v_benchmark_slug_base;
+        WHILE EXISTS (
+          SELECT 1
+          FROM public.agchain_benchmarks existing
+          WHERE existing.benchmark_slug = v_benchmark_slug
+        ) LOOP
+          v_benchmark_slug := left(
+            v_benchmark_slug_base,
+            greatest(1, 120 - length('-' || v_benchmark_suffix::text))
+          ) || '-' || v_benchmark_suffix::text;
+          v_benchmark_suffix := v_benchmark_suffix + 1;
+        END LOOP;
 
-GRANT EXECUTE ON FUNCTION public.create_agchain_project_atomic(
-  UUID,
-  UUID,
-  TEXT,
-  TEXT,
-  TEXT,
-  BOOLEAN,
-  TEXT,
-  TIMESTAMPTZ
-) TO service_role;
+        INSERT INTO public.agchain_benchmarks (
+          project_id,
+          benchmark_slug,
+          benchmark_name,
+          description,
+          owner_user_id,
+          updated_at
+        )
+        VALUES (
+          v_project_id,
+          v_benchmark_slug,
+          v_benchmark_name,
+          p_description,
+          p_user_id,
+          p_now
+        )
+        RETURNING benchmark_id INTO v_benchmark_id;
+
+        INSERT INTO public.agchain_benchmark_versions (
+          benchmark_id,
+          version_label,
+          version_status,
+          plan_family,
+          created_by,
+          updated_at
+        )
+        VALUES (
+          v_benchmark_id,
+          'v0.1.0',
+          'draft',
+          'custom',
+          p_user_id,
+          p_now
+        )
+        RETURNING benchmark_version_id INTO v_benchmark_version_id;
+
+        UPDATE public.agchain_benchmarks
+        SET
+          current_draft_version_id = v_benchmark_version_id,
+          updated_at = p_now
+        WHERE benchmark_id = v_benchmark_id;
+      END IF;
+
+      RETURN jsonb_build_object(
+        'project_id', v_project_id,
+        'project_slug', p_project_slug,
+        'primary_benchmark_slug', v_benchmark_slug
+      );
+    END;
+    $body$;
+  $sql$;
+END
+$create_project_rpc$;
 
 WITH distinct_workspace_users AS (
   SELECT DISTINCT owner_id AS user_id
@@ -538,3 +533,14 @@ BEGIN
       ON DELETE CASCADE;
   END IF;
 END $$;
+
+GRANT EXECUTE ON FUNCTION public.create_agchain_project_atomic(
+  UUID,
+  UUID,
+  TEXT,
+  TEXT,
+  TEXT,
+  BOOLEAN,
+  TEXT,
+  TIMESTAMPTZ
+) TO service_role;

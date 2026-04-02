@@ -309,7 +309,18 @@ def check_blockdata_pipeline_definitions(_settings: Settings) -> dict:
 
 def check_agchain_benchmarks_catalog(_settings: Settings, *, actor_id: str) -> dict:
     try:
-        items = list_benchmarks(user_id=actor_id)
+        result = list_benchmarks(
+            user_id=actor_id,
+            project_id=None,
+            search=None,
+            state=None,
+            validation_status=None,
+            has_active_runs=None,
+            limit=100,
+            cursor=None,
+            offset=0,
+        )
+        items = result.get("items") or []
         return _make_check(
             check_id="agchain.benchmarks.catalog",
             category="product",

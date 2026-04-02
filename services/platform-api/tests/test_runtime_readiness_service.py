@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from app.services.runtime_readiness import (
+    check_agchain_benchmarks_catalog,
     check_shared_platform_api_ready,
     check_blockdata_storage_bucket_cors,
     check_blockdata_storage_signed_url_signing,
@@ -57,6 +58,53 @@ def test_platform_api_ready_returns_unknown_when_conversion_pool_status_raises(m
     assert result["evidence"]["ready"] is False
     assert result["evidence"]["error_type"] == "PermissionError"
     assert "could not be evaluated" in result["summary"].lower()
+
+
+def test_agchain_benchmarks_catalog_uses_paginated_registry_contract(monkeypatch):
+    captured: dict[str, object] = {}
+
+    def _mock_list_benchmarks(**kwargs):
+        captured.update(kwargs)
+        return {
+            "items": [
+                {"benchmark_id": "bench-1"},
+                {"benchmark_id": "bench-2"},
+            ],
+            "next_cursor": None,
+        }
+
+    monkeypatch.setattr("app.services.runtime_readiness.list_benchmarks", _mock_list_benchmarks)
+
+    result = check_agchain_benchmarks_catalog(SimpleNamespace(), actor_id="user-123")
+
+    assert result["id"] == "agchain.benchmarks.catalog"
+    assert result["status"] == "ok"
+    assert result["evidence"]["catalog_count"] == 2
+    assert captured == {
+        "user_id": "user-123",
+        "project_id": None,
+        "search": None,
+        "state": None,
+        "validation_status": None,
+        "has_active_runs": None,
+        "limit": 100,
+        "cursor": None,
+        "offset": 0,
+    }
+
+
+def test_agchain_benchmarks_catalog_returns_fail_when_registry_raises_type_error(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.runtime_readiness.list_benchmarks",
+        lambda **_kwargs: (_ for _ in ()).throw(TypeError("wrong call signature")),
+    )
+
+    result = check_agchain_benchmarks_catalog(SimpleNamespace(), actor_id="user-123")
+
+    assert result["id"] == "agchain.benchmarks.catalog"
+    assert result["status"] == "fail"
+    assert result["evidence"]["catalog_count"] == 0
+    assert result["evidence"]["error_type"] == "TypeError"
 
 
 def test_runtime_readiness_snapshot_degrades_when_check_observability_raises(monkeypatch):

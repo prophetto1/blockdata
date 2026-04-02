@@ -104,6 +104,23 @@ describe('useAgchainProjectFocus', () => {
     expect(result.current.loading).toBe(true);
   });
 
+  it('clears a stale legacy slug after loading finishes without a matching project', async () => {
+    window.localStorage.setItem('agchain.projectFocusSlug', 'finance-eval');
+    fetchAgchainProjectsMock.mockResolvedValue({
+      items: [],
+    });
+
+    const { result } = renderHook(() => useAgchainProjectFocus());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.focusedProject).toBeNull();
+    expect(result.current.focusedProjectSlug).toBeNull();
+    expect(window.localStorage.getItem('agchain.projectFocusSlug')).toBeNull();
+  });
+
   it('synchronizes focus changes across mounted hook instances', async () => {
     const first = renderHook(() => useAgchainProjectFocus());
     const second = renderHook(() => useAgchainProjectFocus());

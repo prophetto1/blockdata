@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { ProjectFocusSelectorPopover } from './ProjectFocusSelectorPopover';
@@ -42,6 +42,9 @@ describe('ProjectFocusSelectorPopover', () => {
           ]}
           selectedItemId="project-1"
           triggerLabel="Alpha Project"
+          triggerDescription="First project"
+          triggerLeadingText="A"
+          triggerVariant="sidebar-row"
           searchPlaceholder="Find Project..."
           emptyLabel="No projects found"
           footerActionLabel="Create Project"
@@ -51,12 +54,14 @@ describe('ProjectFocusSelectorPopover', () => {
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /alpha project/i }));
+    const trigger = screen.getByRole('button', { name: /alpha project/i });
+    expect(within(trigger).getByText('First project')).toBeInTheDocument();
+
+    fireEvent.click(trigger);
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Find Project...')).toBeInTheDocument();
     });
-
     expect(screen.getByRole('link', { name: 'Create Project' })).toHaveAttribute('href', '/app/projects/list?new=1');
   });
 

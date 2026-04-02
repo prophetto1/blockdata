@@ -29,14 +29,25 @@ export function AgchainOrganizationSwitcher() {
   const triggerLabel = selectedOrganization?.display_name
     ?? selectedOrganizationId
     ?? 'Select organization';
+  const triggerDescription = selectedOrganization
+    ? selectedOrganization.is_personal
+      ? `Personal workspace · ${selectedOrganization.project_count} projects`
+      : `${selectedOrganization.project_count} projects`
+    : null;
+  const triggerLeadingText = selectedOrganization?.display_name[0]?.toUpperCase()
+    ?? triggerLabel[0]?.toUpperCase()
+    ?? '?';
 
   return (
     <ProjectFocusSelectorPopover
       items={selectorItems}
       selectedItemId={selectedOrganizationId}
       triggerLabel={triggerLabel}
+      triggerDescription={triggerDescription}
+      triggerLeadingText={triggerLeadingText}
+      triggerVariant="sidebar-row"
       triggerTestId="agchain-organization-context"
-      triggerClassName="agchain-organization-switcher-trigger w-full justify-between"
+      triggerClassName="agchain-organization-switcher-trigger"
       searchPlaceholder="Find organization..."
       emptyLabel="No organizations found"
       loadingLabel="Loading organizations..."

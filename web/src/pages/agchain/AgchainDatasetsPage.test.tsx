@@ -157,7 +157,7 @@ describe('AgchainDatasetsPage', () => {
     });
   });
 
-  it('shows project selection prompt when no project is focused', () => {
+  it('routes users back toward the project registry when no project is focused', () => {
     useAgchainProjectFocusMock.mockReturnValue({
       focusedProject: null,
       loading: false,
@@ -169,6 +169,7 @@ describe('AgchainDatasetsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText(/choose a project/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /choose an agchain project/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open project registry' })).toHaveAttribute('href', '/app/agchain/projects');
   });
 });

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AgchainPageFrame } from './AgchainPageFrame';
 import { AgchainDatasetsToolbar } from '@/components/agchain/datasets/AgchainDatasetsToolbar';
 import { AgchainDatasetsTable } from '@/components/agchain/datasets/AgchainDatasetsTable';
@@ -32,15 +33,21 @@ export default function AgchainDatasetsPage() {
 
   if (!focusedProject) {
     return (
-      <AgchainPageFrame>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center">
-            <p className="text-lg font-medium text-foreground">Choose a project</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Select a project from the sidebar to view its datasets.
-            </p>
-          </div>
-        </div>
+      <AgchainPageFrame className="gap-8 py-10">
+        <section className="rounded-3xl border border-border/70 bg-card/80 p-8 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">AGChain project</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Choose an AGChain project</h1>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+            Datasets is a child page of the selected AGChain project or evaluation. Pick a project from the registry
+            before working in this surface.
+          </p>
+          <Link
+            to="/app/agchain/projects"
+            className="mt-5 inline-flex w-fit items-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            Open project registry
+          </Link>
+        </section>
       </AgchainPageFrame>
     );
   }

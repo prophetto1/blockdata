@@ -18,6 +18,9 @@ type ProjectFocusSelectorPopoverProps = {
   items: ProjectFocusSelectorItem[];
   selectedItemId: string | null;
   triggerLabel: string;
+  triggerDescription?: string | null;
+  triggerLeadingText?: string;
+  triggerVariant?: 'default' | 'sidebar-row';
   triggerTestId?: string;
   triggerClassName?: string;
   searchPlaceholder: string;
@@ -37,6 +40,9 @@ export function ProjectFocusSelectorPopover({
   items,
   selectedItemId,
   triggerLabel,
+  triggerDescription = null,
+  triggerLeadingText,
+  triggerVariant = 'default',
   triggerTestId,
   triggerClassName,
   searchPlaceholder,
@@ -63,6 +69,8 @@ export function ProjectFocusSelectorPopover({
       return searchable.includes(query);
     });
   }, [items, search]);
+
+  const resolvedTriggerLeadingText = triggerLeadingText ?? triggerLabel[0]?.toUpperCase() ?? '?';
 
   const footerActionNode = footerActionHref ? (
     <Link
@@ -99,12 +107,39 @@ export function ProjectFocusSelectorPopover({
       <Popover.Trigger
         data-testid={triggerTestId}
         className={cn(
-          'project-switcher-trigger inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          triggerVariant === 'sidebar-row'
+            ? 'project-switcher-trigger inline-flex min-h-11 w-full items-center gap-3 rounded-lg border border-border/70 bg-card/40 px-3 py-2 text-left text-foreground transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            : 'project-switcher-trigger inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           triggerClassName,
         )}
       >
-        <span className="truncate">{triggerLabel}</span>
-        <IconChevronDown size={16} stroke={1.75} className="shrink-0 text-muted-foreground" />
+        {triggerVariant === 'sidebar-row' ? (
+          <>
+            <span
+              aria-hidden="true"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary"
+            >
+              {resolvedTriggerLeadingText}
+            </span>
+            <span className="grid min-w-0 flex-1 text-left leading-tight">
+              <span className="truncate text-sm font-medium text-foreground">{triggerLabel}</span>
+              {triggerDescription ? (
+                <span className="truncate pt-0.5 text-xs text-muted-foreground">{triggerDescription}</span>
+              ) : null}
+            </span>
+            <IconChevronDown
+              aria-hidden="true"
+              size={16}
+              stroke={1.75}
+              className="ml-auto shrink-0 text-muted-foreground"
+            />
+          </>
+        ) : (
+          <>
+            <span className="truncate">{triggerLabel}</span>
+            <IconChevronDown aria-hidden="true" size={16} stroke={1.75} className="shrink-0 text-muted-foreground" />
+          </>
+        )}
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner className="z-[140]">

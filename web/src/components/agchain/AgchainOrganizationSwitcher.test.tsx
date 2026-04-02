@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { AgchainOrganizationSwitcher } from './AgchainOrganizationSwitcher';
@@ -83,7 +83,9 @@ describe('AgchainOrganizationSwitcher', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('button', { name: /personal workspace/i })).toBeInTheDocument();
+    const trigger = screen.getByRole('button', { name: /personal workspace/i });
+    expect(trigger).toBeInTheDocument();
+    expect(within(trigger).getByText('Personal workspace · 2 projects')).toBeInTheDocument();
   });
 
   it('lists available organizations and allows switching', async () => {

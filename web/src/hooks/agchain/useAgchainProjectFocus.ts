@@ -41,7 +41,9 @@ export function useAgchainProjectFocus() {
     }
     if (loading) {
       setPendingLegacySlug(readStoredAgchainProjectFocusSlug());
+      return;
     }
+    setPendingLegacySlug(null);
   }, [loading, selectedProject?.project_slug]);
 
   const items = useMemo(
