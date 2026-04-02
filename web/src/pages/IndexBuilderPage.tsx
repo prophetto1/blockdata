@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useIndexBuilderList } from '@/hooks/useIndexBuilderList';
 import { useIndexBuilderJob } from '@/hooks/useIndexBuilderJob';
 import { IndexJobsList } from '@/components/pipelines/IndexJobsList';
@@ -10,29 +11,44 @@ import { IndexJobArtifactsTab } from '@/components/pipelines/IndexJobArtifactsTa
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
+function parseSelectedJobId(rawValue: string | null) {
+  const trimmed = rawValue?.trim() ?? '';
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 export default function IndexBuilderPage() {
   const list = useIndexBuilderList();
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedJobId = parseSelectedJobId(searchParams.get('job'));
+  const updateSelectedJobId = useCallback((nextJobId: string | null) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    if (nextJobId) {
+      nextSearchParams.set('job', nextJobId);
+    } else {
+      nextSearchParams.delete('job');
+    }
+    setSearchParams(nextSearchParams);
+  }, [searchParams, setSearchParams]);
   const job = useIndexBuilderJob(selectedJobId, {
-    onJobSaved: (sourceSetId) => setSelectedJobId(sourceSetId),
+    onJobSaved: (sourceSetId) => updateSelectedJobId(sourceSetId),
   });
 
   function selectJob(jobId: string) {
-    setSelectedJobId(jobId);
+    updateSelectedJobId(jobId);
   }
 
   function createNewJob() {
-    setSelectedJobId('new');
+    updateSelectedJobId('new');
   }
 
   function backToList() {
-    setSelectedJobId(null);
+    updateSelectedJobId(null);
     void list.refreshList();
   }
 
   const handleDiscard = () => {
     if (job.isNewJob) {
-      setSelectedJobId(null);
+      updateSelectedJobId(null);
     } else {
       job.discardChanges();
     }
@@ -143,8 +159,11 @@ export default function IndexBuilderPage() {
             <Skeleton className="mt-4 h-64 w-full" />
           </div>
         ) : job.loadError ? (
-          <div className="flex flex-1 flex-col items-center justify-center p-4">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
             <p className="text-sm text-destructive">{job.loadError}</p>
+            <Button type="button" size="sm" variant="outline" onClick={backToList}>
+              Return to list
+            </Button>
           </div>
         ) : (
           <div className="min-h-0 flex-1 overflow-y-auto">

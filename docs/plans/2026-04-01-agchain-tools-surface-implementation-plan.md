@@ -969,3 +969,109 @@ Completion note:
 - Current placeholder and stale client contract verified from:
   - `web/src/pages/agchain/AgchainToolsPage.tsx`
   - `web/src/lib/agchainTools.ts`
+
+---
+
+## Post-Implementation Evaluation (2026-04-01)
+
+**Evaluator:** Claude (evaluating-implemented-plan skill)
+**Date:** 2026-04-01
+
+### Reviewed Inputs
+
+- Approved plan: this document
+- Code reviewed: All 23 files in the locked file inventory — backend routes, domain modules, migration, frontend pages, components, hooks, service modules, tests
+- Tests reviewed: `pytest -q tests/test_agchain_tools.py` (17 passed), `pytest -q tests/test_agchain_benchmarks.py -k tool` (10 passed), `vitest run AgchainToolsPage.test.tsx` (3 passed), `vitest run AgchainBenchmarkWorkbenchPage.test.tsx` (2 passed)
+- Source verification: Migration SQL, auth helper calls, trace spans, metric registrations, structured logs
+
+### Compliance Verdict
+
+**Verdict:** `Non-Compliant`
+
+**Compliance rate:** ~78% of locked contract items verified. Multiple observability gaps and 1 missing test file.
+
+### Critical Deviations (3)
+
+1. **Missing `AgchainBenchmarkToolBag.test.tsx`** — Locked file inventory declares this file. It does not exist. The AgchainBenchmarkToolBag component (203 lines) has zero test coverage.
+
+2. **10 missing observability items** — The plan locks 43 observability contract items. 10 are absent:
+   - 3 internal traces missing: `agchain.tools.catalog.merge`, `agchain.tools.manifest.resolve`, `agchain.tools.bindings.resolve`
+   - 3 structured logs missing: `agchain.tools.version_published`, `agchain.tools.archived`, `agchain.tools.manifest_resolution_failed`
+   - 1 route trace wrong: resolved manifest reuses `agchain.benchmarks.tools.get` instead of `agchain.benchmarks.tools.resolved`
+   - 1 counter missing: `platform.agchain.benchmarks.tools.resolved.count`
+   - 2 histograms missing: `platform.agchain.tools.manifest.resolve.duration_ms`, `platform.agchain.benchmarks.tools.resolved.duration_ms`
+
+3. **AgchainBenchmarkWorkbenchPage.tsx is a redirect stub, not a workbench** — The plan explicitly tasks this page with wiring the tool bag editor and resolved preview. In reality it's a 26-line redirect to `/settings/project/benchmark-definition`. The tool bag IS functional but lives in `AgchainBenchmarksPage.tsx` via `useAgchainBenchmarkSteps` — an undeclared architectural deviation from the plan.
+
+### Minor Deviations (2)
+
+1. **Auth checks in domain layer vs route handlers** — The plan says routes must "immediately call" `require_project_access`/`require_project_write_access`. The implementation delegates these to `tool_registry.py` domain functions, which DO call the same helpers with correct role gating (publish/archive use `allowed_project_roles=("project_admin",)`). Functionally correct, architecturally different. Existing observability traces still fire via the helpers.
+
+2. **Benchmark tools replace counter name** — `platform.agchain.benchmarks.tools.replace.counter` vs plan's `platform.agchain.benchmarks.tools.replace.count`. Naming inconsistency.
+
+### Manifest Audit
+
+#### Platform API
+
+All 15 route contracts (13 new + 2 modified) exist with correct verbs and paths. Compliant.
+
+#### Observability
+
+| Category | Required | Found | Missing |
+|----------|----------|-------|---------|
+| Route traces | 13 | 12 | `agchain.benchmarks.tools.resolved` (reuses `.get`) |
+| Internal traces | 5 | 2 | `catalog.merge`, `manifest.resolve`, `bindings.resolve` |
+| Structured logs | 5 | 2 | `version_published`, `archived`, `manifest_resolution_failed` |
+| Counters | 13 | 12 | `benchmarks.tools.resolved.count` |
+| Histograms | 7 | 5 | `tools.manifest.resolve.duration_ms`, `benchmarks.tools.resolved.duration_ms` |
+| **Total** | **43** | **33** | **10 (23% gap)** |
+
+#### Database Migration
+
+`20260401123000_agchain_tools_runtime_refs.sql` — Fully compliant. `source_kind` added with CHECK constraint, `tool_ref` added and backfilled, `tool_version_id` made nullable, no destructive rewrites.
+
+#### Edge Functions
+
+None created or modified — Compliant.
+
+#### Frontend Surface Area
+
+| Item | Plan | Reality | Status |
+|------|------|---------|--------|
+| New components (tools/) | 4 | 4 | Compliant |
+| New benchmark component | 1 | 1 | Compliant |
+| New benchmark component test | 1 | 0 | **Missing** |
+| New hook (useAgchainTools) | 1 | 1 | Compliant |
+| New tools page test | 1 | 1 | Compliant |
+| Modified AgchainToolsPage | placeholder → real | real registry | Compliant |
+| Modified agchainTools.ts | stale → new contract | new fetch functions | Compliant |
+| Modified agchainBenchmarks.ts | add tool bag functions | 3 functions added | Compliant |
+| Modified workbench page | wire tool bag | redirect stub | **Deviation** |
+| Modified workbench test | tool bag tests | redirect tests only | **Deviation** |
+
+### Undeclared Additions
+
+1. `useAgchainBenchmarkSteps` hook — not in the plan's file inventory, manages tool bag state for the benchmarks page.
+2. Tool bag wired into `AgchainBenchmarksPage.tsx` instead of `AgchainBenchmarkWorkbenchPage.tsx`.
+
+### Verification Evidence
+
+| Test Suite | Result |
+|------------|--------|
+| `pytest tests/test_agchain_tools.py` | 17 passed |
+| `pytest tests/test_agchain_benchmarks.py -k tool` | 10 passed |
+| `vitest AgchainToolsPage.test.tsx` | 3 passed |
+| `vitest AgchainBenchmarkWorkbenchPage.test.tsx` | 2 passed (redirect tests only) |
+
+### Approval Recommendation
+
+**Recommendation:** `Reject — Remediation Required`
+
+**Remediation list:**
+
+1. Create `web/src/components/agchain/benchmarks/AgchainBenchmarkToolBag.test.tsx` — locked file, zero coverage on a 203-line component.
+2. Add 3 missing internal traces in domain modules: `agchain.tools.catalog.merge` in `tool_catalog.py`, `agchain.tools.manifest.resolve` in `tool_resolution.py`, `agchain.tools.bindings.resolve` in `tool_resolution.py`.
+3. Add 3 missing structured logs: `agchain.tools.version_published` (on publish success), `agchain.tools.archived` (on archive success), `agchain.tools.manifest_resolution_failed` (on resolution failure).
+4. Add dedicated resolved manifest trace `agchain.benchmarks.tools.resolved` instead of reusing `agchain.benchmarks.tools.get`.
+5. Add resolved manifest counter and histograms: `platform.agchain.benchmarks.tools.resolved.count`, `platform.agchain.benchmarks.tools.resolved.duration_ms`, `platform.agchain.tools.manifest.resolve.duration_ms`.
+6. Update plan or implementation to reconcile the workbench architectural deviation — either update the plan to reflect that the tool bag lives in `AgchainBenchmarksPage`, or move the tool bag editor to `AgchainBenchmarkWorkbenchPage` as planned.

@@ -92,9 +92,9 @@ function UnsupportedPipelineServiceRedirect() {
 }
 
 function AgchainIndexRedirect() {
-  const { focusedProject, loading } = useAgchainProjectFocus();
+  const { focusedProject, status } = useAgchainProjectFocus();
 
-  if (loading) {
+  if (status === 'bootstrapping') {
     return (
       <div className="flex min-h-full items-center justify-center bg-background px-6 py-12 text-sm text-muted-foreground">
         Loading AGChain project context...
@@ -102,7 +102,12 @@ function AgchainIndexRedirect() {
     );
   }
 
-  return <Navigate to={focusedProject ? '/app/agchain/overview' : '/app/agchain/projects'} replace />;
+  if (status === 'ready' && focusedProject) {
+    return <Navigate to="/app/agchain/overview" replace />;
+  }
+
+  // no-organization, no-project, and error all land on the projects registry surface
+  return <Navigate to="/app/agchain/projects" replace />;
 }
 
 export const router = createBrowserRouter([

@@ -5,6 +5,7 @@ import { AgchainToolInspector } from '@/components/agchain/tools/AgchainToolInsp
 import { AgchainToolsTable } from '@/components/agchain/tools/AgchainToolsTable';
 import type { AgchainToolEditorState } from '@/components/agchain/tools/AgchainToolSourceEditor';
 import { useAgchainTools } from '@/hooks/agchain/useAgchainTools';
+import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 import type { AgchainToolMutationPayload } from '@/lib/agchainTools';
 import { AgchainPageFrame } from './AgchainPageFrame';
 
@@ -102,6 +103,40 @@ export default function AgchainToolsPage() {
     } catch (nextError) {
       setDialogError(nextError instanceof Error ? nextError.message : 'Tool save failed');
     }
+  }
+
+  const { status, reload: reloadWorkspace } = useAgchainProjectFocus();
+
+  if (status === 'bootstrapping') {
+    return (
+      <AgchainPageFrame className="gap-4 py-6">
+        <div className="flex flex-1 items-center justify-center rounded-3xl border border-border/70 bg-card/70 px-6 py-12 text-center shadow-sm">
+          <p className="text-sm text-muted-foreground">Loading workspace...</p>
+        </div>
+      </AgchainPageFrame>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <AgchainPageFrame className="gap-4 py-6">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-3xl border border-border/70 bg-card/70 px-6 py-12 text-center shadow-sm">
+          <p className="text-sm text-muted-foreground">Failed to load AGChain workspace context.</p>
+          <button onClick={() => void reloadWorkspace()} className="text-sm font-medium text-foreground underline-offset-4 hover:underline">Retry</button>
+        </div>
+      </AgchainPageFrame>
+    );
+  }
+
+  if (status === 'no-organization') {
+    return (
+      <AgchainPageFrame className="gap-4 py-6">
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-3xl border border-border/70 bg-card/70 px-6 py-12 text-center shadow-sm">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">No organization</h1>
+          <p className="text-sm text-muted-foreground">Select or create an organization to continue.</p>
+        </div>
+      </AgchainPageFrame>
+    );
   }
 
   if (!focusedProject) {

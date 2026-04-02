@@ -1,36 +1,62 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
-  AGCHAIN_PROJECT_FOCUS_CHANGED_EVENT,
   AGCHAIN_PROJECT_FOCUS_STORAGE_KEY,
-  AGCHAIN_PROJECT_LIST_CHANGED_EVENT,
-  broadcastAgchainProjectListChanged,
+  AGCHAIN_PROJECT_FOCUS_ID_STORAGE_KEY,
+  AGCHAIN_ORGANIZATION_FOCUS_STORAGE_KEY,
   readStoredAgchainProjectFocusSlug,
-  setStoredAgchainProjectFocusSlug,
+  readStoredAgchainProjectFocusId,
+  readStoredAgchainOrganizationFocusId,
+  writeStoredAgchainWorkspaceFocus,
 } from './agchainProjectFocus';
 
-describe('agchainProjectFocus', () => {
-  it('persists focus changes and broadcasts the focused slug event', () => {
-    const handler = vi.fn();
-    window.addEventListener(AGCHAIN_PROJECT_FOCUS_CHANGED_EVENT, handler);
+afterEach(() => {
+  window.localStorage.clear();
+});
 
-    setStoredAgchainProjectFocusSlug('finance-eval');
-
+describe('agchainProjectFocus localStorage utilities', () => {
+  it('writes and reads project focus slug', () => {
+    writeStoredAgchainWorkspaceFocus({ focusedProjectSlug: 'finance-eval' });
     expect(readStoredAgchainProjectFocusSlug()).toBe('finance-eval');
     expect(window.localStorage.getItem(AGCHAIN_PROJECT_FOCUS_STORAGE_KEY)).toBe('finance-eval');
-    expect(handler).toHaveBeenCalledTimes(1);
-
-    window.removeEventListener(AGCHAIN_PROJECT_FOCUS_CHANGED_EVENT, handler);
   });
 
-  it('broadcasts project-list invalidation with the newly focused slug', () => {
-    const handler = vi.fn();
-    window.addEventListener(AGCHAIN_PROJECT_LIST_CHANGED_EVENT, handler);
+  it('writes and reads project focus id', () => {
+    writeStoredAgchainWorkspaceFocus({ focusedProjectId: 'project-1' });
+    expect(readStoredAgchainProjectFocusId()).toBe('project-1');
+    expect(window.localStorage.getItem(AGCHAIN_PROJECT_FOCUS_ID_STORAGE_KEY)).toBe('project-1');
+  });
 
-    broadcastAgchainProjectListChanged('legal-10');
+  it('writes and reads organization focus id', () => {
+    writeStoredAgchainWorkspaceFocus({ focusedOrganizationId: 'org-1' });
+    expect(readStoredAgchainOrganizationFocusId()).toBe('org-1');
+    expect(window.localStorage.getItem(AGCHAIN_ORGANIZATION_FOCUS_STORAGE_KEY)).toBe('org-1');
+  });
 
-    expect(window.localStorage.getItem(AGCHAIN_PROJECT_FOCUS_STORAGE_KEY)).toBe('legal-10');
-    expect(handler).toHaveBeenCalledTimes(1);
+  it('clears values when set to null', () => {
+    writeStoredAgchainWorkspaceFocus({
+      focusedOrganizationId: 'org-1',
+      focusedProjectId: 'project-1',
+      focusedProjectSlug: 'finance-eval',
+    });
+    writeStoredAgchainWorkspaceFocus({
+      focusedOrganizationId: null,
+      focusedProjectId: null,
+      focusedProjectSlug: null,
+    });
+    expect(readStoredAgchainOrganizationFocusId()).toBeNull();
+    expect(readStoredAgchainProjectFocusId()).toBeNull();
+    expect(readStoredAgchainProjectFocusSlug()).toBeNull();
+  });
 
-    window.removeEventListener(AGCHAIN_PROJECT_LIST_CHANGED_EVENT, handler);
+  it('does not overwrite values when fields are undefined', () => {
+    writeStoredAgchainWorkspaceFocus({
+      focusedOrganizationId: 'org-1',
+      focusedProjectId: 'project-1',
+      focusedProjectSlug: 'slug-1',
+    });
+    writeStoredAgchainWorkspaceFocus({ focusedProjectSlug: 'slug-2' });
+    expect(readStoredAgchainOrganizationFocusId()).toBe('org-1');
+    expect(readStoredAgchainProjectFocusId()).toBe('project-1');
+    expect(readStoredAgchainProjectFocusSlug()).toBe('slug-2');
   });
 });

@@ -26,7 +26,7 @@ const TABS: { key: DetailTab; label: string }[] = [
 export default function AgchainDatasetDetailPage() {
   const { datasetId } = useParams<{ datasetId: string }>();
   const navigate = useNavigate();
-  const { focusedProject } = useAgchainProjectFocus();
+  const { focusedProject, status, reload: reloadWorkspace } = useAgchainProjectFocus();
   const projectId = focusedProject?.project_id ?? null;
 
   const {
@@ -103,6 +103,36 @@ export default function AgchainDatasetDetailPage() {
     },
     [selectSample],
   );
+
+  if (status === 'bootstrapping') {
+    return (
+      <AgchainPageFrame>
+        <div className="flex flex-1 items-center justify-center"><p className="text-sm text-muted-foreground">Loading workspace...</p></div>
+      </AgchainPageFrame>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <AgchainPageFrame>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <p className="text-sm text-muted-foreground">Failed to load AGChain workspace context.</p>
+          <button onClick={() => void reloadWorkspace()} className="text-sm font-medium text-foreground underline-offset-4 hover:underline">Retry</button>
+        </div>
+      </AgchainPageFrame>
+    );
+  }
+
+  if (status === 'no-organization') {
+    return (
+      <AgchainPageFrame>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">No organization</h1>
+          <p className="text-sm text-muted-foreground">Select or create an organization to continue.</p>
+        </div>
+      </AgchainPageFrame>
+    );
+  }
 
   if (!datasetId || !projectId) {
     return (

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useProjectFocus } from './useProjectFocus';
 import { useResolvedPipelineService } from '@/pages/usePipelineServicesOverview';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
@@ -10,7 +9,6 @@ export function useIndexBuilderList() {
   const { resolvedProjectId } = useProjectFocus();
   const { service } = useResolvedPipelineService('index-builder');
   const pipelineKind = service?.pipelineKind ?? null;
-  const navigate = useNavigate();
 
   useShellHeaderTitle({
     breadcrumbs: ['Pipeline Services', service?.label ?? 'Index Builder'],
@@ -61,21 +59,11 @@ export function useIndexBuilderList() {
     void refreshList();
   }, [refreshList]);
 
-  const navigateToJob = useCallback((jobId: string) => {
-    navigate(`/app/pipeline-services/index-builder/${jobId}`);
-  }, [navigate]);
-
-  const navigateToNewJob = useCallback(() => {
-    navigate('/app/pipeline-services/index-builder/new');
-  }, [navigate]);
-
   return {
     indexJobs,
     isLoading,
     error,
     refreshList,
-    navigateToJob,
-    navigateToNewJob,
     resolvedProjectId,
   };
 }

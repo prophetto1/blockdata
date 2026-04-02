@@ -10,10 +10,39 @@ import {
   type PipelineDeliverable,
 } from '@/lib/pipelineService';
 import { deriveIndexJobStatus, type IndexJobStatus } from '@/lib/indexJobStatus';
+import type { PipelineSourceSet } from '@/lib/pipelineSourceSetService';
 
 type UseIndexBuilderJobOptions = {
   onJobSaved?: (sourceSetId: string) => void;
 };
+
+type SavedJobSnapshot = {
+  jobName: string;
+  sourceSetId: string | null;
+  selectedSourceUids: string[];
+};
+
+const DEFAULT_JOB_NAME = 'Untitled index job';
+
+function orderSourceUids(sourceSet: PipelineSourceSet) {
+  return sourceSet.items
+    .slice()
+    .sort((left, right) => left.source_order - right.source_order)
+    .map((item) => item.source_uid);
+}
+
+function buildSavedSnapshot(sourceSet: PipelineSourceSet): SavedJobSnapshot {
+  return {
+    jobName: sourceSet.label,
+    sourceSetId: sourceSet.source_set_id,
+    selectedSourceUids: orderSourceUids(sourceSet),
+  };
+}
+
+function sameSelection(left: string[], right: string[]) {
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
 
 export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuilderJobOptions) {
   const isNewJob = jobId === 'new';
@@ -37,9 +66,8 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
     sourceSetId: pipelineSourceSet.activeSourceSetId,
   });
 
-  const [jobName, setJobName] = useState('Untitled index job');
-  const [savedName, setSavedName] = useState('');
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [jobName, setJobName] = useState(DEFAULT_JOB_NAME);
+  const [savedSnapshot, setSavedSnapshot] = useState<SavedJobSnapshot | null>(null);
   const [isLoading, setIsLoading] = useState(!isNewJob);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -49,10 +77,12 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
   useEffect(() => {
     if (isNewJob || !jobId || !pipelineKind) {
       setIsLoading(false);
+      setLoadError(null);
       if (isNewJob) {
         pipelineSourceSet.resetSelection();
-        pipelineSourceSet.setSourceSetLabel('Untitled index job');
-        setHasUnsavedChanges(true);
+        pipelineSourceSet.setSourceSetLabel(DEFAULT_JOB_NAME);
+        setJobName(DEFAULT_JOB_NAME);
+        setSavedSnapshot(null);
       }
       return;
     }
@@ -63,10 +93,17 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
         setIsLoading(true);
         setLoadError(null);
         const detail = await pipelineSourceSet.loadSourceSet(jobId!);
-        if (!cancelled && detail) {
-          setJobName(detail.label);
-          setSavedName(detail.label);
-          setHasUnsavedChanges(false);
+        if (!detail) {
+          if (!cancelled) {
+            setLoadError('Unable to load this job.');
+            setSavedSnapshot(null);
+          }
+          return;
+        }
+        if (!cancelled) {
+          const nextSnapshot = buildSavedSnapshot(detail);
+          setJobName(nextSnapshot.jobName);
+          setSavedSnapshot(nextSnapshot);
         }
         await pipelineJob.refreshLatestJob(jobId);
       } catch {
@@ -79,6 +116,16 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
     return () => { cancelled = true; };
   }, [jobId, pipelineKind]);
 
+  const hasUnsavedChanges = isNewJob
+    ? true
+    : savedSnapshot
+      ? (
+        jobName !== savedSnapshot.jobName
+        || pipelineSourceSet.activeSourceSetId !== savedSnapshot.sourceSetId
+        || !sameSelection(pipelineSourceSet.selectedSourceUids, savedSnapshot.selectedSourceUids)
+      )
+      : false;
+
   // Derive status
   const status: IndexJobStatus = deriveIndexJobStatus(
     isNewJob
@@ -90,27 +137,27 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
 
   const updateName = useCallback((name: string) => {
     setJobName(name);
-    setHasUnsavedChanges(true);
-  }, []);
+    pipelineSourceSet.setSourceSetLabel(name);
+  }, [pipelineSourceSet]);
+
+  const persistCurrentSourceSet = useCallback(async () => {
+    const saved = await pipelineSourceSet.persistSourceSet();
+    const nextSnapshot = buildSavedSnapshot(saved);
+    setJobName(nextSnapshot.jobName);
+    setSavedSnapshot(nextSnapshot);
+    return saved;
+  }, [pipelineSourceSet]);
 
   const saveDraft = useCallback(async () => {
-    const label = jobName.trim() || 'Untitled index job';
-    pipelineSourceSet.setSourceSetLabel(label);
-    const saved = await pipelineSourceSet.persistSourceSet();
-    setSavedName(label);
-    setHasUnsavedChanges(false);
+    const saved = await persistCurrentSourceSet();
     if (isNewJob) {
       onJobSavedRef.current?.(saved.source_set_id);
     }
-  }, [jobName, pipelineSourceSet, isNewJob]);
+  }, [isNewJob, persistCurrentSourceSet]);
 
   const startRun = useCallback(async () => {
     if (hasUnsavedChanges || isNewJob) {
-      const label = jobName.trim() || 'Untitled index job';
-      pipelineSourceSet.setSourceSetLabel(label);
-      const saved = await pipelineSourceSet.persistSourceSet();
-      setSavedName(label);
-      setHasUnsavedChanges(false);
+      const saved = await persistCurrentSourceSet();
       if (isNewJob) {
         onJobSavedRef.current?.(saved.source_set_id);
       }
@@ -118,7 +165,7 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
     } else {
       await pipelineJob.triggerJob();
     }
-  }, [hasUnsavedChanges, isNewJob, jobName, pipelineSourceSet, pipelineJob]);
+  }, [hasUnsavedChanges, isNewJob, persistCurrentSourceSet, pipelineJob]);
 
   const retryRun = useCallback(async () => {
     await pipelineJob.triggerJob();
@@ -134,7 +181,6 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
       });
     }
     await pipelineSourceSet.refreshSources();
-    setHasUnsavedChanges(true);
   }, [resolvedProjectId, service, pipelineSourceSet]);
 
   const handleDownload = useCallback(async (deliverable: PipelineDeliverable) => {
@@ -162,9 +208,11 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
   }, [pipelineJob.job]);
 
   const discardChanges = useCallback(() => {
-    setJobName(savedName);
-    setHasUnsavedChanges(false);
-  }, [savedName]);
+    if (!savedSnapshot) return;
+    setJobName(savedSnapshot.jobName);
+    pipelineSourceSet.setSourceSetLabel(savedSnapshot.jobName);
+    pipelineSourceSet.replaceSelection(savedSnapshot.selectedSourceUids);
+  }, [pipelineSourceSet, savedSnapshot]);
 
   return {
     // State

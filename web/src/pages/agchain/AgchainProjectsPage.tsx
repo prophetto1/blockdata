@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AgchainProjectCreateDialog } from '@/components/agchain/AgchainProjectCreateDialog';
-import {
-  broadcastAgchainProjectListChanged,
-  setStoredAgchainWorkspaceFocus,
-} from '@/lib/agchainProjectFocus';
+import { useAgchainWorkspace } from '@/contexts/AgchainWorkspaceContext';
 import {
   createAgchainProject,
-  fetchAgchainProjects,
   type AgchainProjectCreateRequest,
-  type AgchainProjectRow,
 } from '@/lib/agchainWorkspaces';
 import { AgchainPageFrame } from './AgchainPageFrame';
 
@@ -22,38 +17,18 @@ export default function AgchainProjectsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const createOpen = searchParams.get('new') === '1';
-  const [items, setItems] = useState<AgchainProjectRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadProjects() {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetchAgchainProjects();
-        if (!cancelled) {
-          setItems(response.items);
-        }
-      } catch (nextError) {
-        if (!cancelled) {
-          setError(nextError instanceof Error ? nextError.message : 'Failed to load AGChain projects.');
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadProjects();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    projects,
+    status,
+    error: workspaceError,
+    selectedProjectId,
+    selectedOrganizationId,
+    reloadAndSelect,
+    reload,
+  } = useAgchainWorkspace();
 
   function setCreateOpen(open: boolean) {
     const next = new URLSearchParams(searchParams);
@@ -71,17 +46,11 @@ export default function AgchainProjectsPage() {
     try {
       const result = await createAgchainProject({
         ...payload,
+        organization_id: payload.organization_id ?? selectedOrganizationId,
         seed_initial_benchmark: true,
         initial_benchmark_name: payload.project_name,
       });
-      setStoredAgchainWorkspaceFocus({
-        focusedProjectId: result.project_id,
-        focusedProjectSlug: result.project_slug,
-      });
-      broadcastAgchainProjectListChanged({
-        focusedProjectId: result.project_id,
-        focusedProjectSlug: result.project_slug,
-      });
+      await reloadAndSelect(result.project_id, result.project_slug);
       setCreateOpen(false);
       navigate(overviewPathForProject(result.project_slug));
     } catch (nextError) {
@@ -89,6 +58,40 @@ export default function AgchainProjectsPage() {
     } finally {
       setCreating(false);
     }
+  }
+
+  if (status === 'bootstrapping') {
+    return (
+      <AgchainPageFrame className="gap-6 py-8">
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-sm text-muted-foreground">Loading workspace...</p>
+        </div>
+      </AgchainPageFrame>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <AgchainPageFrame className="gap-6 py-8">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <p className="text-sm text-muted-foreground">{workspaceError ?? 'Failed to load AGChain workspace context.'}</p>
+          <button onClick={() => void reload()} className="text-sm font-medium text-foreground underline-offset-4 hover:underline">Retry</button>
+        </div>
+      </AgchainPageFrame>
+    );
+  }
+
+  if (status === 'no-organization') {
+    return (
+      <AgchainPageFrame className="gap-6 py-8">
+        <section className="rounded-3xl border border-border/70 bg-card/70 p-8 shadow-sm">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">No organization</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Select or create an organization using the sidebar before managing AGChain projects.
+          </p>
+        </section>
+      </AgchainPageFrame>
+    );
   }
 
   return (
@@ -138,21 +141,18 @@ export default function AgchainProjectsPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr>
-                  <td className="px-6 py-8 text-muted-foreground" colSpan={5}>
-                    Loading AGChain project workspaces...
-                  </td>
-                </tr>
-              ) : items.length === 0 ? (
+              {projects.length === 0 ? (
                 <tr>
                   <td className="px-6 py-8 text-muted-foreground" colSpan={5}>
                     No AGChain project workspaces have been created yet.
                   </td>
                 </tr>
               ) : (
-                items.map((item) => (
-                  <tr key={item.project_id} className="border-t border-border/60 align-top">
+                projects.map((item) => (
+                  <tr
+                    key={item.project_id}
+                    className={`border-t border-border/60 align-top ${item.project_id === selectedProjectId ? 'bg-accent/20' : ''}`}
+                  >
                     <td className="px-6 py-4 font-medium text-foreground">{item.project_name}</td>
                     <td className="px-6 py-4 text-muted-foreground">{item.project_slug}</td>
                     <td className="max-w-sm px-6 py-4 text-muted-foreground">{item.description}</td>

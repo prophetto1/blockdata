@@ -1,5 +1,7 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
+import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
 import { useAgchainProjectFocus } from './useAgchainProjectFocus';
 
 const fetchAgchainOrganizationsMock = vi.fn();
@@ -9,6 +11,10 @@ vi.mock('@/lib/agchainWorkspaces', () => ({
   fetchAgchainOrganizations: (...args: unknown[]) => fetchAgchainOrganizationsMock(...args),
   fetchAgchainProjects: (...args: unknown[]) => fetchAgchainProjectsMock(...args),
 }));
+
+function wrapper({ children }: { children: ReactNode }) {
+  return <AgchainWorkspaceProvider>{children}</AgchainWorkspaceProvider>;
+}
 
 describe('useAgchainProjectFocus', () => {
   beforeEach(() => {
@@ -63,7 +69,7 @@ describe('useAgchainProjectFocus', () => {
     window.localStorage.setItem('agchain.organizationFocusId', 'org-1');
     window.localStorage.setItem('agchain.projectFocusId', 'project-2');
 
-    const { result } = renderHook(() => useAgchainProjectFocus());
+    const { result } = renderHook(() => useAgchainProjectFocus(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.focusedProject?.project_name).toBe('Finance Workspace');
@@ -72,7 +78,7 @@ describe('useAgchainProjectFocus', () => {
   });
 
   it('falls back to the first available project row when no stored focus exists', async () => {
-    const { result } = renderHook(() => useAgchainProjectFocus());
+    const { result } = renderHook(() => useAgchainProjectFocus(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.focusedProjectSlug).toBe('legal-evals');
@@ -84,7 +90,7 @@ describe('useAgchainProjectFocus', () => {
   it('accepts a legacy benchmark slug and resolves it to the owning project row', async () => {
     window.localStorage.setItem('agchain.projectFocusSlug', 'finance-eval');
 
-    const { result } = renderHook(() => useAgchainProjectFocus());
+    const { result } = renderHook(() => useAgchainProjectFocus(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.focusedProjectSlug).toBe('finance-workspace');
@@ -94,14 +100,14 @@ describe('useAgchainProjectFocus', () => {
     expect(result.current.focusedProject?.project_name).toBe('Finance Workspace');
   });
 
-  it('hydrates the stored AGChain focus immediately before the project list finishes loading', () => {
-    window.localStorage.setItem('agchain.projectFocusSlug', 'finance-eval');
+  it('reports bootstrapping status before the project list finishes loading', () => {
     fetchAgchainProjectsMock.mockReturnValue(new Promise(() => {}));
 
-    const { result } = renderHook(() => useAgchainProjectFocus());
+    const { result } = renderHook(() => useAgchainProjectFocus(), { wrapper });
 
-    expect(result.current.focusedProjectSlug).toBe('finance-eval');
     expect(result.current.loading).toBe(true);
+    expect(result.current.status).toBe('bootstrapping');
+    expect(result.current.focusedProject).toBeNull();
   });
 
   it('clears a stale legacy slug after loading finishes without a matching project', async () => {
@@ -110,7 +116,7 @@ describe('useAgchainProjectFocus', () => {
       items: [],
     });
 
-    const { result } = renderHook(() => useAgchainProjectFocus());
+    const { result } = renderHook(() => useAgchainProjectFocus(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -118,24 +124,19 @@ describe('useAgchainProjectFocus', () => {
 
     expect(result.current.focusedProject).toBeNull();
     expect(result.current.focusedProjectSlug).toBeNull();
-    expect(window.localStorage.getItem('agchain.projectFocusSlug')).toBeNull();
+    expect(result.current.status).toBe('no-project');
   });
 
-  it('synchronizes focus changes across mounted hook instances', async () => {
-    const first = renderHook(() => useAgchainProjectFocus());
-    const second = renderHook(() => useAgchainProjectFocus());
+  it('exposes items as AgchainFocusedProjectRow with benchmark_slug and href', async () => {
+    const { result } = renderHook(() => useAgchainProjectFocus(), { wrapper });
 
     await waitFor(() => {
-      expect(first.result.current.focusedProjectSlug).toBe('legal-evals');
-      expect(second.result.current.focusedProjectSlug).toBe('legal-evals');
+      expect(result.current.items.length).toBe(2);
     });
 
-    act(() => {
-      first.result.current.setFocusedProjectSlug('finance-eval');
-    });
-
-    await waitFor(() => {
-      expect(second.result.current.focusedProjectSlug).toBe('finance-workspace');
-    });
+    const first = result.current.items[0];
+    expect(first.benchmark_slug).toBe('legal-10');
+    expect(first.benchmark_name).toBe('Legal-10');
+    expect(first.href).toContain('/app/agchain/overview?project=legal-evals');
   });
 });

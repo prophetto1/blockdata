@@ -7,6 +7,7 @@ import { AgchainOrganizationSwitcher } from '@/components/agchain/AgchainOrganiz
 import { AgchainProjectSwitcher } from '@/components/agchain/AgchainProjectSwitcher';
 import { LeftRailShadcn as AgchainChromeRail } from '@/components/shell/LeftRailShadcn';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
+import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
 import { styleTokens } from '@/lib/styleTokens';
 
 const AGCHAIN_SIDEBAR_WIDTH_KEY = 'agchain.shell.sidebar_width';
@@ -84,6 +85,7 @@ export function AgchainShellLayout() {
   };
 
   return (
+    <AgchainWorkspaceProvider>
     <div className="relative h-dvh overflow-hidden bg-background text-foreground">
       <header
         data-testid="agchain-top-header"
@@ -187,5 +189,6 @@ export function AgchainShellLayout() {
         </div>
       </main>
     </div>
+    </AgchainWorkspaceProvider>
   );
 }

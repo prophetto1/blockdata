@@ -65,11 +65,13 @@ describe('AgchainOverviewPage', () => {
     });
   });
 
-  it('keeps the four-box overview layout visible while project focus is still loading', () => {
+  it('shows loading skeleton while workspace is bootstrapping', () => {
     useAgchainProjectFocusMock.mockReturnValue({
       focusedProject: null,
-      focusedProjectSlug: 'legal-10',
+      focusedProjectSlug: null,
       loading: true,
+      status: 'bootstrapping',
+      reload: vi.fn(),
       setFocusedProjectSlug: vi.fn(),
     });
 
@@ -79,11 +81,8 @@ describe('AgchainOverviewPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Observability')).toBeInTheDocument();
-    expect(screen.getByText('Evaluation')).toBeInTheDocument();
-    expect(screen.getByText('Recently created')).toBeInTheDocument();
-    expect(screen.getByText('Project description')).toBeInTheDocument();
-    expect(screen.queryByText('Loading project overview...')).not.toBeInTheDocument();
+    expect(screen.getByText('Loading workspace...')).toBeInTheDocument();
+    expect(screen.queryByText('Observability')).not.toBeInTheDocument();
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {

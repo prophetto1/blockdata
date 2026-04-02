@@ -16,6 +16,11 @@ vi.mock('@/hooks/agchain/useAgchainBenchmarkSteps', () => ({
   useAgchainBenchmarkSteps: () => useAgchainBenchmarkStepsMock(),
 }));
 
+const useAgchainProjectFocusMock = vi.fn();
+vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
+  useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
+}));
+
 const PROJECT_ROW: AgchainBenchmarkRegistryRow & {
   project_id: string;
   project_slug: string;
@@ -136,6 +141,11 @@ afterEach(() => {
 
 describe('AgchainBenchmarksPage', () => {
   beforeEach(() => {
+    useAgchainProjectFocusMock.mockReset();
+    useAgchainProjectFocusMock.mockReturnValue({
+      status: 'ready',
+      reload: vi.fn(),
+    });
     useAgchainBenchmarkStepsMock.mockReset();
     useAgchainBenchmarkStepsMock.mockReturnValue({
       benchmark: WORKBENCH_DETAIL.benchmark,
@@ -336,6 +346,7 @@ describe('AgchainBenchmarksPage', () => {
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {
+    useAgchainProjectFocusMock.mockReturnValue({ status: 'no-project', reload: vi.fn() });
     useAgchainBenchmarkStepsMock.mockReturnValue({
       benchmark: null,
       currentVersion: null,

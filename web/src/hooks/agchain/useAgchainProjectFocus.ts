@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { AgchainProjectRow } from '@/lib/agchainWorkspaces';
 import {
   AGCHAIN_PROJECT_FOCUS_STORAGE_KEY,
-  readStoredAgchainProjectFocusSlug,
+  writeStoredAgchainWorkspaceFocus,
 } from '@/lib/agchainProjectFocus';
-import { useAgchainWorkspaceContext } from '@/hooks/agchain/useAgchainWorkspaceContext';
+import { useAgchainWorkspace, type AgchainWorkspaceStatus } from '@/contexts/AgchainWorkspaceContext';
 
 export { AGCHAIN_PROJECT_FOCUS_STORAGE_KEY };
 
@@ -24,53 +24,50 @@ function toFocusedProjectRow(project: AgchainProjectRow): AgchainFocusedProjectR
 }
 
 export function useAgchainProjectFocus() {
-  const {
-    projects,
-    loading,
-    error,
-    selectedProject,
-    setSelectedProjectId,
-    reload,
-  } = useAgchainWorkspaceContext();
-  const [pendingLegacySlug, setPendingLegacySlug] = useState<string | null>(() => readStoredAgchainProjectFocusSlug());
-
-  useEffect(() => {
-    if (selectedProject?.project_slug) {
-      setPendingLegacySlug(selectedProject.project_slug);
-      return;
-    }
-    if (loading) {
-      setPendingLegacySlug(readStoredAgchainProjectFocusSlug());
-      return;
-    }
-    setPendingLegacySlug(null);
-  }, [loading, selectedProject?.project_slug]);
+  const ctx = useAgchainWorkspace();
 
   const items = useMemo(
-    () => projects.map((project) => toFocusedProjectRow(project)),
-    [projects],
+    () => ctx.projects.map((project) => toFocusedProjectRow(project)),
+    [ctx.projects],
   );
 
   const focusedProject = useMemo(
-    () => (selectedProject ? toFocusedProjectRow(selectedProject) : null),
-    [selectedProject],
+    () => (ctx.selectedProject ? toFocusedProjectRow(ctx.selectedProject) : null),
+    [ctx.selectedProject],
   );
 
   const setFocusedProjectSlug = useCallback((slug: string | null) => {
-    const match = projects.find((project) => project.project_slug === slug || project.primary_benchmark_slug === slug);
-    setPendingLegacySlug(slug);
-    setSelectedProjectId(match?.project_id ?? null, match?.project_slug ?? slug);
-  }, [projects, setSelectedProjectId]);
+    if (!slug) {
+      ctx.setSelectedProjectId(null);
+      return;
+    }
+    // Case 2 (ready): resolve slug against loaded projects
+    const match = ctx.projects.find(
+      (p) => p.project_slug === slug || p.primary_benchmark_slug === slug,
+    );
+    if (match) {
+      ctx.setSelectedProjectId(match.project_id, match.project_slug);
+      return;
+    }
+    // Case 1 (bootstrapping): write slug to localStorage for reconciliation pickup
+    // Case 3 (ready, no match): no-op on provider state — slug is unknown in current org
+    if (ctx.status === 'bootstrapping') {
+      writeStoredAgchainWorkspaceFocus({
+        focusedProjectSlug: slug,
+      });
+    }
+  }, [ctx]);
 
-  const focusedProjectSlug = focusedProject?.project_slug ?? pendingLegacySlug;
+  const focusedProjectSlug = focusedProject?.project_slug ?? null;
 
   return {
     items,
-    loading,
-    error,
+    loading: ctx.status === 'bootstrapping',
+    error: ctx.error,
+    status: ctx.status as AgchainWorkspaceStatus,
     focusedProjectSlug,
     focusedProject,
     setFocusedProjectSlug,
-    reload,
+    reload: ctx.reload,
   };
 }

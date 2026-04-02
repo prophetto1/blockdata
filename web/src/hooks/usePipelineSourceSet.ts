@@ -135,6 +135,10 @@ export function usePipelineSourceSet({
     setSelectedSourceUids((current) => current.filter((item) => item !== sourceUid));
   }, []);
 
+  const replaceSelection = useCallback((sourceUids: string[]) => {
+    setSelectedSourceUids(sourceUids.slice());
+  }, []);
+
   const resetSelection = useCallback(() => {
     setSelectedSourceUids([]);
     setActiveSourceSetId(null);
@@ -208,6 +212,7 @@ export function usePipelineSourceSet({
     toggleSource,
     moveSource,
     removeSource,
+    replaceSelection,
     refreshSources,
     refreshSourceSet,
     resetSelection,

@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
 import IndexBuilderPage from './IndexBuilderPage';
 import type { IndexJobViewModel } from '@/lib/indexJobStatus';
@@ -51,8 +51,6 @@ function defaultListHook() {
     isLoading: false,
     error: null,
     refreshList: vi.fn(),
-    navigateToJob: vi.fn(),
-    navigateToNewJob: vi.fn(),
     resolvedProjectId: 'project-1',
   };
 }
@@ -116,11 +114,29 @@ function defaultJobHook() {
   };
 }
 
-function renderPage() {
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <div data-testid="location-display">
+      {location.pathname}
+      {location.search}
+    </div>
+  );
+}
+
+function renderPage(initialEntry = '/app/pipeline-services/index-builder') {
   render(
-    <MemoryRouter initialEntries={['/app/pipeline-services/index-builder']}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
-        <Route path="/app/pipeline-services/index-builder" element={<IndexBuilderPage />} />
+        <Route
+          path="/app/pipeline-services/index-builder"
+          element={(
+            <>
+              <IndexBuilderPage />
+              <LocationProbe />
+            </>
+          )}
+        />
       </Routes>
     </MemoryRouter>,
   );
@@ -165,7 +181,11 @@ describe('IndexBuilderPage — job detail view', () => {
       { id: 'set-1', name: 'Test Job', status: 'ready', memberCount: 2, totalBytes: 30000, createdAt: '2026-03-30T08:00:00Z', updatedAt: '2026-03-30T08:30:00Z', lastRunAt: null, latestJob: null },
     ];
     mockUseIndexBuilderList.mockReturnValue({ ...defaultListHook(), indexJobs: jobs });
-    mockUseIndexBuilderJob.mockReturnValue(defaultJobHook());
+    mockUseIndexBuilderJob.mockImplementation((jobId: string | null) => (
+      jobId === 'new'
+        ? { ...defaultJobHook(), isNewJob: true, status: 'draft', jobName: 'Untitled index job' }
+        : defaultJobHook()
+    ));
   });
 
   it('clicking a job row shows job detail', () => {
@@ -174,6 +194,9 @@ describe('IndexBuilderPage — job detail view', () => {
     // After click, job header should appear with the editable name
     expect(screen.getByDisplayValue('Test Job')).toBeInTheDocument();
     expect(screen.getByText('Ready')).toBeInTheDocument();
+    expect(screen.getByTestId('location-display')).toHaveTextContent(
+      '/app/pipeline-services/index-builder?job=set-1',
+    );
   });
 
   it('shows loading skeleton while job loads', () => {
@@ -233,5 +256,63 @@ describe('IndexBuilderPage — job detail view', () => {
     expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
     // The detail header input should be gone
     expect(screen.queryByDisplayValue('Test Job')).not.toBeInTheDocument();
+    expect(screen.getByTestId('location-display')).toHaveTextContent(
+      '/app/pipeline-services/index-builder',
+    );
+  });
+});
+
+describe('IndexBuilderPage — one-page search params', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    const jobs: IndexJobViewModel[] = [
+      { id: 'set-1', name: 'Test Job', status: 'ready', memberCount: 2, totalBytes: 30000, createdAt: '2026-03-30T08:00:00Z', updatedAt: '2026-03-30T08:30:00Z', lastRunAt: null, latestJob: null },
+    ];
+    mockUseIndexBuilderList.mockReturnValue({ ...defaultListHook(), indexJobs: jobs });
+    mockUseIndexBuilderJob.mockImplementation((jobId: string | null) => {
+      if (jobId === 'new') {
+        return { ...defaultJobHook(), isNewJob: true, status: 'draft', jobName: 'Untitled index job' };
+      }
+
+      if (jobId === 'missing') {
+        return { ...defaultJobHook(), loadError: 'Unable to load this job.' };
+      }
+
+      return defaultJobHook();
+    });
+  });
+
+  it('opens existing detail from the same-route job search param', () => {
+    renderPage('/app/pipeline-services/index-builder?job=set-1');
+
+    expect(screen.getByDisplayValue('Test Job')).toBeInTheDocument();
+    expect(screen.getByTestId('location-display')).toHaveTextContent(
+      '/app/pipeline-services/index-builder?job=set-1',
+    );
+  });
+
+  it('opens the draft flow from ?job=new on first render', () => {
+    renderPage('/app/pipeline-services/index-builder?job=new');
+
+    expect(screen.getByDisplayValue('Untitled index job')).toBeInTheDocument();
+    expect(screen.getByText('Save draft')).toBeInTheDocument();
+  });
+
+  it('treats a blank job query as list view', () => {
+    renderPage('/app/pipeline-services/index-builder?job=');
+
+    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Test Job')).not.toBeInTheDocument();
+  });
+
+  it('shows load errors for stale params and lets the user return to the list', () => {
+    renderPage('/app/pipeline-services/index-builder?job=missing');
+
+    expect(screen.getByText('Unable to load this job.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /return to list/i }));
+    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
+    expect(screen.getByTestId('location-display')).toHaveTextContent(
+      '/app/pipeline-services/index-builder',
+    );
   });
 });

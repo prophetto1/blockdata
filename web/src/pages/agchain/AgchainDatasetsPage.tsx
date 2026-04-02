@@ -7,7 +7,7 @@ import { useAgchainDatasets } from '@/hooks/agchain/useAgchainDatasets';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 
 export default function AgchainDatasetsPage() {
-  const { focusedProject } = useAgchainProjectFocus();
+  const { focusedProject, status, reload: reloadWorkspace } = useAgchainProjectFocus();
   const { items, loading, error } = useAgchainDatasets();
 
   const [search, setSearch] = useState('');
@@ -30,6 +30,36 @@ export default function AgchainDatasetsPage() {
     }
     return result;
   }, [items, search, sourceTypeFilter, validationFilter])();
+
+  if (status === 'bootstrapping') {
+    return (
+      <AgchainPageFrame className="gap-8 py-10">
+        <div className="flex flex-1 items-center justify-center"><p className="text-sm text-muted-foreground">Loading workspace...</p></div>
+      </AgchainPageFrame>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <AgchainPageFrame className="gap-8 py-10">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3">
+          <p className="text-sm text-muted-foreground">Failed to load AGChain workspace context.</p>
+          <button onClick={() => void reloadWorkspace()} className="text-sm font-medium text-foreground underline-offset-4 hover:underline">Retry</button>
+        </div>
+      </AgchainPageFrame>
+    );
+  }
+
+  if (status === 'no-organization') {
+    return (
+      <AgchainPageFrame className="gap-8 py-10">
+        <section className="rounded-3xl border border-border/70 bg-card/80 p-8 shadow-sm">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">No organization</h1>
+          <p className="mt-3 text-sm text-muted-foreground">Select or create an organization to continue.</p>
+        </section>
+      </AgchainPageFrame>
+    );
+  }
 
   if (!focusedProject) {
     return (

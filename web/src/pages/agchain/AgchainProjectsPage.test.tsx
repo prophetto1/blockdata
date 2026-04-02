@@ -3,12 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import AgchainProjectsPage from './AgchainProjectsPage';
 
-const platformApiFetchMock = vi.fn();
 const navigateMock = vi.fn();
-
-vi.mock('@/lib/platformApi', () => ({
-  platformApiFetch: (...args: unknown[]) => platformApiFetchMock(...args),
-}));
+const reloadAndSelectMock = vi.fn();
+const reloadMock = vi.fn();
+const useAgchainWorkspaceMock = vi.fn();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -18,12 +16,31 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+vi.mock('@/contexts/AgchainWorkspaceContext', () => ({
+  useAgchainWorkspace: () => useAgchainWorkspaceMock(),
+}));
+
+const createAgchainProjectMock = vi.fn();
+
+vi.mock('@/lib/agchainWorkspaces', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/agchainWorkspaces')>('@/lib/agchainWorkspaces');
+  return {
+    ...actual,
+    createAgchainProject: (...args: unknown[]) => createAgchainProjectMock(...args),
+  };
+});
+
+const PROJECT_ROW = {
+  project_id: 'project-1',
+  organization_id: 'org-1',
+  project_slug: 'legal-evals',
+  project_name: 'Legal Evals',
+  membership_role: 'project_admin',
+  updated_at: '2026-03-27T08:15:00Z',
+  description: 'Three-step benchmark package for legal analysis.',
+  primary_benchmark_slug: 'legal-10',
+  primary_benchmark_name: 'Legal-10',
+};
 
 afterEach(() => {
   cleanup();
@@ -31,42 +48,23 @@ afterEach(() => {
 
 describe('AgchainProjectsPage', () => {
   beforeEach(() => {
-    platformApiFetchMock.mockReset();
     navigateMock.mockReset();
-    platformApiFetchMock.mockImplementation((path: string, init?: RequestInit) => {
-      if (path === '/agchain/projects' && (!init?.method || init.method === 'GET')) {
-        return Promise.resolve(
-          jsonResponse({
-            items: [
-              {
-                project_id: 'project-1',
-                organization_id: 'org-1',
-                project_slug: 'legal-evals',
-                project_name: 'Legal Evals',
-                membership_role: 'project_admin',
-                updated_at: '2026-03-27T08:15:00Z',
-                description: 'Three-step benchmark package for legal analysis.',
-                primary_benchmark_slug: 'legal-10',
-                primary_benchmark_name: 'Legal-10',
-              },
-            ],
-          }),
-        );
-      }
+    reloadAndSelectMock.mockReset();
+    reloadMock.mockReset();
+    useAgchainWorkspaceMock.mockReset();
+    createAgchainProjectMock.mockReset();
 
-      if (path === '/agchain/projects' && init?.method === 'POST') {
-        return Promise.resolve(
-          jsonResponse({
-            ok: true,
-            project_id: 'project-2',
-            project_slug: 'new-project',
-            primary_benchmark_slug: 'new-benchmark',
-            redirect_path: '/app/agchain/projects/new-project',
-          }),
-        );
-      }
+    reloadAndSelectMock.mockResolvedValue(undefined);
+    reloadMock.mockResolvedValue(undefined);
 
-      return Promise.reject(new Error(`Unhandled platformApiFetch call: ${path}`));
+    useAgchainWorkspaceMock.mockReturnValue({
+      projects: [PROJECT_ROW],
+      status: 'ready',
+      error: null,
+      selectedProjectId: 'project-1',
+      selectedOrganizationId: 'org-1',
+      reloadAndSelect: reloadAndSelectMock,
+      reload: reloadMock,
     });
   });
 
@@ -79,7 +77,6 @@ describe('AgchainProjectsPage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Projects and evaluations' })).toBeInTheDocument();
     expect(screen.getByText(/shared workspace parent/i)).toBeInTheDocument();
-    expect(platformApiFetchMock).toHaveBeenCalledWith('/agchain/projects');
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Create Project' })).toBeInTheDocument();
@@ -98,16 +95,14 @@ describe('AgchainProjectsPage', () => {
   });
 
   it('shows an empty registry state when no project workspaces exist yet', async () => {
-    platformApiFetchMock.mockImplementation((path: string, init?: RequestInit) => {
-      if (path === '/agchain/projects' && (!init?.method || init.method === 'GET')) {
-        return Promise.resolve(
-          jsonResponse({
-            items: [],
-          }),
-        );
-      }
-
-      return Promise.reject(new Error(`Unhandled platformApiFetch call: ${path}`));
+    useAgchainWorkspaceMock.mockReturnValue({
+      projects: [],
+      status: 'no-project',
+      error: null,
+      selectedProjectId: null,
+      selectedOrganizationId: 'org-1',
+      reloadAndSelect: reloadAndSelectMock,
+      reload: reloadMock,
     });
 
     render(
@@ -122,6 +117,14 @@ describe('AgchainProjectsPage', () => {
   });
 
   it('creates a project workspace while keeping initial benchmark seeding as compatibility behavior', async () => {
+    createAgchainProjectMock.mockResolvedValue({
+      ok: true,
+      project_id: 'project-2',
+      project_slug: 'new-project',
+      primary_benchmark_slug: 'new-benchmark',
+      redirect_path: '/app/agchain/projects/new-project',
+    });
+
     render(
       <MemoryRouter>
         <AgchainProjectsPage />
@@ -144,10 +147,11 @@ describe('AgchainProjectsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create Project' }));
 
     await waitFor(() => {
-      expect(platformApiFetchMock).toHaveBeenCalledWith(
-        '/agchain/projects',
-        expect.objectContaining({ method: 'POST' }),
-      );
+      expect(createAgchainProjectMock).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(reloadAndSelectMock).toHaveBeenCalledWith('project-2', 'new-project');
     });
 
     expect(navigateMock).toHaveBeenCalledWith('/app/agchain/overview?project=new-project');

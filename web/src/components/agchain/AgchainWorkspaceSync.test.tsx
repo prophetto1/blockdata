@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
 import { AgchainOrganizationSwitcher } from './AgchainOrganizationSwitcher';
 import { AgchainProjectSwitcher } from './AgchainProjectSwitcher';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
@@ -115,9 +116,11 @@ describe('AGChain workspace synchronization', () => {
   it('keeps organization and project selectors synchronized when the org changes', async () => {
     render(
       <MemoryRouter>
-        <AgchainOrganizationSwitcher />
-        <AgchainProjectSwitcher />
-        <FocusProbe />
+        <AgchainWorkspaceProvider>
+          <AgchainOrganizationSwitcher />
+          <AgchainProjectSwitcher />
+          <FocusProbe />
+        </AgchainWorkspaceProvider>
       </MemoryRouter>,
     );
 
