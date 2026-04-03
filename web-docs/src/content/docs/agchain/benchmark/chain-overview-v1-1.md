@@ -1,7 +1,7 @@
 ---
-title: "Legal-10 chain overview"
+title: "Chain overview"
 sidebar:
-  order: 2
+  order: 1
 ---
 
 # Legal-10 Overview 

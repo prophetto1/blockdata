@@ -1,7 +1,7 @@
 ---
-title: "Legal-10 technical specification v1.1"
+title: "Technical specification v1.1"
 sidebar:
-  order: 1
+  order: 2
 ---
 
 **IMPORTANT:** This document to be updated into the one canonical product and technical specification for the Legal-10 Evaluation Benchmark, including describing how the benchmark integrates into the AGChain platform. Currently, the scope of such integration includes compatibility, integration and inter-operability between the PDRunner and Legal-10.

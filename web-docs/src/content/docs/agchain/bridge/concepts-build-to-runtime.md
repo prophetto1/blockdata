@@ -1,6 +1,7 @@
 ---
-title: "Build-Time to Runtime: Core Concepts"
-description: How benchmark authoring in the AGChain platform produces sealed artifacts that the runner executes — the vocabulary, the pipeline, and the separation of concerns.
+title: "Build-time to runtime: core concepts"
+sidebar:
+  order: 2
 ---
 
 This document explains the core concepts that connect AGChain's authoring platform to its execution engine. It uses references to source materials organized elsewhere in these docs.

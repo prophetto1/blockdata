@@ -1,7 +1,7 @@
 ---
 title: "Citation depth labeling specification"
 sidebar:
-  order: 1
+  order: 7
 ---
 
 # Citation Depth Labeling Specification

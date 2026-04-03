@@ -1,7 +1,7 @@
 ---
 title: "IRAC pair scoring guide"
 sidebar:
-  order: 1
+  order: 6
 ---
 
 # IRAC Pair Scoring Guide (General: Step N + Step N+1)

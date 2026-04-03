@@ -1,6 +1,7 @@
 ---
 title: "AGChain Product Vision"
-description: Two products on one platform — benchmark authoring for data scientists, agent arena for AI engineers — sharing the same execution infrastructure.
+sidebar:
+  order: 1
 ---
 
 ## The Core Idea

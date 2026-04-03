@@ -1,5 +1,5 @@
 ---
-title: "3-step to platform bridge analysis"
+title: "CLI prototype to platform bridge analysis"
 sidebar:
   order: 3
 ---

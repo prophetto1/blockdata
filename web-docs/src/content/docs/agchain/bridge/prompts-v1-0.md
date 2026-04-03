@@ -1,5 +1,5 @@
 ---
-title: "Prompts v1.0: prompt as state protocol"
+title: "Prompt protocol foundation (v1.0)"
 sidebar:
   order: 7
 ---

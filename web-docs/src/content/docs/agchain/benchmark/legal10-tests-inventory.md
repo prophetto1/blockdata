@@ -1,7 +1,7 @@
 ---
-title: "Legal-10 tests inventory"
+title: "Tests inventory"
 sidebar:
-  order: 7
+  order: 5
 ---
 
 # Legal-10 Tests — Complete Inventory

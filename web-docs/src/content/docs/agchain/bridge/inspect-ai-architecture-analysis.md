@@ -1,5 +1,5 @@
 ---
-title: "Inspect AI architecture analysis"
+title: "Inspect AI architecture reference"
 sidebar:
   order: 4
 ---

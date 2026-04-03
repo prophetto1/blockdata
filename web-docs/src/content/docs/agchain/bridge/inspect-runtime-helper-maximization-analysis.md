@@ -1,5 +1,5 @@
 ---
-title: "Inspect runtime helper adoption analysis"
+title: "Inspect integration strategy"
 sidebar:
   order: 5
 ---

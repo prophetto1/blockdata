@@ -108,45 +108,45 @@ def enforce_per_file_limit(size_bytes: int, max_bytes: int) -> None:
         raise ValueError("file too large")
 
 
-def _signing_email() -> str | None:
-    """Return the SA email for signBlob-based signing on Cloud Run.
+def _signblob_kwargs() -> dict:
+    """Return extra kwargs for signBlob-based signing on Cloud Run.
 
     On Cloud Run there is no local private key, so the GCS library must
-    fall back to the IAM signBlob API.  Passing ``service_account_email``
-    triggers that path.  Locally (with a key-file), this returns None and
-    the library signs in-process.
+    use the IAM signBlob API.  This requires both ``service_account_email``
+    and ``access_token``.  Locally (with a key-file), the credentials have
+    a signer and these extras are not needed.
     """
     creds = _gcs_client()._credentials
-    return getattr(creds, "service_account_email", None)
+    email = getattr(creds, "service_account_email", None)
+    if not email or hasattr(creds, "sign_bytes"):
+        return {}
+    # Refresh to ensure we have a current access token for the signBlob call.
+    from google.auth.transport import requests as auth_requests
+    creds.refresh(auth_requests.Request())
+    return {"service_account_email": email, "access_token": creds.token}
 
 
 def create_signed_upload_url(bucket_name: str, object_key: str, content_type: str) -> str:
     bucket = _gcs_client().bucket(bucket_name)
     blob = bucket.blob(object_key)
-    kwargs: dict = dict(
+    return blob.generate_signed_url(
         version="v4",
         expiration=timedelta(minutes=SIGNED_URL_MINUTES),
         method="PUT",
         content_type=content_type,
+        **_signblob_kwargs(),
     )
-    email = _signing_email()
-    if email:
-        kwargs["service_account_email"] = email
-    return blob.generate_signed_url(**kwargs)
 
 
 def create_signed_download_url(*, bucket_name: str, object_key: str) -> str:
     bucket = _gcs_client().bucket(bucket_name)
     blob = bucket.blob(object_key)
-    kwargs: dict = dict(
+    return blob.generate_signed_url(
         version="v4",
         expiration=timedelta(minutes=SIGNED_URL_MINUTES),
         method="GET",
+        **_signblob_kwargs(),
     )
-    email = _signing_email()
-    if email:
-        kwargs["service_account_email"] = email
-    return blob.generate_signed_url(**kwargs)
 
 
 def get_object_size_bytes(bucket_name: str, object_key: str) -> int | None:

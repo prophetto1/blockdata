@@ -36,16 +36,15 @@ export default {
 
   'agchain/benchmark': {
     label: 'Benchmark',
-    order: ['legalchain', 'fdq'],
+    order: ['datasets', 'fdq'],
+  },
+
+  'agchain/benchmark/datasets': {
+    label: 'Datasets',
   },
 
   'agchain/benchmark/fdq': {
     label: 'FDQ',
-  },
-
-  'agchain/benchmark/legalchain': {
-    label: 'Legal Chain',
-    order: ['datasets', 'legal-10'],
   },
 
 'agchain/bridge': {
