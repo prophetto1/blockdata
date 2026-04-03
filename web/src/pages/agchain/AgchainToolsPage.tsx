@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
-import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
+import { ShellPageHeader } from '@/components/shell/ShellPageHeader';
 import { Button } from '@/components/ui/button';
 import {
   ComboboxRoot,
@@ -206,7 +206,7 @@ export default function AgchainToolsPage() {
 
   return (
     <AgchainPageFrame className="gap-4 py-6">
-      <AgchainShellPageHeader
+      <ShellPageHeader
         title="Tools"
         description={`Manage the merged tool registry for ${scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}: built-in catalog rows stay read-only while project-authored definitions can be versioned, published, and attached to benchmark tool bags.`}
       />

@@ -6,7 +6,7 @@ import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { LeftRailShadcn } from '@/components/shell/LeftRailShadcn';
 import { RightRailShell } from '@/components/shell/RightRailShell';
-import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
+import { HeaderCenterProvider, useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { RightRailProvider, useRightRailContext } from '@/components/shell/RightRailContext';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
 import { AppPageShell } from '@/components/layout/AppPageShell';
@@ -100,6 +100,7 @@ function AppShellInner() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
+  const { pageHeader } = useHeaderCenter();
   const rightRail = useRightRailContext();
 
   const handleSignOut = async () => {
@@ -243,7 +244,7 @@ function AppShellInner() {
   }, [lockMainScroll]);
 
   const headerHeight = isMobile ? styleTokens.shell.headerHeightMobile
-    : styleTokens.shell.headerHeight;
+    : pageHeader ? styleTokens.shell.headerTallHeight : styleTokens.shell.headerHeight;
 
   const shellVars = {
     '--app-shell-navbar-offset': '0px',
@@ -309,6 +310,7 @@ function AppShellInner() {
             shellGuides={isEditorLayoutRoute}
             hideProjectSwitcher={isSuperuserRoute}
             hideSearch={isSuperuserRoute}
+            primaryContext={pageHeader}
           />
           <div
             data-testid="app-shell-top-divider"

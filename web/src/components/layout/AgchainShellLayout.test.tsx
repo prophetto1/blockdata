@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
+import { ShellPageHeader } from '@/components/shell/ShellPageHeader';
 import { AgchainShellLayout } from './AgchainShellLayout';
 
 const topCommandBarMock = vi.fn();
@@ -13,7 +13,7 @@ const AGCHAIN_SIDEBAR_WIDTH_KEY = 'agchain.shell.sidebar_width';
 function HeaderRegistrationRoute() {
   return (
     <>
-      <AgchainShellPageHeader
+      <ShellPageHeader
         title="Tools"
         description="Manage the merged tool registry for Legal-10."
       />

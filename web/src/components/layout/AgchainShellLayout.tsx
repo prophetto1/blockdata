@@ -14,7 +14,7 @@ import { styleTokens } from '@/lib/styleTokens';
 const AGCHAIN_SIDEBAR_WIDTH_KEY = 'agchain.shell.sidebar_width';
 const AGCHAIN_RAIL_2_WIDTH = 224;
 const AGCHAIN_HEADER_HEIGHT = styleTokens.shell.headerHeight;
-const AGCHAIN_PAGE_HEADER_HEIGHT = 76;
+const AGCHAIN_PAGE_HEADER_HEIGHT = styleTokens.shell.headerTallHeight;
 const AGCHAIN_SETTINGS_PATH_PREFIX = '/app/agchain/settings';
 
 function readStoredWidth(): number {

@@ -2,6 +2,7 @@ export const styleTokens = {
   shell: {
     headerHeight: 60,
     headerHeightMobile: 44,
+    headerTallHeight: 76,
     navbarWidth: 220,
     navbarCompactWidth: 60,
     navbarMobileWidth: 200,

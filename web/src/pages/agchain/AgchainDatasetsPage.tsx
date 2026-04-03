@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
-import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
+import { ShellPageHeader } from '@/components/shell/ShellPageHeader';
 import { AgchainDatasetsToolbar } from '@/components/agchain/datasets/AgchainDatasetsToolbar';
 import { AgchainDatasetsTable } from '@/components/agchain/datasets/AgchainDatasetsTable';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
@@ -95,7 +95,7 @@ export default function AgchainDatasetsPage() {
   return (
     <AgchainPageFrame>
       <div className="flex min-h-0 flex-1 flex-col gap-6 py-6">
-        <AgchainShellPageHeader
+        <ShellPageHeader
           title="Datasets"
           description={`Manage evaluation datasets for ${scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}.`}
         />

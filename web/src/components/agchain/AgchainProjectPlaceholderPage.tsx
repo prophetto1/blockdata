@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
-import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
+import { ShellPageHeader } from '@/components/shell/ShellPageHeader';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { AgchainPageFrame } from '@/pages/agchain/AgchainPageFrame';
 
@@ -81,7 +81,7 @@ export function AgchainProjectPlaceholderPage({
 
   return (
     <AgchainPageFrame className="gap-6 py-8">
-      <AgchainShellPageHeader
+      <ShellPageHeader
         title={title}
         description={description}
       />

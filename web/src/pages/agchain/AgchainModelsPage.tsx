@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
+import { ShellPageHeader } from '@/components/shell/ShellPageHeader';
 import { AgchainModelInspector } from '@/components/agchain/models/AgchainModelInspector';
 import { AgchainModelsTable } from '@/components/agchain/models/AgchainModelsTable';
 import { AgchainModelsToolbar } from '@/components/agchain/models/AgchainModelsToolbar';
@@ -51,7 +51,7 @@ export default function AgchainModelsPage() {
 
   return (
     <AgchainPageFrame className="gap-4 py-6">
-      <AgchainShellPageHeader
+      <ShellPageHeader
         title="Models"
         description="Configure provider access and inspect the curated global model targets available under each provider."
       />
