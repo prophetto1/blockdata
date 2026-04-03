@@ -1,0 +1,27 @@
+
+> web@0.0.0 dev
+> npm run pdfjs-express:assets && vite --host 0.0.0.0 --port 5374
+
+
+> web@0.0.0 pdfjs-express:assets
+> node ./src/scripts/syncPdfjsExpressAssets.mjs
+
+Port 5374 is in use, trying another one...
+Port 5375 is in use, trying another one...
+Port 5376 is in use, trying another one...
+Port 5377 is in use, trying another one...
+Port 5378 is in use, trying another one...
+
+  [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m1006[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5379[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.110:[1m5379[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.28.16.1:[1m5379[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.21.0.1:[1m5379[22m/[39m
+[2m1:00:39 PM[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+[2m1:00:39 PM[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m1:00:39 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mscalar-client-host.html[22m
+[2m1:00:42 PM[22m [36m[1m[vite][22m[39m server restarted.
+[2m1:03:22 PM[22m [36m[1m[vite][22m[39m [32m.env.local changed, restarting server...[39m
+[2m1:03:22 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m1:03:23 PM[22m [36m[1m[vite][22m[39m server restarted.

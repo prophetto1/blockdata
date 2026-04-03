@@ -25,8 +25,9 @@ import {
   SelectHiddenSelect,
   createListCollection,
 } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AgchainToolEditorDialog } from '@/components/agchain/tools/AgchainToolEditorDialog';
-import { AgchainToolInspector } from '@/components/agchain/tools/AgchainToolInspector';
+import { AgchainToolInspectorContent } from '@/components/agchain/tools/AgchainToolInspector';
 import { AgchainToolsTable } from '@/components/agchain/tools/AgchainToolsTable';
 import type { AgchainToolEditorState } from '@/components/agchain/tools/AgchainToolSourceEditor';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
@@ -144,169 +145,200 @@ export default function AgchainToolsPage() {
     }
   }
 
-  if (scopeState.kind === 'bootstrapping') {
+  const scopeMessage = (() => {
+    if (scopeState.kind === 'error') {
+      return {
+        title: 'AGChain tools unavailable',
+        description: 'Failed to load AGChain workspace context.',
+        action: (
+          <button
+            type="button"
+            onClick={() => void scopeState.reload()}
+            className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Retry
+          </button>
+        ),
+      };
+    }
+    if (scopeState.kind === 'no-organization') {
+      return { title: 'No organization', description: 'Select or create an organization to continue.', action: undefined as React.ReactNode };
+    }
+    if (scopeState.kind === 'no-project') {
+      return {
+        title: 'Choose a project',
+        description: 'Select a focused AGChain project before managing project-owned tool definitions.',
+        action: (
+          <Link
+            to="/app/agchain/projects"
+            className="inline-flex w-fit items-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            Open project registry
+          </Link>
+        ),
+      };
+    }
+    return null;
+  })();
+
+  if (scopeMessage) {
     return (
-      <AgchainPageFrame className="gap-4 py-6">
-        <div className="flex flex-1 items-center justify-center rounded-3xl border border-border/70 bg-card/70 px-6 py-12 text-center shadow-sm">
-          <p className="text-sm text-muted-foreground">Loading workspace...</p>
+      <AgchainPageFrame className="gap-0 p-0">
+        <ShellPageHeader
+          title="Tools"
+          description="Manage the merged tool registry."
+        />
+        <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(380px,520px)]">
+          <div className="flex min-h-0 flex-col items-center justify-center border-b border-border p-6 lg:border-b-0 lg:border-r">
+            <AgchainEmptyState title={scopeMessage.title} description={scopeMessage.description} action={scopeMessage.action} />
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+            <h2 className="text-lg font-semibold text-foreground">No tool selected</h2>
+            <p className="max-w-xs text-sm text-muted-foreground">
+              Select a tool from the table to inspect details, versions, and configuration.
+            </p>
+          </div>
         </div>
       </AgchainPageFrame>
     );
   }
 
-  if (scopeState.kind === 'error') {
-    return (
-      <AgchainPageFrame className="gap-4 py-6">
-        <AgchainEmptyState
-          title="AGChain tools unavailable"
-          description="Failed to load AGChain workspace context."
-          action={(
-            <button
-              type="button"
-              onClick={() => void scopeState.reload()}
-              className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Retry
-            </button>
-          )}
-        />
-      </AgchainPageFrame>
-    );
-  }
-
-  if (scopeState.kind === 'no-organization') {
-    return (
-      <AgchainPageFrame className="gap-4 py-6">
-        <AgchainEmptyState
-          title="No organization"
-          description="Select or create an organization to continue."
-        />
-      </AgchainPageFrame>
-    );
-  }
-
-  if (scopeState.kind === 'no-project') {
-    return (
-      <AgchainPageFrame className="gap-4 py-6">
-        <AgchainEmptyState
-          title="Choose a project"
-          description="Select a focused AGChain project before managing project-owned tool definitions."
-          action={(
-            <Link
-              to="/app/agchain/projects"
-              className="inline-flex w-fit items-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              Open project registry
-            </Link>
-          )}
-        />
-      </AgchainPageFrame>
-    );
-  }
-
   return (
-    <AgchainPageFrame className="gap-4 py-6">
+    <AgchainPageFrame className="gap-0 p-0">
       <ShellPageHeader
         title="Tools"
-        description={`Manage the merged tool registry for ${scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}: built-in catalog rows stay read-only while project-authored definitions can be versioned, published, and attached to benchmark tool bags.`}
+        description={scopeState.kind === 'ready'
+          ? `Manage the merged tool registry for ${scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}: built-in catalog rows stay read-only while project-authored definitions can be versioned, published, and attached to benchmark tool bags.`
+          : 'Manage the merged tool registry.'}
       />
 
-      <AgchainToolsTable
-        rows={filteredRows}
-        loading={listLoading}
-        selectedToolKey={selectedToolKey}
-        onInspect={(row) => selectTool(row)}
-        error={error}
-        headerControls={(
-          <div className="flex flex-col gap-3 xl:items-end">
-            <div className="flex flex-1 flex-col gap-3 md:flex-row">
-              <ComboboxRoot
-                collection={searchCollection}
-                inputValue={search}
-                onInputValueChange={(details) => {
-                  setSearch(details.inputValue);
-                  filterSearch(details.inputValue);
-                }}
-                onValueChange={(details) => {
-                  const val = details.value[0];
-                  if (val) {
-                    const row = items.find((r) => (r.tool_id ?? r.tool_ref ?? r.tool_name) === val);
-                    if (row) selectTool(row);
-                  }
-                }}
-                openOnClick
-                className="flex-1"
-              >
-                <ComboboxControl>
-                  <ComboboxInput placeholder="Search tools" />
-                </ComboboxControl>
-                <ComboboxContent>
-                  {searchCollection.items.map((item) => (
-                    <ComboboxItem key={item.value} item={item}>
-                      <ComboboxItemText>{item.label}</ComboboxItemText>
-                    </ComboboxItem>
-                  ))}
-                </ComboboxContent>
-              </ComboboxRoot>
-              <SelectRoot
-                collection={sourceKindFilterCollection}
-                value={[sourceKindFilter]}
-                onValueChange={(details) => {
-                  const val = details.value[0];
-                  if (val) setSourceKindFilter(val);
-                }}
-                className="w-auto"
-              >
-                <SelectControl>
-                  <SelectTrigger className="h-9 min-w-[10rem] text-sm" aria-label="Filter source kind">
-                    <SelectValueText />
-                  </SelectTrigger>
-                </SelectControl>
-                <SelectContent>
-                  {sourceKindFilterCollection.items.map((item) => (
-                    <SelectItem key={item.value} item={item}>
-                      <SelectItemText>{item.label}</SelectItemText>
-                      <SelectItemIndicator>&#10003;</SelectItemIndicator>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-                <SelectHiddenSelect />
-              </SelectRoot>
-              <Button
-                type="button"
-                onClick={() => {
-                  setDialogError(null);
-                  setEditorMode('create');
-                  setEditorOpen(true);
-                }}
-              >
-                Add tool
-              </Button>
+      <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(380px,520px)]">
+        <div className="flex min-h-0 flex-col border-b border-border p-1 lg:border-b-0 lg:border-r">
+            <AgchainToolsTable
+            rows={filteredRows}
+            loading={listLoading}
+            selectedToolKey={selectedToolKey}
+            onInspect={(row) => selectTool(row)}
+            error={error}
+            headerControls={(
+              <div className="flex flex-col gap-3 xl:items-end">
+                <div className="flex flex-1 flex-col gap-3 md:flex-row">
+                  <ComboboxRoot
+                    collection={searchCollection}
+                    inputValue={search}
+                    onInputValueChange={(details) => {
+                      setSearch(details.inputValue);
+                      filterSearch(details.inputValue);
+                    }}
+                    onValueChange={(details) => {
+                      const val = details.value[0];
+                      if (val) {
+                        const row = items.find((r) => (r.tool_id ?? r.tool_ref ?? r.tool_name) === val);
+                        if (row) selectTool(row);
+                      }
+                    }}
+                    openOnClick
+                    className="flex-1"
+                  >
+                    <ComboboxControl>
+                      <ComboboxInput placeholder="Search tools" />
+                    </ComboboxControl>
+                    <ComboboxContent>
+                      {searchCollection.items.map((item) => (
+                        <ComboboxItem key={item.value} item={item}>
+                          <ComboboxItemText>{item.label}</ComboboxItemText>
+                        </ComboboxItem>
+                      ))}
+                    </ComboboxContent>
+                  </ComboboxRoot>
+                  <SelectRoot
+                    collection={sourceKindFilterCollection}
+                    value={[sourceKindFilter]}
+                    onValueChange={(details) => {
+                      const val = details.value[0];
+                      if (val) setSourceKindFilter(val);
+                    }}
+                    className="w-auto"
+                  >
+                    <SelectControl>
+                      <SelectTrigger className="h-9 min-w-[10rem] text-sm" aria-label="Filter source kind">
+                        <SelectValueText />
+                      </SelectTrigger>
+                    </SelectControl>
+                    <SelectContent>
+                      {sourceKindFilterCollection.items.map((item) => (
+                        <SelectItem key={item.value} item={item}>
+                          <SelectItemText>{item.label}</SelectItemText>
+                          <SelectItemIndicator>&#10003;</SelectItemIndicator>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                    <SelectHiddenSelect />
+                  </SelectRoot>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setDialogError(null);
+                      setEditorMode('create');
+                      setEditorOpen(true);
+                    }}
+                  >
+                    Add tool
+                  </Button>
+                </div>
+              </div>
+            )}
+            />
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col">
+          {selectedRow ? (
+            <div className="flex h-full flex-col">
+              <div className="flex items-start justify-between gap-3 border-b border-border/70 px-4 py-4">
+                <div className="min-w-0">
+                  <h2 className="truncate text-base font-semibold text-foreground">
+                    {selectedRow.display_name}
+                  </h2>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">
+                    {selectedRow.description || 'No description has been added yet.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeInspector}
+                  className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  aria-label="Close inspector"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+              <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-y-auto overflow-x-hidden" contentClass="px-4 py-4">
+                <AgchainToolInspectorContent
+                  row={selectedRow}
+                  detail={selectedDetail}
+                  loading={detailLoading}
+                  error={detailError}
+                  saving={mutating}
+                  onEdit={() => {
+                    setDialogError(null);
+                    setEditorMode('edit');
+                    setEditorOpen(true);
+                  }}
+                  onPublish={publishSelectedTool}
+                  onArchive={archiveSelectedTool}
+                />
+              </ScrollArea>
             </div>
-          </div>
-        )}
-      />
-
-      <AgchainToolInspector
-        open={Boolean(selectedRow)}
-        row={selectedRow}
-        detail={selectedDetail}
-        loading={detailLoading}
-        error={detailError}
-        saving={mutating}
-        onOpenChange={(open) => {
-          if (!open) {
-            closeInspector();
-          }
-        }}
-        onEdit={() => {
-          setDialogError(null);
-          setEditorMode('edit');
-          setEditorOpen(true);
-        }}
-        onPublish={publishSelectedTool}
-        onArchive={archiveSelectedTool}
-      />
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+              <h2 className="text-lg font-semibold text-foreground">No tool selected</h2>
+              <p className="max-w-xs text-sm text-muted-foreground">
+                Select a tool from the table to inspect details, versions, and configuration.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       <AgchainToolEditorDialog
         open={editorOpen}

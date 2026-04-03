@@ -54,6 +54,15 @@
   transform: translateX(var(--top-command-bar-leading-offset));
 }
 
+.top-command-bar--minimal.top-command-bar--has-context .top-command-bar-left,
+.top-command-bar--minimal.top-command-bar--has-context .top-command-bar-center {
+  transform: none;
+}
+
+.top-command-bar--minimal.top-command-bar--has-context .top-command-bar-left {
+  padding-inline-start: 1.25rem;
+}
+
 .top-command-bar--minimal .project-switcher-trigger {
   flex: 1 1 auto;
   justify-content: space-between;

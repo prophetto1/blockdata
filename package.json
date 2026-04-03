@@ -1,4 +1,10 @@
 {
+  "name": "writing-system",
+  "private": true,
+  "workspaces": [
+    "web",
+    "web-docs"
+  ],
   "scripts": {
     "capture-server": "node scripts/capture-server.mjs",
     "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1 -NoReload",
@@ -8,16 +14,9 @@
     "test:supabase-migration-reconciliation-contract": "node --test scripts/tests/supabase-migration-reconciliation-contract.test.mjs"
   },
   "dependencies": {
-    "pg": "^8.19.0",
-    "playwright": "^1.58.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "vite": "^7.3.1"
+    "pg": "^8.19.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
     "mintlify": "^4.2.391"
   }
 }

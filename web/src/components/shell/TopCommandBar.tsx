@@ -135,7 +135,7 @@ export function TopCommandBar({
       : searchCombobox
     : null;
 
-  const className = `top-command-bar${shellGuides ? ' top-command-bar--shell-guides' : ' top-command-bar--minimal'}`;
+  const className = `top-command-bar${shellGuides ? ' top-command-bar--shell-guides' : ' top-command-bar--minimal'}${primaryContext ? ' top-command-bar--has-context' : ''}`;
   const leftNode = shellTopSlots?.left ?? null;
   const resolvedMiddleNode = shellGuides ? (shellTopSlots?.middle ?? null) : center;
   const rightNode = shellTopSlots?.right ?? null;

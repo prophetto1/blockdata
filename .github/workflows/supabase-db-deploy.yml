@@ -25,7 +25,7 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.84.10
 
       - name: Link production project
         run: supabase link --project-ref $SUPABASE_PROJECT_ID

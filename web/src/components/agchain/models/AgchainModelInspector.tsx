@@ -154,11 +154,11 @@ export function AgchainModelInspector({
   );
 }
 
-type AgchainModelInspectorSessionProps = Omit<AgchainModelInspectorProps, 'open' | 'onOpenChange' | 'providerRow'> & {
+export type AgchainModelInspectorSessionProps = Omit<AgchainModelInspectorProps, 'open' | 'onOpenChange' | 'providerRow'> & {
   providerRow: AgchainProviderRow;
 };
 
-function AgchainModelInspectorSession({
+export function AgchainModelInspectorSession({
   providerRow,
   providers,
   selectedTarget,
