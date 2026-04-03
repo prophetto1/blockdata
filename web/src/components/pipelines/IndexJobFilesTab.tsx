@@ -30,13 +30,13 @@ export function IndexJobFilesTab({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const selectedSources = sources.filter((s) => selectedSourceUids.includes(s.source_uid));
-  const totalSize = selectedSources.reduce((sum, s) => sum + (s.byte_size ?? 0), 0);
+  const selectedSources = sources.filter((source) => selectedSourceUids.includes(source.source_uid));
+  const totalSize = selectedSources.reduce((sum, source) => sum + (source.byte_size ?? 0), 0);
 
   function addFiles(fileList: FileList | null) {
     if (!fileList) return;
     const mdFiles = Array.from(fileList).filter(
-      (f) => f.name.endsWith('.md') || f.name.endsWith('.markdown') || f.type === 'text/markdown',
+      (file) => file.name.endsWith('.md') || file.name.endsWith('.markdown') || file.type === 'text/markdown',
     );
     if (mdFiles.length === 0) return;
 
@@ -52,15 +52,17 @@ export function IndexJobFilesTab({
   return (
     <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4">
       <div className="space-y-4">
-        {/* Drop zone */}
         <label
           htmlFor="index-job-file-input"
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragOver(true);
+          }}
           onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
+          onDrop={(event) => {
+            event.preventDefault();
             setDragOver(false);
-            addFiles(e.dataTransfer.files);
+            addFiles(event.dataTransfer.files);
           }}
           className={`flex min-h-[160px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed px-6 py-10 text-center transition-colors ${
             dragOver
@@ -82,7 +84,10 @@ export function IndexJobFilesTab({
             type="file"
             multiple
             accept=".md,.markdown,text/markdown"
-            onChange={(e) => { addFiles(e.currentTarget.files); e.currentTarget.value = ''; }}
+            onChange={(event) => {
+              addFiles(event.currentTarget.files);
+              event.currentTarget.value = '';
+            }}
             className="sr-only"
           />
         </label>
@@ -94,7 +99,6 @@ export function IndexJobFilesTab({
           <div className="text-sm text-destructive">{uploadError}</div>
         ) : null}
 
-        {/* Source loading / error */}
         {sourcesLoading ? (
           <div className="text-sm text-muted-foreground">Loading files...</div>
         ) : null}
@@ -102,61 +106,67 @@ export function IndexJobFilesTab({
           <div className="text-sm text-destructive">{sourcesError}</div>
         ) : null}
 
-        {/* File list */}
         {!sourcesLoading && sources.length > 0 ? (
-          <div className="space-y-1">
-            {sources.map((source) => {
-              const isSelected = selectedSourceUids.includes(source.source_uid);
-              return (
-                <div
-                  key={source.source_uid}
-                  className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 ${
-                    isSelected
-                      ? 'border-primary/30 bg-primary/5'
-                      : 'border-border/60 bg-background/40'
-                  }`}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onToggleSource(source.source_uid)}
-                      className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-colors ${
-                        isSelected
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-muted-foreground/40 bg-background hover:border-primary/60'
-                      }`}
-                      aria-label={isSelected ? `Deselect ${source.doc_title}` : `Select ${source.doc_title}`}
+          <div className="overflow-hidden rounded-md border border-border/60 bg-background/40">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-background/80 text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="w-24 px-3 py-2 font-medium">Include</th>
+                  <th className="px-3 py-2 font-medium">Filename</th>
+                  <th className="w-28 px-3 py-2 font-medium">Size</th>
+                  <th className="w-28 px-3 py-2 font-medium">State</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sources.map((source) => {
+                  const isSelected = selectedSourceUids.includes(source.source_uid);
+                  return (
+                    <tr
+                      key={source.source_uid}
+                      className={isSelected ? 'bg-primary/5' : 'bg-transparent'}
                     >
-                      {isSelected ? (
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2 5L4.5 7.5L8 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : null}
-                    </button>
-                    <span className="min-w-0 truncate text-xs text-foreground">{source.doc_title}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="shrink-0 text-[10px] text-muted-foreground">
-                      {formatBytes(source.byte_size)}
-                    </span>
-                    {isSelected ? (
-                      <button
-                        type="button"
-                        onClick={() => onRemoveSource(source.source_uid)}
-                        className="shrink-0 text-[10px] text-muted-foreground hover:text-destructive"
-                        aria-label={`Remove ${source.doc_title}`}
-                      >
-                        ✕
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
+                      <td className="px-3 py-2 align-middle">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => onToggleSource(source.source_uid)}
+                          aria-label={`Include ${source.doc_title}`}
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
+                        />
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-foreground">{source.doc_title}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {isSelected ? 'Included in this job' : 'Available in this project'}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
+                        {formatBytes(source.byte_size)}
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        {isSelected ? (
+                          <button
+                            type="button"
+                            onClick={() => onRemoveSource(source.source_uid)}
+                            className="text-xs font-medium text-muted-foreground hover:text-destructive"
+                            aria-label={`Remove ${source.doc_title}`}
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Available</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : null}
 
-        {/* Footer summary */}
         {selectedSourceUids.length > 0 ? (
           <div className="flex items-center justify-between rounded-md border border-border bg-background/60 px-3 py-2 text-xs text-muted-foreground">
             <span>{selectedSourceUids.length} file{selectedSourceUids.length === 1 ? '' : 's'} selected</span>

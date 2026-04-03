@@ -86,6 +86,7 @@ function defaultJobHook() {
       toggleSource: vi.fn(),
       moveSource: vi.fn(),
       removeSource: vi.fn(),
+      appendSelection: vi.fn(),
       refreshSources: vi.fn(),
       refreshSourceSet: vi.fn(),
       resetSelection: vi.fn(),
@@ -156,6 +157,7 @@ describe('IndexBuilderPage — list view', () => {
   it('renders empty state when no jobs exist', () => {
     renderPage();
     expect(screen.getByText('No index jobs yet.')).toBeInTheDocument();
+    expect(screen.getByText(/select an index job or create a new one/i)).toBeInTheDocument();
   });
 
   it('renders job rows with name and status', () => {
@@ -193,7 +195,8 @@ describe('IndexBuilderPage — job detail view', () => {
     fireEvent.click(screen.getByText('Test Job'));
     // After click, job header should appear with the editable name
     expect(screen.getByDisplayValue('Test Job')).toBeInTheDocument();
-    expect(screen.getByText('Ready')).toBeInTheDocument();
+    expect(screen.getAllByText('Ready').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
     expect(screen.getByTestId('location-display')).toHaveTextContent(
       '/app/pipeline-services/index-builder?job=set-1',
     );
@@ -212,6 +215,7 @@ describe('IndexBuilderPage — job detail view', () => {
     renderPage();
     fireEvent.click(screen.getByText('Test Job'));
     expect(screen.getByText('Unable to load this job.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
   });
 
   it('renders files and config side by side', () => {
@@ -251,7 +255,7 @@ describe('IndexBuilderPage — job detail view', () => {
     renderPage();
     fireEvent.click(screen.getByText('Test Job'));
     expect(screen.getByDisplayValue('Test Job')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Index Jobs'));
+    fireEvent.click(screen.getByRole('button', { name: 'Index Jobs' }));
     // Should be back to list view — the job row reappears
     expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
     // The detail header input should be gone
@@ -286,6 +290,7 @@ describe('IndexBuilderPage — one-page search params', () => {
     renderPage('/app/pipeline-services/index-builder?job=set-1');
 
     expect(screen.getByDisplayValue('Test Job')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
     expect(screen.getByTestId('location-display')).toHaveTextContent(
       '/app/pipeline-services/index-builder?job=set-1',
     );
@@ -296,6 +301,7 @@ describe('IndexBuilderPage — one-page search params', () => {
 
     expect(screen.getByDisplayValue('Untitled index job')).toBeInTheDocument();
     expect(screen.getByText('Save draft')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
   });
 
   it('treats a blank job query as list view', () => {
@@ -313,6 +319,31 @@ describe('IndexBuilderPage — one-page search params', () => {
     expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
     expect(screen.getByTestId('location-display')).toHaveTextContent(
       '/app/pipeline-services/index-builder',
+    );
+  });
+
+  it('refreshes the jobs table and replaces ?job=new after the first save', () => {
+    const refreshList = vi.fn();
+    mockUseIndexBuilderList.mockReturnValue({ ...defaultListHook(), refreshList });
+    mockUseIndexBuilderJob.mockImplementation((jobId: string | null, options?: { onJobSaved?: (sourceSetId: string) => void }) => {
+      if (jobId === 'new') {
+        return {
+          ...defaultJobHook(),
+          isNewJob: true,
+          status: 'draft',
+          jobName: 'Untitled index job',
+          saveDraft: vi.fn(() => options?.onJobSaved?.('set-created')),
+        };
+      }
+      return defaultJobHook();
+    });
+
+    renderPage('/app/pipeline-services/index-builder?job=new');
+    fireEvent.click(screen.getByRole('button', { name: /save draft/i }));
+
+    expect(refreshList).toHaveBeenCalled();
+    expect(screen.getByTestId('location-display')).toHaveTextContent(
+      '/app/pipeline-services/index-builder?job=set-created',
     );
   });
 });

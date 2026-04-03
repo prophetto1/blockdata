@@ -57,6 +57,7 @@ export function useProjectDocuments(projectId: string | null) {
         },
         (payload) => {
           const updated = payload.new as any;
+          if (updated?.document_surface === 'pipeline-services') return;
           setDocs((prev) =>
             prev.map((d) =>
               d.source_uid === updated.source_uid
@@ -80,7 +81,9 @@ export function useProjectDocuments(projectId: string | null) {
           filter: `project_id=eq.${projectId}`,
         },
         (payload) => {
-          const deletedUid = (payload.old as any)?.source_uid;
+          const deleted = payload.old as any;
+          if (deleted?.document_surface === 'pipeline-services') return;
+          const deletedUid = deleted?.source_uid;
           if (deletedUid) {
             setDocs((prev) => prev.filter((d) => d.source_uid !== deletedUid));
             setSelected((prev) => {
@@ -100,7 +103,8 @@ export function useProjectDocuments(projectId: string | null) {
           table: 'source_documents',
           filter: `project_id=eq.${projectId}`,
         },
-        () => {
+        (payload) => {
+          if ((payload.new as any)?.document_surface === 'pipeline-services') return;
           // Refetch to get the full joined view row for the new document.
           void loadDocs(projectId, true);
         },

@@ -44,6 +44,7 @@ export async function fetchAllProjectDocuments<T extends Record<string, unknown>
       .from(TABLES.documents)
       .select(select)
       .eq('project_id', projectId)
+      .eq('document_surface', 'assets')
       .order('uploaded_at', { ascending: false })
       .range(from, to) as QueryResult<T>;
 

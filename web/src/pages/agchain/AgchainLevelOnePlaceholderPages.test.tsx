@@ -5,10 +5,10 @@ import AgchainParametersPage from './AgchainParametersPage';
 import AgchainPromptsPage from './AgchainPromptsPage';
 import AgchainScorersPage from './AgchainScorersPage';
 
-const useAgchainProjectFocusMock = vi.fn();
+const useAgchainScopeStateMock = vi.fn();
 
-vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
-  useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
+vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
+  useAgchainScopeState: () => useAgchainScopeStateMock(),
 }));
 
 afterEach(() => {
@@ -17,19 +17,23 @@ afterEach(() => {
 
 describe('AGChain level-one placeholder pages', () => {
   beforeEach(() => {
-    useAgchainProjectFocusMock.mockReset();
-    useAgchainProjectFocusMock.mockReturnValue({
+    useAgchainScopeStateMock.mockReset();
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'ready',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
       focusedProject: {
         benchmark_id: 'benchmark-1',
         benchmark_slug: 'legal-10',
         benchmark_name: 'Legal-10',
         description: 'Three-step benchmark package for legal analysis.',
       },
-      loading: false,
     });
   });
 
-  it('shows the focused project ownership on prompts, scorers, and parameters pages', () => {
+  it('shows honest placeholder behavior on prompts, scorers, and parameters pages', () => {
     const { rerender } = render(
       <MemoryRouter>
         <AgchainPromptsPage />
@@ -38,6 +42,7 @@ describe('AGChain level-one placeholder pages', () => {
 
     expect(screen.getByRole('heading', { name: 'Prompts' })).toBeInTheDocument();
     expect(screen.getByText(/legal-10 owns this prompts page/i)).toBeInTheDocument();
+    expect(screen.getAllByText('Coming soon').length).toBeGreaterThan(0);
 
     rerender(
       <MemoryRouter>
@@ -57,9 +62,12 @@ describe('AGChain level-one placeholder pages', () => {
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {
-    useAgchainProjectFocusMock.mockReturnValue({
-      focusedProject: null,
-      loading: false,
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'no-project',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
     });
 
     render(

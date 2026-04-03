@@ -4,9 +4,14 @@ import { MemoryRouter } from 'react-router-dom';
 import AgchainOverviewPage from './AgchainOverviewPage';
 
 const useAgchainProjectFocusMock = vi.fn();
+const useAgchainScopeStateMock = vi.fn();
 
 vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
   useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
+}));
+
+vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
+  useAgchainScopeState: () => useAgchainScopeStateMock(),
 }));
 
 afterEach(() => {
@@ -16,6 +21,7 @@ afterEach(() => {
 describe('AgchainOverviewPage', () => {
   beforeEach(() => {
     useAgchainProjectFocusMock.mockReset();
+    useAgchainScopeStateMock.mockReset();
     useAgchainProjectFocusMock.mockReturnValue({
       focusedProject: {
         benchmark_id: 'benchmark-1',
@@ -26,6 +32,19 @@ describe('AgchainOverviewPage', () => {
       focusedProjectSlug: 'legal-10',
       loading: false,
       setFocusedProjectSlug: vi.fn(),
+    });
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'ready',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
+      focusedProject: {
+        benchmark_id: 'benchmark-1',
+        benchmark_slug: 'legal-10',
+        benchmark_name: 'Legal-10',
+        description: 'Three-step benchmark package for legal analysis.',
+      },
     });
   });
 
@@ -66,13 +85,8 @@ describe('AgchainOverviewPage', () => {
   });
 
   it('shows loading skeleton while workspace is bootstrapping', () => {
-    useAgchainProjectFocusMock.mockReturnValue({
-      focusedProject: null,
-      focusedProjectSlug: null,
-      loading: true,
-      status: 'bootstrapping',
-      reload: vi.fn(),
-      setFocusedProjectSlug: vi.fn(),
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'bootstrapping',
     });
 
     render(
@@ -86,11 +100,12 @@ describe('AgchainOverviewPage', () => {
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {
-    useAgchainProjectFocusMock.mockReturnValue({
-      focusedProject: null,
-      focusedProjectSlug: null,
-      loading: false,
-      setFocusedProjectSlug: vi.fn(),
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'no-project',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
     });
 
     render(

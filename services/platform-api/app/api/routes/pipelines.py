@@ -25,6 +25,7 @@ from app.pipelines.registry import (
     get_pipeline_worker_definition,
     list_pipeline_definitions as _list_defs,
 )
+from app.services import pipeline_source_library
 from app.services import pipeline_source_sets as pipeline_source_sets_service
 
 router = APIRouter(prefix="/pipelines", tags=["pipelines"])
@@ -33,12 +34,12 @@ router = APIRouter(prefix="/pipelines", tags=["pipelines"])
 class CreatePipelineSourceSetRequest(BaseModel):
     project_id: str = Field(min_length=1)
     label: str = Field(min_length=1)
-    source_uids: list[str] = Field(min_length=1, max_length=100)
+    pipeline_source_ids: list[str] = Field(min_length=1, max_length=100)
 
 
 class UpdatePipelineSourceSetRequest(BaseModel):
     label: str | None = Field(default=None, min_length=1)
-    source_uids: list[str] | None = Field(default=None, min_length=1, max_length=100)
+    pipeline_source_ids: list[str] | None = Field(default=None, min_length=1, max_length=100)
 
 
 class CreatePipelineJobRequest(BaseModel):
@@ -50,19 +51,6 @@ def _require_pipeline_definition(pipeline_kind: str) -> dict:
     if definition is None:
         raise HTTPException(status_code=404, detail="Unknown pipeline kind")
     return definition
-
-
-def _query_project_sources(admin, owner_id: str, project_id: str, search: str | None) -> list[dict]:
-    query = (
-        admin.table("source_documents")
-        .select("source_uid, project_id, doc_title, source_type, source_filesize, uploaded_at, source_locator")
-        .eq("owner_id", owner_id)
-        .eq("project_id", project_id)
-        .order("uploaded_at", desc=True)
-    )
-    if search:
-        query = query.ilike("doc_title", f"%{search}%")
-    return query.execute().data or []
 
 
 def _load_active_pipeline_job(admin, owner_id: str, pipeline_kind: str, source_set_id: str) -> dict | None:
@@ -91,11 +79,13 @@ def _load_owned_source_set(admin, owner_id: str, pipeline_kind: str, source_set_
 
 
 def _insert_pipeline_job(admin, owner_id: str, pipeline_kind: str, source_set: dict) -> dict:
+    first_item = source_set["items"][0] if source_set.get("items") else {}
     payload = {
         "pipeline_kind": pipeline_kind,
         "owner_id": owner_id,
         "project_id": source_set.get("project_id"),
-        "source_uid": source_set["items"][0]["source_uid"] if source_set.get("items") else None,
+        "pipeline_source_id": first_item.get("pipeline_source_id"),
+        "source_uid": first_item.get("source_uid"),
         "source_set_id": source_set["source_set_id"],
         "status": "queued",
         "stage": "queued",
@@ -235,27 +225,14 @@ async def list_pipeline_sources(
         definition = _require_pipeline_definition(pipeline_kind)
         admin = get_supabase_admin()
         _assert_project_ownership(admin, auth.user_id, project_id)
-        rows = _query_project_sources(admin, auth.user_id, project_id, search)
-        items = []
-        for row in rows:
-            if row.get("source_type") not in definition["eligible_source_types"]:
-                continue
-            object_key = str(row.get("object_key") or row.get("source_locator") or "")
-            source_origin = "pipeline-services" if "/pipeline-services/" in object_key else "assets"
-            items.append(
-                {
-                    "source_uid": row["source_uid"],
-                    "project_id": row["project_id"],
-                    "doc_title": row["doc_title"],
-                    "source_type": row["source_type"],
-                    "content_type": row.get("content_type"),
-                    "byte_size": row.get("byte_size", row.get("source_filesize")),
-                    "created_at": row.get("created_at", row.get("uploaded_at")),
-                    "source_origin": source_origin,
-                    "object_key": object_key,
-                }
-            )
-        items.sort(key=lambda item: item["created_at"] or "", reverse=True)
+        items = pipeline_source_library.list_pipeline_sources(
+            admin,
+            owner_id=auth.user_id,
+            project_id=project_id,
+            pipeline_kind=pipeline_kind,
+            search=search,
+            eligible_source_types=definition["eligible_source_types"],
+        )
         return {"items": items}
 
 
@@ -297,10 +274,10 @@ async def create_pipeline_source_set(
                 pipeline_kind=pipeline_kind,
                 project_id=body.project_id,
                 label=body.label,
-                source_uids=body.source_uids,
+                pipeline_source_ids=body.pipeline_source_ids,
                 eligible_source_types=definition["eligible_source_types"],
             )
-            member_count = int(source_set.get("member_count") or len(body.source_uids))
+            member_count = int(source_set.get("member_count") or len(body.pipeline_source_ids))
             has_project_id = bool(source_set.get("project_id") or body.project_id)
             record_pipeline_source_set_create(result="ok", pipeline_kind=pipeline_kind, http_status_code=201)
             record_pipeline_source_set_member_count(
@@ -368,10 +345,10 @@ async def update_pipeline_source_set(
                 pipeline_kind=pipeline_kind,
                 source_set_id=source_set_id,
                 label=body.label,
-                source_uids=body.source_uids,
+                pipeline_source_ids=body.pipeline_source_ids,
                 eligible_source_types=definition["eligible_source_types"],
             )
-            member_count = int(source_set.get("member_count") or len(body.source_uids or []))
+            member_count = int(source_set.get("member_count") or len(body.pipeline_source_ids or []))
             has_project_id = bool(source_set.get("project_id"))
             record_pipeline_source_set_update(result="ok", pipeline_kind=pipeline_kind, http_status_code=200)
             record_pipeline_source_set_member_count(

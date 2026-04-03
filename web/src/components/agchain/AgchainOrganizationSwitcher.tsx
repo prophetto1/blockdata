@@ -54,8 +54,8 @@ export function AgchainOrganizationSwitcher() {
       loading={loading}
       error={error}
       onRetry={reload}
-      footerActionLabel="Open AGChain settings"
-      footerActionHref="/app/agchain/settings"
+      footerActionLabel="Open organization members"
+      footerActionHref="/app/agchain/settings/organization/members"
       onSelectItem={(organizationId) => setSelectedOrganizationId(organizationId)}
     />
   );

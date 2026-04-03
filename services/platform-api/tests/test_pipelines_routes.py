@@ -37,43 +37,26 @@ async def test_list_pipeline_definitions_returns_index_builder_item():
 
 
 @pytest.mark.asyncio
-async def test_list_pipeline_sources_lists_project_markdown_from_assets_and_pipeline_services(monkeypatch):
+async def test_list_pipeline_sources_reads_pipeline_owned_inventory(monkeypatch):
     from app.api.routes.pipelines import list_pipeline_sources
 
+    captured: list[dict] = []
     monkeypatch.setattr("app.api.routes.pipelines.get_supabase_admin", lambda: object())
     monkeypatch.setattr("app.api.routes.pipelines._assert_project_ownership", lambda *_a, **_k: None)
     monkeypatch.setattr(
-        "app.api.routes.pipelines._query_project_sources",
-        lambda *_a, **_k: [
+        "app.api.routes.pipelines.pipeline_source_library.list_pipeline_sources",
+        lambda *_a, **kwargs: captured.append(kwargs)
+        or [
             {
+                "pipeline_source_id": "psrc-good",
                 "source_uid": "src-good",
                 "project_id": "project-1",
                 "doc_title": "Good",
                 "source_type": "md",
-                "content_type": "text/markdown",
                 "byte_size": 12,
                 "created_at": "2026-03-28T10:00:00Z",
                 "object_key": "users/user-1/pipeline-services/index-builder/projects/project-1/sources/src-good/source/good.md",
-            },
-            {
-                "source_uid": "src-assets",
-                "project_id": "project-1",
-                "doc_title": "Assets",
-                "source_type": "md",
-                "content_type": "text/markdown",
-                "byte_size": 10,
-                "created_at": "2026-03-28T11:00:00Z",
-                "source_locator": "users/user-1/assets/projects/project-1/sources/src-assets/source/assets.md",
-            },
-            {
-                "source_uid": "src-pdf",
-                "project_id": "project-1",
-                "doc_title": "PDF",
-                "source_type": "pdf",
-                "content_type": "application/pdf",
-                "byte_size": 99,
-                "created_at": "2026-03-28T12:00:00Z",
-                "object_key": "users/user-1/pipeline-services/index-builder/projects/project-1/sources/src-pdf/source/doc.pdf",
+                "source_origin": "pipeline-services",
             },
         ],
     )
@@ -83,22 +66,11 @@ async def test_list_pipeline_sources_lists_project_markdown_from_assets_and_pipe
     assert result == {
         "items": [
             {
-                "source_uid": "src-assets",
-                "project_id": "project-1",
-                "doc_title": "Assets",
-                "source_type": "md",
-                "content_type": "text/markdown",
-                "byte_size": 10,
-                "created_at": "2026-03-28T11:00:00Z",
-                "source_origin": "assets",
-                "object_key": "users/user-1/assets/projects/project-1/sources/src-assets/source/assets.md",
-            },
-            {
+                "pipeline_source_id": "psrc-good",
                 "source_uid": "src-good",
                 "project_id": "project-1",
                 "doc_title": "Good",
                 "source_type": "md",
-                "content_type": "text/markdown",
                 "byte_size": 12,
                 "created_at": "2026-03-28T10:00:00Z",
                 "source_origin": "pipeline-services",
@@ -106,6 +78,15 @@ async def test_list_pipeline_sources_lists_project_markdown_from_assets_and_pipe
             }
         ]
     }
+    assert captured == [
+        {
+            "owner_id": "user-1",
+            "project_id": "project-1",
+            "pipeline_kind": "markdown_index_builder",
+            "search": None,
+            "eligible_source_types": ["md", "markdown"],
+        }
+    ]
 
 
 @pytest.mark.asyncio
@@ -163,12 +144,14 @@ async def test_create_pipeline_source_set_emits_locked_observability(monkeypatch
     metrics: list[dict] = []
     member_counts: list[dict] = []
     logs: list[dict] = []
+    captured: list[dict] = []
 
     monkeypatch.setattr("app.api.routes.pipelines.get_supabase_admin", lambda: object())
     monkeypatch.setattr("app.api.routes.pipelines._assert_project_ownership", lambda *_a, **_k: None)
     monkeypatch.setattr(
         "app.api.routes.pipelines.pipeline_source_sets_service.create_source_set",
-        lambda *_a, **_k: {
+        lambda *_a, **kwargs: captured.append(kwargs)
+        or {
             "source_set_id": "set-1",
             "project_id": "project-1",
             "label": "Release corpus",
@@ -195,7 +178,7 @@ async def test_create_pipeline_source_set_emits_locked_observability(monkeypatch
         CreatePipelineSourceSetRequest(
             project_id="project-1",
             label="Release corpus",
-            source_uids=["src-1", "src-2"],
+            pipeline_source_ids=["psrc-1", "psrc-2"],
         ),
         _user_auth(),
     )
@@ -222,6 +205,16 @@ async def test_create_pipeline_source_set_emits_locked_observability(monkeypatch
             "has_project_id": True,
         }
     ]
+    assert captured == [
+        {
+            "owner_id": "user-1",
+            "pipeline_kind": "markdown_index_builder",
+            "project_id": "project-1",
+            "label": "Release corpus",
+            "pipeline_source_ids": ["psrc-1", "psrc-2"],
+            "eligible_source_types": ["md", "markdown"],
+        }
+    ]
 
 
 @pytest.mark.asyncio
@@ -231,11 +224,13 @@ async def test_update_pipeline_source_set_emits_locked_observability(monkeypatch
     metrics: list[dict] = []
     member_counts: list[dict] = []
     logs: list[dict] = []
+    captured: list[dict] = []
 
     monkeypatch.setattr("app.api.routes.pipelines.get_supabase_admin", lambda: object())
     monkeypatch.setattr(
         "app.api.routes.pipelines.pipeline_source_sets_service.update_source_set",
-        lambda *_a, **_k: {
+        lambda *_a, **kwargs: captured.append(kwargs)
+        or {
             "source_set_id": "set-1",
             "project_id": "project-1",
             "label": "Renamed corpus",
@@ -260,7 +255,10 @@ async def test_update_pipeline_source_set_emits_locked_observability(monkeypatch
     result = await update_pipeline_source_set(
         "markdown_index_builder",
         "set-1",
-        UpdatePipelineSourceSetRequest(label="Renamed corpus", source_uids=["src-1", "src-2", "src-3"]),
+        UpdatePipelineSourceSetRequest(
+            label="Renamed corpus",
+            pipeline_source_ids=["psrc-1", "psrc-2", "psrc-3"],
+        ),
         _user_auth(),
     )
 
@@ -284,6 +282,66 @@ async def test_update_pipeline_source_set_emits_locked_observability(monkeypatch
             "change_kind": "update",
             "member_count": 3,
             "has_project_id": True,
+        }
+    ]
+    assert captured == [
+        {
+            "owner_id": "user-1",
+            "pipeline_kind": "markdown_index_builder",
+            "source_set_id": "set-1",
+            "label": "Renamed corpus",
+            "pipeline_source_ids": ["psrc-1", "psrc-2", "psrc-3"],
+            "eligible_source_types": ["md", "markdown"],
+        }
+    ]
+
+
+def test_insert_pipeline_job_records_first_pipeline_source_id():
+    from app.api.routes.pipelines import _insert_pipeline_job
+
+    inserts: list[dict] = []
+
+    class _InsertQuery:
+        def insert(self, payload):
+            inserts.append(payload)
+            return self
+
+        def execute(self):
+            self.data = [dict(inserts[-1], job_id="job-1")]
+            return self
+
+    class _Admin:
+        def table(self, name):
+            assert name == "pipeline_jobs"
+            return _InsertQuery()
+
+    result = _insert_pipeline_job(
+        _Admin(),
+        owner_id="user-1",
+        pipeline_kind="markdown_index_builder",
+        source_set={
+            "source_set_id": "set-1",
+            "project_id": "project-1",
+            "items": [
+                {
+                    "pipeline_source_id": "psrc-1",
+                    "source_uid": "src-1",
+                }
+            ],
+        },
+    )
+
+    assert result["job_id"] == "job-1"
+    assert inserts == [
+        {
+            "pipeline_kind": "markdown_index_builder",
+            "owner_id": "user-1",
+            "project_id": "project-1",
+            "pipeline_source_id": "psrc-1",
+            "source_uid": "src-1",
+            "source_set_id": "set-1",
+            "status": "queued",
+            "stage": "queued",
         }
     ]
 

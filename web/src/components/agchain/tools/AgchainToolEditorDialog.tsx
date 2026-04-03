@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DialogBody,
@@ -87,22 +87,56 @@ export function AgchainToolEditorDialog({
   onOpenChange,
   onSubmit,
 }: AgchainToolEditorDialogProps) {
-  const [draft, setDraft] = useState<AgchainToolEditorState>(() =>
-    mode === 'edit' ? buildDraftFromDetail(detail) : createEmptyDraft(),
-  );
-
   const title = mode === 'edit' ? 'Edit Tool' : 'Create Tool';
   const description =
     mode === 'edit'
       ? 'Update tool metadata and the latest editable version definition.'
       : 'Register a project-owned tool definition and create its first draft version.';
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setDraft(mode === 'edit' ? buildDraftFromDetail(detail) : createEmptyDraft(sourceKindOptions[0] ?? 'custom'));
-  }, [detail, mode, open, sourceKindOptions]);
+  return (
+    <DialogRoot open={open} onOpenChange={(details) => onOpenChange(details.open)}>
+      {open ? (
+        <AgchainToolEditorDialogContent
+          key={`${mode}:${detail?.tool.tool_id ?? 'create'}:${sourceKindOptions.join('|')}`}
+          mode={mode}
+          detail={detail}
+          sourceKindOptions={sourceKindOptions}
+          secrets={secrets}
+          submitting={submitting}
+          error={error}
+          onOpenChange={onOpenChange}
+          onSubmit={onSubmit}
+          title={title}
+          description={description}
+        />
+      ) : null}
+    </DialogRoot>
+  );
+}
+
+type AgchainToolEditorDialogContentProps = Pick<
+  AgchainToolEditorDialogProps,
+  'mode' | 'detail' | 'sourceKindOptions' | 'secrets' | 'submitting' | 'error' | 'onOpenChange' | 'onSubmit'
+> & {
+  title: string;
+  description: string;
+};
+
+function AgchainToolEditorDialogContent({
+  mode,
+  detail,
+  sourceKindOptions,
+  secrets,
+  submitting,
+  error,
+  onOpenChange,
+  onSubmit,
+  title,
+  description,
+}: AgchainToolEditorDialogContentProps) {
+  const [draft, setDraft] = useState<AgchainToolEditorState>(() =>
+    mode === 'edit' ? buildDraftFromDetail(detail) : createEmptyDraft(sourceKindOptions[0] ?? 'custom'),
+  );
 
   const submitDisabled = useMemo(() => {
     if (!draft.toolName.trim() || !draft.displayName.trim()) {
@@ -132,134 +166,129 @@ export function AgchainToolEditorDialog({
   }
 
   return (
-    <DialogRoot open={open} onOpenChange={(details) => onOpenChange(details.open)}>
-      <DialogContent className="w-[720px] max-w-[calc(100vw-2rem)]">
-        <DialogCloseTrigger />
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-        <form onSubmit={handleSubmit}>
-          <DialogBody>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className={fieldClass}>
-                <label htmlFor="agchain-tool-name">Tool name</label>
-                <Input
-                  id="agchain-tool-name"
-                  value={draft.toolName}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value;
-                    setDraft((current) => ({ ...current, toolName: value }));
-                  }}
-                  autoFocus
-                />
-              </div>
-              <div className={fieldClass}>
-                <label htmlFor="agchain-tool-display-name">Display name</label>
-                <Input
-                  id="agchain-tool-display-name"
-                  value={draft.displayName}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value;
-                    setDraft((current) => ({ ...current, displayName: value }));
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className={fieldClass}>
-                <label htmlFor="agchain-tool-source-kind">Source kind</label>
-                <select
-                  id="agchain-tool-source-kind"
-                  className={selectClass}
-                  value={draft.sourceKind}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value as Exclude<AgchainToolSourceKind, 'builtin'>;
-                    setDraft((current) => ({
-                      ...current,
-                      sourceKind: value,
-                    }));
-                  }}
-                >
-                  {sourceKindOptions.map((sourceKind) => (
-                    <option key={sourceKind} value={sourceKind}>
-                      {sourceKind}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={fieldClass}>
-                <label htmlFor="agchain-tool-approval-mode">Approval mode</label>
-                <select
-                  id="agchain-tool-approval-mode"
-                  className={selectClass}
-                  value={draft.approvalMode}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value;
-                    setDraft((current) => ({ ...current, approvalMode: value }));
-                  }}
-                >
-                  <option value="manual">manual</option>
-                  <option value="auto">auto</option>
-                </select>
-              </div>
-            </div>
-
+    <DialogContent className="w-[720px] max-w-[calc(100vw-2rem)]">
+      <DialogCloseTrigger />
+      <DialogTitle>{title}</DialogTitle>
+      <DialogDescription>{description}</DialogDescription>
+      <form onSubmit={handleSubmit}>
+        <DialogBody>
+          <div className="grid gap-4 md:grid-cols-2">
             <div className={fieldClass}>
-              <label htmlFor="agchain-tool-description">Description</label>
-              <textarea
-                id="agchain-tool-description"
-                className={textAreaClass}
-                value={draft.description}
+              <label htmlFor="agchain-tool-name">Tool name</label>
+              <Input
+                id="agchain-tool-name"
+                value={draft.toolName}
                 onChange={(event) => {
                   const value = event.currentTarget.value;
-                  setDraft((current) => ({ ...current, description: value }));
+                  setDraft((current) => ({ ...current, toolName: value }));
+                }}
+                autoFocus
+              />
+            </div>
+            <div className={fieldClass}>
+              <label htmlFor="agchain-tool-display-name">Display name</label>
+              <Input
+                id="agchain-tool-display-name"
+                value={draft.displayName}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setDraft((current) => ({ ...current, displayName: value }));
                 }}
               />
             </div>
+          </div>
 
-            <AgchainToolSourceEditor
-              draft={draft}
-              onChange={(updates) => setDraft((current) => ({ ...current, ...updates }))}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className={fieldClass}>
+              <label htmlFor="agchain-tool-source-kind">Source kind</label>
+              <select
+                id="agchain-tool-source-kind"
+                className={selectClass}
+                value={draft.sourceKind}
+                onChange={(event) => {
+                  const value = event.currentTarget.value as Exclude<AgchainToolSourceKind, 'builtin'>;
+                  setDraft((current) => ({
+                    ...current,
+                    sourceKind: value,
+                  }));
+                }}
+              >
+                {sourceKindOptions.map((sourceKind) => (
+                  <option key={sourceKind} value={sourceKind}>
+                    {sourceKind}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={fieldClass}>
+              <label htmlFor="agchain-tool-approval-mode">Approval mode</label>
+              <select
+                id="agchain-tool-approval-mode"
+                className={selectClass}
+                value={draft.approvalMode}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setDraft((current) => ({ ...current, approvalMode: value }));
+                }}
+              >
+                <option value="manual">manual</option>
+                <option value="auto">auto</option>
+              </select>
+            </div>
+          </div>
+
+          <div className={fieldClass}>
+            <label htmlFor="agchain-tool-description">Description</label>
+            <textarea
+              id="agchain-tool-description"
+              className={textAreaClass}
+              value={draft.description}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setDraft((current) => ({ ...current, description: value }));
+              }}
             />
+          </div>
 
-            <section className="rounded-2xl border border-border/70 bg-muted/20 p-4">
-              <h3 className="text-sm font-semibold text-foreground">Available secrets</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Reuse existing secret names when you add secret-slot metadata to a tool definition.
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {secrets.length === 0 ? (
-                  <span className="text-sm text-muted-foreground">No secrets available.</span>
-                ) : (
-                  secrets.map((secret) => (
-                    <span
-                      key={secret.id}
-                      className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground"
-                    >
-                      {secret.name}
-                    </span>
-                  ))
-                )}
-              </div>
-            </section>
+          <AgchainToolSourceEditor draft={draft} onChange={(updates) => setDraft((current) => ({ ...current, ...updates }))} />
 
-            {error ? (
-              <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {error}
-              </p>
-            ) : null}
-          </DialogBody>
+          <section className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+            <h3 className="text-sm font-semibold text-foreground">Available secrets</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Reuse existing secret names when you add secret-slot metadata to a tool definition.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {secrets.length === 0 ? (
+                <span className="text-sm text-muted-foreground">No secrets available.</span>
+              ) : (
+                secrets.map((secret) => (
+                  <span
+                    key={secret.id}
+                    className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground"
+                  >
+                    {secret.name}
+                  </span>
+                ))
+              )}
+            </div>
+          </section>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting || submitDisabled}>
-              {submitting ? (mode === 'edit' ? 'Saving...' : 'Creating...') : mode === 'edit' ? 'Save changes' : 'Create tool'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </DialogRoot>
+          {error ? (
+            <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+        </DialogBody>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={submitting || submitDisabled}>
+            {submitting ? (mode === 'edit' ? 'Saving...' : 'Creating...') : mode === 'edit' ? 'Save changes' : 'Create tool'}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }

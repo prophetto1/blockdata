@@ -8,6 +8,9 @@ from app.observability.contract import (
     ADMIN_STORAGE_PROVISIONING_INCOMPLETE_COUNTER_NAME,
     ADMIN_STORAGE_PROVISIONING_QUERY_DURATION_MS_HISTOGRAM_NAME,
     STORAGE_METER_NAME,
+    STORAGE_DOWNLOAD_SIGN_COUNTER_NAME,
+    STORAGE_DOWNLOAD_SIGN_DURATION_MS_HISTOGRAM_NAME,
+    STORAGE_DOWNLOAD_SIGN_FAILURE_COUNTER_NAME,
     STORAGE_OBJECT_DELETE_COUNTER_NAME,
     STORAGE_QUOTA_EXCEEDED_COUNTER_NAME,
     STORAGE_QUOTA_READ_COUNTER_NAME,
@@ -33,6 +36,8 @@ _storage_upload_complete_failure_count = _meter.create_counter(STORAGE_UPLOAD_CO
 _storage_upload_cancel_count = _meter.create_counter(STORAGE_UPLOAD_CANCEL_COUNTER_NAME)
 _storage_object_delete_count = _meter.create_counter(STORAGE_OBJECT_DELETE_COUNTER_NAME)
 _storage_quota_exceeded_count = _meter.create_counter(STORAGE_QUOTA_EXCEEDED_COUNTER_NAME)
+_storage_download_sign_count = _meter.create_counter(STORAGE_DOWNLOAD_SIGN_COUNTER_NAME)
+_storage_download_sign_failure_count = _meter.create_counter(STORAGE_DOWNLOAD_SIGN_FAILURE_COUNTER_NAME)
 _admin_storage_policy_update_count = _meter.create_counter(ADMIN_STORAGE_POLICY_UPDATE_COUNTER_NAME)
 _admin_storage_provisioning_incomplete_count = _meter.create_counter(
     ADMIN_STORAGE_PROVISIONING_INCOMPLETE_COUNTER_NAME
@@ -40,6 +45,7 @@ _admin_storage_provisioning_incomplete_count = _meter.create_counter(
 
 _storage_upload_reserve_duration_ms = _meter.create_histogram(STORAGE_UPLOAD_RESERVE_DURATION_MS_HISTOGRAM_NAME)
 _storage_upload_complete_duration_ms = _meter.create_histogram(STORAGE_UPLOAD_COMPLETE_DURATION_MS_HISTOGRAM_NAME)
+_storage_download_sign_duration_ms = _meter.create_histogram(STORAGE_DOWNLOAD_SIGN_DURATION_MS_HISTOGRAM_NAME)
 _admin_storage_policy_duration_ms = _meter.create_histogram(ADMIN_STORAGE_POLICY_DURATION_MS_HISTOGRAM_NAME)
 _admin_storage_provisioning_query_duration_ms = _meter.create_histogram(
     ADMIN_STORAGE_PROVISIONING_QUERY_DURATION_MS_HISTOGRAM_NAME
@@ -147,6 +153,29 @@ def record_storage_object_delete(
             }
         ),
     )
+
+
+def record_storage_download_sign(
+    *,
+    result: str,
+    storage_kind: str,
+    http_status_code: int,
+    has_object: bool,
+    duration_ms: float,
+) -> None:
+    attrs = _clean(
+        {
+            "result": result,
+            "storage.kind": storage_kind,
+            "http.status_code": http_status_code,
+            "has_object": has_object,
+        }
+    )
+    _storage_download_sign_duration_ms.record(duration_ms, attrs)
+    if result == "ok":
+        _storage_download_sign_count.add(1, attrs)
+    else:
+        _storage_download_sign_failure_count.add(1, attrs)
 
 
 def record_admin_storage_policy_read(

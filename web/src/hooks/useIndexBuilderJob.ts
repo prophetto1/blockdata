@@ -14,6 +14,7 @@ import type { PipelineSourceSet } from '@/lib/pipelineSourceSetService';
 
 type UseIndexBuilderJobOptions = {
   onJobSaved?: (sourceSetId: string) => void;
+  onSourceSetPersisted?: (sourceSetId: string) => void;
 };
 
 type SavedJobSnapshot = {
@@ -50,7 +51,9 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
   const { service } = useResolvedPipelineService('index-builder');
   const pipelineKind = service?.pipelineKind ?? null;
   const onJobSavedRef = useRef(options?.onJobSaved);
+  const onSourceSetPersistedRef = useRef(options?.onSourceSetPersisted);
   onJobSavedRef.current = options?.onJobSaved;
+  onSourceSetPersistedRef.current = options?.onSourceSetPersisted;
 
   useShellHeaderTitle({
     breadcrumbs: ['Pipeline Services', service?.label ?? 'Index Builder'],
@@ -78,12 +81,10 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
     if (isNewJob || !jobId || !pipelineKind) {
       setIsLoading(false);
       setLoadError(null);
-      if (isNewJob) {
-        pipelineSourceSet.resetSelection();
-        pipelineSourceSet.setSourceSetLabel(DEFAULT_JOB_NAME);
-        setJobName(DEFAULT_JOB_NAME);
-        setSavedSnapshot(null);
-      }
+      pipelineSourceSet.resetSelection();
+      pipelineSourceSet.setSourceSetLabel(DEFAULT_JOB_NAME);
+      setJobName(DEFAULT_JOB_NAME);
+      setSavedSnapshot(null);
       return;
     }
 
@@ -145,6 +146,7 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
     const nextSnapshot = buildSavedSnapshot(saved);
     setJobName(nextSnapshot.jobName);
     setSavedSnapshot(nextSnapshot);
+    onSourceSetPersistedRef.current?.(saved.source_set_id);
     return saved;
   }, [pipelineSourceSet]);
 
@@ -173,14 +175,19 @@ export function useIndexBuilderJob(jobId: string | null, options?: UseIndexBuild
 
   const handleUpload = useCallback(async (files: File[]) => {
     if (!resolvedProjectId || !service) return;
+    const uploadedSourceUids: string[] = [];
     for (const file of files) {
-      await uploadPipelineSource({
+      const uploaded = await uploadPipelineSource({
         projectId: resolvedProjectId,
         serviceSlug: service.slug,
         file,
       });
+      if (uploaded.sourceUid) {
+        uploadedSourceUids.push(uploaded.sourceUid);
+      }
     }
     await pipelineSourceSet.refreshSources();
+    pipelineSourceSet.appendSelection(uploadedSourceUids);
   }, [resolvedProjectId, service, pipelineSourceSet]);
 
   const handleDownload = useCallback(async (deliverable: PipelineDeliverable) => {

@@ -102,14 +102,6 @@ const SECTIONS: SectionDef[] = [
     label: 'Registries',
     settings: [
       {
-        key: 'registries.python_version',
-        label: 'Python version',
-        description: 'Default Python version for script-type task execution.',
-        fieldType: 'select',
-        defaultValue: '3.12',
-        selectItems: ['3.10', '3.11', '3.12', '3.13'],
-      },
-      {
         key: 'registries.pip_index_url',
         label: 'Pip index URL',
         description: 'Private PyPI registry URL for Python dependency resolution.',

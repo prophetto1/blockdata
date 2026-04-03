@@ -49,6 +49,7 @@ vi.mock('@/lib/pipelineSourceSetService', () => ({
 
 const SOURCES: PipelineSource[] = [
   {
+    pipeline_source_id: 'psrc-1',
     source_uid: 'source-1',
     project_id: 'project-1',
     doc_title: 'Alpha.md',
@@ -56,6 +57,7 @@ const SOURCES: PipelineSource[] = [
     byte_size: 101,
   },
   {
+    pipeline_source_id: 'psrc-2',
     source_uid: 'source-2',
     project_id: 'project-1',
     doc_title: 'Beta.md',
@@ -63,6 +65,7 @@ const SOURCES: PipelineSource[] = [
     byte_size: 202,
   },
   {
+    pipeline_source_id: 'psrc-3',
     source_uid: 'source-3',
     project_id: 'project-1',
     doc_title: 'Gamma.md',
@@ -131,8 +134,20 @@ describe('useIndexBuilderJob', () => {
     listPipelineSourceSetsMock.mockResolvedValue([]);
     getPipelineSourceSetMock.mockResolvedValue(makeSourceSet(['source-1', 'source-2']));
     createPipelineSourceSetMock.mockResolvedValue(makeSourceSet(['source-1', 'source-2']));
-    updatePipelineSourceSetMock.mockImplementation(({ sourceUids, label, sourceSetId }) => (
-      Promise.resolve(makeSourceSet(sourceUids ?? [], label ?? 'Saved set', sourceSetId ?? 'set-1'))
+    updatePipelineSourceSetMock.mockImplementation(({ pipelineSourceIds, label, sourceSetId }) => (
+      Promise.resolve(
+        makeSourceSet(
+          (pipelineSourceIds ?? []).map((pipelineSourceId: string) => {
+            const source = SOURCES.find((item) => item.pipeline_source_id === pipelineSourceId);
+            if (!source) {
+              throw new Error(`Missing source fixture for ${pipelineSourceId}`);
+            }
+            return source.source_uid;
+          }),
+          label ?? 'Saved set',
+          sourceSetId ?? 'set-1',
+        ),
+      )
     ));
     uploadPipelineSourceMock.mockResolvedValue(undefined);
     downloadPipelineDeliverableMock.mockResolvedValue(new Blob());
@@ -156,6 +171,22 @@ describe('useIndexBuilderJob', () => {
 
     return hook;
   }
+
+  it('starts a new draft with no checked membership even when other saved source sets exist', async () => {
+    listPipelineSourceSetsMock.mockResolvedValue([
+      makeSourceSet(['source-1', 'source-2'], 'Existing set', 'set-existing'),
+    ]);
+
+    const hook = renderHook(() => useIndexBuilderJob('new'));
+
+    await waitFor(() => {
+      expect(hook.result.current.isLoading).toBe(false);
+    });
+
+    expect(hook.result.current.isNewJob).toBe(true);
+    expect(hook.result.current.pipelineSourceSet.activeSourceSetId).toBeNull();
+    expect(hook.result.current.pipelineSourceSet.selectedSourceUids).toEqual([]);
+  });
 
   it('marks existing jobs dirty when file membership is toggled', async () => {
     const hook = await renderExistingJob();
@@ -228,11 +259,48 @@ describe('useIndexBuilderJob', () => {
       pipelineKind: 'markdown_index_builder',
       sourceSetId: 'set-1',
       label: 'Saved set',
-      sourceUids: ['source-1', 'source-2', 'source-3'],
+      pipelineSourceIds: ['psrc-1', 'psrc-2', 'psrc-3'],
     });
     expect(pipelineJobHook.triggerJob).toHaveBeenCalledWith('set-1');
     expect(updatePipelineSourceSetMock.mock.invocationCallOrder[0]).toBeLessThan(
       pipelineJobHook.triggerJob.mock.invocationCallOrder[0],
     );
+  });
+
+  it('adds newly uploaded files into the current draft selection', async () => {
+    const newSource: PipelineSource = {
+      pipeline_source_id: 'psrc-4',
+      source_uid: 'source-4',
+      project_id: 'project-1',
+      doc_title: 'Delta.md',
+      source_type: 'md',
+      byte_size: 404,
+    };
+    listPipelineSourcesMock
+      .mockResolvedValueOnce([SOURCES[0], SOURCES[1]])
+      .mockResolvedValueOnce([SOURCES[0], SOURCES[1], newSource]);
+    uploadPipelineSourceMock.mockResolvedValue({
+      sourceUid: 'source-4',
+      reservation: {},
+      completed: {},
+    });
+
+    const hook = renderHook(() => useIndexBuilderJob('new'));
+
+    await waitFor(() => {
+      expect(hook.result.current.pipelineSourceSet.sources).toHaveLength(2);
+    });
+
+    const file = new File(['# delta'], 'Delta.md', { type: 'text/markdown' });
+
+    await act(async () => {
+      await hook.result.current.handleUpload([file]);
+    });
+
+    await waitFor(() => {
+      expect(hook.result.current.pipelineSourceSet.sources).toHaveLength(3);
+    });
+
+    expect(hook.result.current.pipelineSourceSet.selectedSourceUids).toEqual(['source-4']);
   });
 });

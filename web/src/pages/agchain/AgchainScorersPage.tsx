@@ -1,8 +1,8 @@
-import { AgchainSectionPage } from './AgchainSectionPage';
+import { AgchainProjectPlaceholderPage } from '@/components/agchain/AgchainProjectPlaceholderPage';
 
 export default function AgchainScorersPage() {
   return (
-    <AgchainSectionPage
+    <AgchainProjectPlaceholderPage
       title="Scorers"
       description="Scorer definitions, judge rules, and scoring policies will live here for the selected AGChain project."
       bullets={[

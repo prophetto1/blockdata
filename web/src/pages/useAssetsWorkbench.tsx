@@ -100,6 +100,11 @@ export function useAssetsWorkbench({ refreshQuota }: { refreshQuota?: () => Prom
     </div>
   ), [handleDownload, handleDelete]);
 
+  const handleUploadComplete = useCallback(() => {
+    refreshDocs();
+    void refreshQuota?.();
+  }, [refreshDocs, refreshQuota]);
+
   const renderContent = useCallback((tabId: string) => {
     if (tabId === 'upload') {
       if (!resolvedProjectId) {
@@ -112,10 +117,7 @@ export function useAssetsWorkbench({ refreshQuota }: { refreshQuota?: () => Prom
       return (
         <UploadTabPanel
           projectId={resolvedProjectId}
-          onUploadComplete={() => {
-            refreshDocs();
-            void refreshQuota?.();
-          }}
+          onUploadComplete={handleUploadComplete}
         />
       );
     }
@@ -157,7 +159,7 @@ export function useAssetsWorkbench({ refreshQuota }: { refreshQuota?: () => Prom
     }
 
     return null;
-  }, [resolvedProjectId, docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, refreshDocs, refreshQuota]);
+  }, [resolvedProjectId, docs, loading, error, selected, toggleSelect, toggleSelectAll, allSelected, someSelected, activeDocUid, activeDoc, handleDocClick, renderRowActions, handleUploadComplete]);
 
   return { renderContent, workbenchRef };
 }

@@ -1,8 +1,8 @@
-import { AgchainSectionPage } from './AgchainSectionPage';
+import { AgchainProjectPlaceholderPage } from '@/components/agchain/AgchainProjectPlaceholderPage';
 
 export default function AgchainResultsPage() {
   return (
-    <AgchainSectionPage
+    <AgchainProjectPlaceholderPage
       title="Results"
       description="Scored outcomes, comparisons, summaries, and rerun history will be surfaced here for the focused AGChain project or evaluation."
       bullets={[

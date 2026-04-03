@@ -56,6 +56,7 @@ describe('storageUploadService', () => {
       content_type: 'application/pdf',
       expected_bytes: 5,
       storage_kind: 'source',
+      storage_surface: 'assets',
       source_type: 'pdf',
       doc_title: 'Folder/Outline.pdf',
     });
@@ -91,6 +92,7 @@ describe('storageUploadService', () => {
       '/storage/uploads',
       expect.objectContaining({
         method: 'POST',
+        body: expect.stringContaining('"storage_surface":"assets"'),
       }),
     );
     expect(fetchMock).toHaveBeenCalledWith(
@@ -114,9 +116,9 @@ describe('storageUploadService', () => {
     expect(result.completed.storage_object_id).toBe('obj-1');
   });
 
-  it('cancels its reservation when the signed upload request throws', async () => {
+  it('maps signed upload fetch failures to a clearer storage policy error and cancels the reservation', async () => {
     const fetchMock = vi.fn<typeof fetch>()
-      .mockRejectedValueOnce(new Error('network down'));
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'));
     vi.stubGlobal('fetch', fetchMock);
 
     platformApiFetchMock
@@ -132,12 +134,15 @@ describe('storageUploadService', () => {
       projectId: 'project-1',
       file,
       docTitle: 'Folder/Outline.pdf',
-    })).rejects.toThrow('network down');
+    })).rejects.toThrow('bucket CORS policy does not allow this app origin');
 
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
       1,
       '/storage/uploads',
-      expect.objectContaining({ method: 'POST' }),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"storage_surface":"assets"'),
+      }),
     );
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
       2,
@@ -182,6 +187,7 @@ describe('storageUploadService', () => {
       '/storage/uploads',
       expect.objectContaining({
         method: 'POST',
+        body: expect.stringContaining('"storage_surface":"assets"'),
       }),
     );
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
@@ -194,6 +200,7 @@ describe('storageUploadService', () => {
       '/storage/uploads',
       expect.objectContaining({
         method: 'POST',
+        body: expect.stringContaining('"storage_surface":"assets"'),
       }),
     );
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(

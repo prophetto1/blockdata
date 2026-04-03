@@ -55,6 +55,7 @@ describe('pipelineService', () => {
       .mockResolvedValueOnce(jsonResponse({
         items: [
           {
+            pipeline_source_id: 'psrc-1',
             source_uid: 'source-1',
             project_id: 'project-1',
             doc_title: 'Guide.md',
@@ -80,6 +81,7 @@ describe('pipelineService', () => {
       projectId: 'project-1',
     })).resolves.toEqual([
       {
+        pipeline_source_id: 'psrc-1',
         source_uid: 'source-1',
         project_id: 'project-1',
         doc_title: 'Guide.md',

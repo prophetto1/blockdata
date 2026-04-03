@@ -6,6 +6,7 @@ import {
 } from '@tabler/icons-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useBatchParse } from '@/hooks/useBatchParse';
+import { resolveSignedUrlForLocators } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
@@ -15,9 +16,6 @@ import {
   type ParseTrack,
   type ParsingProfileOption,
 } from './parseProfileSupport';
-
-const DOCUMENTS_BUCKET =
-  (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 
 function getBaseName(locator: string | null | undefined): string | null {
   if (!locator) return null;
@@ -158,12 +156,10 @@ export function useParseTab(activeTrack: ParseTrack, selectedDoc: ProjectDocumen
     const key = locator
       || (baseName ? `converted/${doc.source_uid}/${baseName}.docling.json` : null);
     if (!key) return;
-    const { data, error: urlError } = await supabase.storage
-      .from(DOCUMENTS_BUCKET)
-      .createSignedUrl(key, 60 * 20);
-    if (urlError || !data?.signedUrl) return;
+    const { url: signedUrl } = await resolveSignedUrlForLocators([key]);
+    if (!signedUrl) return;
     try {
-      const resp = await fetch(data.signedUrl);
+      const resp = await fetch(signedUrl);
       const text = await resp.text();
       const formatted = JSON.stringify(JSON.parse(text), null, 2);
       setJsonModal({ title: doc.doc_title, content: formatted });
@@ -178,10 +174,8 @@ export function useParseTab(activeTrack: ParseTrack, selectedDoc: ProjectDocumen
     const key = locator
       || (baseName ? `converted/${doc.source_uid}/${baseName}.docling.json` : null);
     if (!key) return;
-    const { data } = await supabase.storage
-      .from(DOCUMENTS_BUCKET)
-      .createSignedUrl(key, 60 * 20);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+    const { url: signedUrl } = await resolveSignedUrlForLocators([key]);
+    if (signedUrl) window.open(signedUrl, '_blank');
   };
 
   return {

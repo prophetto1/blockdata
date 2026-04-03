@@ -111,4 +111,23 @@ describe('AgchainOrganizationSwitcher', () => {
 
     expect(setSelectedOrganizationId).toHaveBeenCalledWith('org-2');
   });
+
+  it('uses the organization members footer entry for scoped organization management', async () => {
+    render(
+      <MemoryRouter>
+        <AgchainOrganizationSwitcher />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /personal workspace/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: /open organization members/i })).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('link', { name: /open organization members/i })).toHaveAttribute(
+      'href',
+      '/app/agchain/settings/organization/members',
+    );
+  });
 });

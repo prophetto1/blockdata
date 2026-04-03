@@ -11,14 +11,14 @@ import type {
 import AgchainBenchmarksPage from './AgchainBenchmarksPage';
 
 const useAgchainBenchmarkStepsMock = vi.fn();
+const useAgchainScopeStateMock = vi.fn();
 
 vi.mock('@/hooks/agchain/useAgchainBenchmarkSteps', () => ({
   useAgchainBenchmarkSteps: () => useAgchainBenchmarkStepsMock(),
 }));
 
-const useAgchainProjectFocusMock = vi.fn();
-vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
-  useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
+vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
+  useAgchainScopeState: () => useAgchainScopeStateMock(),
 }));
 
 const PROJECT_ROW: AgchainBenchmarkRegistryRow & {
@@ -141,10 +141,14 @@ afterEach(() => {
 
 describe('AgchainBenchmarksPage', () => {
   beforeEach(() => {
-    useAgchainProjectFocusMock.mockReset();
-    useAgchainProjectFocusMock.mockReturnValue({
-      status: 'ready',
-      reload: vi.fn(),
+    useAgchainScopeStateMock.mockReset();
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'ready',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
+      focusedProject: PROJECT_ROW,
     });
     useAgchainBenchmarkStepsMock.mockReset();
     useAgchainBenchmarkStepsMock.mockReturnValue({
@@ -254,6 +258,7 @@ describe('AgchainBenchmarksPage', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Benchmark definition' })).toBeInTheDocument();
+    expect(screen.getByTestId('agchain-benchmark-nav')).toBeInTheDocument();
     expect(screen.getByText(/legal evals owns this benchmark definition page/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New Step' })).toBeInTheDocument();
     expect(screen.getByText('Issue Spotting')).toBeInTheDocument();
@@ -346,7 +351,13 @@ describe('AgchainBenchmarksPage', () => {
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {
-    useAgchainProjectFocusMock.mockReturnValue({ status: 'no-project', reload: vi.fn() });
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'no-project',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
+    });
     useAgchainBenchmarkStepsMock.mockReturnValue({
       benchmark: null,
       currentVersion: null,

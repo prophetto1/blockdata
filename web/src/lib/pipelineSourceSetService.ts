@@ -88,14 +88,14 @@ export async function createPipelineSourceSet(params: {
   pipelineKind: string;
   projectId: string;
   label: string;
-  sourceUids: string[];
+  pipelineSourceIds: string[];
 }): Promise<PipelineSourceSet> {
   const payload = await postJson<{ source_set: PipelineSourceSet }>(
     `/pipelines/${params.pipelineKind}/source-sets`,
     {
       project_id: params.projectId,
       label: params.label,
-      source_uids: params.sourceUids,
+      pipeline_source_ids: params.pipelineSourceIds,
     },
     'pipeline source-set create failed',
   );
@@ -106,13 +106,13 @@ export async function updatePipelineSourceSet(params: {
   pipelineKind: string;
   sourceSetId: string;
   label?: string;
-  sourceUids?: string[];
+  pipelineSourceIds?: string[];
 }): Promise<PipelineSourceSet> {
   const payload = await patchJson<{ source_set: PipelineSourceSet }>(
     `/pipelines/${params.pipelineKind}/source-sets/${params.sourceSetId}`,
     {
       label: params.label,
-      source_uids: params.sourceUids,
+      pipeline_source_ids: params.pipelineSourceIds,
     },
     'pipeline source-set update failed',
   );

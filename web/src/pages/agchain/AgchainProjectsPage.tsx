@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
 import { Button } from '@/components/ui/button';
 import { AgchainProjectCreateDialog } from '@/components/agchain/AgchainProjectCreateDialog';
+import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { useAgchainWorkspace } from '@/contexts/AgchainWorkspaceContext';
 import {
   createAgchainProject,
@@ -22,13 +24,12 @@ export default function AgchainProjectsPage() {
 
   const {
     projects,
-    status,
     error: workspaceError,
     selectedProjectId,
     selectedOrganizationId,
     reloadAndSelect,
-    reload,
   } = useAgchainWorkspace();
+  const scopeState = useAgchainScopeState('organization');
 
   function setCreateOpen(open: boolean) {
     const next = new URLSearchParams(searchParams);
@@ -60,7 +61,7 @@ export default function AgchainProjectsPage() {
     }
   }
 
-  if (status === 'bootstrapping') {
+  if (scopeState.kind === 'bootstrapping') {
     return (
       <AgchainPageFrame className="gap-6 py-8">
         <div className="flex flex-1 items-center justify-center">
@@ -70,26 +71,33 @@ export default function AgchainProjectsPage() {
     );
   }
 
-  if (status === 'error') {
+  if (scopeState.kind === 'error') {
     return (
       <AgchainPageFrame className="gap-6 py-8">
-        <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <p className="text-sm text-muted-foreground">{workspaceError ?? 'Failed to load AGChain workspace context.'}</p>
-          <button onClick={() => void reload()} className="text-sm font-medium text-foreground underline-offset-4 hover:underline">Retry</button>
-        </div>
+        <AgchainEmptyState
+          title="AGChain projects unavailable"
+          description={workspaceError ?? 'Failed to load AGChain workspace context.'}
+          action={(
+            <button
+              type="button"
+              onClick={() => void scopeState.reload()}
+              className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Retry
+            </button>
+          )}
+        />
       </AgchainPageFrame>
     );
   }
 
-  if (status === 'no-organization') {
+  if (scopeState.kind === 'no-organization') {
     return (
       <AgchainPageFrame className="gap-6 py-8">
-        <section className="rounded-3xl border border-border/70 bg-card/70 p-8 shadow-sm">
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">No organization</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Select or create an organization using the sidebar before managing AGChain projects.
-          </p>
-        </section>
+        <AgchainEmptyState
+          title="No organization"
+          description="Select or create an organization using the sidebar before managing AGChain projects."
+        />
       </AgchainPageFrame>
     );
   }

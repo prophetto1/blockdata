@@ -1,73 +1,42 @@
-import { useMemo } from 'react';
-import { Portal } from '@ark-ui/react/portal';
-import { Select, createListCollection } from '@ark-ui/react/select';
-import { IconChevronDown } from '@tabler/icons-react';
+import { SegmentGroup } from '@ark-ui/react/segment-group';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-type WorkspaceOption = {
-  label: string;
-  value: string;
-  path: string;
-};
-
-const WORKSPACE_OPTIONS: WorkspaceOption[] = [
+const WORKSPACE_OPTIONS = [
   { label: 'Blockdata', value: 'blockdata', path: '/app' },
   { label: 'AG chain', value: 'agchain', path: '/app/agchain' },
-];
+] as const;
 
 export function ShellWorkspaceSelector() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const collection = useMemo(
-    () => createListCollection({ items: WORKSPACE_OPTIONS }),
-    [],
-  );
-
-  const currentWorkspace = location.pathname.startsWith('/app/agchain')
-    ? WORKSPACE_OPTIONS[1]
-    : WORKSPACE_OPTIONS[0];
+  const currentValue = location.pathname.startsWith('/app/agchain')
+    ? 'agchain'
+    : 'blockdata';
 
   return (
-    <Select.Root
-      collection={collection}
-      positioning={{ placement: 'bottom-start', offset: { mainAxis: 6 } }}
-      value={[currentWorkspace.value]}
+    <SegmentGroup.Root
+      value={currentValue}
       onValueChange={(details) => {
-        const nextValue = details.value[0];
-        const nextWorkspace = WORKSPACE_OPTIONS.find((item) => item.value === nextValue);
-        if (nextWorkspace && nextWorkspace.path !== currentWorkspace.path) {
-          navigate(nextWorkspace.path);
+        const next = WORKSPACE_OPTIONS.find((o) => o.value === details.value);
+        if (next && next.value !== currentValue) {
+          navigate(next.path);
         }
       }}
+      className="shell-workspace-toggle"
     >
-      <Select.HiddenSelect />
-      <Select.Control>
-        <Select.Trigger
-          aria-label={`Workspace ${currentWorkspace.label}`}
-          className="shell-workspace-selector-trigger"
+      {WORKSPACE_OPTIONS.map((option) => (
+        <SegmentGroup.Item
+          key={option.value}
+          value={option.value}
+          className="shell-workspace-toggle-item"
         >
-          <Select.ValueText placeholder={currentWorkspace.label} />
-          <Select.Indicator>
-            <IconChevronDown size={16} stroke={1.75} className="shrink-0 text-muted-foreground" />
-          </Select.Indicator>
-        </Select.Trigger>
-      </Select.Control>
-      <Portal>
-        <Select.Positioner className="z-[140]">
-          <Select.Content className="shell-workspace-selector-content">
-            {collection.items.map((item) => (
-              <Select.Item
-                key={item.value}
-                item={item}
-                className="shell-workspace-selector-item"
-              >
-                <Select.ItemText>{item.label}</Select.ItemText>
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Positioner>
-      </Portal>
-    </Select.Root>
+          <SegmentGroup.ItemText>{option.label}</SegmentGroup.ItemText>
+          <SegmentGroup.ItemControl />
+          <SegmentGroup.ItemHiddenInput />
+        </SegmentGroup.Item>
+      ))}
+      <SegmentGroup.Indicator className="shell-workspace-toggle-indicator" />
+    </SegmentGroup.Root>
   );
 }

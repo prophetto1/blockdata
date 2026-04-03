@@ -3,7 +3,6 @@ import { listPipelineSources, type PipelineSource } from '@/lib/pipelineService'
 import {
   createPipelineSourceSet,
   getPipelineSourceSet,
-  listPipelineSourceSets,
   updatePipelineSourceSet,
   type PipelineSourceSet,
 } from '@/lib/pipelineSourceSetService';
@@ -74,7 +73,7 @@ export function usePipelineSourceSet({
   }, [pipelineKind, projectId]);
 
   const refreshSourceSet = useCallback(async () => {
-    if (!projectId || !pipelineKind) {
+    if (!projectId || !pipelineKind || !activeSourceSetId) {
       setActiveSourceSetId(null);
       setSourceSetError(null);
       return null;
@@ -82,12 +81,9 @@ export function usePipelineSourceSet({
 
     try {
       setSourceSetError(null);
-      const items = await listPipelineSourceSets({ projectId, pipelineKind });
-      const targetSourceSetId = activeSourceSetId ?? items[0]?.source_set_id ?? null;
-      if (!targetSourceSetId) return null;
       const detail = await getPipelineSourceSet({
         pipelineKind,
-        sourceSetId: targetSourceSetId,
+        sourceSetId: activeSourceSetId,
       });
       hydrateSourceSet(detail);
       return detail;
@@ -108,7 +104,9 @@ export function usePipelineSourceSet({
     }
 
     void refreshSources();
-    void refreshSourceSet();
+    if (activeSourceSetId) {
+      void refreshSourceSet();
+    }
   }, [pipelineKind, projectId, refreshSourceSet, refreshSources]);
 
   const toggleSource = useCallback((sourceUid: string) => {
@@ -133,6 +131,18 @@ export function usePipelineSourceSet({
 
   const removeSource = useCallback((sourceUid: string) => {
     setSelectedSourceUids((current) => current.filter((item) => item !== sourceUid));
+  }, []);
+
+  const appendSelection = useCallback((sourceUids: string[]) => {
+    setSelectedSourceUids((current) => {
+      const next = current.slice();
+      for (const sourceUid of sourceUids) {
+        if (!next.includes(sourceUid)) {
+          next.push(sourceUid);
+        }
+      }
+      return next;
+    });
   }, []);
 
   const replaceSelection = useCallback((sourceUids: string[]) => {
@@ -170,6 +180,10 @@ export function usePipelineSourceSet({
     if (!trimmedLabel) {
       throw new Error('Provide a source set label before starting processing.');
     }
+    const selectedPipelineSourceIds = selectedSources.map((source) => source.pipeline_source_id);
+    if (selectedPipelineSourceIds.length !== selectedSourceUids.length) {
+      throw new Error('Refresh the file list before saving this draft.');
+    }
 
     try {
       setIsPersisting(true);
@@ -179,13 +193,13 @@ export function usePipelineSourceSet({
           pipelineKind,
           sourceSetId: activeSourceSetId,
           label: trimmedLabel,
-          sourceUids: selectedSourceUids,
+          pipelineSourceIds: selectedPipelineSourceIds,
         })
         : await createPipelineSourceSet({
           pipelineKind,
           projectId,
           label: trimmedLabel,
-          sourceUids: selectedSourceUids,
+          pipelineSourceIds: selectedPipelineSourceIds,
         });
       hydrateSourceSet(nextSourceSet);
       return nextSourceSet;
@@ -196,7 +210,15 @@ export function usePipelineSourceSet({
     } finally {
       setIsPersisting(false);
     }
-  }, [activeSourceSetId, hydrateSourceSet, pipelineKind, projectId, selectedSourceUids, sourceSetLabel]);
+  }, [
+    activeSourceSetId,
+    hydrateSourceSet,
+    pipelineKind,
+    projectId,
+    selectedSourceUids,
+    selectedSources,
+    sourceSetLabel,
+  ]);
 
   return {
     sources,
@@ -212,6 +234,7 @@ export function usePipelineSourceSet({
     toggleSource,
     moveSource,
     removeSource,
+    appendSelection,
     replaceSelection,
     refreshSources,
     refreshSourceSet,

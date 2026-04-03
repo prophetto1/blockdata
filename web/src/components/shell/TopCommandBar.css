@@ -312,60 +312,61 @@
   color: var(--accent-foreground);
 }
 
-.shell-workspace-selector-trigger {
+
+.shell-workspace-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  min-width: 132px;
-  max-width: 148px;
-  flex: 0 0 148px;
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 999px;
+  background: var(--muted);
+  padding: 2px;
+  gap: 0;
+}
+
+.shell-workspace-toggle-item {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
   background: transparent;
-  color: var(--foreground);
-  padding: 0.375rem 0.875rem;
-  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-}
-
-.shell-workspace-selector-trigger:hover {
-  background: var(--accent);
-}
-
-.shell-workspace-selector-trigger [data-part='value-text'] {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1;
   white-space: nowrap;
+  cursor: pointer;
+  transition: color 120ms ease;
+  user-select: none;
 }
 
-.shell-workspace-selector-trigger:focus-visible {
+.shell-workspace-toggle-item [data-part='item-control'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.shell-workspace-toggle-item[data-state='checked'] {
+  color: var(--foreground);
+}
+
+.shell-workspace-toggle-item:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 1px;
 }
 
-.shell-workspace-selector-content {
-  width: 220px;
-  max-width: calc(100vw - 32px);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--popover);
-  color: var(--popover-foreground);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
-  padding: 4px;
-}
-
-.shell-workspace-selector-item {
-  border-radius: 8px;
-  cursor: pointer;
-  padding: 8px 10px;
-  font-size: 0.875rem;
-  line-height: 1.2;
-}
-
-.shell-workspace-selector-item[data-highlighted] {
-  background: var(--accent);
-  color: var(--accent-foreground);
+.shell-workspace-toggle-indicator {
+  position: absolute;
+  border-radius: 999px;
+  background: var(--background);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: left 180ms ease, width 180ms ease;
 }
 
 /* Top-bar view tabs */

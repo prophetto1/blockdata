@@ -10,6 +10,7 @@ describe('PipelineSourceFilesPanel', () => {
       <PipelineSourceFilesPanel
         sources={[
           {
+            pipeline_source_id: 'psrc-1',
             source_uid: 'source-1',
             project_id: 'project-1',
             doc_title: 'Guide.md',
@@ -17,6 +18,7 @@ describe('PipelineSourceFilesPanel', () => {
             byte_size: 1200,
           },
           {
+            pipeline_source_id: 'psrc-2',
             source_uid: 'source-2',
             project_id: 'project-1',
             doc_title: 'Notes.md',

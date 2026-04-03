@@ -18,6 +18,7 @@ from app.auth.dependencies import require_user_auth
 from app.core.config import get_settings
 from app.infra.supabase_client import get_supabase_admin
 from app.observability.storage_metrics import (
+    record_storage_download_sign,
     record_storage_object_delete,
     record_storage_quota_read,
     record_storage_upload_cancel,
@@ -25,10 +26,16 @@ from app.observability.storage_metrics import (
     record_storage_upload_reserve,
     storage_tracer,
 )
+from app.services.storage_namespaces import (
+    StorageSurface,
+    get_pipeline_kind_for_service_slug,
+    is_assets_surface,
+    is_pipeline_services_surface,
+    normalize_storage_namespace,
+)
 from app.services.storage_source_documents import upsert_source_document_for_storage_object
 
 StorageKind = Literal["source", "converted", "parsed", "export"]
-StorageSurface = Literal["assets", "pipeline-services"]
 
 SIGNED_URL_MINUTES = 30
 router = APIRouter(prefix="/storage", tags=["storage"])
@@ -109,6 +116,16 @@ def create_signed_upload_url(bucket_name: str, object_key: str, content_type: st
         expiration=timedelta(minutes=SIGNED_URL_MINUTES),
         method="PUT",
         content_type=content_type,
+    )
+
+
+def create_signed_download_url(*, bucket_name: str, object_key: str) -> str:
+    bucket = _gcs_client().bucket(bucket_name)
+    blob = bucket.blob(object_key)
+    return blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(minutes=SIGNED_URL_MINUTES),
+        method="GET",
     )
 
 
@@ -207,6 +224,19 @@ def _fetch_storage_object_by_reservation(admin, owner_user_id: str, reservation_
     return res.data
 
 
+def _fetch_owned_active_storage_object(admin, owner_user_id: str, object_key: str) -> dict | None:
+    res = (
+        admin.table("storage_objects")
+        .select("storage_object_id, bucket, object_key, status")
+        .eq("owner_user_id", owner_user_id)
+        .eq("object_key", object_key)
+        .eq("status", "active")
+        .maybe_single()
+        .execute()
+    )
+    return res.data
+
+
 def _fetch_pending_reservation_by_object(
     admin,
     *,
@@ -255,6 +285,8 @@ def _reserve_upload_with_duplicate_recovery(
     source_uid: str | None,
     source_type: str | None,
     doc_title: str | None,
+    storage_surface: str | None,
+    storage_service_slug: str | None,
 ) -> tuple[dict, bool]:
     payload = {
         "p_user_id": owner_user_id,
@@ -268,6 +300,8 @@ def _reserve_upload_with_duplicate_recovery(
         "p_source_uid": source_uid,
         "p_source_type": source_type,
         "p_doc_title": doc_title,
+        "p_storage_surface": storage_surface,
+        "p_storage_service_slug": storage_service_slug,
     }
 
     for _attempt in range(2):
@@ -312,6 +346,21 @@ def _bridge_failure_http_error() -> HTTPException:
     )
 
 
+def _update_storage_object_namespace_metadata(
+    admin,
+    *,
+    storage_object_id: str,
+    reservation: dict,
+) -> None:
+    payload = {
+        "storage_surface": reservation.get("storage_surface") or "assets",
+        "storage_service_slug": reservation.get("storage_service_slug"),
+        "doc_title": reservation.get("doc_title") or reservation.get("original_filename") or "file",
+        "source_type": reservation.get("source_type") or "binary",
+    }
+    admin.table("storage_objects").update(payload).eq("storage_object_id", storage_object_id).execute()
+
+
 def _sync_source_document_bridge(
     admin,
     *,
@@ -319,7 +368,7 @@ def _sync_source_document_bridge(
     reservation: dict,
     storage_object: dict,
 ) -> None:
-    if reservation.get("storage_kind") != "source":
+    if reservation.get("storage_kind") != "source" or not is_assets_surface(reservation.get("storage_surface")):
         return
 
     source_uid = reservation.get("source_uid")
@@ -335,7 +384,118 @@ def _sync_source_document_bridge(
         doc_title=reservation.get("doc_title") or reservation.get("original_filename") or "file",
         object_key=storage_object["object_key"],
         bytes_used=storage_object["byte_size"],
+        document_surface="assets",
+        storage_object_id=storage_object["storage_object_id"],
     )
+
+
+def _sync_pipeline_source_registry(
+    admin,
+    *,
+    owner_id: str,
+    reservation: dict,
+    storage_object: dict,
+) -> None:
+    if reservation.get("storage_kind") != "source" or not is_pipeline_services_surface(
+        reservation.get("storage_surface")
+    ):
+        return
+
+    storage_service_slug = reservation.get("storage_service_slug")
+    pipeline_kind = get_pipeline_kind_for_service_slug(storage_service_slug)
+    if not pipeline_kind:
+        raise RuntimeError("pipeline source reservation missing recognized storage_service_slug")
+
+    payload = {
+        "owner_id": owner_id,
+        "project_id": reservation.get("project_id"),
+        "pipeline_kind": pipeline_kind,
+        "storage_service_slug": storage_service_slug,
+        "storage_object_id": storage_object["storage_object_id"],
+        "source_uid": reservation.get("source_uid"),
+        "doc_title": reservation.get("doc_title") or reservation.get("original_filename") or "file",
+        "source_type": reservation.get("source_type") or "binary",
+        "byte_size": storage_object.get("byte_size"),
+        "object_key": storage_object["object_key"],
+    }
+    admin.table("pipeline_sources").upsert(
+        payload,
+        on_conflict="owner_id,project_id,pipeline_kind,source_uid",
+    ).execute()
+
+
+def _delete_assets_document_metadata(admin, *, owner_id: str, storage_object: dict) -> None:
+    table = admin.table("source_documents")
+    storage_object_id = storage_object.get("storage_object_id")
+    if storage_object_id:
+        result = (
+            table.delete()
+            .eq("owner_id", owner_id)
+            .eq("storage_object_id", storage_object_id)
+            .execute()
+        )
+        if result.data:
+            return
+
+    source_uid = storage_object.get("source_uid")
+    if not source_uid:
+        return
+
+    query = (
+        admin.table("source_documents")
+        .delete()
+        .eq("owner_id", owner_id)
+        .eq("source_uid", source_uid)
+        .eq("document_surface", "assets")
+    )
+    project_id = storage_object.get("project_id")
+    if project_id is not None:
+        query = query.eq("project_id", project_id)
+    query.execute()
+
+
+def _delete_pipeline_source_metadata(admin, *, owner_id: str, storage_object: dict) -> None:
+    table = admin.table("pipeline_sources")
+    storage_object_id = storage_object.get("storage_object_id")
+    if storage_object_id:
+        result = (
+            table.delete()
+            .eq("owner_id", owner_id)
+            .eq("storage_object_id", storage_object_id)
+            .execute()
+        )
+        if result.data:
+            return
+
+    source_uid = storage_object.get("source_uid")
+    if not source_uid:
+        return
+
+    query = (
+        admin.table("pipeline_sources")
+        .delete()
+        .eq("owner_id", owner_id)
+        .eq("source_uid", source_uid)
+    )
+    project_id = storage_object.get("project_id")
+    if project_id is not None:
+        query = query.eq("project_id", project_id)
+    storage_service_slug = storage_object.get("storage_service_slug")
+    if storage_service_slug:
+        query = query.eq("storage_service_slug", storage_service_slug)
+    query.execute()
+
+
+def _reconcile_deleted_storage_metadata(admin, *, owner_id: str, storage_object: dict) -> None:
+    if storage_object.get("storage_kind") != "source":
+        return
+
+    if is_assets_surface(storage_object.get("storage_surface")):
+        _delete_assets_document_metadata(admin, owner_id=owner_id, storage_object=storage_object)
+        return
+
+    if is_pipeline_services_surface(storage_object.get("storage_surface")):
+        _delete_pipeline_source_metadata(admin, owner_id=owner_id, storage_object=storage_object)
 
 
 def _assert_project_ownership(admin, user_id: str, project_id: str) -> None:
@@ -370,6 +530,10 @@ class CompleteUploadRequest(BaseModel):
     checksum_sha256: str | None = None
 
 
+class CreateDownloadUrlRequest(BaseModel):
+    object_key: str = Field(min_length=1)
+
+
 @router.get("/quota")
 async def read_storage_quota(auth=Depends(require_user_auth)):
     started = perf_counter()
@@ -402,6 +566,64 @@ async def read_storage_quota(auth=Depends(require_user_auth)):
                 http_status_code=_http_status_code(exc),
             )
             raise
+
+
+@router.post("/download-url")
+async def create_download_url(body: CreateDownloadUrlRequest, auth=Depends(require_user_auth)):
+    started = perf_counter()
+    with storage_tracer.start_as_current_span("storage.download.sign_url") as span:
+        span.set_attribute("storage.kind", "gcs")
+        span.set_attribute("has_object", False)
+        admin = get_supabase_admin()
+        storage_object = None
+        try:
+            storage_object = _fetch_owned_active_storage_object(admin, auth.user_id, body.object_key)
+            if not storage_object:
+                http_exc = HTTPException(status_code=404, detail="Object not found")
+                span.set_attribute("result", "error")
+                span.set_attribute("http.status_code", http_exc.status_code)
+                record_storage_download_sign(
+                    result="error",
+                    storage_kind="gcs",
+                    http_status_code=http_exc.status_code,
+                    has_object=False,
+                    duration_ms=(perf_counter() - started) * 1000.0,
+                )
+                raise http_exc
+
+            span.set_attribute("has_object", True)
+            signed_url = create_signed_download_url(
+                bucket_name=storage_object["bucket"],
+                object_key=storage_object["object_key"],
+            )
+        except HTTPException:
+            raise
+        except Exception as exc:
+            http_exc = _http_from_supabase_error(exc)
+            span.set_attribute("result", "error")
+            span.set_attribute("http.status_code", http_exc.status_code)
+            record_storage_download_sign(
+                result="error",
+                storage_kind="gcs",
+                http_status_code=http_exc.status_code,
+                has_object=bool(storage_object),
+                duration_ms=(perf_counter() - started) * 1000.0,
+            )
+            raise http_exc from exc
+
+        span.set_attribute("result", "ok")
+        span.set_attribute("http.status_code", 200)
+        record_storage_download_sign(
+            result="ok",
+            storage_kind="gcs",
+            http_status_code=200,
+            has_object=True,
+            duration_ms=(perf_counter() - started) * 1000.0,
+        )
+        return {
+            "signed_url": signed_url,
+            "expires_in_seconds": SIGNED_URL_MINUTES * 60,
+        }
 
 
 @router.post("/uploads")
@@ -444,6 +666,10 @@ async def create_upload(body: CreateUploadRequest, auth=Depends(require_user_aut
 
         upload_id = uuid4().hex
         try:
+            storage_surface, storage_service_slug = normalize_storage_namespace(
+                storage_surface=body.storage_surface if body.storage_kind == "source" else None,
+                storage_service_slug=body.storage_service_slug if body.storage_kind == "source" else None,
+            )
             object_key = build_object_key(
                 user_id=auth.user_id,
                 project_id=body.project_id,
@@ -452,8 +678,8 @@ async def create_upload(body: CreateUploadRequest, auth=Depends(require_user_aut
                 source_uid=body.source_uid,
                 upload_id=upload_id,
                 artifact_name=body.artifact_name,
-                storage_surface=body.storage_surface,
-                storage_service_slug=body.storage_service_slug,
+                storage_surface=storage_surface if body.storage_kind == "source" else None,
+                storage_service_slug=storage_service_slug if body.storage_kind == "source" else None,
             )
         except ValueError as exc:
             http_exc = HTTPException(status_code=422, detail=str(exc))
@@ -481,6 +707,8 @@ async def create_upload(body: CreateUploadRequest, auth=Depends(require_user_aut
                 source_uid=body.source_uid,
                 source_type=body.source_type,
                 doc_title=body.doc_title,
+                storage_surface=storage_surface if body.storage_kind == "source" else None,
+                storage_service_slug=storage_service_slug if body.storage_kind == "source" else None,
             )
         except HTTPException as http_exc:
             record_storage_upload_reserve(
@@ -686,7 +914,18 @@ async def finalize_upload(
             raise http_exc from exc
 
         try:
+            _update_storage_object_namespace_metadata(
+                admin,
+                storage_object_id=result["storage_object_id"],
+                reservation=reservation,
+            )
             _sync_source_document_bridge(
+                admin,
+                owner_id=auth.user_id,
+                reservation=reservation,
+                storage_object=result,
+            )
+            _sync_pipeline_source_registry(
                 admin,
                 owner_id=auth.user_id,
                 reservation=reservation,
@@ -758,6 +997,11 @@ async def delete_storage_object(storage_object_id: str, auth=Depends(require_use
             http_status_code=404,
         )
         raise HTTPException(status_code=404, detail="Object not found")
+
+    try:
+        _reconcile_deleted_storage_metadata(admin, owner_id=auth.user_id, storage_object=deleted)
+    except Exception:
+        logger.exception("storage.delete_metadata_reconciliation_failed")
 
     try:
         if deleted.get("status") == "deleted" and deleted.get("bucket") and deleted.get("object_key"):

@@ -193,6 +193,10 @@ def create_app() -> FastAPI:
     from app.api.routes.agchain_workspaces import router as agchain_workspaces_router
     app.include_router(agchain_workspaces_router)
 
+    # 5k2. AG chain settings surface (user-scoped, before plugin catch-all)
+    from app.api.routes.agchain_settings import router as agchain_settings_router
+    app.include_router(agchain_settings_router)
+
     # 5l. AG chain dataset registry (user-scoped, before plugin catch-all)
     from app.api.routes.agchain_datasets import router as agchain_datasets_router
     app.include_router(agchain_datasets_router)

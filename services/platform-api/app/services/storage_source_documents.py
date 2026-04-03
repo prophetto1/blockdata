@@ -11,6 +11,8 @@ def upsert_source_document_for_storage_object(
     doc_title: str,
     object_key: str,
     bytes_used: int,
+    document_surface: str,
+    storage_object_id: str,
 ) -> None:
     payload = {
         "source_uid": source_uid,
@@ -24,6 +26,8 @@ def upsert_source_document_for_storage_object(
         "status": "uploaded",
         "conversion_job_id": None,
         "error": None,
+        "document_surface": document_surface,
+        "storage_object_id": storage_object_id,
     }
 
     supabase_admin.table("source_documents").upsert(payload, on_conflict="source_uid").execute()

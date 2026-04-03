@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-02T04:24:06.711Z",
+  "generatedAt": "2026-04-03T00:37:24.999Z",
   "scope": "auth",
   "pages": [
     {
@@ -747,8 +747,7 @@
       "page": "src/pages/IndexBuilderPage.tsx",
       "componentCount": 8,
       "categoryCounts": {
-        "local-components": 7,
-        "tabler-icons": 1
+        "local-components": 8
       },
       "components": [
         {
@@ -759,15 +758,6 @@
           "importedAs": "Button",
           "category": "local-components",
           "definition": "Button comes from @/components/ui/button (named import of Button)"
-        },
-        {
-          "component": "IconPlus",
-          "usedAs": "IconPlus",
-          "source": "@tabler/icons-react",
-          "importKind": "named",
-          "importedAs": "IconPlus",
-          "category": "tabler-icons",
-          "definition": "IconPlus comes from @tabler/icons-react (named import of IconPlus)"
         },
         {
           "component": "IndexJobArtifactsTab",
@@ -797,15 +787,6 @@
           "definition": "IndexJobFilesTab comes from @/components/pipelines/IndexJobFilesTab (named import of IndexJobFilesTab)"
         },
         {
-          "component": "IndexJobHeader",
-          "usedAs": "IndexJobHeader",
-          "source": "@/components/pipelines/IndexJobHeader",
-          "importKind": "named",
-          "importedAs": "IndexJobHeader",
-          "category": "local-components",
-          "definition": "IndexJobHeader comes from @/components/pipelines/IndexJobHeader (named import of IndexJobHeader)"
-        },
-        {
           "component": "IndexJobRunsTab",
           "usedAs": "IndexJobRunsTab",
           "source": "@/components/pipelines/IndexJobRunsTab",
@@ -822,6 +803,24 @@
           "importedAs": "IndexJobsList",
           "category": "local-components",
           "definition": "IndexJobsList comes from @/components/pipelines/IndexJobsList (named import of IndexJobsList)"
+        },
+        {
+          "component": "IndexJobStatusChip",
+          "usedAs": "IndexJobStatusChip",
+          "source": "@/components/pipelines/IndexJobStatusChip",
+          "importKind": "named",
+          "importedAs": "IndexJobStatusChip",
+          "category": "local-components",
+          "definition": "IndexJobStatusChip comes from @/components/pipelines/IndexJobStatusChip (named import of IndexJobStatusChip)"
+        },
+        {
+          "component": "Skeleton",
+          "usedAs": "Skeleton",
+          "source": "@/components/ui/skeleton",
+          "importKind": "named",
+          "importedAs": "Skeleton",
+          "category": "local-components",
+          "definition": "Skeleton comes from @/components/ui/skeleton (named import of Skeleton)"
         }
       ]
     },
@@ -4509,8 +4508,8 @@
   "totalComponentUsages": 440,
   "categoryTotals": {
     "local-pages": 2,
-    "local-components": 143,
-    "tabler-icons": 75,
+    "local-components": 144,
+    "tabler-icons": 74,
     "in-file component": 20,
     "ark-ui": 153,
     "external-package": 23,

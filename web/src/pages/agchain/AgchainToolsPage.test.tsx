@@ -22,6 +22,7 @@ beforeAll(() => {
 
 const platformApiFetchMock = vi.fn();
 const useAgchainProjectFocusMock = vi.fn();
+const useAgchainScopeStateMock = vi.fn();
 
 vi.mock('@/lib/platformApi', () => ({
   platformApiFetch: (...args: unknown[]) => platformApiFetchMock(...args),
@@ -29,6 +30,10 @@ vi.mock('@/lib/platformApi', () => ({
 
 vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
   useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
+}));
+
+vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
+  useAgchainScopeState: () => useAgchainScopeStateMock(),
 }));
 
 function jsonResponse(body: unknown, status = 200) {
@@ -119,6 +124,7 @@ describe('AgchainToolsPage', () => {
   beforeEach(() => {
     platformApiFetchMock.mockReset();
     useAgchainProjectFocusMock.mockReset();
+    useAgchainScopeStateMock.mockReset();
     useAgchainProjectFocusMock.mockReturnValue({
       focusedProject: {
         project_id: PROJECT_ID,
@@ -135,6 +141,27 @@ describe('AgchainToolsPage', () => {
         href: '/app/agchain/overview?project=legal-10',
       },
       loading: false,
+    });
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'ready',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
+      focusedProject: {
+        project_id: PROJECT_ID,
+        organization_id: 'org-1',
+        project_slug: 'legal-10',
+        project_name: 'Legal-10',
+        description: 'Three-step benchmark package for legal analysis.',
+        membership_role: 'owner',
+        updated_at: '2026-03-31T00:00:00Z',
+        primary_benchmark_slug: 'legal-10',
+        primary_benchmark_name: 'Legal-10',
+        benchmark_slug: 'legal-10',
+        benchmark_name: 'Legal-10',
+        href: '/app/agchain/overview?project=legal-10',
+      },
     });
 
     let listResponse = TOOL_LIST_RESPONSE;
@@ -238,9 +265,12 @@ describe('AgchainToolsPage', () => {
   });
 
   it('shows the project selection prompt when no project is focused', () => {
-    useAgchainProjectFocusMock.mockReturnValue({
-      focusedProject: null,
-      loading: false,
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'no-project',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
     });
 
     render(
@@ -250,6 +280,21 @@ describe('AgchainToolsPage', () => {
     );
 
     expect(screen.getByRole('heading', { name: /choose a project/i })).toBeInTheDocument();
+  });
+
+  it('shows loading while the shared AGChain scope is bootstrapping', () => {
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'bootstrapping',
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainToolsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Loading workspace...')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Tools' })).not.toBeInTheDocument();
   });
 
   it('renders the merged registry and opens the inspector for authored tools', async () => {

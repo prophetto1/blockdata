@@ -49,7 +49,7 @@ export function AgchainProjectSwitcher() {
       loading={loading}
       error={error}
       onRetry={reload}
-      footerActionLabel="Open project registry"
+      footerActionLabel="Create new project"
       footerActionHref="/app/agchain/projects?new=1"
       onSelectItem={(slug) => setFocusedProjectSlug(slug)}
     />

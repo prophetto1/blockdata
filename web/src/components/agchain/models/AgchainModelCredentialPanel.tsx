@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { AgchainProviderRow } from '@/lib/agchainModelProviders';
 import { Button } from '@/components/ui/button';
 
@@ -17,19 +17,37 @@ export function AgchainModelCredentialPanel({
   onConnect,
   onDisconnect,
 }: AgchainModelCredentialPanelProps) {
-  const [apiKey, setApiKey] = useState('');
-  const [showInput, setShowInput] = useState(false);
-
   const anchorTarget = useMemo(
     () =>
       providerRow.targets.find((target) => target.model_target_id === providerRow.credential_anchor_target_id) ?? null,
     [providerRow],
   );
 
-  useEffect(() => {
-    setApiKey('');
-    setShowInput(false);
-  }, [providerRow.provider_slug, providerRow.credential_anchor_target_id]);
+  return (
+    <AgchainModelCredentialPanelContent
+      key={`${providerRow.provider_slug}:${providerRow.credential_anchor_target_id ?? 'none'}`}
+      providerRow={providerRow}
+      anchorTarget={anchorTarget}
+      saving={saving}
+      onConnect={onConnect}
+      onDisconnect={onDisconnect}
+    />
+  );
+}
+
+type AgchainModelCredentialPanelContentProps = AgchainModelCredentialPanelProps & {
+  anchorTarget: AgchainProviderRow['targets'][number] | null;
+};
+
+function AgchainModelCredentialPanelContent({
+  providerRow,
+  anchorTarget,
+  saving,
+  onConnect,
+  onDisconnect,
+}: AgchainModelCredentialPanelContentProps) {
+  const [apiKey, setApiKey] = useState('');
+  const [showInput, setShowInput] = useState(false);
 
   if (!anchorTarget) {
     const authKind =
@@ -85,12 +103,7 @@ export function AgchainModelCredentialPanel({
             value={apiKey}
             onChange={(event) => setApiKey(event.target.value)}
           />
-          <Button
-            type="button"
-            size="sm"
-            disabled={saving || !apiKey.trim()}
-            onClick={() => void handleConnect()}
-          >
+          <Button type="button" size="sm" disabled={saving || !apiKey.trim()} onClick={() => void handleConnect()}>
             {saving ? 'Saving...' : isReady ? 'Replace' : 'Connect'}
           </Button>
         </div>

@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import AgchainSettingsPage from './AgchainSettingsPage';
 
 const useAgchainProjectFocusMock = vi.fn();
@@ -29,37 +29,39 @@ describe('AgchainSettingsPage', () => {
     });
   });
 
-  it('renders the settings landing with project, organization, and personal partitions', () => {
+  function RedirectTarget() {
+    const location = useLocation();
+    return <div data-testid="redirect-target">{location.pathname}</div>;
+  }
+
+  it('redirects the settings index route into organization members', async () => {
     render(
-      <MemoryRouter>
-        <AgchainSettingsPage />
+      <MemoryRouter initialEntries={['/app/agchain/settings']}>
+        <Routes>
+          <Route path="/app/agchain/settings" element={<AgchainSettingsPage />} />
+          <Route path="/app/agchain/settings/organization/members" element={<RedirectTarget />} />
+        </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
-    expect(screen.getByText(/legal evals owns this settings surface/i)).toBeInTheDocument();
-    expect(screen.getByText('Project settings')).toBeInTheDocument();
-    expect(screen.getByText('Organization settings')).toBeInTheDocument();
-    expect(screen.getByText('Personal settings')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open benchmark definition' })).toHaveAttribute(
-      'href',
-      '/app/agchain/settings/project/benchmark-definition',
-    );
+    expect(screen.getByTestId('redirect-target')).toHaveTextContent('/app/agchain/settings/organization/members');
   });
 
-  it('routes users back toward the project registry when no AGChain project is available', () => {
+  it('redirects regardless of project focus state because page-local gating moved to section routes', () => {
     useAgchainProjectFocusMock.mockReturnValue({
       focusedProject: null,
       loading: false,
     });
 
     render(
-      <MemoryRouter>
-        <AgchainSettingsPage />
+      <MemoryRouter initialEntries={['/app/agchain/settings']}>
+        <Routes>
+          <Route path="/app/agchain/settings" element={<AgchainSettingsPage />} />
+          <Route path="/app/agchain/settings/organization/members" element={<RedirectTarget />} />
+        </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Choose an AGChain project' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open project registry' })).toHaveAttribute('href', '/app/agchain/projects');
+    expect(screen.getByTestId('redirect-target')).toHaveTextContent('/app/agchain/settings/organization/members');
   });
 });

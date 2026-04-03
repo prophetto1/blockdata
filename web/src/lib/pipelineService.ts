@@ -20,6 +20,7 @@ export type PipelineDefinition = {
 };
 
 export type PipelineSource = {
+  pipeline_source_id: string;
   source_uid: string;
   project_id: string;
   doc_title: string;

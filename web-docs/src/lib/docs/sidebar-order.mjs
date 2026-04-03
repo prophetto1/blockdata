@@ -19,6 +19,45 @@ export default {
     hidden: ['index'],
   },
 
+  // AGChain docs are shown in the dedicated AGChain sidebar tab, not the main Sections view.
+  agchain: {
+    label: 'AGChain',
+    order: ['platform', 'builders', 'benchmark', 'bridge', 'other'],
+  },
+
+  'agchain/platform': {
+    label: 'Platform Features',
+    order: ['general', 'runner', 'multi-tasks', 'prompts', 'statefulness', 'security'],
+  },
+
+  'agchain/builders': {
+    label: 'Builders',
+    order: ['eu-builders', 'benchmark-builders', 'payload'],
+  },
+
+  'agchain/benchmark': {
+    label: 'Benchmark',
+    order: ['legalchain'],
+  },
+
+  'agchain/benchmark/legalchain': {
+    label: 'Legal Chain',
+    order: ['datasets', 'legal-10'],
+  },
+
+  'agchain/benchmark/legalchain/legal-10': {
+    label: 'Legal-10',
+    order: ['fdq'],
+  },
+
+  'agchain/bridge': {
+    label: 'Bridge',
+  },
+
+  'agchain/other': {
+    label: 'Other',
+  },
+
   internal: {
     label: 'Internal',
     order: ['docs-site-direction', 'shell-contract-spec', 'arango-cloud', 'gcp-benchmark-access', 'style-guide'],

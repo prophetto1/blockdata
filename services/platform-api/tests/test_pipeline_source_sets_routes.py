@@ -68,14 +68,16 @@ async def test_create_pipeline_source_set_returns_detail_shape(monkeypatch):
             "total_bytes": 300,
             "items": [
               {
+                "pipeline_source_id": "psrc-1",
                 "source_uid": "src-1",
                 "doc_title": "Guide.md",
                 "source_type": "md",
                 "byte_size": 120,
                 "source_order": 1,
-                "object_key": "users/user-1/assets/projects/project-1/sources/src-1/source/guide.md",
+                "object_key": "users/user-1/pipeline-services/index-builder/projects/project-1/sources/src-1/source/guide.md",
               },
               {
+                "pipeline_source_id": "psrc-2",
                 "source_uid": "src-2",
                 "doc_title": "Notes.md",
                 "source_type": "md",
@@ -93,7 +95,7 @@ async def test_create_pipeline_source_set_returns_detail_shape(monkeypatch):
         CreatePipelineSourceSetRequest(
             project_id="project-1",
             label="Release corpus",
-            source_uids=["src-1", "src-2"],
+            pipeline_source_ids=["psrc-1", "psrc-2"],
         ),
         _user_auth(),
     )
@@ -104,7 +106,7 @@ async def test_create_pipeline_source_set_returns_detail_shape(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_update_pipeline_source_set_replaces_membership_when_source_uids_present(monkeypatch):
+async def test_update_pipeline_source_set_replaces_membership_when_pipeline_source_ids_present(monkeypatch):
     from app.api.routes.pipelines import UpdatePipelineSourceSetRequest, update_pipeline_source_set
 
     monkeypatch.setattr("app.api.routes.pipelines.get_supabase_admin", lambda: object())
@@ -118,6 +120,7 @@ async def test_update_pipeline_source_set_replaces_membership_when_source_uids_p
             "total_bytes": 180,
             "items": [
                 {
+                    "pipeline_source_id": "psrc-2",
                     "source_uid": "src-2",
                     "doc_title": "Notes.md",
                     "source_type": "md",
@@ -133,7 +136,7 @@ async def test_update_pipeline_source_set_replaces_membership_when_source_uids_p
     result = await update_pipeline_source_set(
         "markdown_index_builder",
         "set-1",
-        UpdatePipelineSourceSetRequest(label="Release corpus v2", source_uids=["src-2"]),
+        UpdatePipelineSourceSetRequest(label="Release corpus v2", pipeline_source_ids=["psrc-2"]),
         _user_auth(),
     )
 

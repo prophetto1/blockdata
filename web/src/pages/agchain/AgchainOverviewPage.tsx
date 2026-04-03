@@ -1,20 +1,20 @@
 import { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
 import { AgchainOverviewEvaluationCard } from '@/components/agchain/overview/AgchainOverviewEvaluationCard';
 import { AgchainOverviewObservabilityCard } from '@/components/agchain/overview/AgchainOverviewObservabilityCard';
 import { AgchainOverviewRecentGrid } from '@/components/agchain/overview/AgchainOverviewRecentGrid';
+import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 import { AgchainPageFrame } from './AgchainPageFrame';
 
 export default function AgchainOverviewPage() {
   const [searchParams] = useSearchParams();
   const requestedProjectSlug = searchParams.get('project');
+  const scopeState = useAgchainScopeState('project');
   const {
-    focusedProject,
     focusedProjectSlug,
     loading,
-    status,
-    reload: reloadWorkspace,
     setFocusedProjectSlug,
   } = useAgchainProjectFocus();
 
@@ -24,7 +24,7 @@ export default function AgchainOverviewPage() {
     }
   }, [focusedProjectSlug, requestedProjectSlug, setFocusedProjectSlug]);
 
-  if (status === 'bootstrapping') {
+  if (scopeState.kind === 'bootstrapping') {
     return (
       <AgchainPageFrame className="gap-6 py-8">
         <div className="flex flex-1 items-center justify-center"><p className="text-sm text-muted-foreground">Loading workspace...</p></div>
@@ -32,50 +32,58 @@ export default function AgchainOverviewPage() {
     );
   }
 
-  if (status === 'error') {
+  if (scopeState.kind === 'error') {
     return (
       <AgchainPageFrame className="gap-6 py-8">
-        <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          <p className="text-sm text-muted-foreground">Failed to load AGChain workspace context.</p>
-          <button onClick={() => void reloadWorkspace()} className="text-sm font-medium text-foreground underline-offset-4 hover:underline">Retry</button>
-        </div>
+        <AgchainEmptyState
+          title="AGChain overview unavailable"
+          description="Failed to load AGChain workspace context."
+          action={(
+            <button
+              type="button"
+              onClick={() => void scopeState.reload()}
+              className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Retry
+            </button>
+          )}
+        />
       </AgchainPageFrame>
     );
   }
 
-  if (status === 'no-organization') {
+  if (scopeState.kind === 'no-organization') {
     return (
       <AgchainPageFrame className="gap-6 py-8">
-        <section className="rounded-3xl border border-border/70 bg-card/70 p-8 shadow-sm">
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">No organization</h1>
-          <p className="mt-3 text-sm text-muted-foreground">Select or create an organization to continue.</p>
-        </section>
+        <AgchainEmptyState
+          title="No organization"
+          description="Select or create an organization to continue."
+        />
       </AgchainPageFrame>
     );
   }
 
-  if (!focusedProject) {
+  if (scopeState.kind === 'no-project') {
     return (
       <AgchainPageFrame className="gap-6 py-8">
-        <section className="rounded-3xl border border-border/70 bg-card/70 p-8 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">Project overview</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Choose an AGChain project</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-            Overview is the default child surface of the selected AGChain project or evaluation. Pick a project from
-            the registry before entering the overview-first shell.
-          </p>
-          <Link
-            to="/app/agchain/projects"
-            className="mt-5 inline-flex w-fit items-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            Open project registry
-          </Link>
-        </section>
+        <AgchainEmptyState
+          eyebrow="Project overview"
+          title="Choose an AGChain project"
+          description="Overview is the default child surface of the selected AGChain project or evaluation. Pick a project from the registry before entering the overview-first shell."
+          action={(
+            <Link
+              to="/app/agchain/projects"
+              className="inline-flex w-fit items-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              Open project registry
+            </Link>
+          )}
+        />
       </AgchainPageFrame>
     );
   }
 
-  const projectDescription = focusedProject?.description
+  const projectDescription = scopeState.focusedProject.description
     || (loading
       ? 'Loading focused AGChain project details...'
       : 'This workspace now acts as the shared AGChain parent surface. Benchmark definition remains a child resource inside the selected project.');

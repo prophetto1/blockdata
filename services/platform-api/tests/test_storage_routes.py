@@ -7,6 +7,7 @@ from app.api.routes.storage import (
     CreateUploadRequest,
     CompleteUploadRequest,
     create_upload,
+    delete_storage_object,
     finalize_upload,
 )
 
@@ -153,8 +154,169 @@ async def test_create_upload_records_reservation_observability(monkeypatch):
                 "p_source_uid": "src-1",
                 "p_source_type": "txt",
                 "p_doc_title": "folder/a.txt",
+                "p_storage_surface": "assets",
+                "p_storage_service_slug": None,
             },
         ),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_delete_storage_object_reconciles_assets_metadata(monkeypatch):
+    deleted_object = {
+        "storage_object_id": "obj-1",
+        "owner_user_id": "user-1",
+        "project_id": "project-1",
+        "bucket": "unit-bucket",
+        "object_key": "users/user-1/assets/projects/project-1/sources/src-1/source/guide.md",
+        "byte_size": 12,
+        "storage_kind": "source",
+        "storage_surface": "assets",
+        "storage_service_slug": None,
+        "source_uid": "src-1",
+        "status": "deleted",
+    }
+    table_calls: list[tuple[str, dict[str, object]]] = []
+    object_delete_calls: list[tuple[str, str]] = []
+    metrics: list[dict] = []
+
+    class _DeleteQuery:
+        def __init__(self, table_name: str):
+            self._table_name = table_name
+            self._filters: dict[str, object] = {}
+
+        def delete(self):
+            return self
+
+        def eq(self, key: str, value: object):
+            self._filters[key] = value
+            return self
+
+        def execute(self):
+            table_calls.append((self._table_name, dict(self._filters)))
+            return type("R", (), {"data": [{"ok": True}]})()
+
+    class _Exec:
+        data = deleted_object
+
+        def execute(self):
+            return self
+
+    class _Admin:
+        def rpc(self, function_name, payload):
+            assert function_name == "delete_user_storage_object"
+            assert payload == {
+                "p_user_id": "user-1",
+                "p_storage_object_id": "obj-1",
+            }
+            return _Exec()
+
+        def table(self, table_name):
+            assert table_name == "source_documents"
+            return _DeleteQuery(table_name)
+
+    monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: _Admin())
+    monkeypatch.setattr(
+        "app.api.routes.storage.delete_object_if_exists",
+        lambda bucket, object_key: object_delete_calls.append((bucket, object_key)),
+    )
+    monkeypatch.setattr(
+        "app.api.routes.storage.record_storage_object_delete",
+        lambda **kwargs: metrics.append(kwargs),
+    )
+
+    response = await delete_storage_object("obj-1", AuthStub("user-1"))
+
+    assert response.status_code == 204
+    assert table_calls == [
+        (
+            "source_documents",
+            {
+                "owner_id": "user-1",
+                "storage_object_id": "obj-1",
+            },
+        )
+    ]
+    assert object_delete_calls == [
+        ("unit-bucket", "users/user-1/assets/projects/project-1/sources/src-1/source/guide.md")
+    ]
+    assert metrics == [
+        {
+            "result": "ok",
+            "storage_kind": "source",
+            "actual_bytes": 12,
+            "http_status_code": 204,
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_delete_storage_object_reconciles_pipeline_source_metadata(monkeypatch):
+    deleted_object = {
+        "storage_object_id": "obj-2",
+        "owner_user_id": "user-1",
+        "project_id": "project-1",
+        "bucket": "unit-bucket",
+        "object_key": "users/user-1/pipeline-services/index-builder/projects/project-1/sources/src-2/source/guide.md",
+        "byte_size": 18,
+        "storage_kind": "source",
+        "storage_surface": "pipeline-services",
+        "storage_service_slug": "index-builder",
+        "source_uid": "src-2",
+        "status": "deleted",
+    }
+    table_calls: list[tuple[str, dict[str, object]]] = []
+
+    class _DeleteQuery:
+        def __init__(self, table_name: str):
+            self._table_name = table_name
+            self._filters: dict[str, object] = {}
+
+        def delete(self):
+            return self
+
+        def eq(self, key: str, value: object):
+            self._filters[key] = value
+            return self
+
+        def execute(self):
+            table_calls.append((self._table_name, dict(self._filters)))
+            return type("R", (), {"data": [{"ok": True}]})()
+
+    class _Exec:
+        data = deleted_object
+
+        def execute(self):
+            return self
+
+    class _Admin:
+        def rpc(self, function_name, payload):
+            assert function_name == "delete_user_storage_object"
+            assert payload == {
+                "p_user_id": "user-1",
+                "p_storage_object_id": "obj-2",
+            }
+            return _Exec()
+
+        def table(self, table_name):
+            assert table_name == "pipeline_sources"
+            return _DeleteQuery(table_name)
+
+    monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: _Admin())
+    monkeypatch.setattr("app.api.routes.storage.delete_object_if_exists", lambda *_a, **_k: None)
+    monkeypatch.setattr("app.api.routes.storage.record_storage_object_delete", lambda **_kwargs: None)
+
+    response = await delete_storage_object("obj-2", AuthStub("user-1"))
+
+    assert response.status_code == 204
+    assert table_calls == [
+        (
+            "pipeline_sources",
+            {
+                "owner_id": "user-1",
+                "storage_object_id": "obj-2",
+            },
+        )
     ]
 
 
@@ -205,6 +367,8 @@ async def test_create_upload_defaults_source_uploads_to_assets_surface_prefix(mo
 
     assert result["object_key"] == "users/user-1/assets/projects/project-1/sources/src-1/source/a.md"
     assert rpc_calls[0][1]["p_object_key"] == "users/user-1/assets/projects/project-1/sources/src-1/source/a.md"
+    assert rpc_calls[0][1]["p_storage_surface"] == "assets"
+    assert rpc_calls[0][1]["p_storage_service_slug"] is None
 
 
 @pytest.mark.asyncio
@@ -260,6 +424,8 @@ async def test_create_upload_routes_pipeline_services_uploads_to_service_prefix(
     assert rpc_calls[0][1]["p_object_key"] == (
         "users/user-1/pipeline-services/index-builder/projects/project-1/sources/src-1/source/a.md"
     )
+    assert rpc_calls[0][1]["p_storage_surface"] == "pipeline-services"
+    assert rpc_calls[0][1]["p_storage_service_slug"] == "index-builder"
 
 
 @pytest.mark.asyncio
@@ -298,6 +464,7 @@ async def test_create_upload_requires_service_slug_for_pipeline_services_surface
 @pytest.mark.asyncio
 async def test_finalize_source_upload_writes_source_document(monkeypatch):
     calls: list[dict] = []
+    storage_object_updates: list[dict] = []
 
     reservation = {
         "reservation_id": "res-1",
@@ -323,6 +490,29 @@ async def test_finalize_source_upload_writes_source_document(monkeypatch):
         lambda _admin, **kwargs: calls.append(kwargs),
     )
 
+    class _UpdateQuery:
+        def __init__(self):
+            self._payload = None
+            self._storage_object_id = None
+
+        def update(self, payload):
+            self._payload = payload
+            return self
+
+        def eq(self, key, value):
+            assert key == "storage_object_id"
+            self._storage_object_id = value
+            return self
+
+        def execute(self):
+            storage_object_updates.append(
+                {
+                    "storage_object_id": self._storage_object_id,
+                    "payload": self._payload,
+                }
+            )
+            return self
+
     class _Admin:
         def rpc(self, *_args, **_kwargs):
             class _Exec:
@@ -338,6 +528,10 @@ async def test_finalize_source_upload_writes_source_document(monkeypatch):
                     return self
 
             return _Exec()
+
+        def table(self, name):
+            assert name == "storage_objects"
+            return _UpdateQuery()
 
     monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: _Admin())
 
@@ -357,6 +551,19 @@ async def test_finalize_source_upload_writes_source_document(monkeypatch):
             "doc_title": "Folder/Outline.pdf",
             "object_key": "users/user-1/assets/projects/project-1/sources/abc123/source/outline.pdf",
             "bytes_used": 1234,
+            "document_surface": "assets",
+            "storage_object_id": "obj-1",
+        }
+    ]
+    assert storage_object_updates == [
+        {
+            "storage_object_id": "obj-1",
+            "payload": {
+                "storage_surface": "assets",
+                "storage_service_slug": None,
+                "doc_title": "Folder/Outline.pdf",
+                "source_type": "pdf",
+            },
         }
     ]
 
@@ -412,6 +619,139 @@ async def test_finalize_completed_source_upload_repairs_source_document_bridge(m
             "doc_title": "Folder/Outline.pdf",
             "object_key": "users/user-1/assets/projects/project-1/sources/abc123/source/outline.pdf",
             "bytes_used": 1234,
+            "document_surface": "assets",
+            "storage_object_id": "obj-1",
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_finalize_pipeline_services_source_upload_refreshes_pipeline_source_without_source_document_bridge(
+    monkeypatch,
+):
+    bridge_calls: list[dict] = []
+    pipeline_source_upserts: list[dict] = []
+    storage_object_updates: list[dict] = []
+
+    reservation = {
+        "reservation_id": "res-1",
+        "owner_user_id": "user-1",
+        "project_id": "project-1",
+        "bucket": "unit-bucket",
+        "object_key": "users/user-1/pipeline-services/index-builder/projects/project-1/sources/abc123/source/outline.md",
+        "requested_bytes": 1234,
+        "content_type": "text/markdown",
+        "original_filename": "outline.md",
+        "storage_kind": "source",
+        "source_uid": "abc123",
+        "source_type": "md",
+        "doc_title": "Folder/Outline.md",
+        "storage_surface": "pipeline-services",
+        "storage_service_slug": "index-builder",
+        "status": "pending",
+    }
+
+    monkeypatch.setattr("app.api.routes.storage._fetch_reservation", lambda *_a, **_k: reservation)
+    monkeypatch.setattr("app.api.routes.storage.get_object_size_bytes", lambda *_a, **_k: 1234)
+    monkeypatch.setattr("app.api.routes.storage.record_storage_upload_complete", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        "app.api.routes.storage.upsert_source_document_for_storage_object",
+        lambda _admin, **kwargs: bridge_calls.append(kwargs),
+    )
+
+    class _TableQuery:
+        def __init__(self, name):
+            self._name = name
+            self._payload = None
+            self._storage_object_id = None
+
+        def upsert(self, payload, on_conflict):
+            assert self._name == "pipeline_sources"
+            pipeline_source_upserts.append(
+                {
+                    "payload": payload,
+                    "on_conflict": on_conflict,
+                }
+            )
+            return self
+
+        def update(self, payload):
+            assert self._name == "storage_objects"
+            self._payload = payload
+            return self
+
+        def eq(self, key, value):
+            assert self._name == "storage_objects"
+            assert key == "storage_object_id"
+            self._storage_object_id = value
+            return self
+
+        def execute(self):
+            if self._name == "storage_objects":
+                storage_object_updates.append(
+                    {
+                        "storage_object_id": self._storage_object_id,
+                        "payload": self._payload,
+                    }
+                )
+            return self
+
+    class _Admin:
+        def rpc(self, *_args, **_kwargs):
+            class _Exec:
+                data = {
+                    "storage_object_id": "obj-1",
+                    "reservation_id": "res-1",
+                    "object_key": reservation["object_key"],
+                    "byte_size": 1234,
+                    "storage_kind": "source",
+                }
+
+                def execute(self):
+                    return self
+
+            return _Exec()
+
+        def table(self, name):
+            assert name in {"pipeline_sources", "storage_objects"}
+            return _TableQuery(name)
+
+    monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: _Admin())
+
+    result = await finalize_upload(
+        "res-1",
+        CompleteUploadRequest(actual_bytes=1234),
+        AuthStub("user-1"),
+    )
+
+    assert result["storage_object_id"] == "obj-1"
+    assert bridge_calls == []
+    assert pipeline_source_upserts == [
+        {
+            "payload": {
+                "owner_id": "user-1",
+                "project_id": "project-1",
+                "pipeline_kind": "markdown_index_builder",
+                "storage_service_slug": "index-builder",
+                "storage_object_id": "obj-1",
+                "source_uid": "abc123",
+                "doc_title": "Folder/Outline.md",
+                "source_type": "md",
+                "byte_size": 1234,
+                "object_key": "users/user-1/pipeline-services/index-builder/projects/project-1/sources/abc123/source/outline.md",
+            },
+            "on_conflict": "owner_id,project_id,pipeline_kind,source_uid",
+        }
+    ]
+    assert storage_object_updates == [
+        {
+            "storage_object_id": "obj-1",
+            "payload": {
+                "storage_surface": "pipeline-services",
+                "storage_service_slug": "index-builder",
+                "doc_title": "Folder/Outline.md",
+                "source_type": "md",
+            },
         }
     ]
 
@@ -442,6 +782,18 @@ async def test_finalize_source_upload_returns_retryable_error_when_bridge_write_
         lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("bridge failed")),
     )
 
+    class _UpdateQuery:
+        def update(self, _payload):
+            return self
+
+        def eq(self, key, value):
+            assert key == "storage_object_id"
+            assert value == "obj-1"
+            return self
+
+        def execute(self):
+            return self
+
     class _Admin:
         def rpc(self, *_args, **_kwargs):
             class _Exec:
@@ -457,6 +809,10 @@ async def test_finalize_source_upload_returns_retryable_error_when_bridge_write_
                     return self
 
             return _Exec()
+
+        def table(self, name):
+            assert name == "storage_objects"
+            return _UpdateQuery()
 
     monkeypatch.setattr("app.api.routes.storage.get_supabase_admin", lambda: _Admin())
 
@@ -712,6 +1068,8 @@ async def test_create_upload_cancels_expired_duplicate_then_retries(monkeypatch)
                 "p_source_uid": "src-1",
                 "p_source_type": "txt",
                 "p_doc_title": "folder/a.txt",
+                "p_storage_surface": "assets",
+                "p_storage_service_slug": None,
             },
         ),
         (
@@ -735,6 +1093,8 @@ async def test_create_upload_cancels_expired_duplicate_then_retries(monkeypatch)
                 "p_source_uid": "src-1",
                 "p_source_type": "txt",
                 "p_doc_title": "folder/a.txt",
+                "p_storage_surface": "assets",
+                "p_storage_service_slug": None,
             },
         ),
     ]

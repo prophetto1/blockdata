@@ -1,3 +1,4 @@
+import { platformApiFetch } from '@/lib/platformApi';
 import { supabase } from '@/lib/supabase';
 import type { DocumentRow } from '@/lib/types';
 
@@ -116,6 +117,37 @@ export async function downloadFromSignedUrl(signedUrl: string, filename: string)
   URL.revokeObjectURL(blobUrl);
 }
 
+async function createGcsSignedUrl(objectKey: string): Promise<SignedUrlResult> {
+  let response: Response;
+  try {
+    response = await platformApiFetch('/storage/download-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ object_key: objectKey }),
+    });
+  } catch (error) {
+    return {
+      url: null,
+      error: error instanceof Error ? error.message : 'Failed to contact platform API.',
+    };
+  }
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    return {
+      url: null,
+      error: text || `Platform API returned HTTP ${response.status}.`,
+    };
+  }
+
+  const payload = (await response.json().catch(() => null)) as { signed_url?: string } | null;
+  if (!payload?.signed_url) {
+    return { url: null, error: 'Platform API did not return a signed URL.' };
+  }
+
+  return { url: payload.signed_url, error: null };
+}
+
 async function createSignedUrlForLocator(locator: string | null | undefined): Promise<SignedUrlResult> {
   const normalized = locator?.trim();
   if (!normalized) {
@@ -123,6 +155,10 @@ async function createSignedUrlForLocator(locator: string | null | undefined): Pr
   }
 
   const sourceKey = normalized.replace(/^\/+/, '');
+  if (sourceKey.startsWith('users/')) {
+    return createGcsSignedUrl(sourceKey);
+  }
+
   const { data, error: signedUrlError } = await supabase.storage
     .from(DOCUMENTS_BUCKET)
     .createSignedUrl(sourceKey, 60 * 20);

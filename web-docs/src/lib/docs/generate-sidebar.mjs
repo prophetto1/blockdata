@@ -103,3 +103,4 @@ function buildSidebarItems(relativeDir = '') {
 export function generateSidebar() {
   return buildSidebarItems();
 }
+

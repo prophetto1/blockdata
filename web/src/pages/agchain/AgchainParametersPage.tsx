@@ -1,8 +1,8 @@
-import { AgchainSectionPage } from './AgchainSectionPage';
+import { AgchainProjectPlaceholderPage } from '@/components/agchain/AgchainProjectPlaceholderPage';
 
 export default function AgchainParametersPage() {
   return (
-    <AgchainSectionPage
+    <AgchainProjectPlaceholderPage
       title="Parameters"
       description="Runtime profiles, context delivery policy, and project-level parameter controls will live here."
       bullets={[

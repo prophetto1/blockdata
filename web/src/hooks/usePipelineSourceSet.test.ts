@@ -24,6 +24,7 @@ vi.mock('@/lib/pipelineSourceSetService', () => ({
 
 const SOURCES: PipelineSource[] = [
   {
+    pipeline_source_id: 'psrc-1',
     source_uid: 'source-1',
     project_id: 'project-1',
     doc_title: 'Alpha.md',
@@ -31,6 +32,7 @@ const SOURCES: PipelineSource[] = [
     byte_size: 101,
   },
   {
+    pipeline_source_id: 'psrc-2',
     source_uid: 'source-2',
     project_id: 'project-1',
     doc_title: 'Beta.md',
@@ -38,6 +40,7 @@ const SOURCES: PipelineSource[] = [
     byte_size: 202,
   },
   {
+    pipeline_source_id: 'psrc-3',
     source_uid: 'source-3',
     project_id: 'project-1',
     doc_title: 'Gamma.md',
@@ -81,6 +84,25 @@ describe('usePipelineSourceSet', () => {
     updatePipelineSourceSetMock.mockResolvedValue(makeSourceSet(['source-1', 'source-2']));
   });
 
+  it('does not auto-load another saved source set into a fresh draft context', async () => {
+    listPipelineSourceSetsMock.mockResolvedValue([
+      makeSourceSet(['source-1', 'source-2'], 'Existing set', 'set-existing'),
+    ]);
+
+    const { result } = renderHook(() => usePipelineSourceSet({
+      projectId: 'project-1',
+      pipelineKind: 'markdown_index_builder',
+    }));
+
+    await waitFor(() => {
+      expect(result.current.sources).toHaveLength(3);
+    });
+
+    expect(result.current.activeSourceSetId).toBeNull();
+    expect(result.current.selectedSourceUids).toEqual([]);
+    expect(getPipelineSourceSetMock).not.toHaveBeenCalled();
+  });
+
   it('replaces selection with the caller-provided order', async () => {
     const { result } = renderHook(() => usePipelineSourceSet({
       projectId: 'project-1',
@@ -100,6 +122,27 @@ describe('usePipelineSourceSet', () => {
       'source-3',
       'source-1',
     ]);
+  });
+
+  it('appends uploaded sources without duplicating existing selection order', async () => {
+    const { result } = renderHook(() => usePipelineSourceSet({
+      projectId: 'project-1',
+      pipelineKind: 'markdown_index_builder',
+    }));
+
+    await waitFor(() => {
+      expect(result.current.sources).toHaveLength(3);
+    });
+
+    act(() => {
+      result.current.replaceSelection(['source-1']);
+    });
+
+    act(() => {
+      result.current.appendSelection(['source-3', 'source-1', 'source-2']);
+    });
+
+    expect(result.current.selectedSourceUids).toEqual(['source-1', 'source-3', 'source-2']);
   });
 
   it('restores ordered membership by replacing the current edited selection exactly', async () => {
@@ -134,5 +177,36 @@ describe('usePipelineSourceSet', () => {
       'source-3',
       'source-1',
     ]);
+  });
+
+  it('persists ordered pipeline source ids while preserving uid-based selection state', async () => {
+    getPipelineSourceSetMock.mockResolvedValue(makeSourceSet(['source-3', 'source-1']));
+    createPipelineSourceSetMock.mockResolvedValue(makeSourceSet(['source-3', 'source-1']));
+
+    const { result } = renderHook(() => usePipelineSourceSet({
+      projectId: 'project-1',
+      pipelineKind: 'markdown_index_builder',
+    }));
+
+    await waitFor(() => {
+      expect(result.current.sources).toHaveLength(3);
+    });
+
+    act(() => {
+      result.current.setSourceSetLabel('Release corpus');
+      result.current.replaceSelection(['source-3', 'source-1']);
+    });
+
+    await act(async () => {
+      await result.current.persistSourceSet();
+    });
+
+    expect(createPipelineSourceSetMock).toHaveBeenCalledWith({
+      pipelineKind: 'markdown_index_builder',
+      projectId: 'project-1',
+      label: 'Release corpus',
+      pipelineSourceIds: ['psrc-3', 'psrc-1'],
+    });
+    expect(result.current.selectedSourceUids).toEqual(['source-3', 'source-1']);
   });
 });

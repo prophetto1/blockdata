@@ -64,6 +64,8 @@ STORAGE_UPLOAD_COMPLETE_FAILURE_COUNTER_NAME: str = "platform.storage.upload.com
 STORAGE_UPLOAD_CANCEL_COUNTER_NAME: str = "platform.storage.upload.cancel.count"
 STORAGE_OBJECT_DELETE_COUNTER_NAME: str = "platform.storage.object.delete.count"
 STORAGE_QUOTA_EXCEEDED_COUNTER_NAME: str = "platform.storage.quota.exceeded.count"
+STORAGE_DOWNLOAD_SIGN_COUNTER_NAME: str = "platform.storage.download.sign_url.count"
+STORAGE_DOWNLOAD_SIGN_FAILURE_COUNTER_NAME: str = "platform.storage.download.sign_url.failure.count"
 ADMIN_STORAGE_POLICY_UPDATE_COUNTER_NAME: str = "platform.admin.storage.policy.update.count"
 ADMIN_STORAGE_PROVISIONING_INCOMPLETE_COUNTER_NAME: str = (
     "platform.admin.storage.provisioning.incomplete.count"
@@ -73,6 +75,9 @@ STORAGE_UPLOAD_RESERVE_DURATION_MS_HISTOGRAM_NAME: str = (
 )
 STORAGE_UPLOAD_COMPLETE_DURATION_MS_HISTOGRAM_NAME: str = (
     "platform.storage.upload.complete.duration.ms"
+)
+STORAGE_DOWNLOAD_SIGN_DURATION_MS_HISTOGRAM_NAME: str = (
+    "platform.storage.download.sign_url.duration_ms"
 )
 ADMIN_STORAGE_POLICY_DURATION_MS_HISTOGRAM_NAME: str = (
     "platform.admin.storage.policy.duration.ms"

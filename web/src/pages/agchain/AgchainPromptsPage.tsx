@@ -1,8 +1,8 @@
-import { AgchainSectionPage } from './AgchainSectionPage';
+import { AgchainProjectPlaceholderPage } from '@/components/agchain/AgchainProjectPlaceholderPage';
 
 export default function AgchainPromptsPage() {
   return (
-    <AgchainSectionPage
+    <AgchainProjectPlaceholderPage
       title="Prompts"
       description="Prompt packs, prompt revisions, and prompt-to-evaluation promotion flows will live here for the selected AGChain project."
       bullets={[

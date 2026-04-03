@@ -110,6 +110,19 @@ function AgchainIndexRedirect() {
   return <Navigate to="/app/agchain/projects" replace />;
 }
 
+function agchainSettingsPlaceholderRoute(spec: {
+  scope: 'organization' | 'project' | 'personal';
+  title: string;
+  description: string;
+  note: string;
+}) {
+  return async () => {
+    const { AgchainSettingsPlaceholderPage } = await import('@/components/agchain/settings/AgchainSettingsPlaceholderPage');
+    const Component = () => <AgchainSettingsPlaceholderPage {...spec} />;
+    return { Component };
+  };
+}
+
 export const router = createBrowserRouter([
   // Marketing pages: full-width with PublicNav
   {
@@ -382,8 +395,79 @@ export const router = createBrowserRouter([
                     lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainSettingsPage')).default }),
                   },
                   {
+                    path: 'organization/members',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/settings/AgchainOrganizationMembersPage')).default }),
+                  },
+                  {
+                    path: 'organization/permission-groups',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/settings/AgchainPermissionGroupsPage')).default }),
+                  },
+                  {
+                    path: 'organization/api-keys',
+                    lazy: agchainSettingsPlaceholderRoute({
+                      scope: 'organization',
+                      title: 'Organization API Keys',
+                      description: 'Organization-owned API credentials and shared issuance policies will live here.',
+                      note: 'This scoped settings page is visible now so the settings information architecture stays stable as organization-owned credentials arrive.',
+                    }),
+                  },
+                  {
+                    path: 'organization/ai-providers',
+                    lazy: agchainSettingsPlaceholderRoute({
+                      scope: 'organization',
+                      title: 'Organization AI Providers',
+                      description: 'Shared provider defaults and organization-owned model access policies will live here.',
+                      note: 'This section remains visible so future organization-level provider controls do not require reshaping the AGChain settings shell.',
+                    }),
+                  },
+                  {
+                    path: 'project/general',
+                    lazy: agchainSettingsPlaceholderRoute({
+                      scope: 'project',
+                      title: 'Project General',
+                      description: 'Project-level identity, defaults, and descriptive metadata will converge here.',
+                      note: 'Benchmark definition remains the live project-level settings child page in this implementation wave.',
+                    }),
+                  },
+                  {
+                    path: 'project/members',
+                    lazy: agchainSettingsPlaceholderRoute({
+                      scope: 'project',
+                      title: 'Project Members',
+                      description: 'Project-specific membership overlays and participation controls will live here.',
+                      note: 'This page is visible now to lock the project settings taxonomy before project-level access overlays are implemented.',
+                    }),
+                  },
+                  {
+                    path: 'project/access',
+                    lazy: agchainSettingsPlaceholderRoute({
+                      scope: 'project',
+                      title: 'Project Access',
+                      description: 'Project-specific access rules, sharing posture, and exceptions will live here.',
+                      note: 'Organization-level permission groups land first. Project-specific access controls remain a later batch.',
+                    }),
+                  },
+                  {
                     path: 'project/benchmark-definition',
                     lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainBenchmarksPage')).default }),
+                  },
+                  {
+                    path: 'personal/preferences',
+                    lazy: agchainSettingsPlaceholderRoute({
+                      scope: 'personal',
+                      title: 'Personal Preferences',
+                      description: 'AGChain-specific user defaults, shortcuts, and local preferences will live here.',
+                      note: 'This page stays visible so user-scoped controls do not get absorbed into organization or project settings.',
+                    }),
+                  },
+                  {
+                    path: 'personal/credentials',
+                    lazy: agchainSettingsPlaceholderRoute({
+                      scope: 'personal',
+                      title: 'Personal Credentials',
+                      description: 'User-owned AGChain credentials and per-user provider overrides will live here.',
+                      note: 'Global account settings remain outside AGChain. This surface is reserved for AGChain-specific personal credentials only.',
+                    }),
                   },
                 ],
               },

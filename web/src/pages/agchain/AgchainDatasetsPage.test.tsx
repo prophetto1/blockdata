@@ -27,9 +27,14 @@ vi.mock('@/lib/platformApi', () => ({
 }));
 
 const useAgchainProjectFocusMock = vi.fn();
+const useAgchainScopeStateMock = vi.fn();
 
 vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
   useAgchainProjectFocus: () => useAgchainProjectFocusMock(),
+}));
+
+vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
+  useAgchainScopeState: () => useAgchainScopeStateMock(),
 }));
 
 function jsonResponse(body: unknown, status = 200) {
@@ -75,6 +80,7 @@ describe('AgchainDatasetsPage', () => {
   beforeEach(() => {
     platformApiFetchMock.mockReset();
     useAgchainProjectFocusMock.mockReset();
+    useAgchainScopeStateMock.mockReset();
     useAgchainProjectFocusMock.mockReturnValue({
       focusedProject: {
         project_id: 'project-1',
@@ -91,6 +97,27 @@ describe('AgchainDatasetsPage', () => {
         href: '/app/agchain/overview?project=legal-10',
       },
       loading: false,
+    });
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'ready',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
+      focusedProject: {
+        project_id: 'project-1',
+        organization_id: 'org-1',
+        project_slug: 'legal-10',
+        project_name: 'Legal-10',
+        description: 'Three-step benchmark package for legal analysis.',
+        membership_role: 'owner',
+        updated_at: '2026-03-31T00:00:00Z',
+        primary_benchmark_slug: 'legal-10',
+        primary_benchmark_name: 'Legal-10',
+        benchmark_slug: 'legal-10',
+        benchmark_name: 'Legal-10',
+        href: '/app/agchain/overview?project=legal-10',
+      },
     });
 
     platformApiFetchMock.mockImplementation((path: string) => {
@@ -158,9 +185,12 @@ describe('AgchainDatasetsPage', () => {
   });
 
   it('routes users back toward the project registry when no project is focused', () => {
-    useAgchainProjectFocusMock.mockReturnValue({
-      focusedProject: null,
-      loading: false,
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'no-project',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
     });
 
     render(
@@ -171,5 +201,20 @@ describe('AgchainDatasetsPage', () => {
 
     expect(screen.getByRole('heading', { name: /choose an agchain project/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open project registry' })).toHaveAttribute('href', '/app/agchain/projects');
+  });
+
+  it('shows loading while the shared AGChain scope is bootstrapping', () => {
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'bootstrapping',
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainDatasetsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Loading workspace...')).toBeInTheDocument();
+    expect(screen.queryByText('Datasets')).not.toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   draftFromBenchmarkStep,
@@ -22,23 +22,6 @@ type AgchainBenchmarkStepInspectorProps = {
 const inputClass =
   'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
-function createEmptyFormValues(): StepFormValues {
-  return stepDraftToFormValues({
-    step_id: '',
-    display_name: '',
-    step_kind: 'model',
-    api_call_boundary: 'own_call',
-    inject_payloads: [],
-    scoring_mode: 'none',
-    output_contract: null,
-    scorer_ref: null,
-    judge_prompt_ref: null,
-    judge_grades_step_ids: [],
-    enabled: true,
-    step_config: {},
-  });
-}
-
 export function AgchainBenchmarkStepInspector({
   selectedStep,
   canEdit,
@@ -47,38 +30,6 @@ export function AgchainBenchmarkStepInspector({
   onSave,
   onDelete,
 }: AgchainBenchmarkStepInspectorProps) {
-  const [values, setValues] = useState<StepFormValues>(createEmptyFormValues());
-  const [localError, setLocalError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!selectedStep) {
-      setValues(createEmptyFormValues());
-      setLocalError(null);
-      return;
-    }
-
-    setValues(stepDraftToFormValues(draftFromBenchmarkStep(selectedStep)));
-    setLocalError(null);
-  }, [selectedStep]);
-
-  async function handleSave() {
-    try {
-      setLocalError(null);
-      await onSave(stepFormValuesToDraft(values));
-    } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'Failed to save step');
-    }
-  }
-
-  async function handleDelete() {
-    try {
-      setLocalError(null);
-      await onDelete();
-    } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'Failed to delete step');
-    }
-  }
-
   if (loading) {
     return (
       <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">
@@ -96,6 +47,53 @@ export function AgchainBenchmarkStepInspector({
         </p>
       </section>
     );
+  }
+
+  return (
+    <AgchainBenchmarkStepInspectorContent
+      key={selectedStep.step_id}
+      selectedStep={selectedStep}
+      canEdit={canEdit}
+      mutating={mutating}
+      onSave={onSave}
+      onDelete={onDelete}
+    />
+  );
+}
+
+type AgchainBenchmarkStepInspectorContentProps = Omit<
+  AgchainBenchmarkStepInspectorProps,
+  'loading' | 'selectedStep'
+> & {
+  selectedStep: AgchainBenchmarkStepRow;
+};
+
+function AgchainBenchmarkStepInspectorContent({
+  selectedStep,
+  canEdit,
+  mutating,
+  onSave,
+  onDelete,
+}: AgchainBenchmarkStepInspectorContentProps) {
+  const [values, setValues] = useState<StepFormValues>(() => stepDraftToFormValues(draftFromBenchmarkStep(selectedStep)));
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  async function handleSave() {
+    try {
+      setLocalError(null);
+      await onSave(stepFormValuesToDraft(values));
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : 'Failed to save step');
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      setLocalError(null);
+      await onDelete();
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : 'Failed to delete step');
+    }
   }
 
   return (

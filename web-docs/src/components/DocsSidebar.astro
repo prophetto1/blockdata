@@ -2,24 +2,33 @@
 import MobileMenuFooter from '@astrojs/starlight/components/MobileMenuFooter.astro';
 import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
 import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
-import { FolderTree, PanelLeft } from 'lucide-react';
-import { getCurrentDocsRelativePath, getDocsContentTreeState } from '../lib/docs/content-tree.mjs';
+import { PanelLeft } from 'lucide-react';
 
-const { entry, sidebar } = Astro.locals.starlightRoute;
-const { treeRoot } = getDocsContentTreeState();
-const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
+const { sidebar } = Astro.locals.starlightRoute;
+
+// Split the unified sidebar into BlockData and AGChain sections.
+// AGChain entries are identified by their top-level group label.
+const AGCHAIN_LABEL = 'AGChain';
+
+
+const blockdataSidebar = sidebar.filter(
+  (entry) => !(entry.type === 'group' && entry.label === AGCHAIN_LABEL)
+);
+const agchainGroup = sidebar.find(
+  (entry) => entry.type === 'group' && entry.label === AGCHAIN_LABEL
+);
+const agchainSidebar = agchainGroup?.type === 'group' ? agchainGroup.entries : [];
+
 ---
 
 <script is:inline>
   (() => {
     try {
-      const savedMode = localStorage.getItem('shell-mode');
-      if (savedMode === 'filetree' || savedMode === 'sections') {
-        document.documentElement.setAttribute('data-shell-mode', savedMode);
+      const saved = localStorage.getItem('docs-sidebar-tab');
+      if (saved === 'agchain' || saved === 'sections') {
+        document.documentElement.setAttribute('data-sidebar-tab', saved);
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   })();
 </script>
 
@@ -31,50 +40,32 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
       data-sidebar-view-button
       data-sidebar-view-target="nav"
       aria-pressed="true"
-      aria-label="Sections"
-      title="Sections"
+      aria-label="BlockData"
+      title="BlockData docs"
     >
       <PanelLeft className="docs-sidebar-view-toggle__icon" size={17} strokeWidth={2.35} aria-hidden="true" />
+      <span class="docs-sidebar-view-toggle__label">BlockData</span>
     </button>
     <button
       type="button"
       class="docs-sidebar-view-toggle__button"
       data-sidebar-view-button
-      data-sidebar-view-target="files"
+      data-sidebar-view-target="agchain"
       aria-pressed="false"
-      aria-label="File tree"
-      title="File tree"
+      aria-label="AGChain"
+      title="AGChain docs"
     >
-      <FolderTree className="docs-sidebar-view-toggle__icon" size={17} strokeWidth={2.35} aria-hidden="true" />
+      <span class="docs-sidebar-view-toggle__label">AGChain</span>
     </button>
   </div>
 
   <script is:inline>
     (() => {
-      // Canonical source: src/lib/docs/shell-state.ts
-      // Duplicated here because is:inline scripts cannot import ES modules.
-      const SHELL_ATTR = 'data-shell-mode';           // SHELL_MODE_ATTR
-      const SHELL_STORAGE = 'shell-mode';              // SHELL_MODE_STORAGE_KEY
-      const FILE_STORAGE = 'shell-selected-file';      // FILE_STORAGE_KEY
-      const FILE_RESET_EVENT = 'shell-file-reset';     // SHELL_FILE_RESET_EVENT
-
-      function readSelectedFile() {
-        try {
-          const raw = sessionStorage.getItem(FILE_STORAGE);
-          return raw ? JSON.parse(raw) : null;
-        } catch {
-          return null;
-        }
-      }
+      const STORAGE_KEY = 'docs-sidebar-tab';
 
       function applySidebarView(root, view) {
         root.dataset.sidebarView = view;
-
-        // Set unified shell mode
-        const shellMode = view === 'files' ? 'filetree' : 'sections';
-        document.documentElement.setAttribute(SHELL_ATTR, shellMode);
-        try { localStorage.setItem(SHELL_STORAGE, shellMode); } catch {}
-
+        try { localStorage.setItem(STORAGE_KEY, view === 'agchain' ? 'agchain' : 'sections'); } catch {}
         root.querySelectorAll('[data-sidebar-view-button]').forEach((button) => {
           button.setAttribute(
             'aria-pressed',
@@ -87,36 +78,14 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
         if (root.dataset.sidebarViewReady === 'true') return;
         root.dataset.sidebarViewReady = 'true';
 
-        // Restore from unified shell-mode storage
-        let savedMode = null;
-        try { savedMode = localStorage.getItem(SHELL_STORAGE); } catch {}
-        const initialView = savedMode === 'filetree' ? 'files' : 'nav';
-
+        let saved = null;
+        try { saved = localStorage.getItem(STORAGE_KEY); } catch {}
+        const initialView = saved === 'agchain' ? 'agchain' : 'nav';
         applySidebarView(root, initialView);
 
         root.querySelectorAll('[data-sidebar-view-button]').forEach((button) => {
           button.addEventListener('click', () => {
-            const nextView = button.dataset.sidebarViewTarget === 'files' ? 'files' : 'nav';
-            const wasFileTree = root.dataset.sidebarView === 'files';
-            const isEnteringFiles = nextView === 'files';
-
-            if (wasFileTree && !isEnteringFiles) {
-              const selected = readSelectedFile();
-              try {
-                sessionStorage.removeItem(FILE_STORAGE);
-              } catch {}
-              window.dispatchEvent(
-                new CustomEvent(FILE_RESET_EVENT, { detail: { reason: 'mode-change' } }),
-              );
-
-              if (selected?.sourceKind === 'repo' && selected?.docsHref) {
-                applySidebarView(root, nextView);
-                const next = new URL(selected.docsHref, window.location.origin);
-                window.location.replace(next.toString());
-                return;
-              }
-            }
-
+            const nextView = button.dataset.sidebarViewTarget === 'agchain' ? 'agchain' : 'nav';
             applySidebarView(root, nextView);
           });
         });
@@ -127,28 +96,21 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
   <div data-sidebar-panel="nav">
     <div class="docs-sidebar-scroll">
       <SidebarPersister>
-        <SidebarSublist sublist={sidebar} />
+        <SidebarSublist sublist={blockdataSidebar} />
       </SidebarPersister>
     </div>
   </div>
 
-  <div data-sidebar-panel="files">
-    <div
-      class="docs-sidebar-filetree-host"
-      data-docs-sidebar-filetree-root
-      data-current-relative-path={currentRelativePath}
-      data-tree-nodes={JSON.stringify(treeRoot.children)}
-    >
-      <div class="docs-sidebar-filetree-loading">Loading file tree...</div>
+  <div data-sidebar-panel="agchain">
+    <div class="docs-sidebar-scroll">
+      {agchainSidebar.length === 0 ? (
+        <p style="padding: 1rem; color: var(--muted-foreground); font-size: 0.8rem;">No AGChain docs found.</p>
+      ) : (
+        <SidebarSublist sublist={agchainSidebar} />
+      )}
     </div>
   </div>
 </div>
-
-<script>
-  import { mountDocsSidebarFileTreeWhenFiletreeMode } from '../lib/docs/lazy-shell-mount';
-
-  mountDocsSidebarFileTreeWhenFiletreeMode('[data-docs-sidebar-filetree-root]');
-</script>
 
 <div class="md:sl-hidden">
   <MobileMenuFooter />
@@ -166,17 +128,6 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
 
     .docs-sidebar-view-toggle {
       flex-shrink: 0;
-    }
-
-    [data-sidebar-view-root][data-sidebar-view='nav'] [data-sidebar-panel='files'] {
-      display: none;
-    }
-
-    [data-sidebar-view-root][data-sidebar-view='files'] [data-sidebar-panel='nav'] {
-      display: none;
-    }
-
-    .docs-sidebar-view-toggle {
       display: flex;
       gap: 0;
       border-bottom: 1px solid var(--separator);
@@ -189,13 +140,19 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 0.35rem;
       border: 0;
       border-radius: 0;
       background: transparent;
-      width: 2.25rem;
       height: 2.25rem;
+      padding: 0 0.5rem;
       color: var(--muted-foreground);
       cursor: pointer;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
       transition: color 100ms ease;
     }
 
@@ -206,6 +163,10 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
     :global(.docs-sidebar-view-toggle__icon) {
       display: block;
       opacity: 0.92;
+    }
+
+    .docs-sidebar-view-toggle__label {
+      white-space: nowrap;
     }
 
     .docs-sidebar-view-toggle__button[aria-pressed='true'] {
@@ -227,147 +188,17 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
       outline-offset: -1px;
     }
 
-    /* ── File Tree Header ── */
-
-    :global(.docs-tree-container) {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
+    /* Panel visibility */
+    [data-sidebar-view-root][data-sidebar-view='nav'] [data-sidebar-panel='agchain'] {
+      display: none;
     }
 
-    :global(.docs-tree-header) {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.25rem;
-      height: 1.5rem;
-      padding: 0 0.25rem;
-      margin-bottom: 0.35rem;
+    [data-sidebar-view-root][data-sidebar-view='agchain'] [data-sidebar-panel='nav'] {
+      display: none;
     }
 
-    :global(.docs-tree-header__name) {
-      font-family: var(--app-font-mono);
-      font-size: 0.65rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted-foreground);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    :global(.docs-tree-header__actions) {
-      display: flex;
-      gap: 0.15rem;
-      flex-shrink: 0;
-    }
-
-    :global(.docs-tree-header__button) {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 1.25rem;
-      height: 1.25rem;
-      border: 0;
-      border-radius: 0.2rem;
-      background: transparent;
-      color: var(--muted-foreground);
-      cursor: pointer;
-      opacity: 0.6;
-      transition: opacity 80ms ease, background-color 80ms ease;
-    }
-
-    :global(.docs-tree-header__button:hover) {
-      opacity: 1;
-      background: color-mix(in oklab, var(--foreground) 8%, transparent);
-    }
-
-    :global(.docs-tree-header__button:focus-visible) {
-      outline: 1px solid var(--ring);
-      outline-offset: -1px;
-    }
-
-    /* ── Empty State ── */
-
-    :global(.docs-tree-empty) {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      flex: 1;
-      padding: 2rem 1rem;
-      color: var(--muted-foreground);
-      font-family: var(--app-font-mono);
-      font-size: 0.72rem;
-      text-align: center;
-    }
-
-    :global(.docs-tree-empty__button) {
-      border: 1px solid var(--separator);
-      border-radius: 0.3rem;
-      background: transparent;
-      padding: 0.35rem 0.75rem;
-      color: var(--sl-color-text);
-      font-family: var(--app-font-mono);
-      font-size: 0.68rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 80ms ease, border-color 80ms ease;
-    }
-
-    :global(.docs-tree-empty__button:hover) {
-      background: color-mix(in oklab, var(--foreground) 6%, transparent);
-      border-color: var(--sl-color-text);
-    }
-
-    :global(.docs-tree-empty__button) {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-
-    :global(.docs-tree-empty__button:focus-visible) {
-      outline: 1px solid var(--ring);
-      outline-offset: 1px;
-    }
-
-    :global(.docs-tree-empty__button--muted) {
-      border-color: transparent;
-      color: var(--muted-foreground);
-      font-size: 0.62rem;
-    }
-
-    :global(.docs-tree-empty__button--muted:hover) {
-      border-color: transparent;
-      color: var(--sl-color-text);
-      background: transparent;
-    }
-
-    :global(.docs-tree-empty__detail) {
-      font-size: 0.6rem;
-      color: var(--muted-foreground);
-      opacity: 0.7;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* ── File Tree Panel ── */
-
-    [data-sidebar-panel='files'] {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
-      width: 100%;
-      padding: 0.4rem 0;
-    }
-
-    [data-sidebar-panel='nav'] {
+    [data-sidebar-panel='nav'],
+    [data-sidebar-panel='agchain'] {
       display: flex;
       flex-direction: column;
       flex: 1;
@@ -379,185 +210,6 @@ const currentRelativePath = getCurrentDocsRelativePath(entry.filePath);
       min-height: 0;
       overflow-y: auto;
       overflow-x: hidden;
-    }
-
-    :global(.docs-sidebar-filetree-host) {
-      display: flex;
-      flex: 1;
-      min-height: 0;
-    }
-
-    :global(.docs-sidebar-filetree-loading) {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      min-height: 2.5rem;
-      color: var(--muted-foreground);
-      font-family: var(--app-font-mono);
-      font-size: 0.68rem;
-    }
-
-    :global(.docs-tree) {
-      font-family: var(--app-font-mono);
-      font-size: 0.78rem;
-      line-height: 1.4;
-      flex: 1;
-      min-height: 0;
-    }
-
-    :global(.docs-tree__list) {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    :global(.docs-tree__branch) {
-      display: grid;
-    }
-
-    :global(.docs-tree__branch-control) {
-      display: block;
-    }
-
-    /* Shared row style */
-    :global(.docs-tree__row) {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      height: 1.5rem;
-      border-radius: 0.25rem;
-      padding: 0 0.4rem;
-      color: var(--muted-foreground);
-      text-decoration: none;
-      transition: background-color 80ms ease, color 80ms ease;
-    }
-
-    :global(.docs-tree__row--branch),
-    :global(.docs-tree__row--file) {
-      border: 0;
-      background: transparent;
-      width: 100%;
-      cursor: pointer;
-      text-align: left;
-      font-family: inherit;
-      font-size: inherit;
-    }
-
-    :global(.docs-tree__row--branch) {
-      font-weight: 500;
-      color: var(--sl-color-text);
-    }
-
-    :global(.docs-tree__row:hover) {
-      background: color-mix(in oklab, var(--foreground) 6%, transparent);
-      color: var(--sl-color-text);
-    }
-
-    :global(.docs-tree__row:focus-visible) {
-      outline: 1px solid var(--ring);
-      outline-offset: -1px;
-    }
-
-    /* Chevron */
-    :global(.docs-tree__chevron) {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      width: 12px;
-      height: 12px;
-      color: var(--muted-foreground);
-      opacity: 0.6;
-      transition: transform 120ms ease;
-    }
-
-    :global(.docs-tree__branch[data-state='open'] .docs-tree__chevron) {
-      transform: rotate(90deg);
-    }
-
-    /* Label */
-    :global(.docs-tree__label) {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      min-width: 0;
-    }
-
-    /* Icons */
-    :global(.docs-tree-icon) {
-      flex-shrink: 0;
-      opacity: 0.7;
-    }
-
-    :global(.docs-tree-icon--folder-closed),
-    :global(.docs-tree-icon--folder-open) {
-      color: var(--icon-folder);
-      opacity: 0.98;
-    }
-
-    :global(.docs-tree-icon--folder-open) {
-      display: none;
-    }
-
-    :global(.docs-tree__branch[data-state='open'] .docs-tree-icon--folder-closed) {
-      display: none;
-    }
-
-    :global(.docs-tree__branch[data-state='open'] .docs-tree-icon--folder-open) {
-      display: block;
-    }
-
-    :global(.docs-tree-icon--file) {
-      color: color-mix(in oklab, var(--sl-color-text) 72%, transparent);
-      opacity: 0.88;
-    }
-
-    :global(.docs-tree-icon--markdown) {
-      color: var(--icon-markdown);
-      opacity: 0.96;
-    }
-
-    /* Name */
-    :global(.docs-tree__name) {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* Extension */
-    :global(.docs-tree__ext) {
-      flex-shrink: 0;
-      color: var(--muted-foreground);
-      font-size: 0.58rem;
-      opacity: 0.4;
-    }
-
-    /* Indent guides */
-    :global(.docs-tree__children) {
-      display: grid;
-      margin-inline-start: 6px;
-      padding-inline-start: 12px;
-      border-inline-start: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
-    }
-
-    :global(.docs-tree__children[hidden]) {
-      display: none;
-    }
-
-    :global(.docs-tree__guide) {
-      display: none;
-    }
-
-    /* Selected */
-    :global(.docs-tree__item[data-selected] .docs-tree__row) {
-      background: color-mix(in oklab, var(--foreground) 10%, transparent);
-      color: var(--sl-color-text);
-    }
-
-    :global(.docs-tree__item[data-selected] .docs-tree-icon--file),
-    :global(.docs-tree__item[data-selected] .docs-tree-icon--markdown) {
-      color: var(--sl-color-text);
-      opacity: 1;
     }
   }
 </style>

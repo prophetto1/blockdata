@@ -1,15 +1,12 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { AgchainSectionPage } from './AgchainSectionPage';
 
-vi.mock('@/lib/agchainWorkspaces', () => ({
-  fetchAgchainOrganizations: () => Promise.resolve({
-    items: [{ organization_id: 'org-1', organization_slug: 'personal', display_name: 'Personal', membership_role: 'organization_admin', is_personal: true, project_count: 1 }],
-  }),
-  fetchAgchainProjects: () => Promise.resolve({
-    items: [{ project_id: 'project-1', organization_id: 'org-1', project_slug: 'test', project_name: 'Test Project', description: '', membership_role: 'project_admin', updated_at: null, primary_benchmark_slug: null, primary_benchmark_name: null }],
-  }),
+const useAgchainScopeStateMock = vi.fn();
+
+vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
+  useAgchainScopeState: () => useAgchainScopeStateMock(),
 }));
 
 afterEach(() => {
@@ -17,24 +14,64 @@ afterEach(() => {
 });
 
 describe('AgchainSectionPage', () => {
-  it('uses the shared AG chain page frame aligned to the shell content inset', async () => {
+  beforeEach(() => {
+    useAgchainScopeStateMock.mockReset();
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'ready',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
+      focusedProject: {
+        benchmark_id: 'benchmark-1',
+        benchmark_slug: 'legal-10',
+        benchmark_name: 'Legal-10',
+        description: 'Three-step benchmark package for legal analysis.',
+      },
+    });
+  });
+
+  it('acts as a deprecated compatibility shim over the shared placeholder surface', () => {
     render(
-      <AgchainWorkspaceProvider>
+      <MemoryRouter>
         <AgchainSectionPage
           title="Runs"
           description="Run setup lives here."
           bullets={['First bullet', 'Second bullet']}
         />
-      </AgchainWorkspaceProvider>,
+      </MemoryRouter>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Project-scoped placeholder surface')).toBeInTheDocument();
-    });
+    expect(screen.getByRole('heading', { name: 'Runs' })).toBeInTheDocument();
+    expect(screen.getByText(/legal-10 owns this runs page/i)).toBeInTheDocument();
+    expect(screen.getByText('Deprecated compatibility surface')).toBeInTheDocument();
 
     const frame = screen.getByTestId('agchain-page-frame');
     expect(frame).toHaveClass('w-full', 'px-4');
     expect(frame.className).not.toContain('max-w-');
     expect(frame.className).not.toContain('mx-auto');
+  });
+
+  it('keeps the no-project fallback delegated to the shared placeholder surface', () => {
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'no-project',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainSectionPage
+          title="Runs"
+          description="Run setup lives here."
+          bullets={['First bullet', 'Second bullet']}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Choose an AGChain project' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open project registry' })).toHaveAttribute('href', '/app/agchain/projects');
   });
 });

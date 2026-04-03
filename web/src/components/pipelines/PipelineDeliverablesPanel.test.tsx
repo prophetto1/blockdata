@@ -29,6 +29,7 @@ describe('PipelineDeliverablesPanel', () => {
         sourceSetLabel="Release corpus"
         selectedSources={[
           {
+            pipeline_source_id: 'psrc-1',
             source_uid: 'source-1',
             project_id: 'project-1',
             doc_title: 'Guide.md',
@@ -69,6 +70,7 @@ describe('PipelineDeliverablesPanel', () => {
         sourceSetLabel="Release corpus"
         selectedSources={[
           {
+            pipeline_source_id: 'psrc-1',
             source_uid: 'source-1',
             project_id: 'project-1',
             doc_title: 'Guide.md',

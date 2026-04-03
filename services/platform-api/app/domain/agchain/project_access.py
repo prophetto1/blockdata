@@ -7,6 +7,7 @@ from typing import Any, Iterable
 from fastapi import HTTPException
 from opentelemetry import metrics, trace
 
+from app.domain.agchain.organization_access import load_active_organization_membership
 from app.infra.supabase_client import get_supabase_admin
 from app.observability.contract import safe_attributes, set_span_attributes
 
@@ -46,17 +47,14 @@ def _load_project_membership(*, user_id: str, project_id: str, sb) -> dict[str, 
 
 
 def _load_org_admin_membership(*, user_id: str, organization_id: str, sb) -> dict[str, Any] | None:
-    return (
-        sb.table("agchain_organization_members")
-        .select("*")
-        .eq("organization_id", organization_id)
-        .eq("user_id", user_id)
-        .eq("membership_role", "organization_admin")
-        .eq("membership_status", "active")
-        .maybe_single()
-        .execute()
-        .data
+    membership = load_active_organization_membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        sb=sb,
     )
+    if membership and membership.get("membership_role") == "organization_admin":
+        return membership
+    return None
 
 
 def _deny_project_access(*, user_id: str, project_id: str, organization_id: str | None) -> None:

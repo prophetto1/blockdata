@@ -58,6 +58,7 @@ export type PreparedSourceUpload = {
   content_type: string;
   expected_bytes: number;
   storage_kind: 'source';
+  storage_surface: 'assets';
   source_type: string;
   source_uid: string;
   doc_title: string;
@@ -79,6 +80,23 @@ export type UploadWithReservationResult = {
   reservation: UploadReservation;
   completed: CompletedUpload;
 };
+
+function mapSignedUploadError(error: unknown): Error {
+  if (error instanceof Error && /failed to fetch/i.test(error.message)) {
+    return new Error(
+      'Storage upload could not reach Google Cloud Storage. This usually means the bucket CORS policy does not allow this app origin yet.',
+    );
+  }
+  if (error instanceof TypeError) {
+    return new Error(
+      'Storage upload failed before the request completed. Verify the bucket CORS policy for this app origin.',
+    );
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error('Storage upload failed before the request completed.');
+}
 
 function normalizeExtension(value: string): string {
   return value.trim().toLowerCase().replace(/^\./, '');
@@ -151,6 +169,7 @@ export async function prepareSourceUpload(
     content_type: file.type || 'application/octet-stream',
     expected_bytes: file.size,
     storage_kind: 'source',
+    storage_surface: 'assets',
     source_type: sourceType,
     source_uid: sourceUid,
     doc_title: options.docTitle?.trim() || file.name,
@@ -179,7 +198,7 @@ export async function uploadWithReservation(params: {
     });
   } catch (error) {
     await cancelUploadReservation(reservation.reservation_id);
-    throw error;
+    throw mapSignedUploadError(error);
   }
 
   if (!uploadResponse.ok) {

@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
 import { Button } from '@/components/ui/button';
 import { AgchainToolEditorDialog } from '@/components/agchain/tools/AgchainToolEditorDialog';
 import { AgchainToolInspector } from '@/components/agchain/tools/AgchainToolInspector';
 import { AgchainToolsTable } from '@/components/agchain/tools/AgchainToolsTable';
 import type { AgchainToolEditorState } from '@/components/agchain/tools/AgchainToolSourceEditor';
+import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { useAgchainTools } from '@/hooks/agchain/useAgchainTools';
-import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 import type { AgchainToolMutationPayload } from '@/lib/agchainTools';
 import { AgchainPageFrame } from './AgchainPageFrame';
 
@@ -49,13 +51,13 @@ function editorStateToPayload(draft: AgchainToolEditorState): AgchainToolMutatio
 }
 
 export default function AgchainToolsPage() {
+  const scopeState = useAgchainScopeState('project');
   const [search, setSearch] = useState('');
   const [sourceKindFilter, setSourceKindFilter] = useState<string>('all');
   const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create');
   const [editorOpen, setEditorOpen] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const {
-    focusedProject,
     items,
     secrets,
     listLoading,
@@ -105,9 +107,7 @@ export default function AgchainToolsPage() {
     }
   }
 
-  const { status, reload: reloadWorkspace } = useAgchainProjectFocus();
-
-  if (status === 'bootstrapping') {
+  if (scopeState.kind === 'bootstrapping') {
     return (
       <AgchainPageFrame className="gap-4 py-6">
         <div className="flex flex-1 items-center justify-center rounded-3xl border border-border/70 bg-card/70 px-6 py-12 text-center shadow-sm">
@@ -117,39 +117,52 @@ export default function AgchainToolsPage() {
     );
   }
 
-  if (status === 'error') {
+  if (scopeState.kind === 'error') {
     return (
       <AgchainPageFrame className="gap-4 py-6">
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-3xl border border-border/70 bg-card/70 px-6 py-12 text-center shadow-sm">
-          <p className="text-sm text-muted-foreground">Failed to load AGChain workspace context.</p>
-          <button onClick={() => void reloadWorkspace()} className="text-sm font-medium text-foreground underline-offset-4 hover:underline">Retry</button>
-        </div>
+        <AgchainEmptyState
+          title="AGChain tools unavailable"
+          description="Failed to load AGChain workspace context."
+          action={(
+            <button
+              type="button"
+              onClick={() => void scopeState.reload()}
+              className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Retry
+            </button>
+          )}
+        />
       </AgchainPageFrame>
     );
   }
 
-  if (status === 'no-organization') {
+  if (scopeState.kind === 'no-organization') {
     return (
       <AgchainPageFrame className="gap-4 py-6">
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-3xl border border-border/70 bg-card/70 px-6 py-12 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">No organization</h1>
-          <p className="text-sm text-muted-foreground">Select or create an organization to continue.</p>
-        </div>
+        <AgchainEmptyState
+          title="No organization"
+          description="Select or create an organization to continue."
+        />
       </AgchainPageFrame>
     );
   }
 
-  if (!focusedProject) {
+  if (scopeState.kind === 'no-project') {
     return (
       <AgchainPageFrame className="gap-4 py-6">
-        <div className="flex flex-1 items-center justify-center rounded-3xl border border-border/70 bg-card/70 px-6 py-12 text-center shadow-sm">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Choose a project</h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Select a focused AGChain project before managing project-owned tool definitions.
-            </p>
-          </div>
-        </div>
+        <AgchainEmptyState
+          title="Choose a project"
+          description="Select a focused AGChain project before managing project-owned tool definitions."
+          action={(
+            <Link
+              to="/app/agchain/projects"
+              className="inline-flex w-fit items-center rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              Open project registry
+            </Link>
+          )}
+        />
       </AgchainPageFrame>
     );
   }
@@ -160,7 +173,7 @@ export default function AgchainToolsPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">AGChain project</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Tools</h1>
         <p className="mt-2 max-w-4xl text-sm leading-6 text-muted-foreground">
-          Manage the merged tool registry for {focusedProject.project_name}: built-in catalog rows stay read-only while
+          Manage the merged tool registry for {scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}: built-in catalog rows stay read-only while
           project-authored definitions can be versioned, published, and attached to benchmark tool bags.
         </p>
       </section>

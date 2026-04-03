@@ -1,8 +1,8 @@
-import { AgchainSectionPage } from './AgchainSectionPage';
+import { AgchainProjectPlaceholderPage } from '@/components/agchain/AgchainProjectPlaceholderPage';
 
 export default function AgchainObservabilityPage() {
   return (
-    <AgchainSectionPage
+    <AgchainProjectPlaceholderPage
       title="Observability"
       description="AGChain should use the host platform's OpenTelemetry patterns for run traces, step events, provider metrics, and operational diagnostics once the rest of the project shell is actively in motion."
       bullets={[

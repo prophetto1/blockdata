@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DialogBody,
@@ -43,13 +43,27 @@ export function AgchainProjectCreateDialog({
   error,
   onCreate,
 }: AgchainProjectCreateDialogProps) {
-  const [draft, setDraft] = useState<ProjectDraft>(createEmptyDraft());
+  return (
+    <DialogRoot open={open} onOpenChange={(details) => onOpenChange(details.open)}>
+      {open ? (
+        <AgchainProjectCreateDialogContent creating={creating} error={error} onCreate={onCreate} onOpenChange={onOpenChange} />
+      ) : null}
+    </DialogRoot>
+  );
+}
 
-  useEffect(() => {
-    if (!open) {
-      setDraft(createEmptyDraft());
-    }
-  }, [open]);
+type AgchainProjectCreateDialogContentProps = Pick<
+  AgchainProjectCreateDialogProps,
+  'creating' | 'error' | 'onCreate' | 'onOpenChange'
+>;
+
+function AgchainProjectCreateDialogContent({
+  creating,
+  error,
+  onCreate,
+  onOpenChange,
+}: AgchainProjectCreateDialogContentProps) {
+  const [draft, setDraft] = useState<ProjectDraft>(() => createEmptyDraft());
 
   async function handleCreate() {
     await onCreate({
@@ -60,69 +74,63 @@ export function AgchainProjectCreateDialog({
   }
 
   return (
-    <DialogRoot open={open} onOpenChange={(details) => onOpenChange(details.open)}>
-      <DialogContent>
-        <DialogCloseTrigger />
-        <DialogTitle>Create Project</DialogTitle>
-        <DialogDescription>
-          Create an AGChain project workspace. This first pass still seeds an initial benchmark so the current
-          definition workflow keeps working while benchmark remains a child resource under the project.
-        </DialogDescription>
-        <DialogBody>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="agchain-project-name">
-                Project Name
-              </label>
-              <input
-                id="agchain-project-name"
-                className={inputClass}
-                value={draft.project_name}
-                onChange={(event) => setDraft({ ...draft, project_name: event.target.value })}
-                autoFocus
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="agchain-project-slug">
-                Project Slug
-              </label>
-              <input
-                id="agchain-project-slug"
-                className={inputClass}
-                value={draft.project_slug}
-                onChange={(event) => setDraft({ ...draft, project_slug: event.target.value })}
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="agchain-project-description">
-                Description
-              </label>
-              <textarea
-                id="agchain-project-description"
-                className={`${inputClass} min-h-24`}
-                value={draft.description}
-                onChange={(event) => setDraft({ ...draft, description: event.target.value })}
-              />
-            </div>
+    <DialogContent>
+      <DialogCloseTrigger />
+      <DialogTitle>Create Project</DialogTitle>
+      <DialogDescription>
+        Create an AGChain project workspace. This first pass still seeds an initial benchmark so the current
+        definition workflow keeps working while benchmark remains a child resource under the project.
+      </DialogDescription>
+      <DialogBody>
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="agchain-project-name">
+              Project Name
+            </label>
+            <input
+              id="agchain-project-name"
+              className={inputClass}
+              value={draft.project_name}
+              onChange={(event) => setDraft({ ...draft, project_name: event.target.value })}
+              autoFocus
+            />
           </div>
 
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        </DialogBody>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={handleCreate}
-            disabled={creating || !draft.project_name.trim()}
-          >
-            {creating ? 'Creating...' : 'Create Project'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </DialogRoot>
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="agchain-project-slug">
+              Project Slug
+            </label>
+            <input
+              id="agchain-project-slug"
+              className={inputClass}
+              value={draft.project_slug}
+              onChange={(event) => setDraft({ ...draft, project_slug: event.target.value })}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-foreground" htmlFor="agchain-project-description">
+              Description
+            </label>
+            <textarea
+              id="agchain-project-description"
+              className={`${inputClass} min-h-24`}
+              value={draft.description}
+              onChange={(event) => setDraft({ ...draft, description: event.target.value })}
+            />
+          </div>
+        </div>
+
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </DialogBody>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          Cancel
+        </Button>
+        <Button type="button" onClick={handleCreate} disabled={creating || !draft.project_name.trim()}>
+          {creating ? 'Creating...' : 'Create Project'}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }

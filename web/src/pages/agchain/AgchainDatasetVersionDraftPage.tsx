@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AgchainPageFrame } from './AgchainPageFrame';
 import { AgchainDatasetFieldMappingEditor } from '@/components/agchain/datasets/AgchainDatasetFieldMappingEditor';
@@ -37,10 +37,22 @@ export default function AgchainDatasetVersionDraftPage() {
   const [dirty, setDirty] = useState(false);
 
   // Sync draft state on load
-  const effectiveFieldSpec = fieldSpec ?? draft?.field_spec_jsonb ?? {
-    input: null, messages: null, choices: null, target: null,
-    id: null, metadata: null, sandbox: null, files: null, setup: null,
-  };
+  const effectiveFieldSpec = useMemo(
+    () =>
+      fieldSpec ??
+      draft?.field_spec_jsonb ?? {
+        input: null,
+        messages: null,
+        choices: null,
+        target: null,
+        id: null,
+        metadata: null,
+        sandbox: null,
+        files: null,
+        setup: null,
+      },
+    [draft?.field_spec_jsonb, fieldSpec],
+  );
 
   const handleFieldSpecChange = useCallback((spec: AgchainFieldSpec) => {
     setFieldSpec(spec);

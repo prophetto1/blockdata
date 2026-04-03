@@ -6,6 +6,7 @@ import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview'
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUploader';
 import { NativeSelect } from '@/components/ui/native-select';
+import { resolveSignedUrlForLocators } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { DocumentRow } from '@/lib/types';
@@ -18,7 +19,6 @@ type UploadDocumentRow = DocumentRow & {
   conv_locator?: string | null;
 };
 
-const DOCUMENTS_BUCKET = (import.meta.env.VITE_DOCUMENTS_BUCKET as string | undefined) ?? 'documents';
 const ROWS_PER_PAGE_OPTIONS = [10, 25, 50, 100] as const;
 const TEXT_SOURCE_TYPES = new Set([
   'md',
@@ -109,44 +109,7 @@ function formatDateTime(value: string): string {
   return date.toLocaleString();
 }
 
-type SignedUrlResult = {
-  url: string | null;
-  error: string | null;
-};
 
-async function createSignedUrlForLocator(locator: string | null | undefined): Promise<SignedUrlResult> {
-  const normalized = locator?.trim();
-  if (!normalized) {
-    return { url: null, error: 'No file locator was found.' };
-  }
-
-  const sourceKey = normalized.replace(/^\/+/, '');
-  const { data, error: signedUrlError } = await supabase.storage
-    .from(DOCUMENTS_BUCKET)
-    .createSignedUrl(sourceKey, 60 * 20);
-
-  if (signedUrlError) {
-    return { url: null, error: signedUrlError.message };
-  }
-  if (!data?.signedUrl) {
-    return { url: null, error: 'Storage did not return a signed URL.' };
-  }
-  return { url: data.signedUrl, error: null };
-}
-
-async function resolveSignedUrlForLocators(locators: Array<string | null | undefined>): Promise<SignedUrlResult> {
-  const errors: string[] = [];
-  for (const locator of locators) {
-    if (!locator?.trim()) continue;
-    const result = await createSignedUrlForLocator(locator);
-    if (result.url) return result;
-    if (result.error) errors.push(result.error);
-  }
-  return {
-    url: null,
-    error: errors[0] ?? 'No previewable file was available for this document.',
-  };
-}
 
 /* ── Inline Pagination ── */
 

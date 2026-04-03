@@ -11,6 +11,7 @@ from google.cloud.exceptions import NotFound
 from app.core.config import get_settings
 from app.infra.supabase_client import get_supabase_admin
 from app.pipelines.registry import get_pipeline_definition
+from app.services import pipeline_source_library
 
 
 @dataclass(frozen=True)
@@ -44,8 +45,8 @@ def _gcs_client() -> gcs.Client:
     return gcs.Client()
 
 
-def load_pipeline_source_markdown(*, owner_id: str, source_uid: str) -> bytes:
-    source = _load_owned_source_document(owner_id=owner_id, source_uid=source_uid)
+def load_pipeline_source_markdown(*, owner_id: str, pipeline_source_id: str) -> bytes:
+    source = _load_owned_pipeline_source(owner_id=owner_id, pipeline_source_id=pipeline_source_id)
     if source.source_type not in {"md", "markdown"}:
         raise RuntimeError("Source type is not eligible for markdown_index_builder")
 
@@ -60,7 +61,7 @@ def load_pipeline_source_set_markdown_members(*, owner_id: str, source_set_id: s
     admin = get_supabase_admin()
     rows = (
         admin.table("pipeline_source_set_items")
-        .select("source_uid, source_order, doc_title, source_type, byte_size, object_key")
+        .select("pipeline_source_id, source_uid, source_order, doc_title, source_type, byte_size, object_key")
         .eq("owner_id", owner_id)
         .eq("source_set_id", source_set_id)
         .order("source_order", desc=False)
@@ -73,7 +74,10 @@ def load_pipeline_source_set_markdown_members(*, owner_id: str, source_set_id: s
 
     members: list[PipelineSourceMarkdownMember] = []
     for row in rows:
-        source = _load_owned_source_document(owner_id=owner_id, source_uid=str(row["source_uid"]))
+        pipeline_source_id = row.get("pipeline_source_id")
+        if not pipeline_source_id:
+            raise RuntimeError("Source set member is missing pipeline_source_id")
+        source = _load_owned_pipeline_source(owner_id=owner_id, pipeline_source_id=str(pipeline_source_id))
         if source.source_type not in {"md", "markdown"}:
             raise RuntimeError("Source type is not eligible for markdown_index_builder")
         blob = _gcs_client().bucket(source.bucket).blob(source.object_key)
@@ -209,46 +213,25 @@ def build_pipeline_artifact_object_key(
     )
 
 
-def _load_owned_source_document(*, owner_id: str, source_uid: str) -> PipelineSourceDocument:
+def _load_owned_pipeline_source(*, owner_id: str, pipeline_source_id: str) -> PipelineSourceDocument:
     admin = get_supabase_admin()
-    source = (
-        admin.table("source_documents")
-        .select("source_uid, project_id, source_type, doc_title, source_locator")
-        .eq("owner_id", owner_id)
-        .eq("source_uid", source_uid)
-        .maybe_single()
-        .execute()
-        .data
+    source = pipeline_source_library.get_owned_pipeline_source(
+        admin,
+        owner_id=owner_id,
+        pipeline_source_id=pipeline_source_id,
     )
     if not source:
-        raise RuntimeError("Source document not found")
-
-    locator = source.get("source_locator")
-    if not locator:
-        raise RuntimeError("Source document is missing source_locator")
-
-    storage_object = (
-        admin.table("storage_objects")
-        .select("bucket, object_key, content_type, byte_size")
-        .eq("owner_user_id", owner_id)
-        .eq("object_key", locator)
-        .eq("status", "active")
-        .maybe_single()
-        .execute()
-        .data
-    )
-    if not storage_object:
-        raise RuntimeError("Source storage object not found")
+        raise RuntimeError("Pipeline source not found")
 
     return PipelineSourceDocument(
         source_uid=str(source["source_uid"]),
         project_id=source.get("project_id"),
         source_type=str(source.get("source_type") or ""),
         doc_title=source.get("doc_title"),
-        bucket=str(storage_object["bucket"]),
-        object_key=str(storage_object["object_key"]),
-        content_type=str(storage_object.get("content_type") or "application/octet-stream"),
-        byte_size=int(storage_object.get("byte_size") or 0),
+        bucket=str(source["bucket"]),
+        object_key=str(source["object_key"]),
+        content_type=str(source.get("content_type") or "application/octet-stream"),
+        byte_size=int(source.get("byte_size") or 0),
     )
 
 

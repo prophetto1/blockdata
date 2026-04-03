@@ -2,39 +2,27 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-
-def _load_owned_sources(admin, owner_id: str, project_id: str, source_uids: list[str]) -> list[dict]:
-    rows = (
-        admin.table("source_documents")
-        .select("source_uid, project_id, doc_title, source_type, source_filesize, source_locator")
-        .eq("owner_id", owner_id)
-        .eq("project_id", project_id)
-        .in_("source_uid", source_uids)
-        .execute()
-        .data
-        or []
-    )
-    order = {source_uid: index for index, source_uid in enumerate(source_uids)}
-    return sorted(rows, key=lambda row: order.get(row["source_uid"], 0))
+from app.services import pipeline_source_library
 
 
 def _load_source_set_row(admin, owner_id: str, pipeline_kind: str, source_set_id: str) -> dict | None:
-    return (
+    rows = (
         admin.table("pipeline_source_sets")
         .select("*")
         .eq("owner_id", owner_id)
         .eq("pipeline_kind", pipeline_kind)
         .eq("source_set_id", source_set_id)
-        .maybe_single()
+        .limit(1)
         .execute()
         .data
     )
+    return rows[0] if rows else None
 
 
 def _load_source_set_items(admin, source_set_id: str) -> list[dict]:
     return (
         admin.table("pipeline_source_set_items")
-        .select("source_uid, source_order, doc_title, source_type, byte_size, object_key")
+        .select("pipeline_source_id, source_uid, source_order, doc_title, source_type, byte_size, object_key")
         .eq("source_set_id", source_set_id)
         .order("source_order", desc=False)
         .execute()
@@ -44,7 +32,7 @@ def _load_source_set_items(admin, source_set_id: str) -> list[dict]:
 
 
 def _load_latest_job_summary(admin, owner_id: str, pipeline_kind: str, source_set_id: str) -> dict | None:
-    row = (
+    rows = (
         admin.table("pipeline_jobs")
         .select("job_id, pipeline_kind, source_set_id, status, stage, started_at")
         .eq("owner_id", owner_id)
@@ -52,10 +40,10 @@ def _load_latest_job_summary(admin, owner_id: str, pipeline_kind: str, source_se
         .eq("source_set_id", source_set_id)
         .order("created_at", desc=True)
         .limit(1)
-        .maybe_single()
         .execute()
         .data
     )
+    row = rows[0] if rows else None
     if not row:
         return None
     return {
@@ -82,6 +70,7 @@ def _serialize_source_set(row: dict, items: list[dict], latest_job: dict | None)
         "updated_at": row.get("updated_at"),
         "items": [
             {
+                "pipeline_source_id": item.get("pipeline_source_id"),
                 "source_uid": item["source_uid"],
                 "doc_title": item["doc_title"],
                 "source_type": item["source_type"],
@@ -140,19 +129,24 @@ def create_source_set(
     pipeline_kind: str,
     project_id: str,
     label: str,
-    source_uids: list[str],
+    pipeline_source_ids: list[str],
     eligible_source_types: list[str],
 ) -> dict:
-    if not source_uids:
+    if not pipeline_source_ids:
         raise ValueError("At least one markdown source must be selected")
-    sources = _load_owned_sources(admin, owner_id, project_id, source_uids)
-    if len(sources) != len(source_uids):
+    sources = pipeline_source_library.load_owned_pipeline_sources(
+        admin,
+        owner_id=owner_id,
+        project_id=project_id,
+        pipeline_kind=pipeline_kind,
+        pipeline_source_ids=pipeline_source_ids,
+        eligible_source_types=eligible_source_types,
+    )
+    if len(sources) != len(pipeline_source_ids):
         raise ValueError("One or more sources were not found")
-    if any(source["source_type"] not in eligible_source_types for source in sources):
-        raise ValueError("One or more sources are not eligible for this pipeline")
 
     source_set_id = str(uuid4())
-    total_bytes = sum(int(source.get("source_filesize") or 0) for source in sources)
+    total_bytes = sum(int(source.get("byte_size") or 0) for source in sources)
     admin.table("pipeline_source_sets").insert(
         {
             "source_set_id": source_set_id,
@@ -169,12 +163,13 @@ def create_source_set(
             {
                 "source_set_id": source_set_id,
                 "owner_id": owner_id,
+                "pipeline_source_id": source["pipeline_source_id"],
                 "source_uid": source["source_uid"],
                 "source_order": index,
                 "doc_title": source["doc_title"],
                 "source_type": source["source_type"],
-                "byte_size": source.get("source_filesize"),
-                "object_key": source.get("source_locator"),
+                "byte_size": source.get("byte_size"),
+                "object_key": source.get("object_key"),
             }
             for index, source in enumerate(sources, start=1)
         ]
@@ -194,7 +189,7 @@ def update_source_set(
     pipeline_kind: str,
     source_set_id: str,
     label: str | None,
-    source_uids: list[str] | None,
+    pipeline_source_ids: list[str] | None,
     eligible_source_types: list[str],
 ) -> dict:
     current = _load_source_set_row(admin, owner_id, pipeline_kind, source_set_id)
@@ -204,12 +199,17 @@ def update_source_set(
     if label is not None:
         admin.table("pipeline_source_sets").update({"label": label}).eq("source_set_id", source_set_id).execute()
 
-    if source_uids is not None:
-        sources = _load_owned_sources(admin, owner_id, current["project_id"], source_uids)
-        if len(sources) != len(source_uids):
+    if pipeline_source_ids is not None:
+        sources = pipeline_source_library.load_owned_pipeline_sources(
+            admin,
+            owner_id=owner_id,
+            project_id=current["project_id"],
+            pipeline_kind=pipeline_kind,
+            pipeline_source_ids=pipeline_source_ids,
+            eligible_source_types=eligible_source_types,
+        )
+        if len(sources) != len(pipeline_source_ids):
             raise ValueError("One or more sources were not found")
-        if any(source["source_type"] not in eligible_source_types for source in sources):
-            raise ValueError("One or more sources are not eligible for this pipeline")
         if not sources:
             raise ValueError("At least one markdown source must remain in the set")
         admin.table("pipeline_source_set_items").delete().eq("source_set_id", source_set_id).execute()
@@ -218,12 +218,13 @@ def update_source_set(
                 {
                     "source_set_id": source_set_id,
                     "owner_id": owner_id,
+                    "pipeline_source_id": source["pipeline_source_id"],
                     "source_uid": source["source_uid"],
                     "source_order": index,
                     "doc_title": source["doc_title"],
                     "source_type": source["source_type"],
-                    "byte_size": source.get("source_filesize"),
-                    "object_key": source.get("source_locator"),
+                    "byte_size": source.get("byte_size"),
+                    "object_key": source.get("object_key"),
                 }
                 for index, source in enumerate(sources, start=1)
             ]
@@ -231,7 +232,7 @@ def update_source_set(
         admin.table("pipeline_source_sets").update(
             {
                 "member_count": len(sources),
-                "total_bytes": sum(int(source.get("source_filesize") or 0) for source in sources),
+                "total_bytes": sum(int(source.get("byte_size") or 0) for source in sources),
             }
         ).eq("source_set_id", source_set_id).execute()
 

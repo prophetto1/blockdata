@@ -1,0 +1,43 @@
+{
+  "output_contract": "irac_v1",
+  "output_schema": {
+    "properties": {
+      "application": {
+        "type": "string"
+      },
+      "citations": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "conclusion": {
+        "type": "string"
+      },
+      "issue": {
+        "type": "string"
+      },
+      "rule": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "issue",
+      "rule",
+      "application",
+      "conclusion",
+      "citations"
+    ],
+    "type": "object"
+  },
+  "placeholders": [
+    "anchor_us_cite",
+    "anchor_case_name",
+    "anchor_term",
+    "anchor_text",
+    "research_pack_content"
+  ],
+  "prompt_template": "You are a legal research assistant. Synthesize the following information into a complete IRAC legal analysis.\n\nCASE INFORMATION:\n- Citation: {anchor_us_cite}\n- Name: {anchor_case_name}\n- Term: {anchor_term}\n\nANCHOR TEXT:\n{anchor_text}\n\nRESEARCH PACK (admitted authorities):\n{research_pack_content}\n\nMODE: OPEN-BOOK\nYou have the anchor text AND a research pack of relevant authorities.\nUse the provided authorities to strengthen your analysis.\nOnly cite authorities from the research pack or the anchor text.\nDo not fabricate authorities, quotations, case treatment, or relationships not present in the admitted materials.\n\nWrite a complete IRAC analysis:\n1. ISSUE: State the central legal question the Court addressed.\n2. RULE: Identify the legal rule or principle the Court applied.\n3. APPLICATION: Explain how the Court applied the rule to the facts.\n4. CONCLUSION: State the Court's holding and its significance.\n\nReturn a JSON object:\n- \"issue\": The legal issue (1-2 sentences)\n- \"rule\": The applicable rule (1-2 sentences)\n- \"application\": How the rule was applied (2-3 sentences)\n- \"conclusion\": The holding and significance (1-2 sentences)\n- \"citations\": List of citations used (should reflect use of admitted authorities)\n\nNo extra keys. No markdown code fences.",
+  "step_id": "j3",
+  "step_name": "IRAC (Open-Book with Research Pack)"
+}

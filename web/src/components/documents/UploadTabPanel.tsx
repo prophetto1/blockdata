@@ -17,7 +17,7 @@ import { useGoogleDrivePicker } from '@/hooks/useGoogleDrivePicker';
 import { useDropboxChooser } from '@/hooks/useDropboxChooser';
 import { edgeJson } from '@/lib/edge';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { UploadSourceCards, type UploadSource } from './UploadSourceCards';
 
 function FileStatusIcon({ status }: { status: StagedFile['status'] }) {
@@ -57,9 +57,13 @@ export function UploadTabPanel({ projectId, onUploadComplete }: UploadTabPanelPr
     startUpload,
   } = useDirectUpload(projectId);
 
+  // Use a ref so the effect only fires on uploadStatus transitions, not when
+  // the callback prop changes reference (which loops when it's an inline arrow).
+  const onCompleteRef = useRef(onUploadComplete);
+  onCompleteRef.current = onUploadComplete;
   useEffect(() => {
-    if (uploadStatus === 'done') onUploadComplete();
-  }, [uploadStatus, onUploadComplete]);
+    if (uploadStatus === 'done') onCompleteRef.current();
+  }, [uploadStatus]);
 
   // Google Drive import
   const [importing, setImporting] = useState(false);

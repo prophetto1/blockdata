@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AgchainSettingsNav } from '@/components/agchain/settings/AgchainSettingsNav';
 import { useAuth } from '@/auth/AuthContext';
 import { AGCHAIN_NAV_SECTIONS } from '@/components/agchain/AgchainLeftNav';
-import { AgchainBenchmarkNav } from '@/components/agchain/AgchainBenchmarkNav';
 import { AgchainOrganizationSwitcher } from '@/components/agchain/AgchainOrganizationSwitcher';
 import { AgchainProjectSwitcher } from '@/components/agchain/AgchainProjectSwitcher';
 import { LeftRailShadcn as AgchainChromeRail } from '@/components/shell/LeftRailShadcn';
@@ -13,7 +13,7 @@ import { styleTokens } from '@/lib/styleTokens';
 const AGCHAIN_SIDEBAR_WIDTH_KEY = 'agchain.shell.sidebar_width';
 const AGCHAIN_RAIL_2_WIDTH = 224;
 const AGCHAIN_HEADER_HEIGHT = styleTokens.shell.headerHeight;
-const AGCHAIN_BENCHMARK_DEFINITION_PATH = '/app/agchain/settings/project/benchmark-definition';
+const AGCHAIN_SETTINGS_PATH_PREFIX = '/app/agchain/settings';
 
 function readStoredWidth(): number {
   if (typeof window === 'undefined') return styleTokens.shell.navbarWidth;
@@ -31,7 +31,7 @@ export function AgchainShellLayout() {
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => readStoredWidth());
   const isResizingRef = useRef(false);
 
-  const showRail2 = location.pathname === AGCHAIN_BENCHMARK_DEFINITION_PATH;
+  const showRail2 = location.pathname.startsWith(AGCHAIN_SETTINGS_PATH_PREFIX);
   const rail1Width = sidebarWidth;
   const totalRailWidth = rail1Width + (showRail2 ? AGCHAIN_RAIL_2_WIDTH : 0);
 
@@ -130,7 +130,7 @@ export function AgchainShellLayout() {
           zIndex: 20,
         }}
       >
-        <AgchainChromeRail
+          <AgchainChromeRail
           userLabel={profile?.display_name || profile?.email || user?.email}
           onSignOut={handleSignOut}
           navSections={AGCHAIN_NAV_SECTIONS}
@@ -179,7 +179,7 @@ export function AgchainShellLayout() {
             zIndex: 19,
           }}
         >
-          <AgchainBenchmarkNav />
+          <AgchainSettingsNav />
         </aside>
       )}
 

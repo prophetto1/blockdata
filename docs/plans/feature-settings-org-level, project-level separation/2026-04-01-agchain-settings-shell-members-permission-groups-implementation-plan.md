@@ -1,6 +1,8 @@
 # 2026-04-01 AGChain Settings Shell + Organization Members + Permission Groups Implementation Plan
 
-## Will require revision before implementation
+## Status
+
+Draft
 
 ## Source of truth
 
@@ -39,7 +41,9 @@ This batch must preserve the current AGChain shell and benchmark-definition rout
 - `web/src/components/layout/AgchainShellLayout.tsx` only renders Rail 2 when `location.pathname === '/app/agchain/settings/project/benchmark-definition'`.
 - `web/src/pages/agchain/AgchainSettingsPage.tsx` is still a placeholder landing page with `Project`, `Organization`, and `Personal` cards and a benchmark-definition CTA.
 - `web/src/components/agchain/AgchainBenchmarkNav.tsx` is currently the shell-level Rail 2 content for benchmark-definition hash sections.
-- `web/src/hooks/agchain/useAgchainWorkspaceContext.ts` already provides the reusable org/project selection seam for any settings shell that depends on selected organization and selected project.
+- `web/src/contexts/AgchainWorkspaceContext.tsx` now mounts a real `AgchainWorkspaceProvider` in the AGChain shell and owns selected organization, selected project, workspace status, and reload flows.
+- `web/src/hooks/agchain/useAgchainWorkspaceContext.ts` and `web/src/hooks/agchain/useAgchainProjectFocus.ts` are now compatibility adapters over the shell-owned provider.
+- `web/src/components/agchain/AgchainOrganizationSwitcher.tsx` still exposes a misleading footer action labeled `Open AGChain settings` that points to `/app/agchain/settings` instead of a scoped organization-management action.
 
 ### Backend
 
@@ -51,6 +55,8 @@ This batch must preserve the current AGChain shell and benchmark-definition rout
   - `PATCH /agchain/projects/{project_id}`
 - `services/platform-api/app/domain/agchain/workspace_registry.py` already returns `settings_partitions: ["project", "organization", "personal"]` from `get_project`.
 - `services/platform-api/app/domain/agchain/project_access.py` already recognizes `organization_admin` as a bypass for project write access and already loads org/project membership rows.
+- No AGChain settings-specific route module currently exists.
+- No organization-invite issuance, token hashing, or permission-definition registry endpoint currently exists.
 
 ### Database
 
@@ -63,7 +69,8 @@ This batch must preserve the current AGChain shell and benchmark-definition rout
 - `agchain_organization_members` currently supports only `membership_role in ('organization_admin', 'organization_member')`.
 - `agchain_organization_members` currently supports only `membership_status in ('active', 'disabled')`.
 - No permission-group tables currently exist in the linked database.
-- No invite/pending-membership table currently exists in the linked database.
+- No organization-invite or pending-membership table currently exists in the linked database.
+- No persisted invite token-hash storage currently exists in the linked database.
 
 ## Locked product decisions
 
@@ -74,27 +81,35 @@ This batch must preserve the current AGChain shell and benchmark-definition rout
 - `Project` and `Personal` remain visible in the settings nav even where sections are still limited.
 - `Organization / Members` lands first as the first real admin feature.
 - `Organization / Permission Groups` lands second in the same initiative.
+- The first registered user for the default AGChain organization is represented as the first member of a protected system permission group named `Owners`.
+- Every organization gets a protected system `Owners` group. The system must always enforce that at least one owner exists.
+- Ownership transfer happens by adding another member to `Owners` before the prior owner is removed or disabled. The last owner can never be removed, disabled, or demoted.
+- `Owners` receives the default full organization-level and project-level permission set in this batch.
+- Permission groups are first-class configurable objects; user-created groups are stored in the same registry as protected system groups.
+- The invite flow is real in this batch: entering one or more email addresses creates persisted pending invites with unique token-hash-backed claim secrets and assigned permission groups.
+- Email delivery, invite acceptance UI, and token-claim execution remain out of scope for this batch.
+- Permission definitions and membership semantics are owned by backend registry/configuration, not hardcoded in frontend components.
 - Settings search in V1 filters settings-nav items only. It does not search page content.
 - AGChain-personal settings remain inside AGChain. Global account/platform settings remain outside AGChain.
 - Benchmark definition remains a real project child surface under settings and must stay reachable through the current compatibility routes and hash anchors.
-- V1 permission-group creation and editing exposes organization-level grants only. Project-scope grant storage stays reserved for a later enforcement-focused batch.
+- V1 custom permission-group creation and editing exposes organization-level grants only. The protected system `Owners` group is seeded with the default full organization-level and project-level grant set.
 
-## Execution gate: workspace-state architecture dependency
+## Resolved dependencies
 
-This plan is revised and lockable now, but implementation must not start until the separate workspace-state architecture issue is resolved.
+The prior workspace-state architecture blocker is resolved enough for this implementation plan.
 
-Blocking dependency:
+Resolved prerequisite:
 
-- selected-organization and selected-project source of truth across the AGChain shell
+- shell-owned selected-organization and selected-project source of truth across the AGChain shell
 
-The settings implementation in this plan assumes the workspace-state decision will explicitly settle:
+What is now true in the current codebase:
 
-- whether `useAgchainWorkspaceContext` remains the shell authority or becomes a compatibility adapter
-- how `selectedOrganizationId` is persisted and recovered
-- how the shell behaves when org state is loading, missing, stale, or failed
-- whether settings routes are allowed to auto-heal missing selection state or must stop in an explicit empty/error shell
+- `AgchainWorkspaceProvider` is mounted in the AGChain shell and is the authoritative source of selected organization, selected project, workspace status, and reload flows.
+- `useAgchainWorkspaceContext` and `useAgchainProjectFocus` are compatibility adapters over that provider.
+- org/project selection persistence and stale-selection recovery now live in the provider bootstrap/reconciliation path.
+- settings-shell planning can now safely lock status-aware organization/project/personal scope behavior against a real shared workspace authority.
 
-Until that architecture issue is resolved, this plan is execution-blocked and should be treated as a revised implementation contract only.
+This plan is no longer blocked on the former split-brain workspace-state issue.
 
 ## Architecture
 
@@ -108,9 +123,10 @@ Until that architecture issue is resolved, this plan is execution-blocked and sh
 
 ### Ownership model
 
-- Organization settings govern shared tenant membership and reusable access bundles.
-- Project settings govern the selected AGChain project or evaluation.
+- Organization settings govern shared tenant membership, pending invites, protected/system permission groups, and reusable access bundles.
+- Project settings govern the selected AGChain project or evaluation plus future project-scope access overlays.
 - Personal settings govern AGChain-specific personal defaults and credentials only.
+- Effective organization-level settings access derives from protected/system permission-group membership and stored grants, not page-local role branching.
 
 ## Pre-implementation contract
 
@@ -119,7 +135,7 @@ The implementation must satisfy these rules:
 - Do not keep the current three-card settings landing as the primary settings experience.
 - Do not introduce direct browser CRUD against Supabase tables. All AGChain settings mutations must go through platform-api.
 - Do not remove or rename the existing AGChain primary rail items in this batch.
-- Do not break the current org/project focus seam in `useAgchainWorkspaceContext`.
+- Do not break the current shell-owned workspace provider or its adapter seams.
 - Do not break these compatibility routes:
   - `/app/agchain/benchmarks`
   - `/app/agchain/benchmarks/:benchmarkId`
@@ -134,6 +150,9 @@ The implementation must satisfy these rules:
   - `#runner`
   - `#validation`
   - `#runs`
+- Do not hardcode permission definitions, group semantics, or owner behavior in page-local frontend logic.
+- Do not ship an invite modal that only pretends to invite. If the UI accepts arbitrary emails, the backend must persist pending invites and token hashes in this batch.
+- Do not allow removing, disabling, or demoting the last owner of an organization.
 - Do not attempt to replace every existing AGChain authorization check with permission-group grants in this batch.
 - Do not add an outbound email-invite dependency unless an already-supported repo-native path is verified during implementation.
 
@@ -141,11 +160,13 @@ The implementation must satisfy these rules:
 
 These seams remain authoritative during this batch:
 
-- `useAgchainWorkspaceContext` remains the source of selected organization and selected project in the web app.
+- `AgchainWorkspaceProvider` is the authoritative source of selected organization, selected project, and workspace status in the web app.
+- `useAgchainWorkspaceContext` and `useAgchainProjectFocus` remain compatibility adapters over provider state.
 - `GET /agchain/organizations` remains the source for the organization selector.
 - `GET /agchain/projects` and `GET /agchain/projects/{project_id}` remain the source for project selection and project metadata.
 - Legacy project and benchmark access continues to rely on `agchain_organization_members` and `agchain_project_memberships`.
-- Permission-group grants are introduced now, but non-settings AGChain surfaces continue to use the current membership-role checks unless explicitly extended in this batch.
+- Permission-group grants become authoritative for AGChain settings surfaces in this batch.
+- Non-settings AGChain surfaces continue to use the current membership-role and project-membership checks unless explicitly extended in this batch.
 
 ## Locked route tree
 
@@ -195,6 +216,14 @@ The settings route tree must become:
 - if `selectedOrganizationId` is missing but at least one organization is available, the shell may auto-select the personal organization when present, otherwise the first accessible organization, exactly once per load cycle
 - Non-settings AGChain routes keep no Rail 2 in this batch.
 - `AgchainBenchmarkNav` becomes page-local inside the benchmark-definition page so benchmark section navigation still exists after Rail 2 is repurposed for settings.
+
+### Status-to-scope contract
+
+- `Organization` settings sections render for workspace status `ready` or `no-project`.
+- `Project` settings sections render only for workspace status `ready`.
+- `Personal` settings sections render for workspace status `ready` or `no-project`.
+- `no-organization` remains a shell-owned empty state; organization and personal sections do not bypass it.
+- `bootstrapping` and `error` remain shell-owned states; settings sections do not replace them with page-local fallback UI.
 
 ## Locked settings navigation taxonomy
 
@@ -252,19 +281,65 @@ All new settings endpoints live under the platform API and use `organization_id`
 #### Global auth requirement
 
 - Every new settings endpoint requires an authenticated user through `require_user_auth`.
-- Every new settings endpoint requires organization-admin authority through a new `require_organization_admin` helper in `services/platform-api/app/domain/agchain/organization_access.py`.
+- Every new settings endpoint requires active organization membership plus a new permission-aware organization access helper in `services/platform-api/app/domain/agchain/organization_access.py`.
+
+#### Permission definitions
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/agchain/settings/organizations/{organization_id}/permission-definitions` | Return backend-owned permission definitions and protected system-group metadata for the settings UI |
+
+##### `GET /agchain/settings/organizations/{organization_id}/permission-definitions`
+
+- Auth: authenticated user + `organization.permission_groups.read`
+- Request:
+  - path: `organization_id: string`
+- Response:
+  ```json
+  {
+    "organization_permissions": [
+      {
+        "permission_key": "organization.members.invite",
+        "label": "Invite members",
+        "description": "Create pending organization invitations.",
+        "user_assignable": true
+      }
+    ],
+    "project_permissions": [
+      {
+        "permission_key": "project.create",
+        "label": "Create projects",
+        "description": "Create AGChain projects inside this organization.",
+        "user_assignable": false
+      }
+    ],
+    "protected_system_groups": [
+      {
+        "system_group_kind": "owners",
+        "name": "Owners",
+        "deletable": false,
+        "last_member_removable": false
+      }
+    ]
+  }
+  ```
+- Touched domain methods:
+  - `require_organization_permission`
+  - `get_permission_definitions`
+- Touched services:
+  - backend-owned settings/permission registry configuration
 
 #### Organization members
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/agchain/settings/organizations/{organization_id}/members` | List org members for the selected organization |
-| `POST` | `/agchain/settings/organizations/{organization_id}/member-invitations` | Add existing platform users to the organization by email and optionally attach permission groups |
+| `POST` | `/agchain/settings/organizations/{organization_id}/member-invitations` | Create one or more pending organization invites by email and assign permission groups |
 | `PATCH` | `/agchain/settings/organizations/{organization_id}/members/{organization_member_id}` | Disable or reactivate an organization membership |
 
 ##### `GET /agchain/settings/organizations/{organization_id}/members`
 
-- Auth: authenticated user + `organization_admin` in `agchain_organization_members`
+- Auth: authenticated user + `organization.members.read`
 - Request:
   - path: `organization_id: string`
   - query:
@@ -294,7 +369,8 @@ All new settings endpoints live under the platform API and use `organization_id`
           {
             "permission_group_id": "uuid",
             "name": "text",
-            "is_system_group": false
+            "is_system_group": false,
+            "system_group_kind": "owners | null"
           }
         ]
       }
@@ -302,7 +378,7 @@ All new settings endpoints live under the platform API and use `organization_id`
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
+  - `require_organization_permission`
   - `list_organization_members`
 - Touched tables:
   - `public.agchain_organizations`
@@ -313,7 +389,7 @@ All new settings endpoints live under the platform API and use `organization_id`
 
 ##### `POST /agchain/settings/organizations/{organization_id}/member-invitations`
 
-- Auth: authenticated user + `organization_admin`
+- Auth: authenticated user + `organization.members.invite`
 - Request:
   ```json
   {
@@ -329,9 +405,10 @@ All new settings endpoints live under the platform API and use `organization_id`
     "results": [
       {
         "email": "person@example.com",
-        "outcome": "created | reactivated | already_member | not_found",
-        "organization_member_id": "uuid",
-        "user_id": "uuid",
+        "outcome": "invite_created | already_member | already_pending | invalid_email",
+        "invite_id": "uuid",
+        "invite_status": "pending",
+        "expires_at": "timestamp",
         "permission_group_ids": ["uuid"],
         "error_code": null
       }
@@ -339,17 +416,22 @@ All new settings endpoints live under the platform API and use `organization_id`
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
-  - `add_organization_members_by_email`
+  - `require_organization_permission`
+  - `create_organization_invites`
 - Touched tables:
   - `public.profiles`
   - `public.agchain_organization_members`
+  - `public.agchain_organization_invites`
+  - `public.agchain_organization_invite_group_assignments`
   - `public.agchain_permission_groups`
-  - `public.agchain_permission_group_memberships`
+ 
+Implementation note:
+
+- The endpoint issues raw invite tokens once, stores only `token_hash`, and does not send email in this batch.
 
 ##### `PATCH /agchain/settings/organizations/{organization_id}/members/{organization_member_id}`
 
-- Auth: authenticated user + `organization_admin`
+- Auth: authenticated user + `organization.members.remove`
 - Request:
   ```json
   {
@@ -371,10 +453,12 @@ All new settings endpoints live under the platform API and use `organization_id`
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
+  - `require_organization_permission`
   - `update_organization_membership_status`
 - Touched tables:
   - `public.agchain_organization_members`
+  - `public.agchain_permission_group_memberships`
+  - `public.agchain_permission_groups`
 
 #### Permission groups
 
@@ -389,7 +473,7 @@ All new settings endpoints live under the platform API and use `organization_id`
 
 ##### `GET /agchain/settings/organizations/{organization_id}/permission-groups`
 
-- Auth: authenticated user + `organization_admin`
+- Auth: authenticated user + `organization.permission_groups.read`
 - Request:
   - path: `organization_id: string`
   - query:
@@ -410,6 +494,7 @@ All new settings endpoints live under the platform API and use `organization_id`
         "group_slug": "text",
         "description": "text",
         "is_system_group": false,
+        "system_group_kind": "owners | null",
         "member_count": 0,
         "organization_permission_count": 0,
         "project_permission_count": 0,
@@ -420,7 +505,7 @@ All new settings endpoints live under the platform API and use `organization_id`
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
+  - `require_organization_permission`
   - `list_permission_groups`
 - Touched tables:
   - `public.agchain_permission_groups`
@@ -429,12 +514,12 @@ All new settings endpoints live under the platform API and use `organization_id`
 
 ##### `POST /agchain/settings/organizations/{organization_id}/permission-groups`
 
-- Auth: authenticated user + `organization_admin`
+- Auth: authenticated user + `organization.permission_groups.manage`
 - Request:
   ```json
   {
     "name": "Analysts",
-    "description": "Read-only org admins",
+    "description": "Read-only org members",
     "permission_keys": [
       "organization.members.read",
       "organization.permission_groups.read"
@@ -460,7 +545,7 @@ All new settings endpoints live under the platform API and use `organization_id`
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
+  - `require_organization_permission`
   - `create_permission_group`
 - Touched tables:
   - `public.agchain_permission_groups`
@@ -468,7 +553,7 @@ All new settings endpoints live under the platform API and use `organization_id`
 
 ##### `GET /agchain/settings/organizations/{organization_id}/permission-groups/{permission_group_id}`
 
-- Auth: authenticated user + `organization_admin`
+- Auth: authenticated user + `organization.permission_groups.read`
 - Request:
   - path:
     - `organization_id: string`
@@ -481,20 +566,23 @@ All new settings endpoints live under the platform API and use `organization_id`
       "organization_id": "uuid",
       "name": "text",
       "group_slug": "text",
-      "description": "text",
-      "is_system_group": false
-    },
-    "grants": {
-      "organization": [
-        "organization.members.read"
-      ],
-      "project": []
-    },
-    "enforcement_notice": "Organization-scope grants are authoritative in this batch. Project-scope grants remain reserved for later enforcement work."
+        "description": "text",
+        "is_system_group": false,
+        "system_group_kind": "owners | null"
+      },
+      "grants": {
+        "organization": [
+          "organization.members.read"
+        ],
+        "project": [
+          "project.create"
+        ]
+      },
+      "group_policy_notice": "Custom groups expose only organization-level grant editing in V1. Protected system groups may carry seeded project-level grants."
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
+  - `require_organization_permission`
   - `get_permission_group`
 - Touched tables:
   - `public.agchain_permission_groups`
@@ -502,7 +590,7 @@ All new settings endpoints live under the platform API and use `organization_id`
 
 ##### `GET /agchain/settings/organizations/{organization_id}/permission-groups/{permission_group_id}/members`
 
-- Auth: authenticated user + `organization_admin`
+- Auth: authenticated user + `organization.permission_groups.read`
 - Request:
   - path:
     - `organization_id: string`
@@ -531,7 +619,7 @@ All new settings endpoints live under the platform API and use `organization_id`
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
+  - `require_organization_permission`
   - `list_permission_group_members`
 - Touched tables:
   - `public.agchain_permission_group_memberships`
@@ -541,7 +629,7 @@ All new settings endpoints live under the platform API and use `organization_id`
 
 ##### `POST /agchain/settings/organizations/{organization_id}/permission-groups/{permission_group_id}/members`
 
-- Auth: authenticated user + `organization_admin`
+- Auth: authenticated user + `organization.permission_groups.manage`
 - Request:
   ```json
   {
@@ -563,7 +651,7 @@ All new settings endpoints live under the platform API and use `organization_id`
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
+  - `require_organization_permission`
   - `add_permission_group_members`
 - Touched tables:
   - `public.agchain_permission_group_memberships`
@@ -572,7 +660,7 @@ All new settings endpoints live under the platform API and use `organization_id`
 
 ##### `DELETE /agchain/settings/organizations/{organization_id}/permission-groups/{permission_group_id}/members/{organization_member_id}`
 
-- Auth: authenticated user + `organization_admin`
+- Auth: authenticated user + `organization.permission_groups.manage`
 - Request:
   - path:
     - `organization_id: string`
@@ -586,16 +674,20 @@ All new settings endpoints live under the platform API and use `organization_id`
   }
   ```
 - Touched domain methods:
-  - `require_organization_admin`
+  - `require_organization_permission`
   - `remove_permission_group_member`
 - Touched tables:
   - `public.agchain_permission_group_memberships`
+  - `public.agchain_permission_groups`
+  - `public.agchain_organization_members`
 
 ### Authorization contract
 
-- All new settings reads and mutations require organization-admin authority in this batch.
-- The canonical admin check remains the existing `agchain_organization_members.membership_role == 'organization_admin'`.
-- Permission-group grants are stored and surfaced in this batch, but only organization-level grants are user-configurable and authoritative in V1.
+- Settings-surface authorization is permission-based in this batch.
+- New settings routes use a permission resolver over protected/system group membership plus stored grants.
+- The seeded `Owners` group carries the default full organization-level and project-level authority.
+- Existing `agchain_organization_members.membership_role == 'organization_admin'` remains a compatibility seam for non-settings AGChain surfaces in this batch.
+- User-created group editing remains bounded to organization-level grants in V1, but protected/system groups may carry seeded project-level grants.
 
 ### V1 organization-level permission vocabulary
 
@@ -605,36 +697,47 @@ All new settings endpoints live under the platform API and use `organization_id`
 - `organization.members.remove`
 - `organization.permission_groups.read`
 - `organization.permission_groups.manage`
+- `project.create`
+- `project.read`
+- `project.update`
+- `project.delete`
+- `project.manage_access`
 
 ## Database migrations
 
 ### Migration 1
 
-- Filename: `supabase/migrations/20260401170000_agchain_settings_permission_groups_schema.sql`
+- Filename: `supabase/migrations/20260402170000_agchain_settings_permission_groups_and_invites_schema.sql`
 - Schema effect:
   - create `public.agchain_permission_groups`
   - create `public.agchain_permission_group_memberships`
   - create `public.agchain_permission_group_grants`
+  - create `public.agchain_organization_invites`
+  - create `public.agchain_organization_invite_group_assignments`
   - add non-unique indexes:
     - `agchain_permission_groups_organization_idx (organization_id, updated_at desc)`
     - `agchain_permission_group_memberships_group_idx (permission_group_id, created_at desc)`
     - `agchain_permission_group_memberships_member_idx (organization_member_id, created_at desc)`
     - `agchain_permission_group_grants_group_scope_idx (permission_group_id, scope_type, permission_key)`
+    - `agchain_organization_invites_org_status_idx (organization_id, invite_status, created_at desc)`
+    - `agchain_organization_invites_email_idx (organization_id, invited_email_normalized)`
+    - `agchain_organization_invite_group_assignments_invite_idx (organization_invite_id, created_at desc)`
   - add `set_updated_at()` trigger to `public.agchain_permission_groups`
+  - add `set_updated_at()` trigger to `public.agchain_organization_invites`
 - Data impact:
   - no mutation of existing AGChain membership rows
-  - new empty permission-group tables become available for API writes in later tasks
+  - new empty permission-group and invite tables become available for API writes in later tasks
 
 ### Migration 2
 
-- Filename: `supabase/migrations/20260401171000_agchain_settings_permission_groups_admin_backfill.sql`
+- Filename: `supabase/migrations/20260402171000_agchain_settings_owners_backfill.sql`
 - Schema effect:
   - no new schema objects
 - Data impact:
-  - create one system group named `Organization Admins` per existing `agchain_organizations` row
-  - attach all current `organization_admin` memberships to those system groups
-  - seed only the V1 organization-level grants for those system groups
-  - do not write project-scope grants in this batch
+  - create one protected system group named `Owners` per existing `agchain_organizations` row
+  - attach all current `organization_admin` memberships to those `Owners` groups
+  - seed the default full organization-level and project-level grant set for those `Owners` groups
+  - do not create pending invite rows during backfill
 
 ## Edge functions
 
@@ -663,12 +766,14 @@ Required columns:
 - `name TEXT NOT NULL`
 - `description TEXT NOT NULL DEFAULT ''`
 - `is_system_group BOOLEAN NOT NULL DEFAULT false`
+- `system_group_kind TEXT NULL CHECK (system_group_kind IN ('owners'))`
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
 - `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`
 
 Required constraints:
 
 - unique `(organization_id, group_slug)`
+- one protected `system_group_kind` per organization when `system_group_kind` is not null
 
 Required non-unique indexes:
 
@@ -710,17 +815,63 @@ Required non-unique indexes:
 
 - `agchain_permission_group_grants_group_scope_idx (permission_group_id, scope_type, permission_key)`
 
+#### `public.agchain_organization_invites`
+
+Required columns:
+
+- `organization_invite_id UUID PRIMARY KEY`
+- `organization_id UUID NOT NULL REFERENCES public.agchain_organizations(organization_id) ON DELETE CASCADE`
+- `invited_email TEXT NOT NULL`
+- `invited_email_normalized TEXT NOT NULL`
+- `invite_token_hash TEXT NOT NULL`
+- `invited_by_user_id UUID NOT NULL`
+- `invite_status TEXT NOT NULL CHECK (invite_status IN ('pending', 'accepted', 'revoked', 'expired'))`
+- `expires_at TIMESTAMPTZ NOT NULL`
+- `accepted_at TIMESTAMPTZ NULL`
+- `revoked_at TIMESTAMPTZ NULL`
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+- `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+
+Required constraints:
+
+- one pending invite per `(organization_id, invited_email_normalized)` at a time
+
+Required non-unique indexes:
+
+- `agchain_organization_invites_org_status_idx (organization_id, invite_status, created_at desc)`
+- `agchain_organization_invites_email_idx (organization_id, invited_email_normalized)`
+
+#### `public.agchain_organization_invite_group_assignments`
+
+Required columns:
+
+- `organization_invite_group_assignment_id UUID PRIMARY KEY`
+- `organization_invite_id UUID NOT NULL REFERENCES public.agchain_organization_invites(organization_invite_id) ON DELETE CASCADE`
+- `permission_group_id UUID NOT NULL REFERENCES public.agchain_permission_groups(permission_group_id) ON DELETE CASCADE`
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+
+Required constraints:
+
+- unique `(organization_invite_id, permission_group_id)`
+
+Required non-unique indexes:
+
+- `agchain_organization_invite_group_assignments_invite_idx (organization_invite_id, created_at desc)`
+
 ### Seed/backfill requirements
 
 The migration batch must also:
 
-- create a system group named `Organization Admins` for each existing organization
-- assign all current `organization_admin` memberships to that system group
-- seed the `Organization Admins` group with the full V1 organization-level permission set only
+- create a protected system group named `Owners` for each existing organization
+- assign all current `organization_admin` memberships to that `Owners` group
+- seed the `Owners` group with the default full V1 organization-level and project-level permission set
+- preserve the existing `organization_admin` legacy role rows for non-settings compatibility
 
 ### Explicit V1 persistence decisions
 
-- Do not add a pending-invitation table in this batch.
+- Add pending organization-invite persistence in this batch.
+- Store only `invite_token_hash`, never the raw invite token.
+- Defer email delivery and invite claim execution to a later batch.
 - Do not change `agchain_organization_members.user_id` nullability in this batch.
 - Do not widen `agchain_organization_members.membership_status` beyond `active` and `disabled` in this batch.
 - Do not expose user-configurable project-scope grants in this batch.
@@ -732,7 +883,7 @@ The migration batch must also:
 
 - Modified existing route-config files: `1`
 - Modified existing pages: `2`
-- Modified existing components/layout files: `2`
+- Modified existing components/layout files: `3`
 - Modified existing hooks: `0`
 - Modified existing service/lib files: `0`
 - New pages: `2`
@@ -754,7 +905,7 @@ The migration batch must also:
 
 ### Count lock summary
 
-- Exact modified frontend file count in this batch: `5`
+- Exact modified frontend file count in this batch: `6`
 - Exact new frontend file count in this batch: `15`
 
 ### Mount-point contract
@@ -763,6 +914,7 @@ The migration batch must also:
 | --- | --- | --- | --- |
 | `web/src/router.tsx` | route config | modify | Declares the full `/app/agchain/settings/*` subtree and redirect behavior |
 | `web/src/components/layout/AgchainShellLayout.tsx` | layout component | modify | Mounts the settings rail for all settings routes and preserves AGChain shell framing |
+| `web/src/components/agchain/AgchainOrganizationSwitcher.tsx` | component | modify | Replaces the misleading generic footer CTA with a scoped organization-management action into the real settings shell |
 | `web/src/components/agchain/AgchainBenchmarkNav.tsx` | component | modify | Re-homed from shell Rail 2 to page-local benchmark-definition navigation |
 | `web/src/pages/agchain/AgchainBenchmarksPage.tsx` | page | modify | Hosts benchmark-definition page-local navigation and existing project child content |
 | `web/src/pages/agchain/AgchainSettingsPage.tsx` | page | modify | Redirect-only route container for `/app/agchain/settings` |
@@ -771,7 +923,7 @@ The migration batch must also:
 | `web/src/components/agchain/settings/AgchainSettingsSectionLayout.tsx` | component | new | Shared page frame for every AGChain settings section |
 | `web/src/components/agchain/settings/AgchainSettingsPlaceholderPage.tsx` | component | new | Placeholder body used by visible-but-limited settings sections |
 | `web/src/components/agchain/settings/OrganizationMembersTable.tsx` | component | new | Main list body for `Organization / Members` |
-| `web/src/components/agchain/settings/InviteOrganizationMembersModal.tsx` | component | new | Invite/add-existing-user flow launched from `Organization / Members` |
+| `web/src/components/agchain/settings/InviteOrganizationMembersModal.tsx` | component | new | Invite flow launched from `Organization / Members`, creating pending invites and assigning permission groups |
 | `web/src/components/agchain/settings/PermissionGroupsTable.tsx` | component | new | Main list body for `Organization / Permission Groups` |
 | `web/src/components/agchain/settings/CreatePermissionGroupModal.tsx` | component | new | Group creation flow launched from `Organization / Permission Groups` |
 | `web/src/components/agchain/settings/PermissionGroupPermissionsModal.tsx` | component | new | Permissions inspection modal launched from permission-group rows |
@@ -790,6 +942,7 @@ The migration batch must also:
 
 - `web/src/router.tsx`
 - `web/src/components/layout/AgchainShellLayout.tsx`
+- `web/src/components/agchain/AgchainOrganizationSwitcher.tsx`
 - `web/src/components/agchain/AgchainBenchmarkNav.tsx`
 - `web/src/pages/agchain/AgchainBenchmarksPage.tsx`
 - `web/src/pages/agchain/AgchainSettingsPage.tsx`
@@ -821,6 +974,7 @@ The migration batch must also:
 ### Frontend test files
 
 - `web/src/components/layout/AgchainShellLayout.test.tsx`
+- `web/src/components/agchain/AgchainOrganizationSwitcher.test.tsx`
 - `web/src/components/agchain/AgchainBenchmarkNav.test.tsx`
 - `web/src/pages/agchain/AgchainSettingsPage.test.tsx`
 - `web/src/pages/agchain/AgchainBenchmarkWorkbenchPage.test.tsx`
@@ -857,8 +1011,8 @@ The migration batch must also:
 
 ### Database migration files
 
-- `supabase/migrations/20260401170000_agchain_settings_permission_groups_schema.sql`
-- `supabase/migrations/20260401171000_agchain_settings_permission_groups_admin_backfill.sql`
+- `supabase/migrations/20260402170000_agchain_settings_permission_groups_and_invites_schema.sql`
+- `supabase/migrations/20260402171000_agchain_settings_owners_backfill.sql`
 
 ## Locked observability surface
 
@@ -867,7 +1021,7 @@ The migration batch must also:
 | Type | Name | Emit location | Purpose | Allowed attributes |
 | --- | --- | --- | --- | --- |
 | span | `agchain.settings.members.list` | `services/platform-api/app/api/routes/agchain_settings.py` members list route | Trace organization-members list latency and result count | `organization_id_present`, `row_count`, `latency_ms`, `result` |
-| span | `agchain.settings.members.invite` | `services/platform-api/app/api/routes/agchain_settings.py` member-invitations route | Trace add-member batch execution and outcomes | `organization_id_present`, `email_count`, `created_count`, `reactivated_count`, `already_member_count`, `not_found_count`, `result` |
+| span | `agchain.settings.members.invite` | `services/platform-api/app/api/routes/agchain_settings.py` member-invitations route | Trace pending-invite batch execution and outcomes | `organization_id_present`, `email_count`, `invite_created_count`, `already_pending_count`, `already_member_count`, `invalid_email_count`, `result` |
 | span | `agchain.settings.members.update` | `services/platform-api/app/api/routes/agchain_settings.py` member status route | Trace membership status changes | `organization_id_present`, `organization_member_id_present`, `membership_status`, `result` |
 | span | `agchain.settings.permission_groups.list` | `services/platform-api/app/api/routes/agchain_settings.py` permission-groups list route | Trace permission-group list latency and result count | `organization_id_present`, `row_count`, `latency_ms`, `result` |
 | span | `agchain.settings.permission_groups.create` | `services/platform-api/app/api/routes/agchain_settings.py` create group route | Trace permission-group creation and grant count | `organization_id_present`, `permission_key_count`, `result` |
@@ -876,7 +1030,7 @@ The migration batch must also:
 | span | `agchain.settings.permission_groups.members.add` | `services/platform-api/app/api/routes/agchain_settings.py` add group members route | Trace group-members add operations | `organization_id_present`, `permission_group_id_present`, `requested_member_count`, `added_count`, `already_present_count`, `result` |
 | span | `agchain.settings.permission_groups.members.remove` | `services/platform-api/app/api/routes/agchain_settings.py` remove group member route | Trace group-members remove operations | `organization_id_present`, `permission_group_id_present`, `organization_member_id_present`, `removed`, `result` |
 | counter | `platform.agchain.settings.members.list.count` | members list route | Count members-list requests | `organization_id_present`, `result` |
-| counter | `platform.agchain.settings.members.invite.count` | member-invitations route | Count add-member requests | `organization_id_present`, `result` |
+| counter | `platform.agchain.settings.members.invite.count` | member-invitations route | Count pending-invite creation requests | `organization_id_present`, `result` |
 | counter | `platform.agchain.settings.members.update.count` | member status route | Count membership-status updates | `organization_id_present`, `membership_status`, `result` |
 | counter | `platform.agchain.settings.permission_groups.list.count` | permission-groups list route | Count permission-group list requests | `organization_id_present`, `result` |
 | counter | `platform.agchain.settings.permission_groups.create.count` | create group route | Count permission-group creates | `organization_id_present`, `result` |
@@ -884,7 +1038,7 @@ The migration batch must also:
 | counter | `platform.agchain.settings.permission_groups.members.remove.count` | remove group member route | Count group-members remove requests | `organization_id_present`, `result` |
 | histogram | `platform.agchain.settings.members.list.duration_ms` | members list route | Measure members-list latency | `organization_id_present`, `result` |
 | histogram | `platform.agchain.settings.permission_groups.list.duration_ms` | permission-groups list route | Measure permission-group list latency | `organization_id_present`, `result` |
-| structured log | `agchain.settings.members.invite.completed` | member-invitations route | Record batch invite outcomes without exposing raw emails | `organization_id_present`, `email_count`, `created_count`, `reactivated_count`, `already_member_count`, `not_found_count` |
+| structured log | `agchain.settings.members.invite.completed` | member-invitations route | Record batch invite outcomes without exposing raw emails or raw invite tokens | `organization_id_present`, `email_count`, `invite_created_count`, `already_pending_count`, `already_member_count`, `invalid_email_count` |
 | structured log | `agchain.settings.permission_groups.created` | create group route | Record permission-group creation metadata | `organization_id_present`, `permission_group_id`, `permission_key_count`, `is_system_group` |
 
 ### Attribute rules
@@ -927,16 +1081,20 @@ Forbidden attributes for this feature:
 - Toolbar: search input, optional status filter
 - Main body: list/table of members
 - Row content: display name, email, membership status, legacy org role, group summary
-- Row action: disable/reactivate membership
+- Row action: disable/reactivate membership, with last-owner safeguards enforced
 - Empty states:
-  - only initial admin exists
+  - only initial owner exists
   - search returns no matches
+- The initial bootstrap user must appear as an active member of the protected `Owners` group.
+- Invite modal accepts one or more email addresses plus one or more permission groups and creates pending invites.
+- The UI must not imply that invite delivery happened in this batch.
 
 ### Permission groups page
 
 - Header: title, short description, `Create permission group` primary action
 - Toolbar: search input
 - Main body: list/table of groups
+- The protected `Owners` group is always visible and visually distinguished from user-created groups.
 - Row actions:
   - open permissions modal
   - open members modal
@@ -947,9 +1105,10 @@ Forbidden attributes for this feature:
 - Members modal:
   - search existing org members
   - add/remove members
+  - block removal of the last owner from the protected `Owners` group
 - Permissions modal:
-  - read-only grouped view of stored grants in V1
-  - explicit callout that project-scope enforcement is reserved for a later batch
+  - grouped view of stored organization-level and project-level grants
+  - explicit callout that user-created group editing remains bounded to organization-level grants in V1
 
 ## Risks and mitigations
 
@@ -970,10 +1129,10 @@ Current AGChain authorization is still driven by `membership_role`, while permis
 
 Mitigation:
 
-- keep `organization_admin` as the authority for new settings mutations in this batch
-- seed `Organization Admins` groups from existing admin memberships
-- expose only organization-level grants in V1 create/edit flows
-- document that non-settings AGChain surfaces remain on legacy role checks until a later dedicated migration
+- make settings-surface authorization permission-based in this batch
+- seed protected `Owners` groups from existing admin memberships
+- keep legacy `organization_admin` only as a compatibility seam for non-settings AGChain surfaces
+- expose only organization-level grant editing for user-created groups in V1 while allowing protected system groups to carry seeded project-level grants
 
 ### Risk 3: Member invite semantics become fake or incomplete
 
@@ -981,9 +1140,10 @@ There is no verified outbound invite flow in the current repo.
 
 Mitigation:
 
-- lock V1 to existing-account email lookup through `profiles`
-- return explicit `not_found` outcomes for unknown emails
-- do not promise pending invite delivery in this batch
+- persist real pending organization invites with token hashes in this batch
+- return explicit invite outcomes such as `invite_created`, `already_pending`, `already_member`, and `invalid_email`
+- do not log raw invite tokens or raw email lists
+- keep email delivery and token-claim execution explicitly out of scope for this batch
 
 ### Risk 4: Placeholder sections reintroduce transitional ambiguity
 
@@ -1010,20 +1170,22 @@ Mitigation:
 
 ### Organization members
 
-1. An organization admin can load the selected organization members list.
-2. An organization admin can search members by name or email.
-3. An organization admin can add existing platform users by email.
-4. An organization admin can attach permission groups during the add-member flow.
-5. An organization admin can disable and reactivate organization memberships.
-6. The members list shows assigned group summaries.
+1. An authorized organization member can load the selected organization members list.
+2. An authorized organization member can search members by name or email.
+3. The initial bootstrap user appears as an active member of the protected `Owners` group.
+4. An authorized organization member can invite one or more email addresses and assign permission groups during the invite flow.
+5. The backend persists pending invites with token hashes and returns batch outcomes without requiring email delivery.
+6. An authorized organization member can disable and reactivate organization memberships, but the last owner cannot be disabled or removed.
+7. The members list shows assigned group summaries.
 
 ### Permission groups
 
-1. An organization admin can view the organization permission-group list.
-2. An organization admin can create a permission group with a bounded permission set.
-3. An organization admin can open a permissions modal for a group and inspect grouped grants.
-4. An organization admin can open a members modal for a group and add or remove members.
-5. System-generated `Organization Admins` groups exist for existing organizations after migration/backfill.
+1. An authorized organization member can view the organization permission-group list.
+2. An authorized organization member can create a permission group with a bounded permission set.
+3. A protected system `Owners` group exists for existing organizations after migration/backfill.
+4. An authorized organization member can open a permissions modal for a group and inspect grouped organization-level and project-level grants.
+5. An authorized organization member can open a members modal for a group and add or remove members.
+6. Attempting to remove the last owner from the protected `Owners` group is blocked server-side and surfaced cleanly in the UI.
 
 ### Compatibility
 
@@ -1036,7 +1198,7 @@ Mitigation:
 
 Execution note:
 
-- Do not begin Task 1 until the workspace-state architecture dependency described above is resolved and folded into this plan or an approved prerequisite artifact.
+- The workspace-state dependency is resolved; Task 1 can assume the provider-owned shell state described above is already the active architecture.
 
 ### Task 1: Replace the placeholder settings landing with a routed settings shell
 
@@ -1044,11 +1206,13 @@ Files:
 
 - `web/src/router.tsx`
 - `web/src/components/layout/AgchainShellLayout.tsx`
+- `web/src/components/agchain/AgchainOrganizationSwitcher.tsx`
 - `web/src/pages/agchain/AgchainSettingsPage.tsx`
 - `web/src/components/agchain/settings/AgchainSettingsNav.tsx`
 - `web/src/components/agchain/settings/AgchainSettingsSearch.tsx`
 - `web/src/components/agchain/settings/AgchainSettingsSectionLayout.tsx`
 - `web/src/components/agchain/settings/AgchainSettingsPlaceholderPage.tsx`
+- `web/src/components/agchain/AgchainOrganizationSwitcher.test.tsx`
 - `web/src/components/agchain/settings/AgchainSettingsNav.test.tsx`
 - `web/src/pages/agchain/AgchainSettingsPage.test.tsx`
 
@@ -1059,14 +1223,15 @@ Steps:
 3. Render a settings rail for any settings pathname.
 4. Add scoped nav groups and V1 nav filtering.
 5. Replace the current card landing with real section pages and deliberate placeholders.
+6. Replace the org-switcher footer CTA with a scoped organization-management action into the new settings shell.
 
 Test command:
 
-- `cd web && npx vitest run src/components/layout/AgchainShellLayout.test.tsx src/pages/agchain/AgchainSettingsPage.test.tsx src/components/agchain/settings/AgchainSettingsNav.test.tsx`
+- `cd web && npx vitest run src/components/layout/AgchainShellLayout.test.tsx src/components/agchain/AgchainOrganizationSwitcher.test.tsx src/pages/agchain/AgchainSettingsPage.test.tsx src/components/agchain/settings/AgchainSettingsNav.test.tsx`
 
 Expected output:
 
-- Vitest passes with `/app/agchain/settings` redirecting into the org members route, the settings rail mounted across settings subroutes, and loading/error/empty shell states locked.
+- Vitest passes with `/app/agchain/settings` redirecting into the org members route, the settings rail mounted across settings subroutes, the org-switcher footer linking into scoped organization management, and loading/error/empty shell states locked.
 
 Commit message:
 
@@ -1105,16 +1270,16 @@ Commit message:
 
 Files:
 
-- `supabase/migrations/20260401170000_agchain_settings_permission_groups_schema.sql`
-- `supabase/migrations/20260401171000_agchain_settings_permission_groups_admin_backfill.sql`
+- `supabase/migrations/20260402170000_agchain_settings_permission_groups_and_invites_schema.sql`
+- `supabase/migrations/20260402171000_agchain_settings_owners_backfill.sql`
 - `services/platform-api/app/domain/agchain/organization_access.py`
 - `services/platform-api/app/domain/agchain/project_access.py`
 
 Steps:
 
-1. Add permission-group tables and indexes.
-2. Add backfill for `Organization Admins` groups and memberships.
-3. Add reusable organization-access helpers for admin-only settings routes.
+1. Add permission-group, invite, and invite-assignment tables plus indexes.
+2. Add backfill for protected `Owners` groups, seeded grants, and memberships.
+3. Add reusable organization-access helpers for permission-based settings routes.
 
 Test command:
 
@@ -1122,11 +1287,11 @@ Test command:
 
 Expected output:
 
-- Pytest passes with organization-admin access helpers covered, and the migration pair remains ready for linked-database application and post-apply schema verification.
+- Pytest passes with permission-based organization-access helpers covered, and the migration pair remains ready for linked-database application and post-apply schema verification.
 
 Commit message:
 
-- `feat(agchain-settings): add permission group schema and org admin access helpers`
+- `feat(agchain-settings): add permission group and invite schema foundations`
 
 ### Task 4: Implement organization-members backend
 
@@ -1140,9 +1305,9 @@ Files:
 Steps:
 
 1. Add members list endpoint with profile join and group summary.
-2. Add add-member-by-email endpoint with batch outcomes.
-3. Add membership status update endpoint.
-4. Add spans, counters, histograms, and structured logs.
+2. Add pending-invite issuance endpoint with batch outcomes, token hashing, and group assignments.
+3. Add membership status update endpoint with last-owner safeguards.
+4. Add spans, counters, histograms, and structured logs for invite creation and member updates.
 
 Test command:
 
@@ -1150,7 +1315,7 @@ Test command:
 
 Expected output:
 
-- Pytest passes with members list, add-by-email, disable/reactivate, not-found email, duplicate add, and non-admin denial cases covered.
+- Pytest passes with members list, pending-invite creation, last-owner protection, disable/reactivate, duplicate pending invite, invalid email, and unauthorized denial cases covered.
 
 Commit message:
 
@@ -1172,8 +1337,8 @@ Steps:
 
 1. Build the `Organization Members` page inside the settings shell.
 2. Wire loading, empty, error, and search states.
-3. Wire the add-member modal to the new batch API outcomes.
-4. Show group summaries per member row.
+3. Wire the invite modal to the new batch API outcomes.
+4. Show group summaries per member row, including protected `Owners` group visibility.
 
 Test command:
 
@@ -1181,7 +1346,7 @@ Test command:
 
 Expected output:
 
-- Vitest passes with member list load, search, invite modal validation, batch outcome rendering, and disable/reactivate row actions covered.
+- Vitest passes with member list load, search, invite modal validation, pending-invite batch outcome rendering, initial owner visibility, and disable/reactivate row actions covered.
 
 Commit message:
 
@@ -1197,11 +1362,12 @@ Files:
 
 Steps:
 
-1. Add permission-group list endpoint with counts.
-2. Add create endpoint with bounded permission vocabulary validation.
-3. Add detail endpoint for the permissions modal.
-4. Add group-members list/add/remove endpoints.
-5. Add observability for the new endpoints.
+1. Add permission-definitions endpoint backed by the backend-owned settings/permission registry configuration.
+2. Add permission-group list endpoint with counts.
+3. Add create endpoint with bounded permission vocabulary validation for user-created groups.
+4. Add detail endpoint for the permissions modal, including protected-group grant visibility.
+5. Add group-members list/add/remove endpoints with last-owner protection.
+6. Add observability for the new endpoints.
 
 Test command:
 
@@ -1209,7 +1375,7 @@ Test command:
 
 Expected output:
 
-- Pytest passes with list, create, detail, system-group visibility, member add/remove flows, invalid permission-key rejection, and non-admin denial covered.
+- Pytest passes with permission-definitions, list, create, detail, protected `Owners` visibility, member add/remove flows, invalid permission-key rejection, last-owner denial, and unauthorized denial cases covered.
 
 Commit message:
 
@@ -1234,9 +1400,9 @@ Files:
 Steps:
 
 1. Build the `Permission Groups` page inside the settings shell.
-2. Add create flow with organization-level permission checklist only.
-3. Add permissions inspection modal.
-4. Add members modal with searchable org-member add/remove flow.
+2. Add create flow with the organization-level permission checklist loaded from the backend permission-definitions contract.
+3. Add permissions inspection modal with grouped org/project grant display.
+4. Add members modal with searchable org-member add/remove flow and last-owner protection feedback.
 
 Test command:
 
@@ -1244,7 +1410,7 @@ Test command:
 
 Expected output:
 
-- Vitest passes with group list, create modal, permissions modal, members modal, add/remove flows, and the explicit project-scope-future-enforcement callout covered.
+- Vitest passes with group list, backend-driven create modal permission options, protected `Owners` visibility, permissions modal, members modal, add/remove flows, and last-owner protection feedback covered.
 
 Commit message:
 
@@ -1254,7 +1420,7 @@ Commit message:
 
 Test commands:
 
-- `cd web && npx vitest run src/components/layout/AgchainShellLayout.test.tsx src/components/agchain/AgchainBenchmarkNav.test.tsx src/pages/agchain/AgchainSettingsPage.test.tsx src/pages/agchain/AgchainBenchmarkWorkbenchPage.test.tsx src/pages/agchain/AgchainBenchmarksPage.test.tsx src/components/agchain/settings/AgchainSettingsNav.test.tsx src/pages/agchain/settings/AgchainOrganizationMembersPage.test.tsx src/pages/agchain/settings/AgchainPermissionGroupsPage.test.tsx src/components/agchain/settings/InviteOrganizationMembersModal.test.tsx src/components/agchain/settings/CreatePermissionGroupModal.test.tsx src/components/agchain/settings/PermissionGroupPermissionsModal.test.tsx src/components/agchain/settings/PermissionGroupMembersModal.test.tsx`
+- `cd web && npx vitest run src/components/layout/AgchainShellLayout.test.tsx src/components/agchain/AgchainOrganizationSwitcher.test.tsx src/components/agchain/AgchainBenchmarkNav.test.tsx src/pages/agchain/AgchainSettingsPage.test.tsx src/pages/agchain/AgchainBenchmarkWorkbenchPage.test.tsx src/pages/agchain/AgchainBenchmarksPage.test.tsx src/components/agchain/settings/AgchainSettingsNav.test.tsx src/pages/agchain/settings/AgchainOrganizationMembersPage.test.tsx src/pages/agchain/settings/AgchainPermissionGroupsPage.test.tsx src/components/agchain/settings/InviteOrganizationMembersModal.test.tsx src/components/agchain/settings/CreatePermissionGroupModal.test.tsx src/components/agchain/settings/PermissionGroupPermissionsModal.test.tsx src/components/agchain/settings/PermissionGroupMembersModal.test.tsx`
 - `cd services/platform-api && pytest -q tests/test_agchain_settings.py tests/test_agchain_workspaces.py`
 - `cd web && npm run build`
 
@@ -1268,12 +1434,13 @@ Manual verification:
 - confirm redirect to `Organization / Members`
 - confirm settings rail search filters nav items
 - confirm loading, error, and no-organization shell states do not redirect-loop
-- confirm `Permission Groups` create/member flows
+- confirm `Organization Members` initial owner and invite flows
+- confirm `Permission Groups` create/member flows and last-owner safeguards
 - confirm benchmark-definition route and hash links still work
 
 Commit message:
 
-- `test(agchain-settings): verify routed settings shell and org admin flows`
+- `test(agchain-settings): verify routed settings shell and org access flows`
 
 ## Completion criteria
 
@@ -1283,4 +1450,6 @@ The plan is complete when:
 - the backend/data contract is specific enough to implement without guesswork
 - the compatibility seam for benchmark definition is frozen
 - the org-members and permission-groups scope is real, not placeholder-only
+- protected `Owners` groups, pending invite persistence, and hashed-token invite issuance are fully specified
+- settings-surface authorization is registry/grant-driven rather than UI-hardcoded
 - the verification contract is strong enough to catch regressions before claiming completion

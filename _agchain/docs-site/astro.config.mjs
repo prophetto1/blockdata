@@ -13,23 +13,25 @@ export default defineConfig({
 			],
 			sidebar: [
 				{
-					label: 'Platform',
-					collapsed: true,
+					label: 'Platform Features',
 					autogenerate: { directory: 'platform' },
 				},
 				{
-					label: 'Build Pipeline',
-					collapsed: true,
-					autogenerate: { directory: 'pipeline' },
+					label: 'Builders',
+					autogenerate: { directory: 'builders' },
 				},
 				{
-					label: 'Benchmarks',
-					autogenerate: { directory: 'benchmarks' },
+					label: 'Benchmark',
+					autogenerate: { directory: 'benchmark' },
 				},
 				{
-					label: 'Project',
+					label: 'Bridge',
+					autogenerate: { directory: 'bridge' },
+				},
+				{
+					label: 'Other',
 					collapsed: true,
-					autogenerate: { directory: 'project' },
+					autogenerate: { directory: 'other' },
 				},
 			],
 		}),

@@ -76,6 +76,10 @@ vi.mock('@/components/agchain/AgchainOrganizationSwitcher', () => ({
   AgchainOrganizationSwitcher: () => <div data-testid="agchain-organization-context">Focused AGChain organization</div>,
 }));
 
+vi.mock('@/components/agchain/settings/AgchainSettingsNav', () => ({
+  AgchainSettingsNav: () => <div data-testid="agchain-settings-nav">AGChain Settings Nav</div>,
+}));
+
 afterEach(() => {
   cleanup();
   leftRailMock.mockReset();
@@ -172,9 +176,9 @@ describe('AgchainShellLayout', () => {
     expect(lastCall?.onToggleDesktopCompact).toBeUndefined();
   });
 
-  it('renders the benchmark secondary rail only on the hidden benchmark-definition route', () => {
+  it('renders the settings secondary rail on settings routes', () => {
     render(
-      <MemoryRouter initialEntries={['/app/agchain/settings/project/benchmark-definition']}>
+      <MemoryRouter initialEntries={['/app/agchain/settings/organization/members']}>
         <Routes>
           <Route element={<AgchainShellLayout />}>
             <Route path="/app/agchain/*" element={<div data-testid="agchain-route-content" />} />
@@ -187,6 +191,7 @@ describe('AgchainShellLayout', () => {
     const rail2 = screen.getByTestId('agchain-secondary-rail');
     expect(rail2).toBeInTheDocument();
     expect(rail2).toHaveStyle({ top: '60px', bottom: '0px' });
+    expect(screen.getByTestId('agchain-settings-nav')).toBeInTheDocument();
     expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
   });
 

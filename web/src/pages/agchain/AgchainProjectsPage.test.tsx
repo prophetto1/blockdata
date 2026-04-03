@@ -7,6 +7,7 @@ const navigateMock = vi.fn();
 const reloadAndSelectMock = vi.fn();
 const reloadMock = vi.fn();
 const useAgchainWorkspaceMock = vi.fn();
+const useAgchainScopeStateMock = vi.fn();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -18,6 +19,10 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('@/contexts/AgchainWorkspaceContext', () => ({
   useAgchainWorkspace: () => useAgchainWorkspaceMock(),
+}));
+
+vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
+  useAgchainScopeState: () => useAgchainScopeStateMock(),
 }));
 
 const createAgchainProjectMock = vi.fn();
@@ -56,6 +61,14 @@ describe('AgchainProjectsPage', () => {
 
     reloadAndSelectMock.mockResolvedValue(undefined);
     reloadMock.mockResolvedValue(undefined);
+    useAgchainScopeStateMock.mockReset();
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'no-project',
+      selectedOrganization: {
+        organization_id: 'org-1',
+        display_name: 'AGChain',
+      },
+    });
 
     useAgchainWorkspaceMock.mockReturnValue({
       projects: [PROJECT_ROW],
@@ -92,6 +105,36 @@ describe('AgchainProjectsPage', () => {
     expect(screen.getByRole('columnheader', { name: 'Description' })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Primary benchmark' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open Project' })).toHaveAttribute('href', '/app/agchain/overview?project=legal-evals');
+  });
+
+  it('shows loading while the shared AGChain scope is bootstrapping', () => {
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'bootstrapping',
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainProjectsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Loading workspace...')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Project registry' })).not.toBeInTheDocument();
+  });
+
+  it('shows the no-organization fallback from the shared AGChain scope state', () => {
+    useAgchainScopeStateMock.mockReturnValue({
+      kind: 'no-organization',
+    });
+
+    render(
+      <MemoryRouter>
+        <AgchainProjectsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'No organization' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Projects and evaluations' })).not.toBeInTheDocument();
   });
 
   it('shows an empty registry state when no project workspaces exist yet', async () => {
