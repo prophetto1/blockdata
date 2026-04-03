@@ -91,6 +91,7 @@ web-docs/*.log
 external/
 _external/
 _agentDev/
+_reference/
 tmp/
 .temp/
 
