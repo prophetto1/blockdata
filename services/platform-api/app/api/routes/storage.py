@@ -108,49 +108,59 @@ def enforce_per_file_limit(size_bytes: int, max_bytes: int) -> None:
         raise ValueError("file too large")
 
 
-def _signblob_kwargs() -> dict:
-    """Return extra kwargs for signBlob-based signing on Cloud Run.
+@lru_cache(maxsize=1)
+def _signing_credentials():
+    """Return credentials capable of signing GCS URLs.
 
-    On Cloud Run there is no local private key, so the GCS library must
-    use the IAM signBlob API.  This requires both ``service_account_email``
-    and ``access_token``.  The GCS client's own credentials only carry
-    storage scopes, so we obtain a separate token with the cloud-platform
-    scope that covers IAM signBlob.  Locally (with a key-file), the
-    credentials have a signer and these extras are not needed.
+    Locally (key-file), the GCS client credentials already implement
+    ``sign_bytes`` and can sign directly — return None.
+
+    On Cloud Run there is no local private key.  When
+    ``GCS_SIGNING_SERVICE_ACCOUNT`` is set, we create
+    ``impersonated_credentials.Credentials`` that call the IAM signBlob
+    API via the ambient Cloud Run identity.  This class implements the
+    ``Signing`` interface, handles token refresh automatically, and is
+    the documented pattern for serverless runtimes without key files.
+
+    Requires ``roles/iam.serviceAccountTokenCreator`` on the SA.
     """
-    creds = _gcs_client()._credentials
-    email = getattr(creds, "service_account_email", None)
-    if not email or hasattr(creds, "sign_bytes"):
-        return {}
-    from google import auth
-    from google.auth.transport import requests as auth_requests
-    signing_creds, _ = auth.default(
-        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    if hasattr(_gcs_client()._credentials, "sign_bytes"):
+        return None
+    sa_email = get_settings().gcs_signing_service_account
+    if not sa_email:
+        return None
+    import google.auth
+    from google.auth import impersonated_credentials
+    source_credentials, _ = google.auth.default()
+    return impersonated_credentials.Credentials(
+        source_credentials=source_credentials,
+        target_principal=sa_email,
+        target_scopes=["https://www.googleapis.com/auth/devstorage.read_only"],
     )
-    signing_creds.refresh(auth_requests.Request())
-    return {"service_account_email": email, "access_token": signing_creds.token}
 
 
 def create_signed_upload_url(bucket_name: str, object_key: str, content_type: str) -> str:
     bucket = _gcs_client().bucket(bucket_name)
     blob = bucket.blob(object_key)
+    creds = _signing_credentials()
     return blob.generate_signed_url(
         version="v4",
         expiration=timedelta(minutes=SIGNED_URL_MINUTES),
         method="PUT",
         content_type=content_type,
-        **_signblob_kwargs(),
+        **({"credentials": creds} if creds else {}),
     )
 
 
 def create_signed_download_url(*, bucket_name: str, object_key: str) -> str:
     bucket = _gcs_client().bucket(bucket_name)
     blob = bucket.blob(object_key)
+    creds = _signing_credentials()
     return blob.generate_signed_url(
         version="v4",
         expiration=timedelta(minutes=SIGNED_URL_MINUTES),
         method="GET",
-        **_signblob_kwargs(),
+        **({"credentials": creds} if creds else {}),
     )
 
 

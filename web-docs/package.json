@@ -50,6 +50,8 @@
     "rehype-katex": "^7.0.1",
     "remark-emoji": "^5.0.2",
     "remark-math": "^6.0.0",
+    "starlight-llms-txt": "^0.7.0",
+    "starlight-site-graph": "^0.5.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
     "yaml": "^2.8.2"

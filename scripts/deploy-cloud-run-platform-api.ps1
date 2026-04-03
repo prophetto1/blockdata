@@ -410,6 +410,10 @@ if (-not $GcsUserStorageBucket) {
 if ($GcsUserStorageBucket) {
   $envVarEntries += @("GCS_USER_STORAGE_BUCKET=$GcsUserStorageBucket")
 }
+# On Cloud Run there is no local signing key. The platform-api uses
+# impersonated_credentials to sign GCS URLs via the IAM signBlob API.
+# The SA email is derived from the service account name and project.
+$envVarEntries += @("GCS_SIGNING_SERVICE_ACCOUNT=$runtimeServiceAccountEmail")
 
 # ── Optional: OTLP auth headers via Secret Manager ──
 if ($OtelHeadersSecretName) {

@@ -8,6 +8,8 @@ import remarkMath from 'remark-math';
 import remarkEmoji from 'remark-emoji';
 import rehypeKatex from 'rehype-katex';
 import orama from '@orama/plugin-astro';
+import starlightLlmsTxt from 'starlight-llms-txt';
+import starlightSiteGraph from 'starlight-site-graph';
 import { generateSidebar } from './src/lib/docs/generate-sidebar.mjs';
 
 export default defineConfig({
@@ -21,6 +23,10 @@ export default defineConfig({
     react(),
     starlight({
       title: 'BlockData Docs',
+      plugins: [
+        starlightLlmsTxt(),
+        starlightSiteGraph(),
+      ],
       description: 'Documentation for the BlockData platform.',
       pagefind: false,
       components: {
