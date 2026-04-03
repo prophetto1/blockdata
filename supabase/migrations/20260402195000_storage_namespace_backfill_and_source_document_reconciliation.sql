@@ -273,8 +273,6 @@ SELECT
   sd.error,
   sd.conversion_job_id,
   sd.project_id,
-  sd.document_surface,
-  sd.storage_object_id,
   cp.conv_uid,
   cp.conv_status,
   cp.conv_parsing_tool,
@@ -286,7 +284,9 @@ SELECT
   cp.pipeline_config,
   cp.requested_pipeline_config,
   cp.applied_pipeline_config,
-  cp.parser_runtime_meta
+  cp.parser_runtime_meta,
+  sd.document_surface,
+  sd.storage_object_id
 FROM public.source_documents AS sd
 LEFT JOIN public.conversion_parsing AS cp
   ON cp.source_uid = sd.source_uid;

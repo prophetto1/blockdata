@@ -44,6 +44,10 @@ param(
 
   [switch]$UseExistingAppSecretEnvelopeKeySecret,
 
+  # Browser origins accepted by platform-api CORS / OAuth attempt tracking.
+  # If omitted, the script will preserve the currently deployed value when possible.
+  [string]$AuthRedirectOrigins = '',
+
   # ── OpenTelemetry contract (first-class OTEL inputs) ──
   [string]$OtelEnabled = 'false',
 
@@ -231,6 +235,37 @@ function Ensure-ExistingSecretAccess {
   }
 }
 
+function Get-ExistingServiceEnvValue {
+  param(
+    [Parameter(Mandatory = $true)][string]$EnvName
+  )
+
+  $describeJson = & gcloud run services describe $ServiceName `
+    --project $ProjectId `
+    --region $Region `
+    --format json 2>$null
+  if ($LASTEXITCODE -ne 0 -or -not $describeJson) {
+    return $null
+  }
+
+  try {
+    $service = $describeJson | ConvertFrom-Json
+    $envEntries = $service.spec.template.spec.containers[0].env
+    if (-not $envEntries) {
+      return $null
+    }
+
+    $entry = $envEntries | Where-Object { $_.name -eq $EnvName } | Select-Object -First 1
+    if ($entry -and $entry.PSObject.Properties.Name -contains 'value') {
+      return [string]$entry.value
+    }
+  } catch {
+    return $null
+  }
+
+  return $null
+}
+
 Ensure-Command -Name gcloud
 
 if (-not (Test-Path -LiteralPath 'services/platform-api')) {
@@ -353,6 +388,15 @@ if ($SignozUiUrl) {
 if ($JaegerUiUrl) {
   $envVarEntries += @("JAEGER_UI_URL=$JaegerUiUrl")
 }
+if (-not $AuthRedirectOrigins) {
+  $AuthRedirectOrigins = $env:AUTH_REDIRECT_ORIGINS
+}
+if (-not $AuthRedirectOrigins) {
+  $AuthRedirectOrigins = Get-ExistingServiceEnvValue -EnvName 'AUTH_REDIRECT_ORIGINS'
+}
+if ($AuthRedirectOrigins) {
+  $envVarEntries += @("AUTH_REDIRECT_ORIGINS=$AuthRedirectOrigins")
+}
 
 # ── Optional: OTLP auth headers via Secret Manager ──
 if ($OtelHeadersSecretName) {
@@ -386,12 +430,30 @@ if ($UseSecretManager) {
 }
 
 $deployArgs += @('--set-secrets', ($secretMappings -join ','))
-$deployArgs += @('--set-env-vars', ($envVarEntries -join ','))
+$tempEnvFile = New-TemporaryFile
+try {
+  $envVarMap = [ordered]@{}
+  foreach ($entry in $envVarEntries) {
+    $parts = $entry -split '=', 2
+    if ($parts.Length -ne 2) {
+      throw "Invalid env var entry: $entry"
+    }
+    $envVarMap[$parts[0]] = $parts[1]
+  }
+  [System.IO.File]::WriteAllText(
+    $tempEnvFile.FullName,
+    ($envVarMap | ConvertTo-Json -Compress),
+    (New-Object System.Text.UTF8Encoding($false))
+  )
+  $deployArgs += @('--env-vars-file', $tempEnvFile.FullName)
 
-Write-Host "Deploying Cloud Run service..."
-& gcloud @deployArgs
-if ($LASTEXITCODE -ne 0) {
-  throw "Cloud Run deploy failed."
+  Write-Host "Deploying Cloud Run service..."
+  & gcloud @deployArgs
+  if ($LASTEXITCODE -ne 0) {
+    throw "Cloud Run deploy failed."
+  }
+} finally {
+  Remove-Item -Force $tempEnvFile.FullName -ErrorAction SilentlyContinue
 }
 
 $url = & gcloud run services describe $ServiceName --project $ProjectId --region $Region --format 'value(status.url)'

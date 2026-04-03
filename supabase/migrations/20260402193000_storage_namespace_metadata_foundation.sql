@@ -71,7 +71,7 @@ CREATE INDEX storage_objects_pipeline_surface_idx
   );
 
 CREATE INDEX source_documents_document_surface_idx
-  ON public.source_documents (owner_id, project_id, document_surface, created_at DESC);
+  ON public.source_documents (owner_id, project_id, document_surface, uploaded_at DESC);
 
 DROP FUNCTION IF EXISTS public.reserve_user_storage(
   UUID,

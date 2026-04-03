@@ -1,9 +1,0 @@
-{
-  "search.label": "Find",
-  "search.cancelLabel": "Close",
-  "search.devWarning": "Search index is generated during production builds.",
-  "pagefind.search_label": "Find in docs",
-  "pagefind.clear_search": "Clear",
-  "pagefind.load_more": "Load more results",
-  "pagefind.zero_results": "No results for [SEARCH_TERM]"
-}

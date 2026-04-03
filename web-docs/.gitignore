@@ -11,3 +11,6 @@ keystatic-dev.err.log
 .env*.local
 .cache/
 .openvscode-server/
+
+.vercel
+.env*.local
