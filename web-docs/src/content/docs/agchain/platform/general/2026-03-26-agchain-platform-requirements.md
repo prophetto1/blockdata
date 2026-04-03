@@ -25,7 +25,7 @@ It consolidates four sources of direction:
 
 This document should be read together with:
 
-- [2026-03-26-agchain-platform-understanding.md](E:\writing-system\_agchain\docs\platform\2026-03-26-agchain-platform-understanding.md)
+- 2026-03-26-agchain-platform-understanding.md
 
 The understanding dossier explains why these requirements are defensible. This document states what AG chain must do.
 

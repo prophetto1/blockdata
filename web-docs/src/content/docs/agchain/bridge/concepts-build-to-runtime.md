@@ -14,7 +14,7 @@ AGChain separates **build-time** (authoring and packaging) from **runtime** (exe
 
 This separation is what makes benchmarks reproducible. If two people have the same bundle, they get the same execution. The runner never improvises — it reads the plan and follows it.
 
-Source: [Platform Architecture](/platform/agchain-platform-architecture/) (Section 1: Executive Summary), [Benchmark Technical Specification](/builders/benchmark-builders/mvp/3-step-run-benchmark-structure/) (Section A: One-Page Overview)
+Source: Platform Architecture (Section 1: Executive Summary), Benchmark Technical Specification (Section A: One-Page Overview)
 
 ---
 
@@ -44,7 +44,7 @@ A bundle is a directory with two major sections:
 
 The **benchmark packet** (everything under `benchmark/`) is shared — it defines what the benchmark asks. The **EU packets** (under `eus/`) are per-test-case — they provide the specific evidence the model reasons about.
 
-Source: [M1 Build-Time Packaging Dev Brief](/builders/benchmark-builders/mvp/M1-buildtime-packaging-sealing-dev-brief/) (Frozen decisions: Bundle layout), [Sealed Evaluation Units Security](/platform/security/sealed-evaluation-units-security/)
+Source: M1 Build-Time Packaging Dev Brief (Frozen decisions: Bundle layout), Sealed Evaluation Units Security
 
 ---
 
@@ -96,7 +96,7 @@ Key fields:
 
 The plan does not contain prompts, evidence, or scoring logic. It points to those things by reference. This means the same plan shape works for any benchmark — Legal-10, a coding benchmark, a medical reasoning benchmark — only the referenced files change.
 
-Source: [Benchmark Technical Specification v1.1](/builders/benchmark-builders/mvp/3-step-run-benchmark-structure/) (Section 3.2.2: plan.json)
+Source: Benchmark Technical Specification v1.1 (Section 3.2.2: plan.json)
 
 ---
 
@@ -111,7 +111,7 @@ Each EU contains:
 
 The split between p1/p2/ground_truth is the information discipline boundary. The runner enforces it through **payload gating** and **staging isolation**: at each step, only the payloads listed in `inject_payloads` are copied into the staging directory. The model adapter reads only from staging. Ground truth is never staged.
 
-Source: [M1 Dev Brief](/builders/benchmark-builders/mvp/M1-buildtime-packaging-sealing-dev-brief/) (EU packet schema), [Benchmark Technical Specification](/builders/benchmark-builders/mvp/3-step-run-benchmark-structure/) (Section 4.1: Step Lifecycle and Staging)
+Source: M1 Dev Brief (EU packet schema), Benchmark Technical Specification (Section 4.1: Step Lifecycle and Staging)
 
 ---
 
@@ -136,7 +136,7 @@ The build pipeline is three CLI tools:
 
 All three are deterministic. Same inputs + same seed = byte-identical outputs. No model calls, no network access.
 
-Source: [Data Pipeline Reference](/benchmark/legalchain/datasets/information%20on%20how%20data%20integrates%20into%20pipeline%20for%20use/data-pipeline-reference/), [EU Builder Reference](/builders/eu-builders/eu-builder-reference.py/), [RP Builder Reference](/builders/payload/rp-builder-reference.py/)
+Source: Data Pipeline Reference, EU Builder Reference, RP Builder Reference
 
 ---
 
@@ -159,7 +159,7 @@ The critical invariant: **state sanitization**. When the model's output from ste
 
 This is what makes AGChain a **chain engine** rather than just a model caller. Inspect AI handles the model call within a single step. AGChain handles what happens between steps — payload gating, state carry-forward, sanitization, and audit boundaries.
 
-Source: [Inter-Step Requirements](/platform/multi-tasks/inter-step-requirements/), [PDRunner and Inspect AI](/platform/runner/pdrunner-inspect-ai/)
+Source: Inter-Step Requirements, PDRunner and Inspect AI
 
 ---
 
@@ -174,7 +174,7 @@ If any file has been modified, the runner refuses to start. This prevents tamper
 
 The canonicalization rule ensures hash stability across platforms: UTF-8, lexicographic key ordering, arrays preserve order, no insignificant whitespace.
 
-Source: [Sealed Evaluation Units Security](/platform/security/sealed-evaluation-units-security/)
+Source: Sealed Evaluation Units Security
 
 ---
 
@@ -194,7 +194,7 @@ The 3-step CLI prototype (`run_3s.py`) proves the execution model works. It read
 
 The runtime modules (payload_gate, input_assembler, staging, state, audit, scorers) are pure functions that work identically in both contexts. They don't care whether the plan.json came from a Python script or a platform materializer.
 
-Source: [3-Step to Platform Bridge Analysis](/bridge/2026-04-02-3step-to-platform-bridge-analysis/)
+Source: 3-Step to Platform Bridge Analysis
 
 ---
 

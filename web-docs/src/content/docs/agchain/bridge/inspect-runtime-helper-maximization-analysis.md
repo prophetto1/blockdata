@@ -70,42 +70,42 @@ This is stricter than a general "Inspect-informed" approach. It makes Inspect th
 
 ### AG chain / Legal-10
 
-- [run_3s.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py)
-- [input_assembler.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/input_assembler.py)
-- [payload_gate.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/payload_gate.py)
-- [state.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/state.py)
-- [staging.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/staging.py)
-- [audit.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/audit.py)
-- [model_adapter.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/adapters/model_adapter.py)
-- [statefulness-context-persistence.md](E:/writing-system/_agchain/legal-10/docs/platform/statefulness-context-persistence.md)
-- [inter-step-requirements.md](E:/writing-system/_agchain/legal-10/docs/platform/inter-step-requirements.md)
-- [pdrunner-inspect-ai.md](E:/writing-system/_agchain/legal-10/docs/platform/pdrunner-inspect-ai.md)
+- run_3s.py
+- input_assembler.py
+- payload_gate.py
+- state.py
+- staging.py
+- audit.py
+- model_adapter.py
+- statefulness-context-persistence.md
+- inter-step-requirements.md
+- pdrunner-inspect-ai.md
 
 ### Inspect AI
 
-- [environment.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/util/_sandbox/environment.py)
-- [registry.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/util/_sandbox/registry.py)
-- [__init__.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/util/_sandbox/__init__.py)
-- [eval.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/eval.py)
-- [run.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/run.py)
-- [generate.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/generate.py)
-- [sandbox.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/sandbox.py)
-- [resolved.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/resolved.py)
-- [_dataset.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/dataset/_dataset.py)
-- [_task_state.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/solver/_task_state.py)
-- [_use_tools.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/solver/_use_tools.py)
-- [_model.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_model.py)
-- [_call_tools.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_call_tools.py)
-- [_compaction.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_compaction/_compaction.py)
-- [types.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_compaction/types.py)
-- [_tool.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/_tool.py)
-- [_tool_def.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/_tool_def.py)
-- [__init__.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/__init__.py)
-- [_policy.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/approval/_policy.py)
-- [_log.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/log/_log.py)
-- [event/__init__.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/event/__init__.py)
-- [tool/_mcp/__init__.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/_mcp/__init__.py)
-- [tool/_mcp/tools.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/_mcp/tools.py)
+- environment.py
+- registry.py
+- __init__.py
+- eval.py
+- run.py
+- generate.py
+- sandbox.py
+- resolved.py
+- _dataset.py
+- _task_state.py
+- _use_tools.py
+- _model.py
+- _call_tools.py
+- _compaction.py
+- types.py
+- _tool.py
+- _tool_def.py
+- __init__.py
+- _policy.py
+- _log.py
+- event/__init__.py
+- tool/_mcp/__init__.py
+- tool/_mcp/tools.py
 
 ---
 
@@ -118,7 +118,7 @@ The current helper stack mixes two different layers:
 
 The AG chain layer should remain custom. The Inspect layer should not.
 
-Today, the code in [run_3s.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py) and [model_adapter.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/adapters/model_adapter.py) still performs too much substrate work itself. It bypasses:
+Today, the code in run_3s.py and model_adapter.py still performs too much substrate work itself. It bypasses:
 
 - Inspect `ModelAPI` and `Model`
 - Inspect `Task` and `Sample`
@@ -150,9 +150,9 @@ This is the right prototype direction for proving semantics, but not the final a
 
 ### 1. Replace `model_adapter.py`
 
-[model_adapter.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/adapters/model_adapter.py) is the clearest case of underusing Inspect. It manually wraps OpenAI and Anthropic calls, while Inspect already provides:
+model_adapter.py is the clearest case of underusing Inspect. It manually wraps OpenAI and Anthropic calls, while Inspect already provides:
 
-- provider registry and resolution in [_model.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_model.py)
+- provider registry and resolution in _model.py
 - provider-specific behavior and limits
 - token and cost accounting
 - retry logic
@@ -169,7 +169,7 @@ This is the right prototype direction for proving semantics, but not the final a
 
 ### 2. Split `run_3s.py`
 
-[run_3s.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py) currently does two jobs:
+run_3s.py currently does two jobs:
 
 - AG chain step-boundary orchestration
 - per-step model execution
@@ -197,7 +197,7 @@ The first job is AG chain-owned. The second should move to Inspect.
 
 ### 3. Keep `payload_gate.py`
 
-[payload_gate.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/payload_gate.py) is correctly custom.
+payload_gate.py is correctly custom.
 
 Inspect does not implement benchmark-authored admission control. It accepts sample inputs, sample files, and sandbox config, but it does not decide:
 
@@ -209,7 +209,7 @@ This helper should remain AG chain-owned.
 
 ### 4. Keep `input_assembler.py`, but adapt it
 
-[input_assembler.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/input_assembler.py) is also correctly AG chain-owned because structured windows are part of AG chain's core product thesis.
+input_assembler.py is also correctly AG chain-owned because structured windows are part of AG chain's core product thesis.
 
 What should change is the output form. Right now it emits plain `{role, content}` dicts. It should emit Inspect-native `ChatMessage` objects, so the assembly phase plugs directly into:
 
@@ -232,9 +232,9 @@ What should change is the output form. Right now it emits plain `{role, content}
 
 ### 5. Keep `state.py`, but narrow its responsibility
 
-[state.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/state.py) should stay, because candidate-visible carry-forward is an AG chain policy object, not an Inspect default.
+state.py should stay, because candidate-visible carry-forward is an AG chain policy object, not an Inspect default.
 
-But it should not become a duplicate of Inspect `TaskState.store` from [_task_state.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/solver/_task_state.py).
+But it should not become a duplicate of Inspect `TaskState.store` from _task_state.py.
 
 Use the split:
 
@@ -244,13 +244,13 @@ Use the split:
 
 ### 6. Rework `staging.py`
 
-[staging.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/staging.py) has the right semantics but the wrong integration depth.
+staging.py has the right semantics but the wrong integration depth.
 
 Inspect already supports sample-scoped file/setup injection and sandbox lifecycle through:
 
-- [Sample.files / Sample.setup](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/dataset/_dataset.py)
-- [sandbox.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/sandbox.py)
-- [environment.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/util/_sandbox/environment.py)
+- Sample.files / Sample.setup
+- sandbox.py
+- environment.py
 
 **Recommended pattern**
 
@@ -263,7 +263,7 @@ That preserves AG chain audit semantics while letting Inspect own the file injec
 
 ### 7. Keep `audit.py`, but augment it with Inspect artifacts
 
-[audit.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/runtime/audit.py) should remain AG chain-owned. Inspect logs are rich, but they are not a substitute for AG chain's stricter proof requirements:
+audit.py should remain AG chain-owned. Inspect logs are rich, but they are not a substitute for AG chain's stricter proof requirements:
 
 - exact staged file hashes
 - exact assembled message hash
@@ -285,37 +285,37 @@ The following Inspect modules should be integrated next if the goal is maximum r
 
 ### 1. Model layer
 
-- [_model.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_model.py)
+- _model.py
 
 Use this to replace the custom direct-provider adapter layer.
 
 ### 2. Task/eval execution layer
 
-- [eval.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/eval.py)
-- [run.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/run.py)
-- [generate.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/generate.py)
-- [resolved.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/resolved.py)
+- eval.py
+- run.py
+- generate.py
+- resolved.py
 
 These should become the per-step execution kernel.
 
 ### 3. Dataset/sample abstraction
 
-- [_dataset.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/dataset/_dataset.py)
+- _dataset.py
 
 Each AG chain step boundary should compile into an Inspect `Sample`.
 
 ### 4. Sandbox lifecycle
 
-- [environment.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/util/_sandbox/environment.py)
-- [registry.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/util/_sandbox/registry.py)
-- [sandbox.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/_eval/task/sandbox.py)
+- environment.py
+- registry.py
+- sandbox.py
 
 These replace bespoke sandbox wiring and make sandbox type pluggable.
 
 ### 5. Logging and event model
 
-- [_log.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/log/_log.py)
-- [event/__init__.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/event/__init__.py)
+- _log.py
+- event/__init__.py
 
 These should become the standard execution log substrate underneath AG chain's own audit artifacts.
 
@@ -323,24 +323,24 @@ These should become the standard execution log substrate underneath AG chain's o
 
 ### 6. Tool execution pipeline
 
-- [_tool.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/_tool.py)
-- [_tool_def.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/_tool_def.py)
-- [_call_tools.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_call_tools.py)
-- [_use_tools.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/solver/_use_tools.py)
+- _tool.py
+- _tool_def.py
+- _call_tools.py
+- _use_tools.py
 
 If AG chain wants environment profiles to vary tool access cleanly, it should not invent a parallel tool substrate.
 
 ### 7. Approval policies
 
-- [_policy.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/approval/_policy.py)
+- _policy.py
 
 This should back tool access control inside tool-oriented environment profiles.
 
 ### 8. MCP integration
 
-- [tool/__init__.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/__init__.py)
-- [tool/_mcp/__init__.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/_mcp/__init__.py)
-- [tool/_mcp/tools.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/tool/_mcp/tools.py)
+- tool/__init__.py
+- tool/_mcp/__init__.py
+- tool/_mcp/tools.py
 
 This matters because future environment profiles will likely vary:
 
@@ -356,8 +356,8 @@ AG chain should compose those profiles over Inspect's tool and MCP substrate rat
 
 ### 9. Compaction
 
-- [_compaction.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_compaction/_compaction.py)
-- [types.py](E:/writing-system/_agchain/_reference/inspect_ai/src/inspect_ai/model/_compaction/types.py)
+- _compaction.py
+- types.py
 
 Inspect compaction should be integrated, but only as a sub-capability inside AG chain statefulness strategies. It is not a replacement for the AG chain statefulness registry.
 
@@ -452,7 +452,7 @@ Inspect is the runtime substrate. It is not the authority on AG chain runtime po
 
 ## Phase 1: Replace the model adapter
 
-Replace [model_adapter.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/adapters/model_adapter.py) with Inspect model resolution.
+Replace model_adapter.py with Inspect model resolution.
 
 Outcome:
 
@@ -462,7 +462,7 @@ Outcome:
 
 ## Phase 2: Rebase step execution on Inspect `Task` and `Sample`
 
-Keep AG chain orchestration, but replace direct call logic in [run_3s.py](E:/writing-system/_agchain/legal-10/runspecs/3-STEP-RUN/run_3s.py) with per-step Inspect tasks.
+Keep AG chain orchestration, but replace direct call logic in run_3s.py with per-step Inspect tasks.
 
 Outcome:
 

@@ -8,7 +8,7 @@ sidebar:
 
 ## Summary
 - Chosen functionality: `Models`, not `Datasets`.
-- Product boundary: `Models` is a **global model registry** at `/app/agchain/models`, consistent with [agchain-platform-architecture.md](E:/writing-system/_agchain/docs/_essentials/platform/agchain-platform-architecture.md).
+- Product boundary: `Models` is a **global model registry** at `/app/agchain/models`, consistent with agchain-platform-architecture.md.
 - Benchmark-scoped model selection stays in existing `agchain_benchmark_model_targets`; it is explicitly out of scope for this functionality.
 - System of record: `public.agchain_model_targets` and `public.agchain_model_health_checks`.
 - Inspect alignment: store a **constrained, explicit subset** of Inspect `GenerateConfig` in `generate_config_jsonb`; reject unknown keys rather than pretending to support full Inspect config.

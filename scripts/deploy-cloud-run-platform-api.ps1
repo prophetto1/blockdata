@@ -48,6 +48,10 @@ param(
   # If omitted, the script will preserve the currently deployed value when possible.
   [string]$AuthRedirectOrigins = '',
 
+  # GCS user-storage bucket name (e.g., blockdata-user-content-prod).
+  # If omitted, the script will preserve the currently deployed value when possible.
+  [string]$GcsUserStorageBucket = '',
+
   # ── OpenTelemetry contract (first-class OTEL inputs) ──
   [string]$OtelEnabled = 'false',
 
@@ -396,6 +400,15 @@ if (-not $AuthRedirectOrigins) {
 }
 if ($AuthRedirectOrigins) {
   $envVarEntries += @("AUTH_REDIRECT_ORIGINS=$AuthRedirectOrigins")
+}
+if (-not $GcsUserStorageBucket) {
+  $GcsUserStorageBucket = $env:GCS_USER_STORAGE_BUCKET
+}
+if (-not $GcsUserStorageBucket) {
+  $GcsUserStorageBucket = Get-ExistingServiceEnvValue -EnvName 'GCS_USER_STORAGE_BUCKET'
+}
+if ($GcsUserStorageBucket) {
+  $envVarEntries += @("GCS_USER_STORAGE_BUCKET=$GcsUserStorageBucket")
 }
 
 # ── Optional: OTLP auth headers via Secret Manager ──

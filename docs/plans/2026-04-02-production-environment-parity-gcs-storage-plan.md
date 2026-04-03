@@ -185,7 +185,9 @@ The implementation is complete only when all of the following are true:
 
 The deploy script uses `--env-vars-file` which replaces ALL non-secret env vars on every deploy. Any env var not in `$envVarEntries` is silently erased. This is the fundamental reason manual `gcloud run services update` fixes do not persist. The deploy script is the only durable path.
 
-The GCS client in platform-api uses `google.cloud.storage.Client()` with no arguments, relying on Application Default Credentials. On Cloud Run, this resolves to the service account identity via the metadata server. No `GOOGLE_APPLICATION_CREDENTIALS` env var is needed in production. The IAM binding on the bucket is what grants access.
+The GCS client in platform-api uses `google.cloud.storage.Client()` with no arguments, relying on Application Default Credentials. On Cloud Run, this resolves to the service account identity via the metadata server. No `GOOGLE_APPLICATION_CREDENTIALS` env var is needed in production. The IAM bindings on the bucket grant object and metadata access.
+
+Signed URL generation has an additional credential dependency. `blob.generate_signed_url()` at `storage.py` line 114 is called with no explicit `credentials` parameter. Locally, the downloaded SA key file contains a private key and signing happens in-process. On Cloud Run, there is no private key — the library detects this and falls back to the IAM `signBlob` API, which requires the SA to have `iam.serviceAccounts.signBlob` permission on itself. This is typically granted via `roles/iam.serviceAccountTokenCreator`. If the SA lacks this permission, signed URL generation fails and the `blockdata.storage.signed_url_signing` readiness check returns `fail` with `"credentials do not include a private key"`. Task 2 includes a preflight check and contingency grant for this.
 
 ### Explicit Risks Accepted In This Plan
 
@@ -257,7 +259,7 @@ gcloud storage buckets add-iam-policy-binding gs://blockdata-user-content-prod \
 
 **Expected output:** Updated IAM policy with the new binding.
 
-**Step 3:** Verify both bindings.
+**Step 3:** Verify both bucket-level bindings.
 
 ```bash
 gcloud storage buckets get-iam-policy gs://blockdata-user-content-prod \
@@ -265,6 +267,31 @@ gcloud storage buckets get-iam-policy gs://blockdata-user-content-prod \
 ```
 
 **Expected output:** Shows `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` under both `roles/storage.objectAdmin` and `roles/storage.legacyBucketReader`.
+
+**Step 4:** Check whether the SA can sign blobs on its own behalf.
+
+On Cloud Run, there is no local private key. `blob.generate_signed_url()` falls back to the IAM `signBlob` API, which requires `iam.serviceAccounts.signBlob` on the SA itself. Check if this is already granted:
+
+```bash
+gcloud iam service-accounts get-iam-policy \
+  blockdata-platform-api-sa@agchain.iam.gserviceaccount.com \
+  --project agchain \
+  --format="table(bindings.role,bindings.members)"
+```
+
+If the output includes `roles/iam.serviceAccountTokenCreator` (or another role granting `iam.serviceAccounts.signBlob`) for the SA or a broader principal, no action is needed.
+
+**Step 5 (contingency):** If Step 4 shows no signing permission, grant self-signing.
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding \
+  blockdata-platform-api-sa@agchain.iam.gserviceaccount.com \
+  --project agchain \
+  --member="serviceAccount:blockdata-platform-api-sa@agchain.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator"
+```
+
+This grants the SA permission to sign blobs on its own behalf. Without this, the `blockdata.storage.signed_url_signing` readiness check will return `fail` on Cloud Run even though bucket permissions are correct.
 
 ### Task 3: Reconcile the CORS artifact with the full intended origin set
 
@@ -447,6 +474,10 @@ GET https://blockdata-platform-api-sqsmf5q2rq-uc.a.run.app/admin/runtime/readine
 - `blockdata.storage.bucket_config` — `ok`
 - `blockdata.storage.signed_url_signing` — `ok`
 - `blockdata.storage.bucket_cors` — `ok`
+
+**Remediation if `signed_url_signing` reports `fail`:** If the check returns `fail` with evidence `"has_signing_credentials": false`, the SA cannot sign blobs on Cloud Run. Return to Task 2 Step 5 and grant `roles/iam.serviceAccountTokenCreator`. The new IAM binding takes effect within minutes — no redeploy needed. Re-check the readiness endpoint after granting.
+
+**Remediation if `bucket_cors` reports `unknown`:** If the check returns `unknown` with `error_type`, the SA cannot read bucket metadata. Return to Task 2 Step 2 and verify the `roles/storage.legacyBucketReader` binding was applied.
 
 **Step 4:** Verify browser upload from production origin.
 
