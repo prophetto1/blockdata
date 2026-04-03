@@ -39,7 +39,7 @@ This plan is derived from:
 
 3. **No production CORS origins.** `ops/gcs/user-storage-cors.json` only lists `localhost:5374` and `localhost:5375`. The production web origin `https://blockdata.run` is absent. Browser uploads from the live site fail with `Failed to fetch` on the signed PUT to GCS.
 
-4. **Service account IAM gap.** The Cloud Run service `blockdata-platform-api` runs as `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com`. This SA needs `roles/storage.objectAdmin` on the production bucket. Local dev uses a different SA (`gcs-access-sa@agchain.iam.gserviceaccount.com`) with a downloaded key file. The production SA's GCS permissions have not been granted because the production bucket does not exist yet.
+4. **Service account IAM gap.** The Cloud Run service `blockdata-platform-api` runs as `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com`. This SA needs two roles on the production bucket: `roles/storage.objectAdmin` for object operations (upload, download, delete, signed URLs) and `roles/storage.legacyBucketReader` for bucket metadata reads. The metadata read is required because the runtime readiness check `blockdata.storage.bucket_cors` calls `bucket.reload()` (`runtime_readiness.py` line 249) which requires the `storage.buckets.get` permission — a permission not included in `roles/storage.objectAdmin`. Without it, the CORS readiness check falls to the exception handler and returns `unknown` instead of `ok`. Local dev uses a different SA (`gcs-access-sa@agchain.iam.gserviceaccount.com`) with a downloaded key file. The production SA's GCS permissions have not been granted because the production bucket does not exist yet.
 
 5. **`.env.example` gap.** The `.env.example` file does not document `GCS_USER_STORAGE_BUCKET`, `GOOGLE_APPLICATION_CREDENTIALS`, or `USER_STORAGE_MAX_FILE_BYTES`. A developer cloning the repo has no template for the storage surface.
 
@@ -141,7 +141,7 @@ No major infrastructure, naming, or IAM decision may be improvised during implem
 1. The production bucket name is `blockdata-user-content-prod`, matching the approved storage quota design.
 2. The production bucket location is `us-central1`, matching the Cloud Run service region.
 3. The production bucket uses uniform bucket-level access (no per-object ACLs).
-4. The Cloud Run service account `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` receives `roles/storage.objectAdmin` on the production bucket.
+4. The Cloud Run service account `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` receives two IAM roles on the production bucket: `roles/storage.objectAdmin` (object operations) and `roles/storage.legacyBucketReader` (bucket metadata reads, required by the `bucket_cors` readiness check which calls `bucket.reload()`).
 5. The production web origin for CORS is `https://blockdata.run`. No wildcard origins.
 6. The deploy script parameter is named `GcsUserStorageBucket` (PascalCase, matching existing parameter naming convention).
 7. The `.env.example` documents the GCS storage vars so future developers can set up a working local environment.
@@ -151,11 +151,11 @@ No major infrastructure, naming, or IAM decision may be improvised during implem
 The implementation is complete only when all of the following are true:
 
 1. `gcloud storage buckets describe gs://blockdata-user-content-prod --project agchain` succeeds.
-2. `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` has `roles/storage.objectAdmin` on the bucket.
+2. `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` has `roles/storage.objectAdmin` and `roles/storage.legacyBucketReader` on the bucket.
 3. The bucket CORS policy includes `https://blockdata.run` with methods `PUT`, `GET`, `HEAD`, `OPTIONS`.
 4. The deploy script accepts `-GcsUserStorageBucket blockdata-user-content-prod` and includes it in the env vars file.
 5. After a fresh deploy using the updated script, `gcloud run services describe blockdata-platform-api --project agchain --region us-central1 --format json` shows `GCS_USER_STORAGE_BUCKET=blockdata-user-content-prod` in the container env.
-6. The live `GET /admin/runtime/readiness?surface=blockdata` endpoint reports `ok` for `blockdata.storage.bucket_config`.
+6. The live `GET /admin/runtime/readiness?surface=blockdata` endpoint reports `ok` for all three storage checks: `blockdata.storage.bucket_config`, `blockdata.storage.signed_url_signing`, and `blockdata.storage.bucket_cors`.
 7. A browser upload from `https://blockdata.run` succeeds (signed PUT to GCS does not fail CORS).
 
 ### Locked Inventory Counts
@@ -163,8 +163,8 @@ The implementation is complete only when all of the following are true:
 #### Infrastructure
 
 - New GCS buckets: 1 (`blockdata-user-content-prod`)
-- New IAM bindings: 1 (SA on bucket)
-- CORS policy applications: 1 (prod bucket)
+- New IAM bindings: 2 (`roles/storage.objectAdmin` + `roles/storage.legacyBucketReader` on bucket)
+- CORS policy applications: 2 (prod bucket + dev bucket reconciliation)
 
 #### Repository
 
@@ -178,7 +178,7 @@ The implementation is complete only when all of the following are true:
 | File | What changes |
 |------|-------------|
 | `scripts/deploy-cloud-run-platform-api.ps1` | Add `$GcsUserStorageBucket` parameter and conditional `$envVarEntries` entry |
-| `ops/gcs/user-storage-cors.json` | Add `https://blockdata.run` to the origins array |
+| `ops/gcs/user-storage-cors.json` | Reconcile with full intended dev + prod origin set; add `https://blockdata.run`, verify no drift from live bucket state |
 | `.env.example` | Add `GCS_USER_STORAGE_BUCKET`, `GOOGLE_APPLICATION_CREDENTIALS`, `USER_STORAGE_MAX_FILE_BYTES`, `STORAGE_CLEANUP_INTERVAL_SECONDS` with comments |
 
 ### Frozen Seam Contract
@@ -232,7 +232,12 @@ gcloud storage buckets describe gs://blockdata-user-content-prod --project agcha
 
 ### Task 2: Grant the Cloud Run service account access
 
-**Step 1:** Add the IAM binding.
+Two roles are required:
+
+- `roles/storage.objectAdmin` — object operations (upload, download, delete, signed URL generation)
+- `roles/storage.legacyBucketReader` — bucket metadata reads (required by the `blockdata.storage.bucket_cors` readiness check, which calls `bucket.reload()` at `runtime_readiness.py` line 249; this requires `storage.buckets.get`, a permission not included in `roles/storage.objectAdmin`)
+
+**Step 1:** Add the object admin IAM binding.
 
 ```bash
 gcloud storage buckets add-iam-policy-binding gs://blockdata-user-content-prod \
@@ -242,21 +247,51 @@ gcloud storage buckets add-iam-policy-binding gs://blockdata-user-content-prod \
 
 **Expected output:** Updated IAM policy with the new binding.
 
-**Step 2:** Verify the binding.
+**Step 2:** Add the bucket metadata read IAM binding.
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://blockdata-user-content-prod \
+  --member="serviceAccount:blockdata-platform-api-sa@agchain.iam.gserviceaccount.com" \
+  --role="roles/storage.legacyBucketReader"
+```
+
+**Expected output:** Updated IAM policy with the new binding.
+
+**Step 3:** Verify both bindings.
 
 ```bash
 gcloud storage buckets get-iam-policy gs://blockdata-user-content-prod \
-  --format="table(bindings.role,bindings.members)" \
-  | grep -A1 objectAdmin
+  --format="table(bindings.role,bindings.members)"
 ```
 
-**Expected output:** Shows `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` under `roles/storage.objectAdmin`.
+**Expected output:** Shows `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` under both `roles/storage.objectAdmin` and `roles/storage.legacyBucketReader`.
 
-### Task 3: Update the CORS artifact with production origins
+### Task 3: Reconcile the CORS artifact with the full intended origin set
 
 **File:** `ops/gcs/user-storage-cors.json`
 
-**Step 1:** Add `https://blockdata.run` to the origin array.
+The checked-in artifact is the source of truth for both buckets. This task reconciles it with the full intended dev + prod origin set, then applies it to both buckets so the artifact and live state are identical.
+
+**Step 1:** Read the current live CORS state of the dev bucket to check for drift.
+
+```bash
+gcloud storage buckets describe gs://blockdata-user-content-dev \
+  --format="default(cors_config)"
+```
+
+Compare the output against the checked-in `ops/gcs/user-storage-cors.json`. If the live bucket has origins not in the artifact, those origins must be evaluated: add them to the artifact if they are still needed, or accept their removal if they are stale.
+
+**Step 2:** Write the authoritative CORS artifact containing the full intended origin set.
+
+The file must contain exactly these origins and no others:
+
+| Origin | Environment | Purpose |
+|--------|-------------|---------|
+| `http://127.0.0.1:5374` | Dev | Vite dev server (IP) |
+| `http://localhost:5374` | Dev | Vite dev server (hostname) |
+| `http://127.0.0.1:5375` | Dev | Alternate dev port (IP) |
+| `http://localhost:5375` | Dev | Alternate dev port (hostname) |
+| `https://blockdata.run` | Prod | Production web app |
 
 The file should become:
 
@@ -282,30 +317,32 @@ The file should become:
 ]
 ```
 
-**Step 2:** Apply the CORS policy to the production bucket.
+If Step 1 revealed additional origins that should be kept, add them to the artifact here. Do not silently drop origins that are still in use.
+
+**Step 3:** Apply the reconciled artifact to the production bucket.
 
 ```bash
 gcloud storage buckets update gs://blockdata-user-content-prod \
   --cors-file=ops/gcs/user-storage-cors.json
 ```
 
-**Step 3:** Verify the applied policy.
-
-```bash
-gcloud storage buckets describe gs://blockdata-user-content-prod \
-  --format="default(cors_config)"
-```
-
-**Expected output:** Shows the CORS config with `https://blockdata.run` in the origin list and `PUT`, `GET`, `HEAD`, `OPTIONS` in methods.
-
-**Step 4:** Also update the dev bucket CORS to match (keeps both buckets in sync with the checked-in artifact).
+**Step 4:** Apply the same artifact to the dev bucket (reconciles live state with the checked-in source of truth).
 
 ```bash
 gcloud storage buckets update gs://blockdata-user-content-dev \
   --cors-file=ops/gcs/user-storage-cors.json
 ```
 
-**Commit:** `fix: add production origin to GCS user-storage CORS artifact`
+**Step 5:** Verify both buckets match the artifact.
+
+```bash
+gcloud storage buckets describe gs://blockdata-user-content-prod --format="default(cors_config)"
+gcloud storage buckets describe gs://blockdata-user-content-dev --format="default(cors_config)"
+```
+
+**Expected output:** Both buckets show identical CORS config matching the checked-in artifact: all five origins, methods `PUT`, `GET`, `HEAD`, `OPTIONS`, response headers `Content-Type`, `Content-Disposition`, `ETag`, `x-goog-resumable`.
+
+**Commit:** `fix: reconcile GCS user-storage CORS artifact with full dev + prod origin set`
 
 ### Task 4: Add GCS bucket parameter to the deploy script
 
@@ -384,6 +421,8 @@ STORAGE_CLEANUP_INTERVAL_SECONDS=300
   -AuthRedirectOrigins "http://localhost:5374,http://127.0.0.1:5374,http://localhost:5375,http://127.0.0.1:5375,https://blockdata.run"
 ```
 
+Note on `-SecretName conversion-service-key`: the deploy script defaults to `platform-api-m2m-token`, but the actual Secret Manager secret in the `agchain` GCP project is named `conversion-service-key`. This is existing infrastructure — every prior production deploy has passed this flag. This plan does not change secret provenance; it uses the established correct invocation.
+
 Note: this deploy should be coordinated with the live browser remediation checklist (step 3) since both require a platform-api redeploy.
 
 **Step 2:** Verify the env var is set on the deployed service.
@@ -451,7 +490,7 @@ This confirms that the preserve-existing-value pattern works and the bucket conf
 The work is complete only when all of the following are true:
 
 1. `gs://blockdata-user-content-prod` exists in GCP project `agchain`, region `us-central1`, with uniform bucket-level access.
-2. `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` has `roles/storage.objectAdmin` on that bucket.
+2. `blockdata-platform-api-sa@agchain.iam.gserviceaccount.com` has `roles/storage.objectAdmin` and `roles/storage.legacyBucketReader` on that bucket.
 3. The bucket CORS policy includes `https://blockdata.run` with methods `PUT`, `GET`, `HEAD`, `OPTIONS`.
 4. `scripts/deploy-cloud-run-platform-api.ps1` accepts `-GcsUserStorageBucket` and preserves the value across redeploys.
 5. `.env.example` documents all GCS storage vars.

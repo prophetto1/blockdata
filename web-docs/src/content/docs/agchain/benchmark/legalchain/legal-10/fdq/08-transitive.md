@@ -6,9 +6,9 @@ sidebar:
 
 # FDQ: TRANSITIVE — Triangle Citation Prediction
 
-**Version:** 1.0  
-**Date:** 2026-01-23  
-**Status:** Implementation-Ready  
+**Version:** 2.0
+**Date:** 2026-01-27
+**Status:** Implementation-Ready
 **Chain Position:** 8
 
 ---
@@ -24,35 +24,99 @@ sidebar:
 
 ---
 
-## 2. Prompt Template
+## 2. Purpose
+
+This question tests whether the model can reason about transitive citation relationships.
+
+**Setup:**
+- Model has completed 7 prior steps in the chain
+- We construct a citation triangle: three SCOTUS cases A, B, C where:
+  - Case B cites Case A (edge B→A)
+  - Case C cites Case B (edge C→B)
+  - Case C also cites Case A (edge C→A, this is ground truth)
+- Temporal ordering: A decided before B, B decided before C
+
+**Test:**
+- We give the model two known edges (B→A treatment, C→B treatment)
+- We ask the model to predict the third edge (C→A treatment)
+- Ground truth is the actual C→A edge from Shepard's
+
+**Failure mode:**
+- Model applies naive transitive logic (e.g., "if C follows B and B distinguishes A, then C must distinguish A")
+- Model fails to recognize that citation relationships are not mathematically transitive
+- Model ignores the complexity of legal citation patterns
+
+---
+
+## 3. System Prompt
+
+---
+
+## 4. TASK Window Content
 
 ```
-Consider the following citation triangle:
+<<<BEGIN_TASK>>>
 
-Case A: {CASE_A_NAME}, {CASE_A_CITE} ({CASE_A_YEAR})
-Case B: {CASE_B_NAME}, {CASE_B_CITE} ({CASE_B_YEAR})
-Case C: {CASE_C_NAME}, {CASE_C_CITE} ({CASE_C_YEAR})
+CITATION TRIANGLE PREDICTION
 
-Known relationships:
-- Case B's treatment of Case A: {TREATMENT_B_TO_A} (agree: {AGREE_B_TO_A})
-- Case C's treatment of Case B: {TREATMENT_C_TO_B} (agree: {AGREE_C_TO_B})
+Consider the following citation triangle involving three Supreme Court cases:
 
-Note: All placeholder values are strings. AGREE values are "TRUE" or "FALSE".
+| Case | Name | Citation | Year |
+|------|------|----------|------|
+| Case A (oldest) | {CASE_A_NAME} | {CASE_A_CITE} | {CASE_A_YEAR} |
+| Case B (middle) | {CASE_B_NAME} | {CASE_B_CITE} | {CASE_B_YEAR} |
+| Case C (newest) | {CASE_C_NAME} | {CASE_C_CITE} | {CASE_C_YEAR} |
 
-Based on the citation patterns and the known relationships, predict how Case C treats Case A.
+KNOWN CITATION RELATIONSHIPS:
 
-Respond in the following JSON format:
-{
-  "predicted_treatment": "<treatment value>",
-  "predicted_agree": "<TRUE or FALSE>"
-}
+1. Case B's treatment of Case A:
+   - Treatment: {TREATMENT_B_TO_A}
+   - Agreement: {AGREE_B_TO_A}
 
-Valid treatment values: FOLLOWS, DISTINGUISHES, QUESTIONS, CRITICIZES, OVERRULES, LIMITS, CITES, EXPLAINS
+2. Case C's treatment of Case B:
+   - Treatment: {TREATMENT_C_TO_B}
+   - Agreement: {AGREE_C_TO_B}
+
+YOUR TASK:
+
+Based on the citation patterns and known relationships above, predict how Case C treats Case A.
+
+Note: Citation relationships are not always transitive. Just because C follows B and B distinguishes A does not necessarily mean C distinguishes A. Consider the legal reasoning patterns that might apply.
+
+TREATMENT VOCABULARY:
+- FOLLOWS: Applies or relies on the precedent
+- DISTINGUISHES: Explains why the precedent does not control
+- QUESTIONS: Expresses doubt about the precedent
+- CRITICIZES: Explicitly criticizes the precedent
+- OVERRULES: Explicitly overrules the precedent
+- LIMITS: Narrows the precedent's scope
+- CITES: Mentions without significant treatment
+- EXPLAINS: Describes neutrally
+
+<<<END_TASK>>>
 ```
 
 ---
 
-## 3. Data Requirements
+## 5. OUTPUT_GUARD Window Content
+
+```
+<<<BEGIN_OUTPUT_GUARD>>>
+
+Respond with a JSON object containing exactly these fields:
+{
+  "predicted_treatment": "<one of: FOLLOWS, DISTINGUISHES, QUESTIONS, CRITICIZES, OVERRULES, LIMITS, CITES, EXPLAINS>",
+  "predicted_agree": "<TRUE or FALSE>"
+}
+
+Return only the JSON. No explanation.
+
+<<<END_OUTPUT_GUARD>>>
+```
+
+---
+
+## 6. Data Requirements
 
 | Table | Columns Used | Role |
 |-------|--------------|------|
@@ -66,12 +130,12 @@ Valid treatment values: FOLLOWS, DISTINGUISHES, QUESTIONS, CRITICIZES, OVERRULES
 
 ---
 
-## 4. Eligibility Criteria
+## 7. Eligibility Criteria
 
 ```sql
 -- Find complete triangles: A, B, C where B→A, C→B, and C→A all exist
 WITH edges AS (
-    SELECT 
+    SELECT
         s.citing_lexis,
         s.cited_lexis,
         s.treatment_norm,
@@ -89,7 +153,7 @@ WITH edges AS (
       AND s.treatment_norm IS NOT NULL
       AND s.agree IS NOT NULL
 )
-SELECT 
+SELECT
     e_ba.cited_usCite AS case_a_cite,
     e_ba.citing_usCite AS case_b_cite,
     e_cb.citing_usCite AS case_c_cite,
@@ -112,13 +176,13 @@ LIMIT 1000;
 
 ---
 
-## 5. Instantiation Query
+## 8. Instantiation
 
-### 5.1 Find Triangle for Anchor
+### 8.1 Find Triangle for Anchor
 
 ```sql
 WITH edges AS (
-    SELECT 
+    SELECT
         s.citing_lexis,
         s.cited_lexis,
         s.treatment_norm,
@@ -136,7 +200,7 @@ WITH edges AS (
       AND s.treatment_norm IS NOT NULL
       AND s.agree IS NOT NULL
 )
-SELECT 
+SELECT
     -- Case A (oldest, cited by B)
     e_ba.cited_usCite AS case_a_cite,
     e_ba.cited_caseName AS case_a_name,
@@ -168,7 +232,7 @@ ORDER BY e_ba.treatment_norm, e_cb.treatment_norm  -- Deterministic selection
 LIMIT 1;
 ```
 
-### 5.2 Instantiation Procedure
+### 8.2 Instantiation Procedure
 
 1. Query for complete triangle where anchor is Case C
 2. Extract all metadata and edge data
@@ -176,9 +240,27 @@ LIMIT 1;
 4. Convert boolean `agree_b_to_a` and `agree_c_to_b` to strings: `True` → `"TRUE"`, `False` → `"FALSE"`
 5. Populate placeholders for A, B, C and known edges B→A, C→B
 
+### 8.3 Placeholder Mapping
+
+| Placeholder | Source |
+|-------------|--------|
+| `{CASE_A_NAME}` | `case_a_name` |
+| `{CASE_A_CITE}` | `case_a_cite` |
+| `{CASE_A_YEAR}` | `case_a_year` |
+| `{CASE_B_NAME}` | `case_b_name` |
+| `{CASE_B_CITE}` | `case_b_cite` |
+| `{CASE_B_YEAR}` | `case_b_year` |
+| `{CASE_C_NAME}` | `case_c_name` |
+| `{CASE_C_CITE}` | `case_c_cite` |
+| `{CASE_C_YEAR}` | `case_c_year` |
+| `{TREATMENT_B_TO_A}` | `treatment_b_to_a` (uppercased) |
+| `{AGREE_B_TO_A}` | `agree_b_to_a` (as "TRUE"/"FALSE") |
+| `{TREATMENT_C_TO_B}` | `treatment_c_to_b` (uppercased) |
+| `{AGREE_C_TO_B}` | `agree_c_to_b` (as "TRUE"/"FALSE") |
+
 ---
 
-## 6. Response Format
+## 9. Response Format + Parsing
 
 **Type:** Structured JSON
 
@@ -190,10 +272,10 @@ LIMIT 1;
 }
 ```
 
-**Parsing rules:**
+**Parsing:**
 ```python
 VALID_TREATMENTS = {
-    "FOLLOWS", "DISTINGUISHES", "QUESTIONS", "CRITICIZES", 
+    "FOLLOWS", "DISTINGUISHES", "QUESTIONS", "CRITICIZES",
     "OVERRULES", "LIMITS", "CITES", "EXPLAINS"
 }
 
@@ -203,12 +285,12 @@ def parse_response(response: str) -> dict:
         data = json.loads(response)
         treatment = data.get("predicted_treatment", "").strip().upper()
         agree = data.get("predicted_agree", "").strip().upper()
-        
+
         if treatment not in VALID_TREATMENTS:
             treatment = "INVALID"
         if agree not in ("TRUE", "FALSE"):
             agree = "INVALID"
-            
+
         return {"treatment": treatment, "agree": agree}
     except json.JSONDecodeError:
         return {"treatment": "INVALID", "agree": "INVALID"}
@@ -216,9 +298,9 @@ def parse_response(response: str) -> dict:
 
 ---
 
-## 7. Scoring Specification
+## 10. Scoring
 
-### 7.1 Ground Truth
+### 10.1 Ground Truth
 
 GT is the **actual** C→A edge from Shepard's — NOT a theoretical expectation matrix.
 
@@ -231,18 +313,22 @@ def compute_gt(gt_treatment_norm: str, gt_agree: bool) -> dict:
     }
 ```
 
-### 7.2 Scoring Function
+### 10.2 Scoring Function
 
 ```python
-def score_transitive(response: dict, gt_treatment: str, gt_agree: str) -> float:
+def score_transitive(response: dict, gt_treatment: str, gt_agree: str) -> dict:
     """Score transitive prediction."""
     treatment_score = 1.0 if response["treatment"] == gt_treatment.upper() else 0.0
     agree_score = 1.0 if response["agree"] == gt_agree else 0.0
-    
-    return 0.5 * treatment_score + 0.5 * agree_score
+
+    return {
+        "predicted_treatment": treatment_score,
+        "predicted_agree": agree_score,
+        "total": 0.5 * treatment_score + 0.5 * agree_score
+    }
 ```
 
-### 7.3 Scoring Summary
+### 10.3 Scoring Summary
 
 | Sub-question | Weight | Metric |
 |--------------|--------|--------|
@@ -251,7 +337,22 @@ def score_transitive(response: dict, gt_treatment: str, gt_agree: str) -> float:
 
 ---
 
-## 8. Example Instance
+## 11. Treatment Vocabulary (Frozen)
+
+| Shepard's Value | Response Enum | Polarity Bucket |
+|-----------------|---------------|-----------------|
+| follows | FOLLOWS | in_favor |
+| distinguishes | DISTINGUISHES | against |
+| questions | QUESTIONS | against |
+| criticizes | CRITICIZES | against |
+| overrules | OVERRULES | against |
+| limits | LIMITS | against |
+| cites | CITES | neutral |
+| explains | EXPLAINS | neutral |
+
+---
+
+## 12. Example Instance
 
 **Triangle:**
 - **Case A:** Miranda v. Arizona, 384 U.S. 436 (1966)
@@ -259,29 +360,80 @@ def score_transitive(response: dict, gt_treatment: str, gt_agree: str) -> float:
 - **Case C:** Oregon v. Hass, 420 U.S. 714 (1975)
 
 **Known edges (given to model):**
-- B→A: `distinguishes`, agree=FALSE
-- C→B: `follows`, agree=TRUE
+- B→A: `DISTINGUISHES`, agree=FALSE
+- C→B: `FOLLOWS`, agree=TRUE
 
 **Ground Truth (C→A edge from Shepard's):**
 - `treatment_norm` = "distinguishes"
 - `agree` = FALSE
 
-**Instantiated Prompt:**
+### Full Assembled Message
+
 ```
-Consider the following citation triangle:
+messages[0] = {role: "system", content: "[shared benchmark system prompt]"}
 
-Case A: Miranda v. Arizona, 384 U.S. 436 (1966)
-Case B: Harris v. New York, 401 U.S. 222 (1971)
-Case C: Oregon v. Hass, 420 U.S. 714 (1975)
+messages[1] = {role: "user", content: "<<<BEGIN_ENV>>>
+benchmark: Legal-10
+step: 8 of 10
+step_id: TRANSITIVE
+<<<END_ENV>>>"}
 
-Known relationships:
-- Case B's treatment of Case A: DISTINGUISHES (agree: FALSE)
-- Case C's treatment of Case B: FOLLOWS (agree: TRUE)
+messages[2] = {role: "user", content: "<<<BEGIN_ANCHOR_PACK>>>
+[p1 content - anchor opinion text for Oregon v. Hass]
+<<<END_ANCHOR_PACK>>>"}
 
-Based on the citation patterns and the known relationships, predict how Case C treats Case A.
+messages[3] = {role: "user", content: "<<<BEGIN_TASK>>>
+
+CITATION TRIANGLE PREDICTION
+
+Consider the following citation triangle involving three Supreme Court cases:
+
+| Case | Name | Citation | Year |
+|------|------|----------|------|
+| Case A (oldest) | Miranda v. Arizona | 384 U.S. 436 | 1966 |
+| Case B (middle) | Harris v. New York | 401 U.S. 222 | 1971 |
+| Case C (newest) | Oregon v. Hass | 420 U.S. 714 | 1975 |
+
+KNOWN CITATION RELATIONSHIPS:
+
+1. Case B's treatment of Case A:
+   - Treatment: DISTINGUISHES
+   - Agreement: FALSE
+
+2. Case C's treatment of Case B:
+   - Treatment: FOLLOWS
+   - Agreement: TRUE
+
+YOUR TASK:
+
+Based on the citation patterns and known relationships above, predict how Case C treats Case A.
+
+Note: Citation relationships are not always transitive. Just because C follows B and B distinguishes A does not necessarily mean C distinguishes A. Consider the legal reasoning patterns that might apply.
+
+TREATMENT VOCABULARY:
+- FOLLOWS: Applies or relies on the precedent
+- DISTINGUISHES: Explains why the precedent does not control
+- QUESTIONS: Expresses doubt about the precedent
+- CRITICIZES: Explicitly criticizes the precedent
+- OVERRULES: Explicitly overrules the precedent
+- LIMITS: Narrows the precedent's scope
+- CITES: Mentions without significant treatment
+- EXPLAINS: Describes neutrally
+
+<<<END_TASK>>>"}
+
+messages[4] = {role: "user", content: "<<<BEGIN_OUTPUT_GUARD>>>
+Respond with a JSON object containing exactly these fields:
+{
+  \"predicted_treatment\": \"<one of: FOLLOWS, DISTINGUISHES, QUESTIONS, CRITICIZES, OVERRULES, LIMITS, CITES, EXPLAINS>\",
+  \"predicted_agree\": \"<TRUE or FALSE>\"
+}
+Return only the JSON. No explanation.
+<<<END_OUTPUT_GUARD>>>"}
 ```
 
-**Expected Response:**
+### Expected Response
+
 ```json
 {
   "predicted_treatment": "DISTINGUISHES",
@@ -289,11 +441,14 @@ Based on the citation patterns and the known relationships, predict how Case C t
 }
 ```
 
-**Score:** 1.0 (both match GT)
+### Scoring
+- GT treatment = DISTINGUISHES ✓
+- GT agree = FALSE ✓
+- Score = 1.0
 
 ---
 
-## 9. Design Notes
+## 13. Design Rationale
 
 ### Why This Works (Unlike TRANS-TREATMENT)
 
@@ -307,21 +462,50 @@ Based on the citation patterns and the known relationships, predict how Case C t
 ### What This Question Tests
 
 - Can the model reason about citation relationships?
-- Does it understand that C following B≠C following A?
+- Does it understand that C following B ≠ C following A?
 - Can it detect when transitive inference would be wrong?
 
 The model should use the triangle context to make an informed prediction, but the GT is what actually happened — not what "should" happen theoretically.
 
+### Why Use Actual Shepard's Edge as GT?
+
+A theoretical "transitivity matrix" (e.g., "if B follows A and C follows B, then C follows A") does not match reality. Legal citation relationships are more nuanced:
+- A case can follow one aspect of a precedent while distinguishing another
+- Courts make independent judgments about earlier cases
+- The reasoning chain B→A + C→B does not determine C→A
+
+Using the actual C→A edge from Shepard's ensures we test whether the model can predict real citation behavior, not whether it can follow an artificial rule.
+
+### Why Temporal Ordering Matters
+
+The constraint A < B < C (by decision date) ensures:
+- Case B could actually cite Case A (B came after A)
+- Case C could actually cite both (C came after A and B)
+- The triangle represents a real citation evolution over time
+
+### Why This Is Level 3 Reasoning
+
+Unlike single-edge questions (Level 2), this requires:
+- Understanding two separate citation relationships
+- Reasoning about how they might combine
+- Recognizing when naive transitivity fails
+
 ---
 
-## 10. FDQ Checklist
+## 14. FDQ Checklist
 
-- [x] Question ID + family assigned
-- [x] Complete prompt template with `{PLACEHOLDERS}`
-- [x] Data requirements: complete triangle from shepards_edges
-- [x] Eligibility predicate: all 3 edges exist
-- [x] GT computation: actual C→A edge (not theoretical matrix)
-- [x] Response format: treatment + agree
-- [x] Scoring: exact match with equal weights
+- [x] Question ID + family
+- [x] Purpose documented
+- [x] System prompt (shared reference)
+- [x] TASK window content with placeholders
+- [x] OUTPUT_GUARD window content
+- [x] Data requirements with triangle structure
+- [x] Eligibility predicate (complete triangle SQL)
+- [x] Instantiation query + procedure + mapping
+- [x] Response format + parsing
+- [x] Scoring with actual Shepard's GT
+- [x] Treatment vocabulary frozen
+- [x] Full example with assembled messages
+- [x] Design rationale (preserved + expanded)
 
 **Status: ✅ FULLY DEVELOPED**
