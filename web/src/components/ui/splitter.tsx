@@ -49,7 +49,7 @@ function SplitterResizeTriggerIndicator({ className, ...props }: React.Component
   return (
     <ArkSplitter.ResizeTriggerIndicator
       className={cn(
-        'relative z-10 rounded-full border border-[#3a3a3a] bg-popover shadow-md shadow-black/20',
+        'relative z-10 rounded-full border border-[#3a3a3a] bg-[#111110] shadow-[0_1px_3px_0_rgb(0_0_0/0.2),0_1px_2px_-1px_rgb(0_0_0/0.15)]',
         'data-[orientation=horizontal]:h-6 data-[orientation=horizontal]:w-1.5',
         'data-[orientation=vertical]:w-6 data-[orientation=vertical]:h-1.5',
         className,

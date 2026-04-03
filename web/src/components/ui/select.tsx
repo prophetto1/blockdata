@@ -101,7 +101,7 @@ function SelectContent({ className, ...props }: React.ComponentProps<typeof ArkS
         <ArkSelect.Content
           className={cn(
             'z-50 min-w-[var(--reference-width)] overflow-y-auto rounded-md border border-[#3a3a3a] bg-popover p-1',
-            'shadow-lg shadow-black/30',
+            'shadow-[0_4px_6px_-1px_rgb(0_0_0/0.2),0_2px_4px_-2px_rgb(0_0_0/0.12)]',
             'max-h-[min(var(--available-height,300px),300px)]',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',

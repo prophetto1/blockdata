@@ -93,8 +93,8 @@ export default function AgchainDatasetsPage() {
 
   return (
     <AgchainPageFrame>
-      <div className="flex flex-col gap-6 py-6">
-        <div>
+      <div className="flex min-h-0 flex-1 flex-col gap-6 py-6">
+        <div className="shrink-0">
           <h1 className="text-2xl font-bold text-foreground">Datasets</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage evaluation datasets for {scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}.
@@ -102,7 +102,7 @@ export default function AgchainDatasetsPage() {
         </div>
 
         {error && (
-          <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="shrink-0 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}

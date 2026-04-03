@@ -16,8 +16,8 @@ function PaginationPrevTrigger({ className, ...props }: React.ComponentProps<typ
     <ArkPagination.PrevTrigger
       className={cn(
         'inline-flex items-center justify-center rounded-md border border-[#3a3a3a] bg-transparent px-2 h-9 text-sm font-medium text-foreground',
-        'hover:bg-white/5',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'hover:bg-[#222221]',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
         'disabled:opacity-50 disabled:pointer-events-none',
         className,
       )}
@@ -32,8 +32,8 @@ function PaginationNextTrigger({ className, ...props }: React.ComponentProps<typ
     <ArkPagination.NextTrigger
       className={cn(
         'inline-flex items-center justify-center rounded-md border border-[#3a3a3a] bg-transparent px-2 h-9 text-sm font-medium text-foreground',
-        'hover:bg-white/5',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'hover:bg-[#222221]',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
         'disabled:opacity-50 disabled:pointer-events-none',
         className,
       )}
@@ -48,8 +48,8 @@ function PaginationItem({ className, ...props }: React.ComponentProps<typeof Ark
     <ArkPagination.Item
       className={cn(
         'inline-flex items-center justify-center rounded-md border border-[#3a3a3a] bg-transparent min-w-9 h-9 px-2 text-sm font-medium text-foreground',
-        'hover:bg-white/5',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'hover:bg-[#222221]',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
         'data-[selected]:bg-primary data-[selected]:border-primary data-[selected]:text-primary-foreground',
         'disabled:opacity-50',
         className,

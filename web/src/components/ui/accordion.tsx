@@ -27,7 +27,7 @@ function AccordionItemTrigger({ className, ...props }: React.ComponentProps<type
       className={cn(
         'flex w-full items-center justify-between gap-3 bg-transparent border-0 px-0 py-3 text-left text-sm font-semibold text-foreground',
         'hover:text-foreground/80',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
         'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed',
         className,
       )}

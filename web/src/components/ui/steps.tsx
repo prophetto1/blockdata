@@ -45,7 +45,7 @@ function StepsTrigger({ className, ...props }: React.ComponentProps<typeof ArkSt
     <ArkSteps.Trigger
       className={cn(
         'flex items-center gap-3 rounded-md bg-transparent border-none p-0 text-sm font-medium text-foreground',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
@@ -62,7 +62,7 @@ function StepsIndicator({ className, ...props }: React.ComponentProps<typeof Ark
       className={cn(
         'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
         'data-[incomplete]:border-2 data-[incomplete]:border-[#3a3a3a] data-[incomplete]:text-muted-foreground',
-        'data-[current]:border-2 data-[current]:border-primary data-[current]:bg-primary/10 data-[current]:text-primary',
+        'data-[current]:border-2 data-[current]:border-primary data-[current]:bg-[#55221e] data-[current]:text-[#f47a5c]',
         'data-[complete]:border-2 data-[complete]:border-primary data-[complete]:bg-primary data-[complete]:text-primary-foreground',
         className,
       )}
@@ -104,7 +104,7 @@ function StepsContent({ className, ...props }: React.ComponentProps<typeof ArkSt
 function StepsCompletedContent({ className, ...props }: React.ComponentProps<typeof ArkSteps.CompletedContent>) {
   return (
     <ArkSteps.CompletedContent
-      className={cn('text-sm font-medium text-primary', className)}
+      className={cn('text-sm font-medium text-[#f47a5c]', className)}
       data-slot="steps-completed-content"
       {...props}
     />
