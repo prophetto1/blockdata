@@ -240,7 +240,7 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
           <div className="flex flex-col gap-5">
             <h2 className="text-lg font-semibold text-foreground">Source Configuration</h2>
 
-            <SegmentGroupRoot value={sourceType} onValueChange={(details) => setSourceType(details.value)}>
+            <SegmentGroupRoot value={sourceType} onValueChange={(details) => { if (details.value) setSourceType(details.value); }}>
               {SOURCE_TYPES.map((type) => (
                 <SegmentGroupItem key={type} value={type} className="rounded-md px-4 py-2 text-sm">
                   {type === 'huggingface' ? 'HuggingFace' : type.toUpperCase()}

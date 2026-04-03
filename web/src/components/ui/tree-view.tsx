@@ -3,7 +3,8 @@ import { cn } from '@/lib/utils';
 
 export { createTreeCollection };
 
-function TreeViewRoot({ className, ...props }: React.ComponentProps<typeof ArkTreeView.Root>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function TreeViewRoot({ className, ...props }: React.ComponentProps<typeof ArkTreeView.Root<any>>) {
   return (
     <ArkTreeView.Root
       className={cn('flex w-full flex-col gap-2', className)}

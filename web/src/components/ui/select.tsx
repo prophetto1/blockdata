@@ -6,7 +6,8 @@ import { cn } from '@/lib/utils';
 export { createListCollection };
 
 /* ── Root ── */
-function SelectRoot({ className, ...props }: React.ComponentProps<typeof ArkSelect.Root>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function SelectRoot({ className, ...props }: React.ComponentProps<typeof ArkSelect.Root<any>>) {
   return (
     <ArkSelect.Root
       className={cn('flex flex-col gap-1.5', className)}
