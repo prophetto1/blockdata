@@ -11,6 +11,7 @@
     "responseHeader": [
       "Content-Type",
       "Content-Disposition",
+      "Content-Range",
       "ETag",
       "x-goog-resumable"
     ],

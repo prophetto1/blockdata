@@ -37,7 +37,11 @@ export default {
 
   'agchain/benchmark': {
     label: 'Benchmark',
-    order: ['legalchain'],
+    order: ['legalchain', 'fdq'],
+  },
+
+  'agchain/benchmark/fdq': {
+    label: 'FDQ',
   },
 
   'agchain/benchmark/legalchain': {
