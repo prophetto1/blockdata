@@ -121,8 +121,8 @@ function SelectItem({ className, ...props }: React.ComponentProps<typeof ArkSele
     <ArkSelect.Item
       className={cn(
         'flex cursor-default select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-        'data-[highlighted]:bg-white/5',
-        'data-[state=checked]:text-primary data-[state=checked]:font-medium',
+        'data-[highlighted]:bg-[#222221]',
+        'data-[state=checked]:text-[#f47a5c] data-[state=checked]:font-medium',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className,
       )}

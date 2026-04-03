@@ -9,6 +9,7 @@ on:
       - '.github/workflows/supabase-db-validate.yml'
       - '.github/workflows/supabase-db-deploy.yml'
       - '.github/workflows/migration-history-hygiene.yml'
+      - 'scripts/tests/supabase-migration-reconciliation-contract.test.mjs'
       - 'scripts/tests/supabase-db-workflows.test.mjs'
       - 'package.json'
   workflow_dispatch:
@@ -37,3 +38,6 @@ jobs:
 
       - name: Replay migrations from scratch
         run: supabase db reset
+
+      - name: Verify user-projects reconciliation contract
+        run: npm run test:supabase-migration-reconciliation-contract

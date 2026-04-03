@@ -47,8 +47,8 @@ export function TabsTrigger({ className, ...props }: ComponentProps<typeof ArkTa
         'inline-flex items-center justify-center gap-2 rounded-md px-3 h-8 text-sm font-medium',
         'bg-transparent border-none text-muted-foreground whitespace-nowrap select-none',
         'hover:text-foreground',
-        'data-[selected]:text-primary',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'data-[selected]:bg-[#55221e] data-[selected]:text-[#f47a5c]',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
         'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed',
         className,
       )}
@@ -62,7 +62,7 @@ export function TabsIndicator({ className, ...props }: ComponentProps<typeof Ark
     <ArkTabs.Indicator
       data-slot="tabs-indicator"
       className={cn(
-        'absolute z-[-1] bg-primary/10 rounded-md',
+        'absolute z-[-1] bg-[#55221e] rounded-md',
         'transition-[width,height,left,top] duration-200 ease-out',
         'data-[orientation=horizontal]:h-8',
         'data-[orientation=vertical]:w-[calc(100%-0.5rem)]',
