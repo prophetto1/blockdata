@@ -1,19 +1,19 @@
 # Component Inventory
 
-Generated: 2026-04-03T08:12:48.977Z
+Generated: 2026-04-03T09:08:03.490Z
 Scope: auth
 
 Pages scanned: 55
-Unique component usages: 440
+Unique component usages: 447
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
-| ark-ui | 153 |
+| ark-ui | 138 |
 | external-package | 23 |
 | in-file component | 20 |
-| local-components | 144 |
+| local-components | 166 |
 | local-pages | 2 |
 | relative-local | 24 |
 | tabler-icons | 74 |
@@ -156,9 +156,9 @@ Component usages: 38
 | `IconRefresh` | `@tabler/icons-react` | tabler-icons | IconRefresh comes from @tabler/icons-react (named import of IconRefresh) |
 | `LabelBadge` | `(in-file or unresolved)` | in-file component | LabelBadge is defined in the same page file |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
-| `Pagination.NextTrigger` | `@ark-ui/react/pagination` | ark-ui | Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.PrevTrigger` | `@ark-ui/react/pagination` | ark-ui | Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.Root` | `@ark-ui/react/pagination` | ark-ui | Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination) |
+| `PaginationNextTrigger` | `@/components/ui/pagination` | local-components | PaginationNextTrigger comes from @/components/ui/pagination (named import of PaginationNextTrigger) |
+| `PaginationPrevTrigger` | `@/components/ui/pagination` | local-components | PaginationPrevTrigger comes from @/components/ui/pagination (named import of PaginationPrevTrigger) |
+| `PaginationRoot` | `@/components/ui/pagination` | local-components | PaginationRoot comes from @/components/ui/pagination (named import of PaginationRoot) |
 | `Portal` | `@ark-ui/react/portal` | ark-ui | Portal comes from @ark-ui/react/portal (named import of Portal) |
 | `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
 | `Select.Content` | `@ark-ui/react/select` | ark-ui | Select.Content comes from @ark-ui/react/select (named import of Select) |
@@ -241,7 +241,7 @@ Component usages: 3
 
 ## src/pages/marketplace/ServiceDetailPage.tsx
 
-Component usages: 12
+Component usages: 19
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
@@ -257,6 +257,13 @@ Component usages: 12
 | `Pill` | `@/components/services/function-reference` | local-components | Pill comes from @/components/services/function-reference (named import of Pill) |
 | `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
 | `SectionLabel` | `@/components/services/function-reference` | local-components | SectionLabel comes from @/components/services/function-reference (named import of SectionLabel) |
+| `SelectContent` | `@/components/ui/select` | local-components | SelectContent comes from @/components/ui/select (named import of SelectContent) |
+| `SelectControl` | `@/components/ui/select` | local-components | SelectControl comes from @/components/ui/select (named import of SelectControl) |
+| `SelectItem` | `@/components/ui/select` | local-components | SelectItem comes from @/components/ui/select (named import of SelectItem) |
+| `SelectItemText` | `@/components/ui/select` | local-components | SelectItemText comes from @/components/ui/select (named import of SelectItemText) |
+| `SelectRoot` | `@/components/ui/select` | local-components | SelectRoot comes from @/components/ui/select (named import of SelectRoot) |
+| `SelectTrigger` | `@/components/ui/select` | local-components | SelectTrigger comes from @/components/ui/select (named import of SelectTrigger) |
+| `SelectValueText` | `@/components/ui/select` | local-components | SelectValueText comes from @/components/ui/select (named import of SelectValueText) |
 
 ## src/pages/marketplace/ServicesCatalog.tsx
 
@@ -350,12 +357,12 @@ Component usages: 29
 | `IconFolder` | `@tabler/icons-react` | tabler-icons | IconFolder comes from @tabler/icons-react (named import of IconFolder) |
 | `IconFolderPlus` | `@tabler/icons-react` | tabler-icons | IconFolderPlus comes from @tabler/icons-react (named import of IconFolderPlus) |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
-| `Pagination.Context` | `@ark-ui/react/pagination` | ark-ui | Pagination.Context comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.Ellipsis` | `@ark-ui/react/pagination` | ark-ui | Pagination.Ellipsis comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.Item` | `@ark-ui/react/pagination` | ark-ui | Pagination.Item comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.NextTrigger` | `@ark-ui/react/pagination` | ark-ui | Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.PrevTrigger` | `@ark-ui/react/pagination` | ark-ui | Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.Root` | `@ark-ui/react/pagination` | ark-ui | Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination) |
+| `PaginationContext` | `@/components/ui/pagination` | local-components | PaginationContext comes from @/components/ui/pagination (named import of PaginationContext) |
+| `PaginationEllipsis` | `@/components/ui/pagination` | local-components | PaginationEllipsis comes from @/components/ui/pagination (named import of PaginationEllipsis) |
+| `PaginationItem` | `@/components/ui/pagination` | local-components | PaginationItem comes from @/components/ui/pagination (named import of PaginationItem) |
+| `PaginationNextTrigger` | `@/components/ui/pagination` | local-components | PaginationNextTrigger comes from @/components/ui/pagination (named import of PaginationNextTrigger) |
+| `PaginationPrevTrigger` | `@/components/ui/pagination` | local-components | PaginationPrevTrigger comes from @/components/ui/pagination (named import of PaginationPrevTrigger) |
+| `PaginationRoot` | `@/components/ui/pagination` | local-components | PaginationRoot comes from @/components/ui/pagination (named import of PaginationRoot) |
 | `SegmentGroupIndicator` | `@/components/ui/segment-group` | local-components | SegmentGroupIndicator comes from @/components/ui/segment-group (named import of SegmentGroupIndicator) |
 | `SegmentGroupItem` | `@/components/ui/segment-group` | local-components | SegmentGroupItem comes from @/components/ui/segment-group (named import of SegmentGroupItem) |
 | `SegmentGroupItemHiddenInput` | `@/components/ui/segment-group` | local-components | SegmentGroupItemHiddenInput comes from @/components/ui/segment-group (named import of SegmentGroupItemHiddenInput) |
@@ -374,12 +381,12 @@ Component usages: 25
 | `IconChevronRight` | `@tabler/icons-react` | tabler-icons | IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight) |
 | `Input` | `@/components/ui/input` | local-components | Input comes from @/components/ui/input (named import of Input) |
 | `LabeledInput` | `(in-file or unresolved)` | in-file component | LabeledInput is defined in the same page file |
-| `Pagination.Context` | `@ark-ui/react/pagination` | ark-ui | Pagination.Context comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.Ellipsis` | `@ark-ui/react/pagination` | ark-ui | Pagination.Ellipsis comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.Item` | `@ark-ui/react/pagination` | ark-ui | Pagination.Item comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.NextTrigger` | `@ark-ui/react/pagination` | ark-ui | Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.PrevTrigger` | `@ark-ui/react/pagination` | ark-ui | Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination) |
-| `Pagination.Root` | `@ark-ui/react/pagination` | ark-ui | Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination) |
+| `PaginationContext` | `@/components/ui/pagination` | local-components | PaginationContext comes from @/components/ui/pagination (named import of PaginationContext) |
+| `PaginationEllipsis` | `@/components/ui/pagination` | local-components | PaginationEllipsis comes from @/components/ui/pagination (named import of PaginationEllipsis) |
+| `PaginationItem` | `@/components/ui/pagination` | local-components | PaginationItem comes from @/components/ui/pagination (named import of PaginationItem) |
+| `PaginationNextTrigger` | `@/components/ui/pagination` | local-components | PaginationNextTrigger comes from @/components/ui/pagination (named import of PaginationNextTrigger) |
+| `PaginationPrevTrigger` | `@/components/ui/pagination` | local-components | PaginationPrevTrigger comes from @/components/ui/pagination (named import of PaginationPrevTrigger) |
+| `PaginationRoot` | `@/components/ui/pagination` | local-components | PaginationRoot comes from @/components/ui/pagination (named import of PaginationRoot) |
 | `PdfjsExpressPreview` | `../components/documents/PdfjsExpressPreview` | relative-local | PdfjsExpressPreview comes from ../components/documents/PdfjsExpressPreview (named import of PdfjsExpressPreview) |
 | `RadioGroup.Item` | `@ark-ui/react/radio-group` | ark-ui | RadioGroup.Item comes from @ark-ui/react/radio-group (named import of RadioGroup) |
 | `RadioGroup.ItemControl` | `@ark-ui/react/radio-group` | ark-ui | RadioGroup.ItemControl comes from @ark-ui/react/radio-group (named import of RadioGroup) |

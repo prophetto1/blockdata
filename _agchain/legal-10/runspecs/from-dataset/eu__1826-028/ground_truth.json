@@ -1,0 +1,23 @@
+{
+  "anchor_caseId": "1826-028",
+  "anchor_inventory_full": [
+    "23 U.S. 66"
+  ],
+  "anchor_usCite": "24 U.S. 413",
+  "eu_id": "eu__1826-028",
+  "eu_version": "1.0.0",
+  "known_authority": {
+    "against": [],
+    "controlling_authority": "23 U.S. 66",
+    "in_favor": [],
+    "most_frequent": "23 U.S. 66"
+  },
+  "provenance": {
+    "citation_inventory_parquet": "datasets\\citation_inventory.parquet",
+    "dataset_db": "datasets\\legal10-updates.duckdb",
+    "rp_id": "rpv1__1826-028"
+  },
+  "rp_subset": [
+    "23 U.S. 66"
+  ]
+}

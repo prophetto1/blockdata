@@ -1,0 +1,20 @@
+{
+  "protocol_version": "rp-d2-v1",
+  "delivery_id": 2,
+  "authorities": [
+    {
+      "authority_id": "CITE_001",
+      "source": "SCOTUS",
+      "usCite": "23 U.S. 66",
+      "capCite": null,
+      "caseName": "THE ANTELOPE.  THE VICE-CONSULS OF SPAIN AND PORTUGAL, LIBELLANTS",
+      "text": "The African slave trade is contraly to the luw of nature, but is not prohibited by the positive law of rations. Although the slave trade is now prohibited by the laws of most civilized ndtions, it may still be lawfully carried on by the subjects cf those nations who have not prohibited it by municipal acts or treaties. The slave trade is not piracy, unless made so by the treaties or statutes rho v t se hf e er e iit z sgh ee ch de l o t- e u oa n no nt g ti f ro a y tgv hn ei e ts d o t io t ha i wntw ii g hoh t hihno c e,m sh a",
+      "char_count": 534,
+      "ranking": {
+        "rank": 1,
+        "fowler_score": 0.821457,
+        "pagerank_percentile": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "protocol_version": "rp-doc3-v1",
+  "rp_id": "rpv1__1826-018",
+  "created_at": "2026-02-08T03:49:11Z",
+  "generator_version": "stage4a-rpv1",
+  "dataset_snapshot_id": null,
+  "cite_offset_policy": "min_start_per_(anchor_caseId, normalized_cite) from citation_inventory.parquet",
+  "anchor": {
+    "caseId": "1826-018",
+    "usCite": "24 U.S. 380",
+    "caseName": "DOE, EX DEM. PATTERSON, v. WINN AND OTHERS",
+    "term": 1826,
+    "char_count": 17046
+  },
+  "k_policy": {
+    "scotus_k_config": 10,
+    "cap_k_config": 5,
+    "scotus_selected": 1,
+    "cap_selected": 0,
+    "scotus_shipped": 1,
+    "cap_shipped": 0
+  },
+  "build_stats": {
+    "scotus_missing_offset": 0,
+    "scotus_missing_syllabus": 0,
+    "cap_missing_offset": 0,
+    "cap_missing_head_matter": 0,
+    "cap_missing_normalized_cite": 0
+  },
+  "citations": [
+    {
+      "citation_id": "CITE_001",
+      "source": "SCOTUS",
+      "inventory_normalized_cite": "18 U.S. 293",
+      "cite_type": "U.S.",
+      "usCite": "18 U.S. 293",
+      "capCite": null,
+      "caseName": "POLK'S LESSEE v. WENDELL et al.",
+      "cite_offset": 5137,
+      "occurrences": 1,
+      "ranking": {
+        "rank": 1,
+        "fowler_score": 0.377816,
+        "pagerank_percentile": null
+      },
+      "depth_label": "PASSING",
+      "depth_confidence": 0.6000000238418579,
+      "depth_reason": "tfidf_low",
+      "depth_factor": 3,
+      "tfidf_score": 0.012000000104308128
+    }
+  ],
+  "scdb": {
+    "caseDisposition": "10",
+    "partyWinning": "2",
+    "fowler_pauth_score": 0.706110991146621
+  }
+}

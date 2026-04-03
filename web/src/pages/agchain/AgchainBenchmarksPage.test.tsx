@@ -261,7 +261,7 @@ describe('AgchainBenchmarksPage', () => {
     expect(screen.getByRole('tab', { name: 'Steps' })).toBeInTheDocument();
     expect(screen.getByText(/legal evals owns this benchmark definition page/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New Step' })).toBeInTheDocument();
-    expect(screen.getByText('Issue Spotting')).toBeInTheDocument();
+    expect(screen.getAllByText('Issue Spotting').length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: 'Tool Bag' })).toBeInTheDocument();
     expect(screen.getAllByText('Web Search').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Save Tool Bag' })).toBeDisabled();

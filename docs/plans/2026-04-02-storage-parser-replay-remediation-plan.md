@@ -21,11 +21,12 @@ The replay blocker is not in the storage namespace migrations themselves. It is 
 
 The corrective direction is:
 
-1. Keep all existing migrations immutable.
+1. Keep the fix additive wherever replay can be repaired without touching later files.
 2. Add one additive backdated bootstrap migration that sorts before `20260220194000_040_storage_documents_preview_select_policy.sql`.
-3. In that bootstrap, create the missing parser-era physical tables and compatibility columns that later migrations assume already exist.
-4. Make the bootstrap idempotent so it is safe on the linked database, which already appears to have the parser-era tables.
-5. Extend the schema-contract test so replay proves both:
+3. In that bootstrap, create the missing parser-era physical tables, catalog relations, and compatibility columns that later migrations assume already exist.
+4. If replay then reaches a later historical migration with SQL that PostgreSQL will not parse, allow a syntax-only repair that preserves the same schema intent and constraint names.
+5. Make the bootstrap idempotent so it is safe on the linked database, which already appears to have the parser-era tables.
+6. Extend the schema-contract test so replay proves both:
    - the parser-era bootstrap surface exists
    - the later storage namespace surface still exists
 
@@ -60,6 +61,21 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
 - No migration in `supabase/migrations` creates `public.conversion_representations`.
 - No migration in `supabase/migrations` creates `public.runs`.
 - No migration in `supabase/migrations` creates `public.block_overlays`.
+- No migration in `supabase/migrations` creates `public.representation_type_catalog`.
+- No migration in `supabase/migrations` creates `public.block_type_catalog`.
+- No migration in `supabase/migrations` creates `public.status_document_uploads`.
+
+### Post-bootstrap replay evidence
+
+- After the initial bootstrap landed, `npx supabase db start` progressed past `20260220194000_040_storage_documents_preview_select_policy.sql`.
+- Replay then failed during `20260221110000_041_conversion_representations_docling_exports.sql`.
+- The concrete failure is:
+  - `ERROR: relation "public.representation_type_catalog" does not exist (SQLSTATE 42P01)`
+- Later parser/storage migrations also directly reference:
+  - `public.block_type_catalog` in `20260221120000_042_docling_label_and_display_registry.sql`
+  - `public.representation_type_catalog` in `20260222143000_048_citations_output_artifact.sql`
+  - `public.status_document_uploads` in `20260313240000_083_rename_ingested_to_parsed.sql`
+- The approved bootstrap surface therefore has to include the missing parser/storage catalog layer those migrations depend on.
 
 ### Schema-shape mismatch evidence
 
@@ -77,6 +93,10 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
   - `public.conversion_representations`
   - `public.runs`
   - `public.block_overlays`
+- Later parser/storage migrations also assume supporting catalog relations:
+  - `public.representation_type_catalog`
+  - `public.block_type_catalog`
+  - `public.status_document_uploads`
 - Later parser RPCs and cleanup SQL also assume `public.blocks` can be filtered by `conv_uid`, which is not part of the earliest replayed `public.blocks` contract.
 
 ### Execution consequence
@@ -90,6 +110,7 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
   - `20260402193000_storage_namespace_metadata_foundation.sql`
   - `20260402194000_pipeline_source_registry_and_fk_migration.sql`
   - `20260402195000_storage_namespace_backfill_and_source_document_reconciliation.sql`
+- Do not change the schema intent of existing historical migrations. The only approved historical edits in this plan are replay-safe repairs inside `20260227160000_052_integration_registry_actions.sql` and `20260303110000_065_service_schema_extensions.sql`.
 - Do not use migration repair to pretend the missing parser-era schema exists locally.
 - Do not change runtime storage or pipeline API behavior in `services/platform-api/app` or `web/src` as part of this remediation.
 - Do not downscope the fix to only `public.source_documents`; the plan must cover the whole parser-era compatibility surface that later migrations reference.
@@ -98,7 +119,7 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
 ## Locked Product Decisions
 
 1. This remediation exists only to make the historical SQL chain replayable and to unblock the storage namespace closeout.
-2. The fix is additive. Existing migrations remain immutable.
+2. The fix is additive except for the explicitly approved replay-safe repairs in `20260227160000_052_integration_registry_actions.sql` and `20260303110000_065_service_schema_extensions.sql`. No semantic behavior change to historical migrations is allowed.
 3. The new bootstrap migration must sort before `20260220194000_040_storage_documents_preview_select_policy.sql`.
 4. The new bootstrap migration must be idempotent on the linked database because those parser-era tables already appear to exist there.
 5. The bootstrap migration must create physical tables and compatibility columns, not views or ad hoc repair scripts.
@@ -108,6 +129,9 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
    - `public.conversion_representations`
    - `public.runs`
    - `public.block_overlays`
+   - `public.representation_type_catalog`
+   - `public.block_type_catalog`
+   - `public.status_document_uploads`
    - parser-era compatibility columns on `public.blocks` required by later migrations
 7. The linked database remains the source of truth for the parser/storage contract this bootstrap must satisfy, but the bootstrap may only mirror the subset that is safe at timestamp `20260220193000`.
 8. The bootstrap must not pre-create later-era additions that are introduced by unguarded later migrations. Known exclusions include:
@@ -118,14 +142,17 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
 9. `public.blocks` already exists before this remediation in a legacy `doc_uid` shape. The bootstrap may only add additive compatibility columns, constraints, indexes, and policy changes required by later parser/storage migrations.
 10. After this remediation lands, the approved closeout plan resumes unchanged from Task 3.
 11. No secondary checkout is assumed by this plan. Execution must proceed from `E:\\writing-system` on local `master`.
+12. The only allowed edits to existing historical migrations in this plan are:
+   - replacing the unsupported `ADD CONSTRAINT IF NOT EXISTS` syntax in `20260227160000_052_integration_registry_actions.sql` with equivalent idempotent guarded `ALTER TABLE ... ADD CONSTRAINT` logic that preserves the same constraint names, targets, and `ON DELETE RESTRICT` behavior
+   - repairing the `service_functions_view` refresh in `20260303110000_065_service_schema_extensions.sql` so replay preserves the prior view column prefix and appends the new metadata fields without changing the intended view semantics
 
 ## Locked Acceptance Contract
 
 The replay remediation is only complete when all of the following are true:
 
 1. `npx supabase db start` succeeds locally from `E:\\writing-system` on `master` with a clean working tree.
-2. `npx supabase db reset --yes` replays the full migration chain with no failure before or during the storage namespace migrations.
-3. `npx supabase migration list --local` shows the new bootstrap migration applied ahead of the parser/storage chain.
+2. `npx supabase db reset --yes` replays the full migration chain with no parser/storage table or catalog failure before or during the storage namespace migrations.
+3. `npx supabase migration list --local` shows the new bootstrap migration applied ahead of the parser/storage table-and-catalog chain.
 4. `cd services/platform-api && pytest -q tests/test_storage_namespace_schema_contract.py` passes against the locally reset database.
 5. `cd services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py` passes against the locally reset database.
 6. `supabase db push` applies the new bootstrap migration to the linked project with no destructive drift and no unresolved partial-apply state.
@@ -166,8 +193,9 @@ Observability attribute rules for this zero-case:
 
 - File: `supabase/migrations/20260220193000_storage_parser_compat_bootstrap.sql`
 - Schema effect:
-  - create bootstrap-safe versions of `public.source_documents`, `public.conversion_parsing`, `public.conversion_representations`, `public.runs`, and `public.block_overlays` if absent using the linked database as the reference contract
+  - create bootstrap-safe versions of `public.source_documents`, `public.conversion_parsing`, `public.conversion_representations`, `public.runs`, `public.block_overlays`, `public.representation_type_catalog`, `public.block_type_catalog`, and `public.status_document_uploads` if absent using the linked database as the reference contract
   - exclude later unguarded additions that are owned by later migrations, including `source_documents.document_surface`, `source_documents.storage_object_id`, and `block_overlays.overlay_uid`
+  - seed only the minimal bootstrap-era catalog rows required for later parser/storage migrations to succeed, including platform block types for `042` and legacy upload statuses for `083`
   - add additive compatibility columns and supporting indexes/constraints/policies to legacy `public.blocks` so later parser/storage migrations and RPCs can target `conv_uid`-based state
   - add only the foreign keys, checks, permissions, and policies whose dependencies already exist at the bootstrap timestamp
   - preserve the repo's existing privilege pattern by relying on row-level security plus narrow explicit grants only; the bootstrap must not introduce broad `GRANT ALL` access for `anon` or `authenticated` on parser/storage tables
@@ -252,6 +280,67 @@ Observability attribute rules for this zero-case:
 - Required policies and permissions:
   - `ALTER TABLE public.conversion_representations ENABLE ROW LEVEL SECURITY`
   - `CREATE POLICY conversion_representations_select_own`
+  - no bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
+
+#### `public.representation_type_catalog`
+
+- Required columns:
+  - `representation_type TEXT NOT NULL`
+  - `description TEXT`
+  - `sort_order INTEGER NOT NULL DEFAULT 0`
+- Required constraints:
+  - primary key on `representation_type`
+- Required seed behavior:
+  - no bootstrap seed rows are required; later migrations `041` and `048` must be able to insert their artifact types into an empty but valid catalog
+- Required policies and permissions:
+  - no bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
+
+#### `public.block_type_catalog`
+
+- Required columns:
+  - `block_type TEXT NOT NULL`
+  - `description TEXT`
+  - `sort_order INTEGER NOT NULL DEFAULT 0`
+- Required constraints:
+  - primary key on `block_type`
+- Required seed behavior:
+  - bootstrap must seed the platform block types that later migration `042` references through foreign keys or updates:
+    - `heading`
+    - `paragraph`
+    - `list_item`
+    - `code_block`
+    - `table`
+    - `figure`
+    - `caption`
+    - `footnote`
+    - `divider`
+    - `html_block`
+    - `definition`
+    - `checkbox`
+    - `form_region`
+    - `key_value_region`
+    - `page_header`
+    - `page_footer`
+    - `other`
+- Required policies and permissions:
+  - no bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
+
+#### `public.status_document_uploads`
+
+- Required columns:
+  - `status TEXT NOT NULL`
+  - `description TEXT`
+  - `sort_order INTEGER NOT NULL DEFAULT 0`
+- Required constraints:
+  - primary key on `status`
+- Required seed behavior:
+  - bootstrap must seed the legacy upload-status keys required by `source_documents.status` defaults and later migration `083`:
+    - `uploaded`
+    - `upload_failed`
+    - `ingested`
+    - `ingest_failed`
+  - exact pre-`083` `sort_order` integers do not carry runtime meaning in this remediation, but each seeded row must have a stable integer value
+- Required policies and permissions:
   - no bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
 
 #### `public.runs`
@@ -353,6 +442,26 @@ Observability attribute rules for this zero-case:
 
 No second migration is planned in this remediation. The bootstrap file must be comprehensive enough to satisfy all later parser/storage dependencies in one additive step.
 
+### Modified historical migration 1
+
+- File: `supabase/migrations/20260227160000_052_integration_registry_actions.sql`
+- Schema effect:
+  - replace the unsupported `ALTER TABLE ... ADD CONSTRAINT IF NOT EXISTS ...` statements for `integration_services_action_fkey` and `integration_functions_action_fkey` with equivalent idempotent guarded `ALTER TABLE ... ADD CONSTRAINT` logic
+  - preserve the exact constraint names, referenced tables and columns, and `ON DELETE RESTRICT` behavior already intended by the migration
+  - do not change any other DDL, RLS policy, seed data, or uniqueness behavior in `052`
+- Data impact:
+  - none; this is a replay-safe syntax repair only
+
+### Modified historical migration 2
+
+- File: `supabase/migrations/20260303110000_065_service_schema_extensions.sql`
+- Schema effect:
+  - repair the `service_functions_view` refresh so PostgreSQL replay preserves the pre-existing view column order from the earlier migration chain while still exposing the new metadata columns introduced by `065`
+  - preserve the same view name, joins, filters, grants, and intended added metadata fields
+  - do not change any other DDL, seed data, or registry semantics in `065`
+- Data impact:
+  - none; this is a replay-safe view-definition repair only
+
 ## Edge Functions
 
 No edge function changes.
@@ -366,6 +475,7 @@ No frontend runtime or component changes.
 ### Backend
 
 - New migration files: `1`
+- Modified existing migration files: `2`
 - New backend test files: `1`
 - Modified runtime backend files: `0`
 
@@ -387,7 +497,8 @@ No frontend runtime or component changes.
 - `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
 
 ### Modified files
-- None
+- `supabase/migrations/20260227160000_052_integration_registry_actions.sql`
+- `supabase/migrations/20260303110000_065_service_schema_extensions.sql`
 
 ## Frozen Seam Contract
 
@@ -398,6 +509,7 @@ Later migrations in the replay chain are allowed to rely only on:
 1. the bootstrap-safe relations, columns, constraints, indexes, policies, and grants listed in `## Database Migrations`
 2. the explicit exclusions remaining absent until their owning later migrations run
 3. the fact that `public.blocks` is a legacy table receiving an additive compatibility bridge rather than a destructive cutover
+4. the approved historical replay repairs declared in `## Database Migrations` for `20260227160000_052_integration_registry_actions.sql` and `20260303110000_065_service_schema_extensions.sql`
 
 The bootstrap migration is not allowed to:
 
@@ -405,6 +517,7 @@ The bootstrap migration is not allowed to:
 - rewrite historical migration ownership of parser-track CHECK constraints
 - drop legacy `public.blocks` columns to force early parity with the linked final schema
 - introduce new runtime tables, endpoints, or observability surfaces outside this frozen seam
+- change the schema intent of later historical migrations while performing a syntax-only replay repair
 
 ## Task Breakdown
 
@@ -419,6 +532,9 @@ The bootstrap migration is not allowed to:
 - `conversion_representations`
 - `runs`
 - `block_overlays`
+- `representation_type_catalog`
+- `block_type_catalog`
+- `status_document_uploads`
 - `blocks`
 
 **Step 3:** Record the exact columns, foreign keys, checks, indexes, and policies needed by the later parser/storage migrations.
@@ -435,24 +551,32 @@ The bootstrap migration is not allowed to:
 
 ## Task 2: Add the additive parser compatibility bootstrap migration
 
-**File(s):** `supabase/migrations/20260220193000_storage_parser_compat_bootstrap.sql`
+**File(s):** `supabase/migrations/20260220193000_storage_parser_compat_bootstrap.sql`, `supabase/migrations/20260227160000_052_integration_registry_actions.sql`, `supabase/migrations/20260303110000_065_service_schema_extensions.sql`
 
 **Step 1:** Create the bootstrap migration with `IF NOT EXISTS` and equivalent idempotent guards so it is safe on the linked database.
-**Step 2:** Define the physical parser-era tables the later migrations require:
+**Step 2:** Define the physical parser/storage relations the later migrations require:
 - `source_documents`
 - `conversion_parsing`
 - `conversion_representations`
 - `runs`
 - `block_overlays`
+- `representation_type_catalog`
+- `block_type_catalog`
+- `status_document_uploads`
 
-**Step 3:** Exclude later-era unguarded additions that are owned by later migrations, including `source_documents.document_surface`, `source_documents.storage_object_id`, and `block_overlays.overlay_uid`.
-**Step 4:** Add the parser-era compatibility columns to `public.blocks` that later cleanup SQL expects, including `conv_uid` when absent.
-**Step 5:** Add only the required indexes, foreign keys, checks, permissions, and policies whose dependencies already exist at the bootstrap timestamp.
-**Step 6:** Preserve the repo's existing privilege model by avoiding bootstrap-time `GRANT ALL` access for `anon` or `authenticated`; only narrow explicit permissions that existing downstream SQL depends on may be added.
-**Step 7:** Do not backfill or rewrite data in existing immutable tables beyond harmless null-safe compatibility initialization.
+**Step 3:** Seed only the minimal catalog data required by downstream migrations:
+- platform block-type rows required by `042`
+- legacy upload-status rows required by `083`
+**Step 4:** Exclude later-era unguarded additions that are owned by later migrations, including `source_documents.document_surface`, `source_documents.storage_object_id`, and `block_overlays.overlay_uid`.
+**Step 5:** Add the parser-era compatibility columns to `public.blocks` that later cleanup SQL expects, including `conv_uid` when absent.
+**Step 6:** Add only the required indexes, foreign keys, checks, permissions, and policies whose dependencies already exist at the bootstrap timestamp.
+**Step 7:** Preserve the repo's existing privilege model by avoiding bootstrap-time `GRANT ALL` access for `anon` or `authenticated`; only narrow explicit permissions that existing downstream SQL depends on may be added.
+**Step 8:** Do not backfill or rewrite data in existing immutable tables beyond harmless null-safe compatibility initialization.
+**Step 9:** If replay then reaches `20260227160000_052_integration_registry_actions.sql` and fails on unsupported `ADD CONSTRAINT IF NOT EXISTS` syntax, repair only those two statements in-place using guarded `pg_constraint` checks while preserving the same constraint names and foreign key targets.
+**Step 10:** If replay then reaches `20260303110000_065_service_schema_extensions.sql` and fails because `CREATE OR REPLACE VIEW public.service_functions_view` would rename existing columns in-place, repair only that view refresh so the prior column prefix from the earlier replay chain is preserved and the new metadata fields are appended without changing the intended joins, filters, or grants.
 
 **Test command:** `cd supabase && npx supabase db reset --yes`
-**Expected output:** replay proceeds past migration `040` and through the later parser/storage and storage-namespace migration chain without bootstrap-time dependency failures.
+**Expected output:** replay proceeds past migrations `040`, `041`, `042`, `048`, `052`, `065`, and `083`, then through the later parser/storage and storage-namespace migration chain without bootstrap-time dependency, syntax, or view-refresh failures.
 
 **Commit:** `fix(supabase): add parser compatibility bootstrap for replay`
 
@@ -523,14 +647,15 @@ The bootstrap migration is not allowed to:
 
 1. The linked parser-era schema may contain columns or policies not visible from runtime code alone; that is why Task 1 is mandatory.
 2. Backdated additive migrations can be applied later to the linked database only if they are strictly idempotent.
-3. The replay blocker may expose additional missing parser-era assumptions after the first bootstrap lands; if so, that is a new debugging cycle, not permission to rewrite historical files.
+3. The replay blocker may expose additional missing parser/storage catalog assumptions after the first bootstrap lands; if so, that is a new debugging cycle, not permission to rewrite historical files.
+4. If replay surfaces another historical migration defect, that requires a new evidence-backed plan amendment; the only pre-approved historical edits in this plan are the replay repairs for `052` and `065`.
 
 ## Completion Criteria
 
 The work is complete only when all of the following are true:
 
 1. The new additive bootstrap migration exists and is idempotent.
-2. The local Supabase migration chain replays from scratch with no parser/storage dependency failures.
+2. The local Supabase migration chain replays from scratch with no parser/storage table failure, catalog dependency failure, `052` syntax failure, or `065` view-refresh failure.
 3. The schema-contract test proves both parser-era replay prerequisites and storage namespace schema requirements.
 4. `cd services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py` passes against the reset local database.
 5. The linked database shows the bootstrap migration applied successfully with no unresolved partial-apply state.

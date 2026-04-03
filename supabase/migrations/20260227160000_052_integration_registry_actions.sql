@@ -84,9 +84,19 @@ SET action = CASE service_type
 END
 WHERE action IS NULL;
 
-ALTER TABLE public.integration_services
-  ADD CONSTRAINT IF NOT EXISTS integration_services_action_fkey
-  FOREIGN KEY (action) REFERENCES public.integration_actions(action) ON DELETE RESTRICT;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.integration_services'::regclass
+      AND conname = 'integration_services_action_fkey'
+  ) THEN
+    ALTER TABLE public.integration_services
+      ADD CONSTRAINT integration_services_action_fkey
+      FOREIGN KEY (action) REFERENCES public.integration_actions(action) ON DELETE RESTRICT;
+  END IF;
+END $$;
 
 -- Make action required (after backfill).
 ALTER TABLE public.integration_services
@@ -140,9 +150,19 @@ SET action = CASE service_type
 END
 WHERE action IS NULL;
 
-ALTER TABLE public.integration_functions
-  ADD CONSTRAINT IF NOT EXISTS integration_functions_action_fkey
-  FOREIGN KEY (action) REFERENCES public.integration_actions(action) ON DELETE RESTRICT;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.integration_functions'::regclass
+      AND conname = 'integration_functions_action_fkey'
+  ) THEN
+    ALTER TABLE public.integration_functions
+      ADD CONSTRAINT integration_functions_action_fkey
+      FOREIGN KEY (action) REFERENCES public.integration_actions(action) ON DELETE RESTRICT;
+  END IF;
+END $$;
 
 ALTER TABLE public.integration_functions
   ALTER COLUMN action SET NOT NULL;

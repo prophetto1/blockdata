@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-03T08:12:48.968Z",
+  "generatedAt": "2026-04-03T09:08:03.480Z",
   "scope": "auth",
   "pages": [
     {
@@ -392,8 +392,8 @@
       "page": "src/pages/FlowsList.tsx",
       "componentCount": 38,
       "categoryCounts": {
-        "local-components": 5,
-        "ark-ui": 15,
+        "local-components": 8,
+        "ark-ui": 12,
         "external-package": 1,
         "tabler-icons": 14,
         "in-file component": 3
@@ -607,31 +607,31 @@
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.NextTrigger",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationNextTrigger",
+          "usedAs": "PaginationNextTrigger",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationNextTrigger",
+          "category": "local-components",
+          "definition": "PaginationNextTrigger comes from @/components/ui/pagination (named import of PaginationNextTrigger)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.PrevTrigger",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationPrevTrigger",
+          "usedAs": "PaginationPrevTrigger",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationPrevTrigger",
+          "category": "local-components",
+          "definition": "PaginationPrevTrigger comes from @/components/ui/pagination (named import of PaginationPrevTrigger)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Root",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationRoot",
+          "usedAs": "PaginationRoot",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationRoot",
+          "category": "local-components",
+          "definition": "PaginationRoot comes from @/components/ui/pagination (named import of PaginationRoot)"
         },
         {
           "component": "Portal",
@@ -1023,9 +1023,9 @@
     },
     {
       "page": "src/pages/marketplace/ServiceDetailPage.tsx",
-      "componentCount": 12,
+      "componentCount": 19,
       "categoryCounts": {
-        "local-components": 9,
+        "local-components": 16,
         "external-package": 2,
         "tabler-icons": 1
       },
@@ -1137,6 +1137,69 @@
           "importedAs": "SectionLabel",
           "category": "local-components",
           "definition": "SectionLabel comes from @/components/services/function-reference (named import of SectionLabel)"
+        },
+        {
+          "component": "SelectContent",
+          "usedAs": "SelectContent",
+          "source": "@/components/ui/select",
+          "importKind": "named",
+          "importedAs": "SelectContent",
+          "category": "local-components",
+          "definition": "SelectContent comes from @/components/ui/select (named import of SelectContent)"
+        },
+        {
+          "component": "SelectControl",
+          "usedAs": "SelectControl",
+          "source": "@/components/ui/select",
+          "importKind": "named",
+          "importedAs": "SelectControl",
+          "category": "local-components",
+          "definition": "SelectControl comes from @/components/ui/select (named import of SelectControl)"
+        },
+        {
+          "component": "SelectItem",
+          "usedAs": "SelectItem",
+          "source": "@/components/ui/select",
+          "importKind": "named",
+          "importedAs": "SelectItem",
+          "category": "local-components",
+          "definition": "SelectItem comes from @/components/ui/select (named import of SelectItem)"
+        },
+        {
+          "component": "SelectItemText",
+          "usedAs": "SelectItemText",
+          "source": "@/components/ui/select",
+          "importKind": "named",
+          "importedAs": "SelectItemText",
+          "category": "local-components",
+          "definition": "SelectItemText comes from @/components/ui/select (named import of SelectItemText)"
+        },
+        {
+          "component": "SelectRoot",
+          "usedAs": "SelectRoot",
+          "source": "@/components/ui/select",
+          "importKind": "named",
+          "importedAs": "SelectRoot",
+          "category": "local-components",
+          "definition": "SelectRoot comes from @/components/ui/select (named import of SelectRoot)"
+        },
+        {
+          "component": "SelectTrigger",
+          "usedAs": "SelectTrigger",
+          "source": "@/components/ui/select",
+          "importKind": "named",
+          "importedAs": "SelectTrigger",
+          "category": "local-components",
+          "definition": "SelectTrigger comes from @/components/ui/select (named import of SelectTrigger)"
+        },
+        {
+          "component": "SelectValueText",
+          "usedAs": "SelectValueText",
+          "source": "@/components/ui/select",
+          "importKind": "named",
+          "importedAs": "SelectValueText",
+          "category": "local-components",
+          "definition": "SelectValueText comes from @/components/ui/select (named import of SelectValueText)"
         }
       ]
     },
@@ -1436,10 +1499,9 @@
       "page": "src/pages/Projects.tsx",
       "componentCount": 29,
       "categoryCounts": {
-        "local-components": 15,
+        "local-components": 21,
         "external-package": 1,
-        "tabler-icons": 7,
-        "ark-ui": 6
+        "tabler-icons": 7
       },
       "components": [
         {
@@ -1605,58 +1667,58 @@
           "definition": "PageHeader comes from @/components/common/PageHeader (named import of PageHeader)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Context",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationContext",
+          "usedAs": "PaginationContext",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Context comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationContext",
+          "category": "local-components",
+          "definition": "PaginationContext comes from @/components/ui/pagination (named import of PaginationContext)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Ellipsis",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationEllipsis",
+          "usedAs": "PaginationEllipsis",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Ellipsis comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationEllipsis",
+          "category": "local-components",
+          "definition": "PaginationEllipsis comes from @/components/ui/pagination (named import of PaginationEllipsis)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Item",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationItem",
+          "usedAs": "PaginationItem",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Item comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationItem",
+          "category": "local-components",
+          "definition": "PaginationItem comes from @/components/ui/pagination (named import of PaginationItem)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.NextTrigger",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationNextTrigger",
+          "usedAs": "PaginationNextTrigger",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationNextTrigger",
+          "category": "local-components",
+          "definition": "PaginationNextTrigger comes from @/components/ui/pagination (named import of PaginationNextTrigger)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.PrevTrigger",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationPrevTrigger",
+          "usedAs": "PaginationPrevTrigger",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationPrevTrigger",
+          "category": "local-components",
+          "definition": "PaginationPrevTrigger comes from @/components/ui/pagination (named import of PaginationPrevTrigger)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Root",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationRoot",
+          "usedAs": "PaginationRoot",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationRoot",
+          "category": "local-components",
+          "definition": "PaginationRoot comes from @/components/ui/pagination (named import of PaginationRoot)"
         },
         {
           "component": "SegmentGroupIndicator",
@@ -1710,10 +1772,10 @@
       "componentCount": 25,
       "categoryCounts": {
         "in-file component": 3,
-        "local-components": 3,
+        "local-components": 9,
         "tabler-icons": 2,
-        "ark-ui": 16,
-        "relative-local": 1
+        "relative-local": 1,
+        "ark-ui": 10
       },
       "components": [
         {
@@ -1771,58 +1833,58 @@
           "definition": "LabeledInput is defined in the same page file"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Context",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationContext",
+          "usedAs": "PaginationContext",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Context comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationContext",
+          "category": "local-components",
+          "definition": "PaginationContext comes from @/components/ui/pagination (named import of PaginationContext)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Ellipsis",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationEllipsis",
+          "usedAs": "PaginationEllipsis",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Ellipsis comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationEllipsis",
+          "category": "local-components",
+          "definition": "PaginationEllipsis comes from @/components/ui/pagination (named import of PaginationEllipsis)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Item",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationItem",
+          "usedAs": "PaginationItem",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Item comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationItem",
+          "category": "local-components",
+          "definition": "PaginationItem comes from @/components/ui/pagination (named import of PaginationItem)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.NextTrigger",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationNextTrigger",
+          "usedAs": "PaginationNextTrigger",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.NextTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationNextTrigger",
+          "category": "local-components",
+          "definition": "PaginationNextTrigger comes from @/components/ui/pagination (named import of PaginationNextTrigger)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.PrevTrigger",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationPrevTrigger",
+          "usedAs": "PaginationPrevTrigger",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.PrevTrigger comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationPrevTrigger",
+          "category": "local-components",
+          "definition": "PaginationPrevTrigger comes from @/components/ui/pagination (named import of PaginationPrevTrigger)"
         },
         {
-          "component": "Pagination",
-          "usedAs": "Pagination.Root",
-          "source": "@ark-ui/react/pagination",
+          "component": "PaginationRoot",
+          "usedAs": "PaginationRoot",
+          "source": "@/components/ui/pagination",
           "importKind": "named",
-          "importedAs": "Pagination",
-          "category": "ark-ui",
-          "definition": "Pagination.Root comes from @ark-ui/react/pagination (named import of Pagination)"
+          "importedAs": "PaginationRoot",
+          "category": "local-components",
+          "definition": "PaginationRoot comes from @/components/ui/pagination (named import of PaginationRoot)"
         },
         {
           "component": "PdfjsExpressPreview",
@@ -4505,13 +4567,13 @@
       ]
     }
   ],
-  "totalComponentUsages": 440,
+  "totalComponentUsages": 447,
   "categoryTotals": {
     "local-pages": 2,
-    "local-components": 144,
+    "local-components": 166,
     "tabler-icons": 74,
     "in-file component": 20,
-    "ark-ui": 153,
+    "ark-ui": 138,
     "external-package": 23,
     "relative-local": 24
   }

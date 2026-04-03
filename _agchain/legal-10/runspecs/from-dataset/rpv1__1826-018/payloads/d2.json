@@ -1,0 +1,20 @@
+{
+  "protocol_version": "rp-d2-v1",
+  "delivery_id": 2,
+  "authorities": [
+    {
+      "authority_id": "CITE_001",
+      "source": "SCOTUS",
+      "usCite": "18 U.S. 293",
+      "capCite": null,
+      "caseName": "POLK'S LESSEE v. WENDELL et al.",
+      "text": "There are cases in which a grant is absolutely void; as where the State has no title to the thing granted, or where the officer had no authority to issue the grant, c: In such cases, the validity of the grant is necessarily examinable at law. A grant raises a presumption that every prerequisite to its issuing was coibplied with, and a warrant is evidence of the existence of an entry; but where the entry has never in fact been made, and the warrant is forged, zo right accrues under the act of North Carolina of 1777, and the g.ant is void. Where a party, in order to prove that there were no entries to authorize the issuing of the warrants, offered to give in evidence certified copies of warrants from the same office, of the same dates and numbers, but to different persons, and for different quantities of lands: Held, that this was competent evidence to' prove the positive fact of the existence of the entrios specified in the copies; but tlat in order to have a negative 'effect in disproving the entries alleged to be spurious, the whole abstract ought to.be produced in Court, orinspected under 'ac ommission, or the keeper of the document examined as a witness, from vhio' the Court might ascertain the fact of the'nonexistence of the contested entries. In such a casq certificates from the Secretary's office of North Carolina, introduced to prove that on the entries of the same dates with those alleged to be spurious, other warrants issued, and other grants were obtained in the name of various individuals, brit none to the party claiming under the alleged spurious entries, is competent circum.stantial eyvdence to be left to the jury. In such a case, parol evidenee, that the warrants and locations had been rejected by the entry-taker as spurious, is inadmissible. It sems, that, whether a grant be absolutely void, or voidable only, a junior grantee is not, by the law of Tennessee, permitted to avail himself of its nullity as against an innocent purchaser without no-. tice.",
+      "char_count": 1999,
+      "ranking": {
+        "rank": 1,
+        "fowler_score": 0.377816,
+        "pagerank_percentile": null
+      }
+    }
+  ]
+}
