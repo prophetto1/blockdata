@@ -24,7 +24,7 @@ function ProgressLabel({ className, ...props }: React.ComponentProps<typeof ArkP
 function ProgressTrack({ className, ...props }: React.ComponentProps<typeof ArkProgress.Track>) {
   return (
     <ArkProgress.Track
-      className={cn('h-2 w-full overflow-hidden rounded-full bg-accent', className)}
+      className={cn('h-2 w-full overflow-hidden rounded-full bg-white/5', className)}
       data-slot="progress-track"
       {...props}
     />
@@ -64,7 +64,7 @@ function ProgressCircle({ className, ...props }: React.ComponentProps<typeof Ark
 function ProgressCircleTrack({ className, ...props }: React.ComponentProps<typeof ArkProgress.CircleTrack>) {
   return (
     <ArkProgress.CircleTrack
-      className={cn('stroke-accent', className)}
+      className={cn('stroke-white/10', className)}
       data-slot="progress-circle-track"
       {...props}
     />

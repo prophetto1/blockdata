@@ -8,7 +8,7 @@ function SegmentGroupRoot({
   return (
     <ArkSegmentGroup.Root
       className={cn(
-        'relative inline-flex items-center isolate rounded-md bg-muted p-0.5 ring-1 ring-inset ring-border',
+        'relative inline-flex items-center isolate rounded-md bg-white/5 p-0.5 ring-1 ring-inset ring-[#3a3a3a]',
         'data-[disabled]:opacity-50 data-[disabled]:grayscale',
         className,
       )}
@@ -24,7 +24,7 @@ function SegmentGroupIndicator({
   return (
     <ArkSegmentGroup.Indicator
       className={cn(
-        'absolute z-0 rounded-sm bg-background shadow-sm',
+        'absolute z-0 rounded-sm bg-popover shadow-md shadow-black/20',
         'transition-[width,height,left,top] duration-150 ease-out',
         className,
       )}
@@ -41,9 +41,9 @@ function SegmentGroupItem({
     <ArkSegmentGroup.Item
       className={cn(
         'relative flex cursor-pointer select-none items-center justify-center rounded-sm px-2.5 py-1 text-xs font-medium text-muted-foreground',
-        'data-[state=checked]:text-foreground',
+        'data-[state=checked]:text-primary',
         'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
-        'data-[focus-visible]:outline-2 data-[focus-visible]:outline-ring data-[focus-visible]:outline-offset-2',
+        'data-[focus-visible]:outline-2 data-[focus-visible]:outline-primary data-[focus-visible]:outline-offset-2',
         className,
       )}
       {...props}

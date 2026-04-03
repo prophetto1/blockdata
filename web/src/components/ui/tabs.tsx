@@ -29,9 +29,9 @@ export function TabsList({ className, ...props }: ComponentProps<typeof ArkTabs.
     <ArkTabs.List
       data-slot="tabs-list"
       className={cn(
-        'relative inline-flex items-center',
-        'data-[orientation=horizontal]:flex-row data-[orientation=horizontal]:border-b data-[orientation=horizontal]:border-border',
-        'data-[orientation=vertical]:flex-col data-[orientation=vertical]:border-r data-[orientation=vertical]:border-border',
+        'relative inline-flex items-center isolate gap-1',
+        'data-[orientation=horizontal]:flex-row',
+        'data-[orientation=vertical]:flex-col',
         className,
       )}
       {...props}
@@ -44,12 +44,12 @@ export function TabsTrigger({ className, ...props }: ComponentProps<typeof ArkTa
     <ArkTabs.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        'inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium',
-        'text-muted-foreground transition-colors',
+        'inline-flex items-center justify-center gap-2 rounded-md px-3 h-8 text-sm font-medium',
+        'bg-transparent border-none text-muted-foreground whitespace-nowrap select-none',
         'hover:text-foreground',
-        'data-[selected]:text-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'data-[disabled]:opacity-50 data-[disabled]:pointer-events-none',
+        'data-[selected]:text-primary',
+        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed',
         className,
       )}
       {...props}
@@ -62,11 +62,10 @@ export function TabsIndicator({ className, ...props }: ComponentProps<typeof Ark
     <ArkTabs.Indicator
       data-slot="tabs-indicator"
       className={cn(
-        // z-[-1] places the indicator behind trigger content — breaks if a trigger gets an opaque bg
-        'absolute z-[-1] rounded-sm bg-accent/80',
+        'absolute z-[-1] bg-primary/10 rounded-md',
         'transition-[width,height,left,top] duration-200 ease-out',
-        'data-[orientation=horizontal]:h-[2px] data-[orientation=horizontal]:bottom-0',
-        'data-[orientation=vertical]:w-[2px] data-[orientation=vertical]:left-0',
+        'data-[orientation=horizontal]:h-8',
+        'data-[orientation=vertical]:w-[calc(100%-0.5rem)]',
         className,
       )}
       {...props}

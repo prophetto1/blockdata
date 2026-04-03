@@ -14,7 +14,7 @@ function NumberInputInput({ className, ...props }: React.ComponentProps<typeof A
   return (
     <ArkNumberInput.Input
       className={cn(
-        'h-8 w-24 rounded-md border border-input bg-background px-2 text-xs text-foreground',
+        'h-8 w-24 rounded-md border border-[#3a3a3a] bg-transparent px-2 text-xs text-foreground',
         className,
       )}
       {...props}

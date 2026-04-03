@@ -45,7 +45,7 @@ function StepsTrigger({ className, ...props }: React.ComponentProps<typeof ArkSt
     <ArkSteps.Trigger
       className={cn(
         'flex items-center gap-3 rounded-md bg-transparent border-none p-0 text-sm font-medium text-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,
       )}
@@ -61,7 +61,7 @@ function StepsIndicator({ className, ...props }: React.ComponentProps<typeof Ark
     <ArkSteps.Indicator
       className={cn(
         'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
-        'data-[incomplete]:border-2 data-[incomplete]:border-border data-[incomplete]:text-muted-foreground',
+        'data-[incomplete]:border-2 data-[incomplete]:border-[#3a3a3a] data-[incomplete]:text-muted-foreground',
         'data-[current]:border-2 data-[current]:border-primary data-[current]:bg-primary/10 data-[current]:text-primary',
         'data-[complete]:border-2 data-[complete]:border-primary data-[complete]:bg-primary data-[complete]:text-primary-foreground',
         className,
@@ -77,7 +77,7 @@ function StepsSeparator({ className, ...props }: React.ComponentProps<typeof Ark
   return (
     <ArkSteps.Separator
       className={cn(
-        'mx-3 flex-1 bg-border',
+        'mx-3 flex-1 bg-[#3a3a3a]',
         'data-[orientation=horizontal]:h-0.5',
         'data-[orientation=vertical]:w-0.5',
         'data-[state=complete]:bg-primary',

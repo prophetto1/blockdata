@@ -29,8 +29,8 @@ function TagsInputControl({ className, ...props }: React.ComponentProps<typeof A
   return (
     <ArkTagsInput.Control
       className={cn(
-        'relative flex flex-wrap items-center gap-1 rounded-md border border-border bg-transparent px-2 py-1.5',
-        'focus-within:ring-2 focus-within:ring-ring',
+        'relative flex flex-wrap items-center gap-1 rounded-md border border-[#3a3a3a] bg-transparent px-2 py-1.5',
+        'focus-within:border-primary focus-within:shadow-[0_0_0_1px_var(--primary)]',
         'data-[disabled]:opacity-50',
         className,
       )}
@@ -54,7 +54,7 @@ function TagsInputItemPreview({ className, ...props }: React.ComponentProps<type
   return (
     <ArkTagsInput.ItemPreview
       className={cn(
-        'inline-flex items-center gap-1 rounded px-2 py-0.5 text-sm bg-accent text-accent-foreground',
+        'inline-flex items-center gap-1 rounded px-2 py-0.5 text-sm bg-white/5 text-foreground',
         'data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground',
         className,
       )}
@@ -87,7 +87,7 @@ function TagsInputItemDeleteTrigger({ className, ...props }: React.ComponentProp
 function TagsInputItemInput({ className, ...props }: React.ComponentProps<typeof ArkTagsInput.ItemInput>) {
   return (
     <ArkTagsInput.ItemInput
-      className={cn('min-w-16 rounded border border-border bg-accent px-2 py-0.5 text-sm text-foreground outline-none', className)}
+      className={cn('min-w-16 rounded border border-[#3a3a3a] bg-white/5 px-2 py-0.5 text-sm text-foreground outline-none', className)}
       data-slot="tags-input-item-input"
       {...props}
     />

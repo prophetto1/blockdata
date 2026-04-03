@@ -14,7 +14,7 @@ function AccordionRoot({ className, ...props }: React.ComponentProps<typeof ArkA
 function AccordionItem({ className, ...props }: React.ComponentProps<typeof ArkAccordion.Item>) {
   return (
     <ArkAccordion.Item
-      className={cn('border-b border-border', className)}
+      className={cn('border-b border-[#3a3a3a]', className)}
       data-slot="accordion-item"
       {...props}
     />
@@ -27,7 +27,7 @@ function AccordionItemTrigger({ className, ...props }: React.ComponentProps<type
       className={cn(
         'flex w-full items-center justify-between gap-3 bg-transparent border-0 px-0 py-3 text-left text-sm font-semibold text-foreground',
         'hover:text-foreground/80',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
         'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed',
         className,
       )}

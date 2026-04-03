@@ -57,9 +57,9 @@ function TreeViewBranchControl({ className, ...props }: React.ComponentProps<typ
     <ArkTreeView.BranchControl
       className={cn(
         'flex w-full items-center gap-2 rounded-md bg-transparent border-0 px-2 py-1 text-left text-foreground',
-        'hover:bg-accent',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+        'hover:bg-white/5',
+        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'data-[selected]:bg-white/5 data-[selected]:text-primary',
         className,
       )}
       data-slot="tree-view-branch-control"
@@ -110,7 +110,7 @@ function TreeViewBranchText({ className, ...props }: React.ComponentProps<typeof
 function TreeViewBranchIndentGuide({ className, ...props }: React.ComponentProps<typeof ArkTreeView.BranchIndentGuide>) {
   return (
     <ArkTreeView.BranchIndentGuide
-      className={cn('absolute h-full w-px bg-border', className)}
+      className={cn('absolute h-full w-px bg-[#3a3a3a]', className)}
       data-slot="tree-view-branch-indent-guide"
       {...props}
     />
@@ -122,9 +122,9 @@ function TreeViewItem({ className, ...props }: React.ComponentProps<typeof ArkTr
     <ArkTreeView.Item
       className={cn(
         'flex w-full items-center gap-2 rounded-md bg-transparent border-0 px-2 py-1 text-left text-foreground',
-        'hover:bg-accent',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'data-[selected]:bg-accent data-[selected]:text-accent-foreground',
+        'hover:bg-white/5',
+        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'data-[selected]:bg-white/5 data-[selected]:text-primary',
         className,
       )}
       data-slot="tree-view-item"

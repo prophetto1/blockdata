@@ -32,7 +32,7 @@ function PopoverContent({ className, ...props }: React.ComponentProps<typeof Ark
       <ArkPopover.Positioner>
         <ArkPopover.Content
           className={cn(
-            'z-50 w-80 rounded-md border border-border bg-popover p-5 shadow-md outline-none',
+            'z-50 w-80 rounded-md border border-[#3a3a3a] bg-popover p-5 shadow-lg shadow-black/30 outline-none',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
             className,
@@ -48,7 +48,7 @@ function PopoverContent({ className, ...props }: React.ComponentProps<typeof Ark
 function PopoverArrow({ className, ...props }: React.ComponentProps<typeof ArkPopover.Arrow>) {
   return (
     <ArkPopover.Arrow className={cn(className)} data-slot="popover-arrow" {...props}>
-      <ArkPopover.ArrowTip className="border-t border-l border-border" />
+      <ArkPopover.ArrowTip className="border-t border-l border-[#3a3a3a]" />
     </ArkPopover.Arrow>
   );
 }
@@ -59,7 +59,7 @@ function PopoverCloseTrigger({ className, ...props }: React.ComponentProps<typeo
       className={cn(
         'absolute right-1 top-1 inline-flex items-center justify-center rounded p-1',
         'bg-transparent border-0 text-muted-foreground hover:text-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
         className,
       )}
       data-slot="popover-close-trigger"

@@ -44,9 +44,9 @@ function SelectTrigger({ className, ...props }: React.ComponentProps<typeof ArkS
   return (
     <ArkSelect.Trigger
       className={cn(
-        'flex w-full items-center justify-between gap-2 rounded-md border border-border bg-transparent px-3 py-2 text-sm',
-        'text-foreground placeholder:text-muted-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'flex w-full items-center justify-between gap-2 rounded-md border border-[#3a3a3a] bg-transparent px-3 py-2 text-sm',
+        'text-foreground transition-[border-color,box-shadow] duration-150',
+        'focus-visible:outline-none focus-visible:border-primary focus-visible:shadow-[0_0_0_1px_var(--primary)]',
         'disabled:cursor-not-allowed disabled:opacity-50',
         'data-[placeholder-shown]:text-muted-foreground',
         className,
@@ -100,7 +100,8 @@ function SelectContent({ className, ...props }: React.ComponentProps<typeof ArkS
       <ArkSelect.Positioner>
         <ArkSelect.Content
           className={cn(
-            'z-50 min-w-[var(--reference-width)] overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md',
+            'z-50 min-w-[var(--reference-width)] overflow-y-auto rounded-md border border-[#3a3a3a] bg-popover p-1',
+            'shadow-lg shadow-black/30',
             'max-h-[min(var(--available-height,300px),300px)]',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
@@ -120,8 +121,8 @@ function SelectItem({ className, ...props }: React.ComponentProps<typeof ArkSele
     <ArkSelect.Item
       className={cn(
         'flex cursor-default select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-        'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
-        'data-[state=checked]:text-foreground data-[state=checked]:font-medium',
+        'data-[highlighted]:bg-white/5',
+        'data-[state=checked]:text-primary data-[state=checked]:font-medium',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className,
       )}

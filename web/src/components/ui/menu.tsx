@@ -16,9 +16,9 @@ function MenuTrigger({
     ? className
     : cn(
       'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium',
-      'bg-background text-foreground border border-input',
-      'transition-colors hover:bg-accent hover:text-accent-foreground',
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      'bg-transparent text-foreground border border-[#3a3a3a]',
+      'transition-colors hover:bg-white/5',
+      'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
       'disabled:pointer-events-none disabled:opacity-50',
       className,
     );
@@ -73,7 +73,7 @@ function MenuContent({
     <ArkMenu.Content
       className={cn(
         'ui-menu-content',
-        'min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md',
+        'min-w-[8rem] overflow-hidden rounded-md border border-[#3a3a3a] bg-popover p-1 text-popover-foreground shadow-lg shadow-black/30',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
         'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
         className,
@@ -99,7 +99,7 @@ function MenuItem({
       className={cn(
         'ui-menu-item',
         'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors',
-        'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
+        'data-[highlighted]:bg-white/5',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className,
       )}
