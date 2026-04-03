@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
-import { AgchainPageHeader } from '@/components/agchain/AgchainPageHeader';
+import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { AgchainPageFrame } from '@/pages/agchain/AgchainPageFrame';
 
@@ -10,13 +10,6 @@ export type AgchainProjectPlaceholderPageProps = {
   bullets: string[];
   statusLabel?: string;
 };
-
-function getFocusedProjectLabel(project: {
-  project_name?: string | null;
-  benchmark_name?: string | null;
-}) {
-  return project.project_name ?? project.benchmark_name ?? 'Selected project';
-}
 
 export function AgchainProjectPlaceholderPage({
   title,
@@ -86,15 +79,11 @@ export function AgchainProjectPlaceholderPage({
     );
   }
 
-  const focusedProjectLabel = getFocusedProjectLabel(scopeState.focusedProject);
-
   return (
     <AgchainPageFrame className="gap-6 py-8">
-      <AgchainPageHeader
-        eyebrow="Project placeholder"
+      <AgchainShellPageHeader
         title={title}
-        description={`${focusedProjectLabel} owns this ${title.toLowerCase()} page. ${description}`}
-        meta={`Current organization: ${scopeState.selectedOrganization.display_name}`}
+        description={description}
       />
 
       <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">

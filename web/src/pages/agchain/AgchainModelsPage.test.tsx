@@ -257,10 +257,15 @@ describe('AgchainModelsPage', () => {
     expect(
       screen.getByText(/configure provider access and inspect the curated global model targets/i),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: 'Providers' })).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
     });
+
+    const providerConfiguration = screen.getByRole('heading', { level: 2, name: 'Provider configuration' }).closest('section');
+    expect(providerConfiguration).not.toBeNull();
+    expect(within(providerConfiguration as HTMLElement).getByLabelText('Search providers')).toBeInTheDocument();
 
     expect(screen.getAllByText('Anthropic').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Gemini').length).toBeGreaterThan(0);

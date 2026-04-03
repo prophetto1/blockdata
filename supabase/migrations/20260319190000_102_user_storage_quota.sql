@@ -10,7 +10,16 @@
 -- - reconcile_user_storage_usage
 -- - storage_kind/status constraints and cleanup indexes
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_extension
+    WHERE extname = 'pgcrypto'
+  ) THEN
+    CREATE EXTENSION pgcrypto;
+  END IF;
+END $$;
 
 -- Storage quota per user
 CREATE TABLE IF NOT EXISTS public.storage_quotas (

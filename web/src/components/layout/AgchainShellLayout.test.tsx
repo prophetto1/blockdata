@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
 import { AgchainShellLayout } from './AgchainShellLayout';
 
 const topCommandBarMock = vi.fn();
@@ -8,6 +9,18 @@ const leftRailMock = vi.fn();
 
 const AGCHAIN_DESKTOP_NAV_OPEN_KEY = 'agchain.shell.nav_open_desktop';
 const AGCHAIN_SIDEBAR_WIDTH_KEY = 'agchain.shell.sidebar_width';
+
+function HeaderRegistrationRoute() {
+  return (
+    <>
+      <AgchainShellPageHeader
+        title="Tools"
+        description="Manage the merged tool registry for Legal-10."
+      />
+      <div data-testid="agchain-route-content" />
+    </>
+  );
+}
 
 vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({
@@ -223,5 +236,22 @@ describe('AgchainShellLayout', () => {
 
     expect(screen.getByTestId('agchain-platform-rail')).toBeInTheDocument();
     expect(screen.queryByTestId('agchain-secondary-rail')).not.toBeInTheDocument();
+  });
+
+  it('renders registered AGChain page headers inside the fixed shell header', () => {
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/tools']}>
+        <Routes>
+          <Route element={<AgchainShellLayout />}>
+            <Route path="/app/agchain/*" element={<HeaderRegistrationRoute />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const header = screen.getByTestId('top-command-bar-left');
+    expect(within(header).getByRole('heading', { name: 'Tools' })).toBeInTheDocument();
+    expect(within(header).getByText('Manage the merged tool registry for Legal-10.')).toBeInTheDocument();
+    expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
   });
 });

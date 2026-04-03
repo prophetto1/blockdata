@@ -17,6 +17,11 @@ test('db validation workflow enforces PR migration verification', () => {
   assert.match(workflow, /pull_request:/, 'workflow must run on pull requests');
   assert.match(workflow, /supabase\/migrations\/\*\*/, 'workflow must watch migration changes');
   assert.match(workflow, /supabase\/setup-cli@v1/, 'workflow must install the Supabase CLI');
+  assert.match(
+    workflow,
+    /test:supabase-extension-replay-guardrails/,
+    'workflow must enforce the extension replay guardrail before local replay'
+  );
   assert.match(workflow, /supabase db start/, 'workflow must start the local Supabase stack');
   assert.match(workflow, /supabase db reset/, 'workflow must replay migrations locally');
 });

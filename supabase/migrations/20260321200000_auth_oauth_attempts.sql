@@ -1,4 +1,13 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_extension
+    WHERE extname = 'pgcrypto'
+  ) THEN
+    CREATE EXTENSION pgcrypto;
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.auth_oauth_attempts (
   attempt_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { AgchainProviderRow } from '@/lib/agchainModelProviders';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ type AgchainModelsTableProps = {
   loading: boolean;
   selectedProviderSlug: string | null;
   onConfigure: (providerSlug: string) => void;
+  headerControls?: ReactNode;
 };
 
 const STATUS_BADGE: Record<string, 'green' | 'red' | 'yellow' | 'gray'> = {
@@ -36,14 +38,20 @@ export function AgchainModelsTable({
   loading,
   selectedProviderSlug,
   onConfigure,
+  headerControls,
 }: AgchainModelsTableProps) {
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/70 shadow-sm">
       <div className="border-b border-border/70 px-6 py-4">
-        <h2 className="text-base font-semibold text-foreground">Provider configuration</h2>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          One row per supported provider. Use Configure to manage credentials and inspect curated targets.
-        </p>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-foreground">Provider configuration</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              One row per supported provider. Use Configure to manage credentials and inspect curated targets.
+            </p>
+          </div>
+          {headerControls ? <div className="xl:shrink-0">{headerControls}</div> : null}
+        </div>
       </div>
       <ScrollArea className="min-h-0 flex-1">
         <table className="w-full text-left">

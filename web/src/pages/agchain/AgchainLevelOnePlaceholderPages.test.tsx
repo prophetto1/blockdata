@@ -41,7 +41,9 @@ describe('AGChain level-one placeholder pages', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Prompts' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this prompts page/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/prompt packs, prompt revisions, and prompt-to-evaluation promotion flows will live here/i),
+    ).toBeInTheDocument();
     expect(screen.getAllByText('Coming soon').length).toBeGreaterThan(0);
 
     rerender(
@@ -50,7 +52,7 @@ describe('AGChain level-one placeholder pages', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('heading', { name: 'Scorers' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this scorers page/i)).toBeInTheDocument();
+    expect(screen.getByText(/scorer definitions, judge rules, and scoring policies will live here/i)).toBeInTheDocument();
 
     rerender(
       <MemoryRouter>
@@ -58,7 +60,9 @@ describe('AGChain level-one placeholder pages', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('heading', { name: 'Parameters' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this parameters page/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/runtime profiles, context delivery policy, and project-level parameter controls will live here/i),
+    ).toBeInTheDocument();
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {

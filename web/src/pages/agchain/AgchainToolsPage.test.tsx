@@ -308,6 +308,11 @@ describe('AgchainToolsPage', () => {
       expect(screen.getAllByText('Web Search').length).toBeGreaterThan(0);
     });
 
+    const registry = screen.getByRole('heading', { level: 2, name: 'Tool registry' }).closest('section');
+    expect(registry).not.toBeNull();
+    expect(within(registry as HTMLElement).getByPlaceholderText('Search tools')).toBeInTheDocument();
+    expect(within(registry as HTMLElement).getByRole('button', { name: 'Add tool' })).toBeInTheDocument();
+
     expect(screen.getAllByText('Custom Lookup').length).toBeGreaterThan(0);
     expect(screen.getByText('Read-only built-in')).toBeInTheDocument();
 

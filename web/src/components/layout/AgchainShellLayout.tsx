@@ -5,6 +5,7 @@ import { useAuth } from '@/auth/AuthContext';
 import { AGCHAIN_NAV_SECTIONS } from '@/components/agchain/AgchainLeftNav';
 import { AgchainOrganizationSwitcher } from '@/components/agchain/AgchainOrganizationSwitcher';
 import { AgchainProjectSwitcher } from '@/components/agchain/AgchainProjectSwitcher';
+import { HeaderCenterProvider, useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { LeftRailShadcn as AgchainChromeRail } from '@/components/shell/LeftRailShadcn';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
@@ -13,6 +14,7 @@ import { styleTokens } from '@/lib/styleTokens';
 const AGCHAIN_SIDEBAR_WIDTH_KEY = 'agchain.shell.sidebar_width';
 const AGCHAIN_RAIL_2_WIDTH = 224;
 const AGCHAIN_HEADER_HEIGHT = styleTokens.shell.headerHeight;
+const AGCHAIN_PAGE_HEADER_HEIGHT = 76;
 const AGCHAIN_SETTINGS_PATH_PREFIX = '/app/agchain/settings';
 
 function readStoredWidth(): number {
@@ -25,15 +27,27 @@ function readStoredWidth(): number {
 }
 
 export function AgchainShellLayout() {
+  return (
+    <HeaderCenterProvider>
+      <AgchainWorkspaceProvider>
+        <AgchainShellInner />
+      </AgchainWorkspaceProvider>
+    </HeaderCenterProvider>
+  );
+}
+
+function AgchainShellInner() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
+  const { pageHeader } = useHeaderCenter();
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => readStoredWidth());
   const isResizingRef = useRef(false);
 
   const showRail2 = location.pathname.startsWith(AGCHAIN_SETTINGS_PATH_PREFIX);
   const rail1Width = sidebarWidth;
   const totalRailWidth = rail1Width + (showRail2 ? AGCHAIN_RAIL_2_WIDTH : 0);
+  const headerHeight = pageHeader ? AGCHAIN_PAGE_HEADER_HEIGHT : AGCHAIN_HEADER_HEIGHT;
 
   const handleSignOut = async () => {
     await signOut();
@@ -76,7 +90,7 @@ export function AgchainShellLayout() {
 
   const mainStyle: CSSProperties = {
     position: 'absolute',
-    insetBlockStart: `${AGCHAIN_HEADER_HEIGHT}px`,
+    insetBlockStart: `${headerHeight}px`,
     insetBlockEnd: 0,
     insetInlineEnd: 0,
     insetInlineStart: `${totalRailWidth}px`,
@@ -85,7 +99,6 @@ export function AgchainShellLayout() {
   };
 
   return (
-    <AgchainWorkspaceProvider>
     <div className="relative h-dvh overflow-hidden bg-background text-foreground">
       <header
         data-testid="agchain-top-header"
@@ -94,16 +107,17 @@ export function AgchainShellLayout() {
           insetInlineStart: `${totalRailWidth}px`,
           insetInlineEnd: 0,
           top: 0,
-          height: `${AGCHAIN_HEADER_HEIGHT}px`,
+          height: `${headerHeight}px`,
           zIndex: 30,
           backgroundColor: 'var(--chrome, var(--background))',
         }}
-        >
-          <TopCommandBar
-            onToggleNav={() => {}}
-            hideProjectSwitcher
-            hideSearch
-          />
+      >
+        <TopCommandBar
+          onToggleNav={() => {}}
+          hideProjectSwitcher
+          hideSearch
+          primaryContext={pageHeader}
+        />
         <div
           data-testid="agchain-shell-top-divider"
           aria-hidden
@@ -172,7 +186,7 @@ export function AgchainShellLayout() {
           data-testid="agchain-secondary-rail"
           style={{
             position: 'fixed',
-            top: `${AGCHAIN_HEADER_HEIGHT}px`,
+            top: `${headerHeight}px`,
             bottom: 0,
             insetInlineStart: `${rail1Width}px`,
             width: `${AGCHAIN_RAIL_2_WIDTH}px`,
@@ -189,6 +203,5 @@ export function AgchainShellLayout() {
         </div>
       </main>
     </div>
-    </AgchainWorkspaceProvider>
   );
 }

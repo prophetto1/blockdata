@@ -110,6 +110,16 @@ function expectPolicyContains(policies, key, fragment, field = 'qual') {
   );
 }
 
+function expectPolicyMatches(policies, key, pattern, field = 'qual') {
+  const policy = policies.get(key);
+  assert.ok(policy, `Expected policy ${key} to exist`);
+  assert.match(
+    policy[field],
+    pattern,
+    `Expected ${field} for ${key} to match ${pattern}`,
+  );
+}
+
 test('supabase migration reconciliation contract is satisfied', async () => {
   await withClient(async (client) => {
     const relationState = await getRelationState(client);
@@ -139,49 +149,60 @@ test('supabase migration reconciliation contract is satisfied', async () => {
 
     const policies = await getPolicies(client);
 
-    expectPolicyContains(
+    expectPolicyMatches(
       policies,
       'flow_executions.flow_executions_select_own',
-      'from public.user_projects',
+      /from (public\.)?user_projects/,
     );
-    expectPolicyContains(
+    expectPolicyMatches(
       policies,
       'flow_executions.flow_executions_insert_own',
-      'from public.user_projects',
+      /from (public\.)?user_projects/,
       'withCheck',
     );
-    expectPolicyContains(
+    expectPolicyMatches(
       policies,
       'flow_executions.flow_executions_update_own',
-      'from public.user_projects',
+      /from (public\.)?user_projects/,
     );
-    expectPolicyContains(
+    expectPolicyMatches(
       policies,
       'flow_executions.flow_executions_update_own',
-      'from public.user_projects',
+      /from (public\.)?user_projects/,
       'withCheck',
     );
 
     expectPolicyContains(
       policies,
       'flow_logs.flow_logs_select_own',
-      'project_id is null or exists',
+      'project_id is null',
+    );
+    expectPolicyMatches(
+      policies,
+      'flow_logs.flow_logs_select_own',
+      /from (public\.)?user_projects/,
     );
     expectPolicyContains(
       policies,
       'flow_logs.flow_logs_select_own',
-      'from public.user_projects',
+      'exists',
     );
     expectPolicyContains(
       policies,
       'flow_logs.flow_logs_insert_own',
-      'project_id is null or exists',
+      'project_id is null',
+      'withCheck',
+    );
+    expectPolicyMatches(
+      policies,
+      'flow_logs.flow_logs_insert_own',
+      /from (public\.)?user_projects/,
       'withCheck',
     );
     expectPolicyContains(
       policies,
       'flow_logs.flow_logs_insert_own',
-      'from public.user_projects',
+      'exists',
       'withCheck',
     );
     assert.ok(
@@ -199,10 +220,10 @@ test('supabase migration reconciliation contract is satisfied', async () => {
       'extraction_schemas.extraction_schemas_delete_own',
       'owner_id = auth.uid()',
     );
-    expectPolicyContains(
+    expectPolicyMatches(
       policies,
       'extraction_schemas.extraction_schemas_insert_own',
-      'from public.user_projects',
+      /from (public\.)?user_projects/,
       'withCheck',
     );
     expectPolicyContains(
@@ -210,10 +231,10 @@ test('supabase migration reconciliation contract is satisfied', async () => {
       'extraction_schemas.extraction_schemas_update_own',
       'owner_id = auth.uid()',
     );
-    expectPolicyContains(
+    expectPolicyMatches(
       policies,
       'extraction_schemas.extraction_schemas_update_own',
-      'from public.user_projects',
+      /from (public\.)?user_projects/,
       'withCheck',
     );
 

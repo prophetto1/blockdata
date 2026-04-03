@@ -92,6 +92,7 @@ external/
 _external/
 _agentDev/
 tmp/
+.temp/
 
 # _agchain
 _agchain/_reference/

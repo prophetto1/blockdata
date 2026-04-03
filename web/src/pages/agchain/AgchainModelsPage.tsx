@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
 import { AgchainModelInspector } from '@/components/agchain/models/AgchainModelInspector';
 import { AgchainModelsTable } from '@/components/agchain/models/AgchainModelsTable';
 import { AgchainModelsToolbar } from '@/components/agchain/models/AgchainModelsToolbar';
@@ -50,21 +51,17 @@ export default function AgchainModelsPage() {
 
   return (
     <AgchainPageFrame className="gap-4 py-6">
-      <section className="shrink-0 rounded-3xl border border-border/70 bg-card/70 px-6 py-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">AGChain platform</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Models</h1>
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-muted-foreground">
-          Configure provider access and inspect the curated global model targets available under each provider.
-        </p>
-      </section>
-
-      <AgchainModelsToolbar search={search} onSearchChange={setSearch} error={error} />
+      <AgchainShellPageHeader
+        title="Models"
+        description="Configure provider access and inspect the curated global model targets available under each provider."
+      />
 
       <AgchainModelsTable
         providerRows={filteredProviderRows}
         loading={listLoading || providersLoading}
         selectedProviderSlug={selectedProviderSlug}
         onConfigure={selectProvider}
+        headerControls={<AgchainModelsToolbar search={search} onSearchChange={setSearch} error={error} />}
       />
 
       <AgchainModelInspector

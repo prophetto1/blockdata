@@ -292,28 +292,19 @@ export function AgchainModelsToolbar({
   error,
 }: AgchainModelsToolbarProps) {
   return (
-    <section className="space-y-3">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-semibold text-foreground">Providers</h2>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Configure provider access, review readiness, and open Configure to inspect each provider&apos;s curated
-            targets.
-          </p>
-        </div>
-        <input
-          aria-label="Search providers"
-          className={`${inputClass} lg:w-80 lg:min-w-80 lg:flex-none`}
-          placeholder="Search provider or target"
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-        />
-      </div>
+    <div className="flex min-w-[20rem] flex-col gap-3">
+      <input
+        aria-label="Search providers"
+        className={inputClass}
+        placeholder="Search provider or target"
+        value={search}
+        onChange={(event) => onSearchChange(event.target.value)}
+      />
       {error ? (
-        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
           {error}
         </p>
       ) : null}
-    </section>
+    </div>
   );
 }

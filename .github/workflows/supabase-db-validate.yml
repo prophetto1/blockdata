@@ -9,6 +9,7 @@ on:
       - '.github/workflows/supabase-db-validate.yml'
       - '.github/workflows/supabase-db-deploy.yml'
       - '.github/workflows/migration-history-hygiene.yml'
+      - 'scripts/tests/supabase-extension-replay-guardrails.test.mjs'
       - 'scripts/tests/supabase-migration-reconciliation-contract.test.mjs'
       - 'scripts/tests/supabase-db-workflows.test.mjs'
       - 'package.json'
@@ -28,6 +29,9 @@ jobs:
 
       - name: Verify DB workflow guardrails
         run: npm run test:workflow-guardrails
+
+      - name: Verify extension replay guardrails
+        run: npm run test:supabase-extension-replay-guardrails
 
       - uses: supabase/setup-cli@v1
         with:

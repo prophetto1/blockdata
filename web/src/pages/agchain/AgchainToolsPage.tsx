@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
+import { AgchainShellPageHeader } from '@/components/agchain/AgchainShellPageHeader';
 import { Button } from '@/components/ui/button';
 import {
   ComboboxRoot,
@@ -205,96 +206,85 @@ export default function AgchainToolsPage() {
 
   return (
     <AgchainPageFrame className="gap-4 py-6">
-      <section className="shrink-0 rounded-3xl border border-border/70 bg-card/70 px-6 py-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">AGChain project</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Tools</h1>
-        <p className="mt-2 max-w-4xl text-sm leading-6 text-muted-foreground">
-          Manage the merged tool registry for {scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}: built-in catalog rows stay read-only while
-          project-authored definitions can be versioned, published, and attached to benchmark tool bags.
-        </p>
-      </section>
-
-      <section className="shrink-0 rounded-3xl border border-border/70 bg-card/70 px-6 py-4 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-1 flex-col gap-3 md:flex-row">
-            <ComboboxRoot
-              collection={searchCollection}
-              inputValue={search}
-              onInputValueChange={(details) => {
-                setSearch(details.inputValue);
-                filterSearch(details.inputValue);
-              }}
-              onValueChange={(details) => {
-                const val = details.value[0];
-                if (val) {
-                  const row = items.find((r) => (r.tool_id ?? r.tool_ref ?? r.tool_name) === val);
-                  if (row) selectTool(row);
-                }
-              }}
-              openOnClick
-              className="flex-1"
-            >
-              <ComboboxControl>
-                <ComboboxInput placeholder="Search tools" />
-              </ComboboxControl>
-              <ComboboxContent>
-                {searchCollection.items.map((item) => (
-                  <ComboboxItem key={item.value} item={item}>
-                    <ComboboxItemText>{item.label}</ComboboxItemText>
-                  </ComboboxItem>
-                ))}
-              </ComboboxContent>
-            </ComboboxRoot>
-            <SelectRoot
-              collection={sourceKindFilterCollection}
-              value={[sourceKindFilter]}
-              onValueChange={(details) => {
-                const val = details.value[0];
-                if (val) setSourceKindFilter(val);
-              }}
-              className="w-auto"
-            >
-              <SelectControl>
-                <SelectTrigger className="h-9 min-w-[10rem] text-sm" aria-label="Filter source kind">
-                  <SelectValueText />
-                </SelectTrigger>
-              </SelectControl>
-              <SelectContent>
-                {sourceKindFilterCollection.items.map((item) => (
-                  <SelectItem key={item.value} item={item}>
-                    <SelectItemText>{item.label}</SelectItemText>
-                    <SelectItemIndicator>&#10003;</SelectItemIndicator>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-              <SelectHiddenSelect />
-            </SelectRoot>
-          </div>
-
-          <Button
-            type="button"
-            onClick={() => {
-              setDialogError(null);
-              setEditorMode('create');
-              setEditorOpen(true);
-            }}
-          >
-            Add tool
-          </Button>
-        </div>
-
-        {error ? (
-          <p className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {error}
-          </p>
-        ) : null}
-      </section>
+      <AgchainShellPageHeader
+        title="Tools"
+        description={`Manage the merged tool registry for ${scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}: built-in catalog rows stay read-only while project-authored definitions can be versioned, published, and attached to benchmark tool bags.`}
+      />
 
       <AgchainToolsTable
         rows={filteredRows}
         loading={listLoading}
         selectedToolKey={selectedToolKey}
         onInspect={(row) => selectTool(row)}
+        error={error}
+        headerControls={(
+          <div className="flex flex-col gap-3 xl:items-end">
+            <div className="flex flex-1 flex-col gap-3 md:flex-row">
+              <ComboboxRoot
+                collection={searchCollection}
+                inputValue={search}
+                onInputValueChange={(details) => {
+                  setSearch(details.inputValue);
+                  filterSearch(details.inputValue);
+                }}
+                onValueChange={(details) => {
+                  const val = details.value[0];
+                  if (val) {
+                    const row = items.find((r) => (r.tool_id ?? r.tool_ref ?? r.tool_name) === val);
+                    if (row) selectTool(row);
+                  }
+                }}
+                openOnClick
+                className="flex-1"
+              >
+                <ComboboxControl>
+                  <ComboboxInput placeholder="Search tools" />
+                </ComboboxControl>
+                <ComboboxContent>
+                  {searchCollection.items.map((item) => (
+                    <ComboboxItem key={item.value} item={item}>
+                      <ComboboxItemText>{item.label}</ComboboxItemText>
+                    </ComboboxItem>
+                  ))}
+                </ComboboxContent>
+              </ComboboxRoot>
+              <SelectRoot
+                collection={sourceKindFilterCollection}
+                value={[sourceKindFilter]}
+                onValueChange={(details) => {
+                  const val = details.value[0];
+                  if (val) setSourceKindFilter(val);
+                }}
+                className="w-auto"
+              >
+                <SelectControl>
+                  <SelectTrigger className="h-9 min-w-[10rem] text-sm" aria-label="Filter source kind">
+                    <SelectValueText />
+                  </SelectTrigger>
+                </SelectControl>
+                <SelectContent>
+                  {sourceKindFilterCollection.items.map((item) => (
+                    <SelectItem key={item.value} item={item}>
+                      <SelectItemText>{item.label}</SelectItemText>
+                      <SelectItemIndicator>&#10003;</SelectItemIndicator>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+                <SelectHiddenSelect />
+              </SelectRoot>
+              <Button
+                type="button"
+                onClick={() => {
+                  setDialogError(null);
+                  setEditorMode('create');
+                  setEditorOpen(true);
+                }}
+              >
+                Add tool
+              </Button>
+            </div>
+          </div>
+        )}
       />
 
       <AgchainToolInspector

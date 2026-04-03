@@ -3,6 +3,7 @@
     "capture-server": "node scripts/capture-server.mjs",
     "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1 -NoReload",
     "platform-api:recover": "powershell -ExecutionPolicy Bypass -File scripts/platform-api-dev-control.ps1 -Action recover",
+    "test:supabase-extension-replay-guardrails": "node --test scripts/tests/supabase-extension-replay-guardrails.test.mjs",
     "test:workflow-guardrails": "node --test scripts/tests/supabase-db-workflows.test.mjs",
     "test:supabase-migration-reconciliation-contract": "node --test scripts/tests/supabase-migration-reconciliation-contract.test.mjs"
   },
