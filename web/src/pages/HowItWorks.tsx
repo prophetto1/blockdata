@@ -1,6 +1,6 @@
 import { Steps } from '@ark-ui/react/steps';
 import { Tabs } from '@ark-ui/react/tabs';
-import { Accordion } from '@ark-ui/react/accordion';
+import { AccordionRoot, AccordionItem, AccordionItemTrigger, AccordionItemContent, AccordionItemIndicator } from '@/components/ui/accordion';
 import { Clipboard } from '@ark-ui/react/clipboard';
 import { Highlight } from '@ark-ui/react/highlight';
 import { JsonTreeView } from '@ark-ui/react/json-tree-view';
@@ -427,16 +427,16 @@ export default function HowItWorks() {
                 />
               </p>
 
-              <Accordion.Root collapsible className="flex w-full flex-col">
+              <AccordionRoot collapsible className="flex w-full flex-col">
                 {COMPARISON.map((item) => (
-                  <Accordion.Item key={item.label} value={item.label} className="border-b border-border/60">
-                    <Accordion.ItemTrigger className="flex w-full items-center justify-between gap-4 border-none bg-transparent py-5 text-left text-[15px] font-semibold text-foreground transition-colors hover:text-primary">
+                  <AccordionItem key={item.label} value={item.label} className="border-b border-border/60">
+                    <AccordionItemTrigger className="flex w-full items-center justify-between gap-4 border-none bg-transparent py-5 text-left text-[15px] font-semibold text-foreground transition-colors hover:text-primary">
                       {item.label}
-                      <Accordion.ItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-180">
+                      <AccordionItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-180">
                         <IconChevronDown size={16} />
-                      </Accordion.ItemIndicator>
-                    </Accordion.ItemTrigger>
-                    <Accordion.ItemContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
+                      </AccordionItemIndicator>
+                    </AccordionItemTrigger>
+                    <AccordionItemContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
                       <div className="grid gap-3 pb-5 sm:grid-cols-2">
                         <div className="rounded-lg border border-border/40 bg-background p-4">
                           <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground/60">Document-level</p>
@@ -447,10 +447,10 @@ export default function HowItWorks() {
                           <p className="text-sm text-foreground">{item.block}</p>
                         </div>
                       </div>
-                    </Accordion.ItemContent>
-                  </Accordion.Item>
+                    </AccordionItemContent>
+                  </AccordionItem>
                 ))}
-              </Accordion.Root>
+              </AccordionRoot>
             </div>
 
             {/* Right — schema modes */}

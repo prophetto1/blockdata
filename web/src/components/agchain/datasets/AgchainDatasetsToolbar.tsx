@@ -1,5 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
 
 type AgchainDatasetsToolbarProps = {
   search: string;
@@ -10,20 +21,24 @@ type AgchainDatasetsToolbarProps = {
   onValidationChange: (value: string | null) => void;
 };
 
-const SOURCE_TYPE_OPTIONS = [
-  { value: '', label: 'All types' },
-  { value: 'csv', label: 'CSV' },
-  { value: 'json', label: 'JSON' },
-  { value: 'jsonl', label: 'JSONL' },
-  { value: 'huggingface', label: 'HuggingFace' },
-];
+const sourceTypeCollection = createListCollection({
+  items: [
+    { value: '', label: 'All types' },
+    { value: 'csv', label: 'CSV' },
+    { value: 'json', label: 'JSON' },
+    { value: 'jsonl', label: 'JSONL' },
+    { value: 'huggingface', label: 'HuggingFace' },
+  ],
+});
 
-const VALIDATION_OPTIONS = [
-  { value: '', label: 'All statuses' },
-  { value: 'pass', label: 'Pass' },
-  { value: 'warn', label: 'Warn' },
-  { value: 'fail', label: 'Fail' },
-];
+const validationCollection = createListCollection({
+  items: [
+    { value: '', label: 'All statuses' },
+    { value: 'pass', label: 'Pass' },
+    { value: 'warn', label: 'Warn' },
+    { value: 'fail', label: 'Fail' },
+  ],
+});
 
 export function AgchainDatasetsToolbar({
   search,
@@ -54,29 +69,47 @@ export function AgchainDatasetsToolbar({
         />
       </div>
 
-      <select
-        value={sourceTypeFilter ?? ''}
-        onChange={(e) => onSourceTypeChange(e.target.value || null)}
-        className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+      <SelectRoot
+        collection={sourceTypeCollection}
+        value={[sourceTypeFilter ?? '']}
+        onValueChange={(details) => onSourceTypeChange(details.value[0] || null)}
+        className="w-auto"
       >
-        {SOURCE_TYPE_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+        <SelectControl>
+          <SelectTrigger className="h-9 min-w-[8rem] text-sm">
+            <SelectValueText placeholder="All types" />
+          </SelectTrigger>
+        </SelectControl>
+        <SelectContent>
+          {sourceTypeCollection.items.map((item) => (
+            <SelectItem key={item.value} item={item}>
+              <SelectItemText>{item.label}</SelectItemText>
+            </SelectItem>
+          ))}
+        </SelectContent>
+        <SelectHiddenSelect />
+      </SelectRoot>
 
-      <select
-        value={validationFilter ?? ''}
-        onChange={(e) => onValidationChange(e.target.value || null)}
-        className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+      <SelectRoot
+        collection={validationCollection}
+        value={[validationFilter ?? '']}
+        onValueChange={(details) => onValidationChange(details.value[0] || null)}
+        className="w-auto"
       >
-        {VALIDATION_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+        <SelectControl>
+          <SelectTrigger className="h-9 min-w-[8rem] text-sm">
+            <SelectValueText placeholder="All statuses" />
+          </SelectTrigger>
+        </SelectControl>
+        <SelectContent>
+          {validationCollection.items.map((item) => (
+            <SelectItem key={item.value} item={item}>
+              <SelectItemText>{item.label}</SelectItemText>
+            </SelectItem>
+          ))}
+        </SelectContent>
+        <SelectHiddenSelect />
+      </SelectRoot>
 
       <Button asChild size="sm">
         <Link to="/app/agchain/datasets/new">+ Add Dataset</Link>

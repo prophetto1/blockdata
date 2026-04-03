@@ -5,7 +5,7 @@ import { DocxPreview } from '@/components/documents/DocxPreview';
 import { PdfjsExpressPreview } from '@/components/documents/PdfjsExpressPreview';
 import { PptxPreview } from '@/components/documents/PptxPreview';
 import { ProjectParseUploader, type UploadBatchResult } from '@/components/documents/ProjectParseUploader';
-import { NativeSelect } from '@/components/ui/native-select';
+import { SelectRoot, SelectControl, SelectTrigger, SelectValueText, SelectContent, SelectItem, SelectItemText, createListCollection } from '@/components/ui/select';
 import { resolveSignedUrlForLocators } from '@/lib/projectDetailHelpers';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
@@ -467,19 +467,36 @@ export default function Upload() {
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-muted-foreground">Rows</span>
-                      <NativeSelect
-                        className="h-[26px] min-w-[58px]"
-                        aria-label="Rows per page"
-                        value={String(rowsPerPage)}
-                        onChange={(event) => {
-                          setRowsPerPage(Number(event.target.value));
-                          setPage(1);
+                      <SelectRoot
+                        collection={createListCollection({
+                          items: ROWS_PER_PAGE_OPTIONS.map((value) => ({
+                            label: String(value),
+                            value: String(value),
+                          })),
+                        })}
+                        value={[String(rowsPerPage)]}
+                        onValueChange={(details) => {
+                          const val = details.value[0];
+                          if (val) {
+                            setRowsPerPage(Number(val));
+                            setPage(1);
+                          }
                         }}
-                        options={ROWS_PER_PAGE_OPTIONS.map((value) => ({
-                          value: String(value),
-                          label: String(value),
-                        }))}
-                      />
+                        className="w-auto"
+                      >
+                        <SelectControl>
+                          <SelectTrigger className="h-[26px] min-w-[58px] text-xs" aria-label="Rows per page">
+                            <SelectValueText />
+                          </SelectTrigger>
+                        </SelectControl>
+                        <SelectContent>
+                          {ROWS_PER_PAGE_OPTIONS.map((value) => (
+                            <SelectItem key={value} item={{ label: String(value), value: String(value) }}>
+                              <SelectItemText>{value}</SelectItemText>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </SelectRoot>
                     </div>
                     <SimplePagination
                       value={activePage}

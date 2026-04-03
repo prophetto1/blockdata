@@ -1,5 +1,17 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
 import type {
   AgchainBenchmarkToolBinding,
   AgchainResolvedBenchmarkTool,
@@ -84,7 +96,12 @@ export function AgchainBenchmarkToolBag({
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-foreground">Tool {binding.position}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{binding.display_name ?? binding.tool_ref}</p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">{binding.display_name ?? binding.tool_ref}</p>
+                      </TooltipTrigger>
+                      <TooltipContent>{binding.display_name ?? binding.tool_ref}</TooltipContent>
+                    </Tooltip>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -120,19 +137,37 @@ export function AgchainBenchmarkToolBag({
                 <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem]">
                   <div className={fieldClass}>
                     <label htmlFor={`benchmark-tool-ref-${binding.position}`}>Tool selection</label>
-                    <select
-                      id={`benchmark-tool-ref-${binding.position}`}
-                      className={selectClass}
-                      value={binding.tool_ref}
-                      onChange={(event) => onChange(binding.position, { tool_ref: event.currentTarget.value })}
+                    <SelectRoot
+                      collection={createListCollection({
+                        items: availableTools.map((tool) => ({
+                          value: tool.tool_ref ?? tool.tool_name,
+                          label: tool.display_name,
+                        })),
+                      })}
+                      value={[binding.tool_ref]}
+                      onValueChange={(details) => {
+                        const val = details.value[0];
+                        if (val) onChange(binding.position, { tool_ref: val });
+                      }}
                       disabled={!canEdit || mutating}
                     >
-                      {availableTools.map((tool) => (
-                        <option key={tool.tool_ref ?? tool.tool_name} value={tool.tool_ref ?? ''}>
-                          {tool.display_name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectControl>
+                        <SelectTrigger className="h-9 w-full text-sm">
+                          <SelectValueText placeholder="Select tool" />
+                        </SelectTrigger>
+                      </SelectControl>
+                      <SelectContent>
+                        {availableTools.map((tool) => {
+                          const val = tool.tool_ref ?? tool.tool_name;
+                          return (
+                            <SelectItem key={val} item={{ value: val, label: tool.display_name }}>
+                              <SelectItemText>{tool.display_name}</SelectItemText>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                      <SelectHiddenSelect />
+                    </SelectRoot>
                   </div>
 
                   <div className={fieldClass}>
@@ -169,8 +204,18 @@ export function AgchainBenchmarkToolBag({
                 <article key={`${tool.position}:${tool.tool_ref}`} className="rounded-xl border border-border/70 px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{tool.display_name ?? tool.tool_ref}</p>
-                      <p className="mt-1 text-xs font-mono text-muted-foreground">{tool.tool_ref}</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="truncate text-sm font-semibold text-foreground">{tool.display_name ?? tool.tool_ref}</p>
+                        </TooltipTrigger>
+                        <TooltipContent>{tool.display_name ?? tool.tool_ref}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="mt-1 truncate text-xs font-mono text-muted-foreground">{tool.tool_ref}</p>
+                        </TooltipTrigger>
+                        <TooltipContent>{tool.tool_ref}</TooltipContent>
+                      </Tooltip>
                     </div>
                     <Badge variant={RESOLUTION_BADGE[tool.resolution_status] ?? 'gray'} size="sm">
                       {tool.resolution_status}

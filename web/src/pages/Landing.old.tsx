@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Tabs } from '@ark-ui/react/tabs';
-import { Accordion } from '@ark-ui/react/accordion';
+import { AccordionRoot, AccordionItem, AccordionItemTrigger, AccordionItemContent, AccordionItemIndicator } from '@/components/ui/accordion';
 import { Clipboard } from '@ark-ui/react/clipboard';
 import { Marquee } from '@ark-ui/react/marquee';
 import { Highlight } from '@ark-ui/react/highlight';
@@ -483,16 +483,16 @@ export default function Landing() {
             Common questions
           </h2>
 
-          <Accordion.Root defaultValue={['what-is-schema']} collapsible className="flex w-full flex-col">
+          <AccordionRoot defaultValue={['what-is-schema']} collapsible className="flex w-full flex-col">
             {FAQ_ITEMS.map((item) => (
-              <Accordion.Item key={item.value} value={item.value} className="border-b border-border/60">
-                <Accordion.ItemTrigger className="flex w-full items-center justify-between gap-4 border-none bg-transparent py-6 text-left text-[15px] font-semibold text-foreground transition-colors hover:text-primary">
+              <AccordionItem key={item.value} value={item.value} className="border-b border-border/60">
+                <AccordionItemTrigger className="flex w-full items-center justify-between gap-4 border-none bg-transparent py-6 text-left text-[15px] font-semibold text-foreground transition-colors hover:text-primary">
                   {item.question}
-                  <Accordion.ItemIndicator className="inline-flex shrink-0 items-center text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-180">
+                  <AccordionItemIndicator className="inline-flex shrink-0 items-center text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-180">
                     <IconChevronDown size={16} />
-                  </Accordion.ItemIndicator>
-                </Accordion.ItemTrigger>
-                <Accordion.ItemContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
+                  </AccordionItemIndicator>
+                </AccordionItemTrigger>
+                <AccordionItemContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
                   <div className="pb-6 text-[15px] leading-relaxed text-muted-foreground">
                     <Highlight
                       className="rounded bg-primary/10 px-0.5 font-medium text-primary"
@@ -500,10 +500,10 @@ export default function Landing() {
                       text={item.answer}
                     />
                   </div>
-                </Accordion.ItemContent>
-              </Accordion.Item>
+                </AccordionItemContent>
+              </AccordionItem>
             ))}
-          </Accordion.Root>
+          </AccordionRoot>
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { IconChevronDown, IconSearch } from '@tabler/icons-react';
-import { Popover } from '@ark-ui/react/popover';
-import { Portal } from '@ark-ui/react/portal';
+import { PopoverRoot, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+
 import { Link } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -96,7 +96,7 @@ export function ProjectFocusSelectorPopover({
   );
 
   return (
-    <Popover.Root
+    <PopoverRoot
       open={open}
       positioning={{ placement: 'bottom-start', offset: { mainAxis: 4 } }}
       onOpenChange={(details) => {
@@ -104,7 +104,7 @@ export function ProjectFocusSelectorPopover({
         if (!details.open) setSearch('');
       }}
     >
-      <Popover.Trigger
+      <PopoverTrigger
         data-testid={triggerTestId}
         className={cn(
           triggerVariant === 'sidebar-row'
@@ -140,10 +140,8 @@ export function ProjectFocusSelectorPopover({
             <IconChevronDown aria-hidden="true" size={16} stroke={1.75} className="shrink-0 text-muted-foreground" />
           </>
         )}
-      </Popover.Trigger>
-      <Portal>
-        <Popover.Positioner className="z-[140]">
-          <Popover.Content className="relative z-[140] w-80 max-w-[calc(100vw-32px)] rounded-md border border-border bg-popover p-0 shadow-md outline-none">
+      </PopoverTrigger>
+      <PopoverContent className="relative z-[140] w-80 max-w-[calc(100vw-32px)] rounded-md border border-border bg-popover p-0 shadow-md outline-none">
             <div className="flex items-center gap-2 border-b border-border px-3 py-2">
               <IconSearch size={14} stroke={1.75} className="shrink-0 text-muted-foreground" />
               <input
@@ -222,9 +220,7 @@ export function ProjectFocusSelectorPopover({
             <div className="border-t border-border py-1">
               {footerActionNode}
             </div>
-          </Popover.Content>
-        </Popover.Positioner>
-      </Portal>
-    </Popover.Root>
+      </PopoverContent>
+    </PopoverRoot>
   );
 }

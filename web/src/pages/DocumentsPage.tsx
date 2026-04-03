@@ -13,6 +13,7 @@ import { UploadTabPanel } from '@/components/documents/UploadTabPanel';
 import { ParseTabPanel, ParseRowActions, useParseTab } from '@/components/documents/ParseTabPanel';
 import { EditTabPanel } from '@/components/documents/EditTabPanel';
 
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 type Tab = 'upload' | 'parse' | 'edit';
@@ -97,56 +98,47 @@ export default function DocumentsPage() {
       </section>
 
       {/* Right: tabbed panel */}
-      <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {/* Tab bar */}
-        <div className="flex shrink-0 border-b border-border">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <TabsList className="flex shrink-0 border-b border-border">
           {TABS.map((tab) => {
             const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
             return (
-              <button
+              <TabsTrigger
                 key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
+                value={tab.id}
                 className={cn(
                   'flex items-center gap-1.5 px-4 py-2 text-xs font-medium transition-colors border-b-2',
-                  isActive
-                    ? 'border-primary text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/30',
+                  'data-[selected]:border-primary data-[selected]:text-foreground',
+                  'border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/30',
                 )}
               >
                 <Icon size={14} stroke={1.75} />
                 {tab.label}
-              </button>
+              </TabsTrigger>
             );
           })}
-        </div>
+        </TabsList>
 
-        {/* Tab content */}
-        <div className="min-h-0 flex-1 overflow-auto">
-          {activeTab === 'upload' && (
-            <UploadTabPanel
-              projectId={resolvedProjectId}
-              onUploadComplete={docState.refreshDocs}
-            />
-          )}
-          {activeTab === 'parse' && (
-            <>
-              <ParseConfigColumn
-                docs={docState.docs}
-                trackDocs={docState.docs}
-                selected={docState.selected}
-                selectedDoc={parseSelectedDoc}
-                parseTab={parseTab}
-              />
-              <ParseTabPanel parseTab={parseTab} />
-            </>
-          )}
-          {activeTab === 'edit' && (
-            <EditTabPanel selectedDoc={editDoc} />
-          )}
-        </div>
-      </section>
+        <TabsContent value="upload" className="min-h-0 flex-1 overflow-auto">
+          <UploadTabPanel
+            projectId={resolvedProjectId}
+            onUploadComplete={docState.refreshDocs}
+          />
+        </TabsContent>
+        <TabsContent value="parse" className="min-h-0 flex-1 overflow-auto">
+          <ParseConfigColumn
+            docs={docState.docs}
+            trackDocs={docState.docs}
+            selected={docState.selected}
+            selectedDoc={parseSelectedDoc}
+            parseTab={parseTab}
+          />
+          <ParseTabPanel parseTab={parseTab} />
+        </TabsContent>
+        <TabsContent value="edit" className="min-h-0 flex-1 overflow-auto">
+          <EditTabPanel selectedDoc={editDoc} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

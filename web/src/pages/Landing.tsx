@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs } from '@ark-ui/react/tabs';
-import { Accordion } from '@ark-ui/react/accordion';
+import { AccordionRoot, AccordionItem, AccordionItemTrigger, AccordionItemContent, AccordionItemIndicator } from '@/components/ui/accordion';
 import { Highlight } from '@ark-ui/react/highlight';
 import { JsonTreeView } from '@ark-ui/react/json-tree-view';
 import {
@@ -743,20 +743,20 @@ export default function Landing() {
       <section id="faq" className="py-20 md:py-28">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 md:px-8">
           <h2 className="mb-10 text-center text-3xl font-bold tracking-tight md:text-4xl">FAQ</h2>
-          <Accordion.Root defaultValue={['what-is-block']} className="flex flex-col gap-2">
+          <AccordionRoot defaultValue={['what-is-block']} className="flex flex-col gap-2">
             {FAQ_ITEMS.map((item) => (
-              <Accordion.Item
+              <AccordionItem
                 key={item.value}
                 value={item.value}
                 className="overflow-hidden rounded-xl border border-border/60 bg-card/50 transition-colors data-[state=open]:bg-card/80"
               >
-                <Accordion.ItemTrigger className="flex w-full cursor-pointer items-center justify-between px-6 py-5 text-left text-sm font-semibold transition-colors hover:text-primary">
+                <AccordionItemTrigger className="flex w-full cursor-pointer items-center justify-between px-6 py-5 text-left text-sm font-semibold transition-colors hover:text-primary">
                   {item.question}
-                  <Accordion.ItemIndicator>
+                  <AccordionItemIndicator>
                     <IconChevronDown size={16} className="transition-transform duration-200 data-[state=open]:rotate-180" />
-                  </Accordion.ItemIndicator>
-                </Accordion.ItemTrigger>
-                <Accordion.ItemContent className="px-6 pb-5">
+                  </AccordionItemIndicator>
+                </AccordionItemTrigger>
+                <AccordionItemContent className="px-6 pb-5">
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     <Highlight
                       className="rounded bg-primary/10 px-0.5 font-medium text-primary"
@@ -764,10 +764,10 @@ export default function Landing() {
                       text={item.answer}
                     />
                   </p>
-                </Accordion.ItemContent>
-              </Accordion.Item>
+                </AccordionItemContent>
+              </AccordionItem>
             ))}
-          </Accordion.Root>
+          </AccordionRoot>
         </div>
       </section>
 

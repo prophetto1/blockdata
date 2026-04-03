@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
+import { type TreeViewNodeProviderProps, TreeViewRoot, TreeViewTree, TreeViewNodeProvider, TreeViewNodeContext, TreeViewBranch, TreeViewBranchControl, TreeViewBranchTrigger, TreeViewBranchIndicator, TreeViewBranchText, TreeViewBranchContent, TreeViewBranchIndentGuide, TreeViewItem, TreeViewItemText, createTreeCollection } from '@/components/ui/tree-view';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import {
@@ -360,7 +360,7 @@ export function AssetsPanel({
                 setSelectedTreeNodeId(null);
               }}
             >
-              <TreeView.Root
+              <TreeViewRoot
                 collection={filesTreeCollection}
                 selectionMode="single"
                 selectedValue={selectedTreeValue}
@@ -386,12 +386,12 @@ export function AssetsPanel({
                 }}
                 className="text-[13px]"
               >
-                <TreeView.Tree className="flex flex-col py-1" aria-label="Project assets">
+                <TreeViewTree className="flex flex-col py-1" aria-label="Project assets">
                   {filesTreeCollection.rootNode.children?.map((node, index) => (
                     <AssetTreeNode key={node.id} node={node} indexPath={[index]} />
                   ))}
-                </TreeView.Tree>
-              </TreeView.Root>
+                </TreeViewTree>
+              </TreeViewRoot>
             </div>
           ) : null}
         </ScrollArea>
@@ -447,33 +447,33 @@ const ROW_BASE = 'flex w-full min-w-0 items-center gap-1.5 overflow-hidden round
 const ROW_HOVER = 'hover:bg-accent/60';
 const ROW_SELECTED = 'bg-accent/70 text-foreground';
 
-type AssetTreeNodeProps = TreeView.NodeProviderProps<FilesTreeNode>;
+type AssetTreeNodeProps = TreeViewNodeProviderProps<FilesTreeNode>;
 
 function AssetTreeNode({ node, indexPath }: AssetTreeNodeProps) {
   if (node.kind === 'folder') {
     return (
-      <TreeView.NodeProvider node={node} indexPath={indexPath}>
-        <TreeView.Branch>
-          <TreeView.BranchControl className="min-w-0">
-            <TreeView.BranchTrigger className={`${ROW_BASE} ${ROW_HOVER}`}>
-              <TreeView.BranchIndicator className="transition-transform data-[state=open]:rotate-90">
+      <TreeViewNodeProvider node={node} indexPath={indexPath}>
+        <TreeViewBranch>
+          <TreeViewBranchControl className="min-w-0">
+            <TreeViewBranchTrigger className={`${ROW_BASE} ${ROW_HOVER}`}>
+              <TreeViewBranchIndicator className="transition-transform data-[state=open]:rotate-90">
                 <IconChevronRight size={14} className="shrink-0 text-muted-foreground" />
-              </TreeView.BranchIndicator>
-              <TreeView.BranchText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+              </TreeViewBranchIndicator>
+              <TreeViewBranchText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                 <IconFolder size={15} className="shrink-0 text-muted-foreground [[data-state=open]_&]:hidden" />
                 <IconFolderOpen size={15} className="hidden shrink-0 text-muted-foreground [[data-state=open]_&]:block" />
                 <span className="min-w-0 truncate">{node.label}</span>
-              </TreeView.BranchText>
-            </TreeView.BranchTrigger>
-          </TreeView.BranchControl>
-          <TreeView.BranchContent className="pl-3">
-            <TreeView.BranchIndentGuide />
+              </TreeViewBranchText>
+            </TreeViewBranchTrigger>
+          </TreeViewBranchControl>
+          <TreeViewBranchContent className="pl-3">
+            <TreeViewBranchIndentGuide />
             {(node.children ?? []).map((child, i) => (
               <AssetTreeNode key={child.id} node={child} indexPath={[...indexPath, i]} />
             ))}
-          </TreeView.BranchContent>
-        </TreeView.Branch>
-      </TreeView.NodeProvider>
+          </TreeViewBranchContent>
+        </TreeViewBranch>
+      </TreeViewNodeProvider>
     );
   }
 
@@ -482,11 +482,11 @@ function AssetTreeNode({ node, indexPath }: AssetTreeNodeProps) {
   const failed = fileDoc.status.includes('failed');
 
   return (
-    <TreeView.NodeProvider node={node} indexPath={indexPath}>
-      <TreeView.Item>
-        <TreeView.NodeContext>
+    <TreeViewNodeProvider node={node} indexPath={indexPath}>
+      <TreeViewItem>
+        <TreeViewNodeContext>
           {(state) => (
-            <TreeView.ItemText className={`${ROW_BASE} ${state.selected ? ROW_SELECTED : ROW_HOVER}`}>
+            <TreeViewItemText className={`${ROW_BASE} ${state.selected ? ROW_SELECTED : ROW_HOVER}`}>
               <IconFileText size={15} className="shrink-0 text-muted-foreground" />
               <span
                 className="min-w-0 flex-1 truncate font-medium text-foreground"
@@ -512,10 +512,10 @@ function AssetTreeNode({ node, indexPath }: AssetTreeNodeProps) {
                   />
                 </span>
               </span>
-            </TreeView.ItemText>
+            </TreeViewItemText>
           )}
-        </TreeView.NodeContext>
-      </TreeView.Item>
-    </TreeView.NodeProvider>
+        </TreeViewNodeContext>
+      </TreeViewItem>
+    </TreeViewNodeProvider>
   );
 }

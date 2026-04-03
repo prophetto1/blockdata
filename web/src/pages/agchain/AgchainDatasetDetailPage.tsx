@@ -11,7 +11,7 @@ import { useAgchainDatasetDraft } from '@/hooks/agchain/useAgchainDatasetDraft';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 type DetailTab = 'samples' | 'versions' | 'source' | 'mapping' | 'validation';
 
@@ -221,111 +221,106 @@ export default function AgchainDatasetDetailPage() {
           </div>
         )}
 
-        {/* Tab bar */}
-        <div className="flex border-b border-border">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => handleTabChange(tab.key)}
-              className={cn(
-                'px-4 py-2 text-sm font-medium transition-colors',
-                activeTab === tab.key
-                  ? 'border-b-2 border-primary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => handleTabChange(v as DetailTab)}>
+          <TabsList className="flex border-b border-border">
+            {TABS.map((tab) => (
+              <TabsTrigger
+                key={tab.key}
+                value={tab.key}
+                className="px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[selected]:border-b-2 data-[selected]:border-primary data-[selected]:text-foreground"
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {/* Tab content */}
-        {activeTab === 'samples' && (
-          <AgchainDatasetSamplesTable
-            samples={samples}
-            loading={tabLoading}
-            onSelectSample={handleSelectSample}
-          />
-        )}
+          <TabsContent value="samples">
+            <AgchainDatasetSamplesTable
+              samples={samples}
+              loading={tabLoading}
+              onSelectSample={handleSelectSample}
+            />
+          </TabsContent>
 
-        {activeTab === 'versions' && (
-          <AgchainDatasetVersionsTable versions={versions} loading={tabLoading} />
-        )}
+          <TabsContent value="versions">
+            <AgchainDatasetVersionsTable versions={versions} loading={tabLoading} />
+          </TabsContent>
 
-        {activeTab === 'source' && source && (
-          <div className="rounded-xl border border-border/70 bg-card/70 p-5">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Source Configuration</h3>
-            <div className="flex flex-col gap-2 text-sm">
-              <div className="flex gap-2">
-                <span className="text-muted-foreground">Source Type:</span>
-                <span className="text-foreground">{source.source_type}</span>
+          <TabsContent value="source">
+            {source ? (
+              <div className="rounded-xl border border-border/70 bg-card/70 p-5">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Source Configuration</h3>
+                <div className="flex flex-col gap-2 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground">Source Type:</span>
+                    <span className="text-foreground">{source.source_type}</span>
+                  </div>
+                  {source.source_uri && (
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground">Source URI:</span>
+                      <span className="font-mono text-foreground">{source.source_uri}</span>
+                    </div>
+                  )}
+                  <pre className="mt-2 max-h-48 overflow-auto rounded-md bg-background/50 p-3 text-xs text-muted-foreground">
+                    {JSON.stringify(source.source_config_jsonb, null, 2)}
+                  </pre>
+                </div>
               </div>
-              {source.source_uri && (
-                <div className="flex gap-2">
-                  <span className="text-muted-foreground">Source URI:</span>
-                  <span className="font-mono text-foreground">{source.source_uri}</span>
+            ) : !tabLoading ? (
+              <div className="rounded-xl border border-border/70 bg-card/70 px-5 py-4 text-sm text-muted-foreground">
+                No source data available.
+              </div>
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="mapping">
+            {mapping ? (
+              <div className="rounded-xl border border-border/70 bg-card/70 p-5">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Field Mapping</h3>
+                <div className="flex flex-col gap-2">
+                  {Object.entries(mapping.field_spec_jsonb).map(([key, value]) => (
+                    <div key={key} className="flex items-center gap-4 rounded-md border border-border/50 bg-background/50 px-4 py-2">
+                      <span className="w-24 text-sm font-semibold text-foreground">{key}</span>
+                      <span className="font-mono text-sm text-muted-foreground">
+                        {value && typeof value === 'object' && 'path' in value
+                          ? String((value as { path: string }).path)
+                          : '-'}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              )}
-              <pre className="mt-2 max-h-48 overflow-auto rounded-md bg-background/50 p-3 text-xs text-muted-foreground">
-                {JSON.stringify(source.source_config_jsonb, null, 2)}
-              </pre>
-            </div>
-          </div>
-        )}
+                {mapping.field_resolution_summary && Object.keys(mapping.field_resolution_summary).length > 0 && (
+                  <pre className="mt-3 max-h-32 overflow-auto rounded-md bg-background/50 p-3 text-xs text-muted-foreground">
+                    {JSON.stringify(mapping.field_resolution_summary, null, 2)}
+                  </pre>
+                )}
+              </div>
+            ) : !tabLoading ? (
+              <div className="rounded-xl border border-border/70 bg-card/70 px-5 py-4 text-sm text-muted-foreground">
+                No mapping data available.
+              </div>
+            ) : null}
+          </TabsContent>
 
-        {activeTab === 'mapping' && mapping && (
-          <div className="rounded-xl border border-border/70 bg-card/70 p-5">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Field Mapping</h3>
-            <div className="flex flex-col gap-2">
-              {Object.entries(mapping.field_spec_jsonb).map(([key, value]) => (
-                <div key={key} className="flex items-center gap-4 rounded-md border border-border/50 bg-background/50 px-4 py-2">
-                  <span className="w-24 text-sm font-semibold text-foreground">{key}</span>
-                  <span className="font-mono text-sm text-muted-foreground">
-                    {value && typeof value === 'object' && 'path' in value
-                      ? String((value as { path: string }).path)
-                      : '-'}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {mapping.field_resolution_summary && Object.keys(mapping.field_resolution_summary).length > 0 && (
-              <pre className="mt-3 max-h-32 overflow-auto rounded-md bg-background/50 p-3 text-xs text-muted-foreground">
-                {JSON.stringify(mapping.field_resolution_summary, null, 2)}
-              </pre>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'validation' && (
-          <AgchainDatasetValidationPanel
-            validation={
-              validation
-                ? {
-                    ...validation,
-                    warning_count: validation.warning_counts.warning_count,
-                    duplicate_id_count: validation.warning_counts.duplicate_id_count,
-                    missing_field_count: validation.warning_counts.missing_field_count,
-                    unsupported_payload_count: validation.warning_counts.unsupported_payload_count,
-                    source_hash: null,
-                  }
-                : null
-            }
-            loading={tabLoading}
-          />
-        )}
-
-        {activeTab === 'source' && !source && !tabLoading && (
-          <div className="rounded-xl border border-border/70 bg-card/70 px-5 py-4 text-sm text-muted-foreground">
-            No source data available.
-          </div>
-        )}
-
-        {activeTab === 'mapping' && !mapping && !tabLoading && (
-          <div className="rounded-xl border border-border/70 bg-card/70 px-5 py-4 text-sm text-muted-foreground">
-            No mapping data available.
-          </div>
-        )}
+          <TabsContent value="validation">
+            <AgchainDatasetValidationPanel
+              validation={
+                validation
+                  ? {
+                      ...validation,
+                      warning_count: validation.warning_counts.warning_count,
+                      duplicate_id_count: validation.warning_counts.duplicate_id_count,
+                      missing_field_count: validation.warning_counts.missing_field_count,
+                      unsupported_payload_count: validation.warning_counts.unsupported_payload_count,
+                      source_hash: null,
+                    }
+                  : null
+              }
+              loading={tabLoading}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* Sample drawer */}
         <AgchainDatasetSampleDrawer

@@ -20,7 +20,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { useNavigate } from 'react-router-dom';
 import { Checkbox } from '@ark-ui/react/checkbox';
 import { Select, createListCollection } from '@ark-ui/react/select';
-import { Pagination } from '@ark-ui/react/pagination';
+import { PaginationRoot, PaginationPrevTrigger, PaginationNextTrigger } from '@/components/ui/pagination';
 import { Portal } from '@ark-ui/react/portal';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -395,21 +395,21 @@ export default function FlowsList() {
               </Portal>
             </Select.Root>
             {totalPages > 1 && (
-              <Pagination.Root
+              <PaginationRoot
                 count={total}
                 pageSize={pageSize}
                 page={page}
                 onPageChange={(details) => setPage(details.page)}
                 className="flex items-center gap-1"
               >
-                <Pagination.PrevTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
+                <PaginationPrevTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
                   Prev
-                </Pagination.PrevTrigger>
+                </PaginationPrevTrigger>
                 <span>Page {page} of {totalPages}</span>
-                <Pagination.NextTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
+                <PaginationNextTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
                   Next
-                </Pagination.NextTrigger>
-              </Pagination.Root>
+                </PaginationNextTrigger>
+              </PaginationRoot>
             )}
           </div>
           <span className="font-medium">Total: {total}</span>

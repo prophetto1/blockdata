@@ -6,6 +6,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SelectRoot, SelectControl, SelectTrigger, SelectValueText, SelectContent, SelectItem, SelectItemText, createListCollection } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import type { ServiceFunctionRow, ServiceRow } from '@/pages/settings/services-panel.types';
 import { getServiceTypeLabel } from '@/pages/settings/services-panel.types';
@@ -294,19 +295,38 @@ export default function ServiceDetailPage() {
                         placeholder="Search functions"
                         className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
                       />
-                      <select
-                        aria-label="Filter Functions by Type"
-                        value={selectedFunctionType}
-                        onChange={(event) => setSelectedFunctionType(event.currentTarget.value)}
-                        className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                      <SelectRoot
+                        collection={createListCollection({
+                          items: [
+                            { label: `All types (${functions.length})`, value: 'all' },
+                            ...functionTypeOptions.map(([type, count]) => ({
+                              label: `${type} (${count})`,
+                              value: type,
+                            })),
+                          ],
+                        })}
+                        value={[selectedFunctionType]}
+                        onValueChange={(details) => {
+                          const val = details.value[0];
+                          if (val) setSelectedFunctionType(val);
+                        }}
                       >
-                        <option value="all">{`All types (${functions.length})`}</option>
-                        {functionTypeOptions.map(([type, count]) => (
-                          <option key={type} value={type}>
-                            {`${type} (${count})`}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectControl>
+                          <SelectTrigger className="h-8 w-full text-sm" aria-label="Filter Functions by Type">
+                            <SelectValueText />
+                          </SelectTrigger>
+                        </SelectControl>
+                        <SelectContent>
+                          <SelectItem item={{ label: `All types (${functions.length})`, value: 'all' }}>
+                            <SelectItemText>{`All types (${functions.length})`}</SelectItemText>
+                          </SelectItem>
+                          {functionTypeOptions.map(([type, count]) => (
+                            <SelectItem key={type} item={{ label: `${type} (${count})`, value: type }}>
+                              <SelectItemText>{`${type} (${count})`}</SelectItemText>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </SelectRoot>
                     </div>
                     {filteredFunctions.length === 0 ? (
                       <p className="text-xs text-muted-foreground">No functions match the current filters.</p>

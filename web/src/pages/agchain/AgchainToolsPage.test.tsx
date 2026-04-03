@@ -305,10 +305,10 @@ describe('AgchainToolsPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Web Search')).toBeInTheDocument();
+      expect(screen.getAllByText('Web Search').length).toBeGreaterThan(0);
     });
 
-    expect(screen.getByText('Custom Lookup')).toBeInTheDocument();
+    expect(screen.getAllByText('Custom Lookup').length).toBeGreaterThan(0);
     expect(screen.getByText('Read-only built-in')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Custom Lookup' }));
@@ -328,7 +328,7 @@ describe('AgchainToolsPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Custom Lookup')).toBeInTheDocument();
+      expect(screen.getAllByText('Custom Lookup').length).toBeGreaterThan(0);
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Add tool' }));
@@ -363,7 +363,7 @@ describe('AgchainToolsPage', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Create tool' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Repo Search')).toBeInTheDocument();
+      expect(screen.getAllByText('Repo Search').length).toBeGreaterThan(0);
     });
   });
 });

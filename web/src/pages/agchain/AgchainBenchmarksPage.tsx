@@ -1,30 +1,28 @@
 import { AgchainBenchmarkToolBag } from '@/components/agchain/benchmarks/AgchainBenchmarkToolBag';
-import { AgchainBenchmarkNav } from '@/components/agchain/AgchainBenchmarkNav';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AgchainBenchmarkStepInspector } from '@/components/agchain/benchmarks/AgchainBenchmarkStepInspector';
 import { AgchainBenchmarkStepsList } from '@/components/agchain/benchmarks/AgchainBenchmarkStepsList';
 import { AgchainBenchmarkWorkbenchHeader } from '@/components/agchain/benchmarks/AgchainBenchmarkWorkbenchHeader';
 import { useAgchainBenchmarkSteps } from '@/hooks/agchain/useAgchainBenchmarkSteps';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { AgchainPageFrame } from './AgchainPageFrame';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { SplitterRoot, SplitterPanel, SplitterResizeTrigger } from '@/components/ui/splitter';
 
-const SECTION_LABELS: Record<string, string> = {
-  '#steps': 'Steps',
-  '#questions': 'Questions',
-  '#context': 'Context',
-  '#state': 'State',
-  '#scoring': 'Scoring',
-  '#models': 'Models',
-  '#runner': 'Runner',
-  '#validation': 'Validation',
-  '#runs': 'Runs',
-};
+const SECTIONS = [
+  { key: 'steps', label: 'Steps' },
+  { key: 'questions', label: 'Questions' },
+  { key: 'context', label: 'Context' },
+  { key: 'state', label: 'State' },
+  { key: 'scoring', label: 'Scoring' },
+  { key: 'models', label: 'Models' },
+  { key: 'runner', label: 'Runner' },
+  { key: 'validation', label: 'Validation' },
+  { key: 'runs', label: 'Runs' },
+];
 
 export default function AgchainBenchmarksPage() {
-  const { hash } = useLocation();
-  const activeHash = hash || '#steps';
-  const activeLabel = SECTION_LABELS[activeHash] ?? 'Steps';
   const scopeState = useAgchainScopeState('project');
   const {
     benchmark,
@@ -147,60 +145,85 @@ export default function AgchainBenchmarksPage() {
         </section>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[14rem_minmax(0,1fr)]">
-        <aside className="self-start rounded-3xl border border-border/70 bg-card/70 shadow-sm">
-          <AgchainBenchmarkNav />
+      <Tabs defaultValue="steps" onValueChange={() => {}} className="grid gap-6 xl:grid-cols-[14rem_minmax(0,1fr)]">
+        <aside className="self-start rounded-3xl border border-border/70 bg-card/70 shadow-sm p-2">
+          <TabsList className="flex flex-col gap-0.5">
+            {SECTIONS.map((s) => (
+              <TabsTrigger
+                key={s.key}
+                value={s.key}
+                className="w-full justify-start rounded-md px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/20 hover:text-foreground data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[selected]:font-semibold"
+              >
+                {s.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </aside>
 
-        {activeHash === '#steps' ? (
-          <div className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(24rem,1fr)]">
-              <AgchainBenchmarkStepsList
-                steps={steps}
-                selectedStepId={selectedStepId}
-                canEdit={canEdit}
+        <div>
+          <TabsContent value="steps">
+            <div className="space-y-6">
+              <SplitterRoot
+                panels={[{ id: 'list', minSize: 30 }, { id: 'inspector', minSize: 25 }]}
+                defaultSize={[60, 40]}
+                className="min-h-[24rem]"
+              >
+                <SplitterPanel id="list">
+                  <AgchainBenchmarkStepsList
+                    steps={steps}
+                    selectedStepId={selectedStepId}
+                    canEdit={canEdit}
+                    loading={loading}
+                    mutating={mutating}
+                    dirtyOrder={dirtyOrder}
+                    onSelect={selectStep}
+                    onMove={moveStep}
+                    onSaveOrder={saveOrder}
+                  />
+                </SplitterPanel>
+                <SplitterResizeTrigger id="list:inspector" aria-label="Resize steps and inspector" />
+                <SplitterPanel id="inspector">
+                  <AgchainBenchmarkStepInspector
+                    selectedStep={selectedStep}
+                    canEdit={canEdit}
+                    loading={loading}
+                    mutating={mutating}
+                    onSave={updateSelectedStep}
+                    onDelete={deleteSelectedStep}
+                  />
+                </SplitterPanel>
+              </SplitterRoot>
+
+              <AgchainBenchmarkToolBag
+                toolRefs={toolRefs}
+                resolvedTools={resolvedTools}
+                availableTools={availableTools}
+                canEdit={canEdit && currentVersion?.version_status === 'draft'}
                 loading={loading}
                 mutating={mutating}
-                dirtyOrder={dirtyOrder}
-                onSelect={selectStep}
-                onMove={moveStep}
-                onSaveOrder={saveOrder}
-              />
-              <AgchainBenchmarkStepInspector
-                selectedStep={selectedStep}
-                canEdit={canEdit}
-                loading={loading}
-                mutating={mutating}
-                onSave={updateSelectedStep}
-                onDelete={deleteSelectedStep}
+                dirty={dirtyToolBag}
+                onAdd={addToolRef}
+                onChange={updateToolRef}
+                onMove={moveToolRef}
+                onRemove={removeToolRef}
+                onSave={saveToolBag}
               />
             </div>
+          </TabsContent>
 
-            <AgchainBenchmarkToolBag
-              toolRefs={toolRefs}
-              resolvedTools={resolvedTools}
-              availableTools={availableTools}
-              canEdit={canEdit && currentVersion?.version_status === 'draft'}
-              loading={loading}
-              mutating={mutating}
-              dirty={dirtyToolBag}
-              onAdd={addToolRef}
-              onChange={updateToolRef}
-              onMove={moveToolRef}
-              onRemove={removeToolRef}
-              onSave={saveToolBag}
-            />
-          </div>
-        ) : (
-          <section className="rounded-3xl border border-border/70 bg-card/70 p-8 shadow-sm">
-            <h2 className="text-xl font-semibold text-foreground">{activeLabel}</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-              {activeLabel} remains a child placeholder of the selected AGChain project in this phase. The live surface
-              implemented in this plan is `#steps`.
-            </p>
-          </section>
-        )}
-      </div>
+          {SECTIONS.filter((s) => s.key !== 'steps').map((s) => (
+            <TabsContent key={s.key} value={s.key}>
+              <section className="rounded-3xl border border-border/70 bg-card/70 p-8 shadow-sm">
+                <h2 className="text-xl font-semibold text-foreground">{s.label}</h2>
+                <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+                  {s.label} remains a child placeholder of the selected AGChain project in this phase. The live surface
+                  implemented in this plan is Steps.
+                </p>
+              </section>
+            </TabsContent>
+          ))}
+        </div>
+      </Tabs>
     </AgchainPageFrame>
   );
 }

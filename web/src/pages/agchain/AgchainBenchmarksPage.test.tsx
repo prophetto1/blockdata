@@ -258,7 +258,7 @@ describe('AgchainBenchmarksPage', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Benchmark definition' })).toBeInTheDocument();
-    expect(screen.getByTestId('agchain-benchmark-nav')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Steps' })).toBeInTheDocument();
     expect(screen.getByText(/legal evals owns this benchmark definition page/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New Step' })).toBeInTheDocument();
     expect(screen.getByText('Issue Spotting')).toBeInTheDocument();

@@ -13,7 +13,7 @@ import {
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Checkbox } from '@ark-ui/react/checkbox';
-import { Pagination } from '@ark-ui/react/pagination';
+import { PaginationRoot, PaginationPrevTrigger, PaginationNextTrigger } from '@/components/ui/pagination';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -607,21 +607,21 @@ export function Component() {
               ))}
             </select>
             {totalPages > 1 && (
-              <Pagination.Root
+              <PaginationRoot
                 count={filtered.length}
                 pageSize={pageSize}
                 page={page}
                 onPageChange={(details) => setPage(details.page)}
                 className="flex items-center gap-1"
               >
-                <Pagination.PrevTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
+                <PaginationPrevTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
                   Prev
-                </Pagination.PrevTrigger>
+                </PaginationPrevTrigger>
                 <span>Page {page} of {totalPages}</span>
-                <Pagination.NextTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
+                <PaginationNextTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
                   Next
-                </Pagination.NextTrigger>
-              </Pagination.Root>
+                </PaginationNextTrigger>
+              </PaginationRoot>
             )}
           </div>
           <span className="font-medium">Total: {filtered.length}</span>

@@ -17,7 +17,7 @@ import {
   IconUpload,
   IconX,
 } from '@tabler/icons-react';
-import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
+import { TreeViewRoot, TreeViewTree, TreeViewNodeProvider, TreeViewNodeContext, TreeViewContext, TreeViewBranch, TreeViewBranchControl, TreeViewBranchText, TreeViewItem, TreeViewItemText, TreeViewNodeRenameInput, createTreeCollection } from '@/components/ui/tree-view';
 import {
   MenuContent,
   MenuItem,
@@ -925,7 +925,7 @@ function FilesTree({
             {filesQuery.trim().length > 0 ? 'No files match that filter.' : 'No files yet.'}
           </div>
         ) : !docsLoading && !docsError ? (
-          <TreeView.Root
+          <TreeViewRoot
             collection={treeCollection}
             selectionMode="single"
             selectedValue={selectedNodeId ? [selectedNodeId] : []}
@@ -938,7 +938,7 @@ function FilesTree({
             }}
             className="text-xs"
           >
-            <TreeView.Tree className="flex flex-col" aria-label="Flow files">
+            <TreeViewTree className="flex flex-col" aria-label="Flow files">
               {creatingType && !createTargetFolderId ? (
                 <div className="flow-workbench-files-create" style={{ paddingLeft: '0px' }}>
                   {creatingType === 'folder' ? (
@@ -962,7 +962,7 @@ function FilesTree({
                   <button type="button" onClick={() => { setCreatingType(null); setCreateName(''); }} className="flow-workbench-files-create-cancel"><IconX size={12} /></button>
                 </div>
               ) : null}
-              <TreeView.Context>
+              <TreeViewContext>
                 {(tree) => tree.getVisibleNodes().map((entry) => {
                   const node = entry.node as FilesTreeNode;
                   if (node.id === 'root') return null;
@@ -993,8 +993,8 @@ function FilesTree({
                     </div>
                   ) : null;
                   return (
-                    <TreeView.NodeProvider key={node.id} node={node} indexPath={entry.indexPath}>
-                      <TreeView.NodeContext>
+                    <TreeViewNodeProvider key={node.id} node={node} indexPath={entry.indexPath}>
+                      <TreeViewNodeContext>
                         {(state) => {
                           const rowClassName = `flow-workbench-files-row ${
                             state.selected
@@ -1006,28 +1006,28 @@ function FilesTree({
                           if (state.isBranch || node.kind === 'folder') {
                             return (
                               <>
-                                <TreeView.Branch>
-                                  <TreeView.BranchControl className={rowClassName} style={{ paddingLeft: rowPaddingLeft }}>
+                                <TreeViewBranch>
+                                  <TreeViewBranchControl className={rowClassName} style={{ paddingLeft: rowPaddingLeft }}>
                                     <IconFolder size={14} className="shrink-0 text-muted-foreground" />
                                     {state.renaming ? (
-                                      <TreeView.NodeRenameInput className="flow-workbench-files-rename-input" />
+                                      <TreeViewNodeRenameInput className="flow-workbench-files-rename-input" />
                                     ) : (
-                                      <TreeView.BranchText className="min-w-0 flex-1 truncate text-foreground">
+                                      <TreeViewBranchText className="min-w-0 flex-1 truncate text-foreground">
                                         {node.label}
-                                      </TreeView.BranchText>
+                                      </TreeViewBranchText>
                                     )}
-                                  </TreeView.BranchControl>
-                                </TreeView.Branch>
+                                  </TreeViewBranchControl>
+                                </TreeViewBranch>
                                 {createRow}
                               </>
                             );
                           }
                           return (
-                            <TreeView.Item className={rowClassName} style={{ paddingLeft: rowPaddingLeft }}>
-                              <TreeView.ItemText className="flex min-w-0 flex-1 items-center gap-2">
+                            <TreeViewItem className={rowClassName} style={{ paddingLeft: rowPaddingLeft }}>
+                              <TreeViewItemText className="flex min-w-0 flex-1 items-center gap-2">
                                 <IconFileText size={14} className="shrink-0 text-muted-foreground" />
                                 {state.renaming ? (
-                                  <TreeView.NodeRenameInput className="flow-workbench-files-rename-input" />
+                                  <TreeViewNodeRenameInput className="flow-workbench-files-rename-input" />
                                 ) : (
                                   <>
                                     <span className="min-w-0 flex-1 truncate text-foreground">{node.label}</span>
@@ -1047,17 +1047,17 @@ function FilesTree({
                                     ) : null}
                                   </>
                                 )}
-                              </TreeView.ItemText>
-                            </TreeView.Item>
+                              </TreeViewItemText>
+                            </TreeViewItem>
                           );
                         }}
-                      </TreeView.NodeContext>
-                    </TreeView.NodeProvider>
+                      </TreeViewNodeContext>
+                    </TreeViewNodeProvider>
                   );
                 })}
-              </TreeView.Context>
-            </TreeView.Tree>
-          </TreeView.Root>
+              </TreeViewContext>
+            </TreeViewTree>
+          </TreeViewRoot>
         ) : null}
       </ScrollArea>
     </div>

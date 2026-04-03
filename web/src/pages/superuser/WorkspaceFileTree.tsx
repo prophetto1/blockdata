@@ -3,7 +3,7 @@
  * Ported from web-docs/src/components/DocsSidebarFileTree.tsx, generalized
  * for all file types and stripped of docs-specific concerns.
  */
-import { TreeView, createTreeCollection } from '@ark-ui/react/tree-view';
+import { type TreeViewNodeProviderProps, TreeViewRoot, TreeViewTree, TreeViewNodeProvider, TreeViewBranch, TreeViewBranchControl, TreeViewBranchTrigger, TreeViewBranchIndicator, TreeViewBranchText, TreeViewBranchContent, TreeViewBranchIndentGuide, TreeViewItem, TreeViewItemText, createTreeCollection } from '@/components/ui/tree-view';
 import {
   ChevronRight,
   File,
@@ -376,7 +376,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
 
       {/* Tree */}
       <ScrollArea className="flex-1 min-h-0" viewportClass="!overflow-x-hidden" contentClass="p-4">
-        <TreeView.Root
+        <TreeViewRoot
           aria-label="Workspace file tree"
           collection={collection}
           selectionMode="single"
@@ -389,7 +389,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
             }
           }}
         >
-          <TreeView.Tree className="py-1 pb-2">
+          <TreeViewTree className="py-1 pb-2">
             {collection.rootNode.children?.map((node, index) => (
               <TreeNodeView
                 key={node.id}
@@ -404,8 +404,8 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
                 onContextMenu={handleContextMenu}
               />
             ))}
-          </TreeView.Tree>
-        </TreeView.Root>
+          </TreeViewTree>
+        </TreeViewRoot>
       </ScrollArea>
 
       {contextMenu && (
@@ -474,7 +474,7 @@ function findNodeById(nodes: FsNode[], id: string): FsNode | null {
 
 // ─── TreeNodeView ────────────────────────────────────────────────────────────
 
-type TreeNodeViewProps = TreeView.NodeProviderProps<FsNode> & {
+type TreeNodeViewProps = TreeViewNodeProviderProps<FsNode> & {
   onSelect: (node: FsNode) => void;
   onDragStart: (e: React.DragEvent, node: FsNode) => void;
   onDragOver: (e: React.DragEvent, node: FsNode) => void;
@@ -497,10 +497,10 @@ function TreeNodeView({
 }: TreeNodeViewProps) {
   if (node.kind === 'directory') {
     return (
-      <TreeView.NodeProvider node={node} indexPath={indexPath}>
-        <TreeView.Branch>
-          <TreeView.BranchControl className="min-w-0">
-            <TreeView.BranchTrigger
+      <TreeViewNodeProvider node={node} indexPath={indexPath}>
+        <TreeViewBranch>
+          <TreeViewBranchControl className="min-w-0">
+            <TreeViewBranchTrigger
               className="flex w-full min-w-0 items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-sm hover:bg-accent data-[drag-over=true]:bg-accent/50 data-[drag-over=true]:ring-1 data-[drag-over=true]:ring-primary/50"
               draggable
               onDragStart={(e) => onDragStart(e, node)}
@@ -510,10 +510,10 @@ function TreeNodeView({
               onDragEnd={onDragEnd}
               onContextMenu={(e) => onContextMenu(e, node)}
             >
-              <TreeView.BranchIndicator className="transition-transform data-[state=open]:rotate-90">
+              <TreeViewBranchIndicator className="transition-transform data-[state=open]:rotate-90">
                 <ChevronRight size={14} strokeWidth={ICON_STROKE} className="shrink-0" />
-              </TreeView.BranchIndicator>
-              <TreeView.BranchText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+              </TreeViewBranchIndicator>
+              <TreeViewBranchText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                 <FolderClosed
                   size={ICON_SIZE}
                   strokeWidth={ICON_STROKE}
@@ -525,11 +525,11 @@ function TreeNodeView({
                   className="shrink-0 text-muted-foreground hidden [[data-state=open]_&]:block"
                 />
                 <span className="min-w-0 truncate">{node.name}</span>
-              </TreeView.BranchText>
-            </TreeView.BranchTrigger>
-          </TreeView.BranchControl>
-          <TreeView.BranchContent className="pl-4">
-            <TreeView.BranchIndentGuide />
+              </TreeViewBranchText>
+            </TreeViewBranchTrigger>
+          </TreeViewBranchControl>
+          <TreeViewBranchContent className="pl-4">
+            <TreeViewBranchIndentGuide />
             {(node.children ?? []).map((child, i) => (
               <TreeNodeView
                 key={child.id}
@@ -544,15 +544,15 @@ function TreeNodeView({
                 onContextMenu={onContextMenu}
               />
             ))}
-          </TreeView.BranchContent>
-        </TreeView.Branch>
-      </TreeView.NodeProvider>
+          </TreeViewBranchContent>
+        </TreeViewBranch>
+      </TreeViewNodeProvider>
     );
   }
 
   return (
-    <TreeView.NodeProvider node={node} indexPath={indexPath}>
-      <TreeView.Item>
+    <TreeViewNodeProvider node={node} indexPath={indexPath}>
+      <TreeViewItem>
         <button
           type="button"
           className="flex w-full min-w-0 items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-sm hover:bg-accent"
@@ -562,12 +562,12 @@ function TreeNodeView({
           onDragEnd={onDragEnd}
           onContextMenu={(e) => onContextMenu(e, node)}
         >
-          <TreeView.ItemText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+          <TreeViewItemText className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
             {fileIcon(node.extension)}
             <span className="min-w-0 truncate">{node.name}</span>
-          </TreeView.ItemText>
+          </TreeViewItemText>
         </button>
-      </TreeView.Item>
-    </TreeView.NodeProvider>
+      </TreeViewItem>
+    </TreeViewNodeProvider>
   );
 }

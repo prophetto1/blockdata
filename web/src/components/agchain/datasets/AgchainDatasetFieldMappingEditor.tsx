@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { CollapsibleRoot, CollapsibleTrigger, CollapsibleIndicator, CollapsibleContent } from '@/components/ui/collapsible';
 import type { AgchainFieldSpec } from '@/lib/agchainDatasets';
 
 type AgchainDatasetFieldMappingEditorProps = {
@@ -74,7 +74,6 @@ export function AgchainDatasetFieldMappingEditor({
   fieldSpec,
   onChange,
 }: AgchainDatasetFieldMappingEditorProps) {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const handleChange = (key: keyof AgchainFieldSpec, value: string) => {
     onChange(setPathValue(fieldSpec, key, value));
@@ -110,25 +109,13 @@ export function AgchainDatasetFieldMappingEditor({
         </div>
       </div>
 
-      <div>
-        <button
-          type="button"
-          onClick={() => setAdvancedOpen(!advancedOpen)}
-          className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-foreground/80"
-        >
+      <CollapsibleRoot>
+        <CollapsibleTrigger>
           Advanced
-          <svg
-            className={`h-4 w-4 transition-transform ${advancedOpen ? 'rotate-90' : ''}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-        {advancedOpen && (
-          <div className="mt-2 flex flex-col gap-2">
+          <CollapsibleIndicator>&#9656;</CollapsibleIndicator>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="flex flex-col gap-2">
             {ADVANCED_FIELDS.map((field) => (
               <FieldRow
                 key={field.key}
@@ -138,8 +125,8 @@ export function AgchainDatasetFieldMappingEditor({
               />
             ))}
           </div>
-        )}
-      </div>
+        </CollapsibleContent>
+      </CollapsibleRoot>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Accordion } from '@ark-ui/react/accordion';
+import { AccordionRoot, AccordionItem, AccordionItemTrigger, AccordionItemContent, AccordionItemIndicator } from '@/components/ui/accordion';
 import { Clipboard } from '@ark-ui/react/clipboard';
 import { JsonTreeView } from '@ark-ui/react/json-tree-view';
 import {
@@ -236,18 +236,18 @@ export function ExampleBlocks({
   return (
     <div>
       <SectionLabel size={headingSize}>Examples ({docs.length})</SectionLabel>
-      <Accordion.Root collapsible className="mt-1.5 space-y-2">
+      <AccordionRoot collapsible className="mt-1.5 space-y-2">
         {docs.map((doc, index) => (
-          <Accordion.Item
+          <AccordionItem
             key={`${doc.title ?? 'example'}-${index}`}
             value={`example-${index}`}
             className="overflow-hidden rounded-md border border-border"
           >
             <div className="flex items-start gap-2 bg-muted/30 px-2 py-1.5">
-              <Accordion.ItemTrigger className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                <Accordion.ItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-90">
+              <AccordionItemTrigger className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                <AccordionItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-90">
                   <IconChevronRight size={12} />
-                </Accordion.ItemIndicator>
+                </AccordionItemIndicator>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-xs font-medium uppercase text-foreground">
@@ -263,7 +263,7 @@ export function ExampleBlocks({
                     <p className="mt-0.5 text-xs text-muted-foreground">{doc.title}</p>
                   )}
                 </div>
-              </Accordion.ItemTrigger>
+              </AccordionItemTrigger>
               <Clipboard.Root value={doc.code}>
                 <Clipboard.Trigger
                   title="Copy example code"
@@ -275,16 +275,16 @@ export function ExampleBlocks({
                 </Clipboard.Trigger>
               </Clipboard.Root>
             </div>
-            <Accordion.ItemContent className="overflow-hidden border-t border-border/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
+            <AccordionItemContent className="overflow-hidden border-t border-border/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
               <ScrollArea className="max-h-64 bg-background" viewportClass="px-2 py-2">
                 <pre className="text-xs leading-relaxed text-foreground">
                   <code className="whitespace-pre-wrap break-words">{doc.code}</code>
                 </pre>
               </ScrollArea>
-            </Accordion.ItemContent>
-          </Accordion.Item>
+            </AccordionItemContent>
+          </AccordionItem>
         ))}
-      </Accordion.Root>
+      </AccordionRoot>
     </div>
   );
 }
@@ -447,41 +447,41 @@ export function FunctionReferenceBody({ fn }: { fn: ServiceFunctionRow }) {
 
       {/* Parameters */}
       {params.length > 0 && (
-        <Accordion.Root collapsible className="rounded-md border border-border">
-          <Accordion.Item value="parameters">
-            <Accordion.ItemTrigger className="flex w-full items-center gap-2 bg-muted/30 px-2 py-1.5 text-left">
-              <Accordion.ItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-90">
+        <AccordionRoot collapsible className="rounded-md border border-border">
+          <AccordionItem value="parameters">
+            <AccordionItemTrigger className="flex w-full items-center gap-2 bg-muted/30 px-2 py-1.5 text-left">
+              <AccordionItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-90">
                 <IconChevronRight size={12} />
-              </Accordion.ItemIndicator>
+              </AccordionItemIndicator>
               <SectionLabel size="lg">Parameters ({params.length})</SectionLabel>
-            </Accordion.ItemTrigger>
-            <Accordion.ItemContent className="overflow-hidden border-t border-border/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
+            </AccordionItemTrigger>
+            <AccordionItemContent className="overflow-hidden border-t border-border/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
               <div className="p-2">
                 <ParametersTable params={params} />
               </div>
-            </Accordion.ItemContent>
-          </Accordion.Item>
-        </Accordion.Root>
+            </AccordionItemContent>
+          </AccordionItem>
+        </AccordionRoot>
       )}
 
       {/* JSON trees grid */}
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         {isNonEmptyObject(fn.result_schema) && (
-          <Accordion.Root collapsible className="rounded-md border border-border">
-            <Accordion.Item value="result-schema">
-              <Accordion.ItemTrigger className="flex w-full items-center gap-2 bg-muted/30 px-2 py-1.5 text-left">
-                <Accordion.ItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-90">
+          <AccordionRoot collapsible className="rounded-md border border-border">
+            <AccordionItem value="result-schema">
+              <AccordionItemTrigger className="flex w-full items-center gap-2 bg-muted/30 px-2 py-1.5 text-left">
+                <AccordionItemIndicator className="inline-flex shrink-0 text-muted-foreground transition-transform duration-200 data-[state=open]:rotate-90">
                   <IconChevronRight size={12} />
-                </Accordion.ItemIndicator>
+                </AccordionItemIndicator>
                 <SectionLabel size="lg">Result Schema</SectionLabel>
-              </Accordion.ItemTrigger>
-              <Accordion.ItemContent className="overflow-hidden border-t border-border/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
+              </AccordionItemTrigger>
+              <AccordionItemContent className="overflow-hidden border-t border-border/40 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0">
                 <div className="p-2">
                   <JsonBlock value={fn.result_schema} label="Result Schema" labelSize="lg" showLabel={false} />
                 </div>
-              </Accordion.ItemContent>
-            </Accordion.Item>
-          </Accordion.Root>
+              </AccordionItemContent>
+            </AccordionItem>
+          </AccordionRoot>
         )}
         {isNonEmptyObject(fn.request_example) && (
           <JsonBlock value={fn.request_example} label="Request Example" labelSize="lg" />

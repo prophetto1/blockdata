@@ -1,6 +1,10 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { StepsRoot, StepsList, StepsItem, StepsTrigger, StepsIndicator, StepsSeparator, StepsContent } from '@/components/ui/steps';
+import { SwitchRoot, SwitchControl, SwitchThumb, SwitchHiddenInput } from '@/components/ui/switch';
+import { SegmentGroupRoot, SegmentGroupItem, SegmentGroupIndicator, SegmentGroupItemHiddenInput, SegmentGroupItemControl } from '@/components/ui/segment-group';
+import { TagsInputRoot, TagsInputContext, TagsInputControl, TagsInputItem, TagsInputItemPreview, TagsInputItemText, TagsInputItemDeleteTrigger, TagsInputInput, TagsInputHiddenInput } from '@/components/ui/tags-input';
 import { AgchainDatasetFieldMappingEditor } from './AgchainDatasetFieldMappingEditor';
 import { AgchainDatasetPreviewTable } from './AgchainDatasetPreviewTable';
 import { AgchainDatasetValidationPanel } from './AgchainDatasetValidationPanel';
@@ -80,7 +84,7 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [versionLabel, setVersionLabel] = useState('v1');
 
   // Submit state
@@ -168,7 +172,7 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
         slug: slug || name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
         name,
         description,
-        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+        tags,
         initial_version_label: versionLabel,
       });
       if (isOperationStatus(response)) {
@@ -205,50 +209,47 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
     if (idx > 0) setStep(STEPS[idx - 1].key);
   };
 
+  const stepIndex = useMemo(() => STEPS.findIndex((s) => s.key === step), [step]);
+
   return (
-    <div className="flex gap-6">
-      {/* Step sidebar */}
-      <div className="w-48 shrink-0">
-        <div className="flex flex-col gap-1 rounded-xl border border-border/70 bg-card/70 p-3">
-          {STEPS.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => setStep(s.key)}
-              className={`rounded-md px-3 py-2 text-left text-sm ${
-                step === s.key
-                  ? 'bg-primary text-primary-foreground font-semibold'
-                  : 'text-muted-foreground hover:bg-accent/20 hover:text-foreground'
-              }`}
-            >
-              {s.number}. {s.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <StepsRoot
+      count={STEPS.length}
+      step={stepIndex}
+      onStepChange={(details) => {
+        const target = STEPS[details.step];
+        if (target) setStep(target.key);
+      }}
+      className="flex flex-col gap-6"
+    >
+      {/* Step indicator bar */}
+      <StepsList className="flex items-center">
+        {STEPS.map((s, i) => (
+          <StepsItem key={s.key} index={i}>
+            <StepsTrigger>
+              <StepsIndicator>{s.number}</StepsIndicator>
+              <span className="text-sm">{s.label}</span>
+            </StepsTrigger>
+            <StepsSeparator />
+          </StepsItem>
+        ))}
+      </StepsList>
 
       {/* Step content */}
-      <div className="flex-1 rounded-xl border border-border/70 bg-card/70 p-6">
-        {step === 'source' && (
+      <div className="rounded-xl border border-border/70 bg-card/70 p-6">
+        <StepsContent index={0}>
           <div className="flex flex-col gap-5">
             <h2 className="text-lg font-semibold text-foreground">Source Configuration</h2>
 
-            <div className="flex gap-2">
+            <SegmentGroupRoot value={sourceType} onValueChange={(details) => setSourceType(details.value)}>
               {SOURCE_TYPES.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSourceType(type)}
-                  className={`rounded-md px-4 py-2 text-sm ${
-                    sourceType === type
-                      ? 'bg-primary text-primary-foreground font-medium'
-                      : 'border border-border bg-background text-foreground hover:bg-accent/20'
-                  }`}
-                >
+                <SegmentGroupItem key={type} value={type} className="rounded-md px-4 py-2 text-sm">
                   {type === 'huggingface' ? 'HuggingFace' : type.toUpperCase()}
-                </button>
+                  <SegmentGroupItemHiddenInput />
+                  <SegmentGroupItemControl />
+                </SegmentGroupItem>
               ))}
-            </div>
+              <SegmentGroupIndicator />
+            </SegmentGroupRoot>
 
             {sourceType !== 'huggingface' && (
               <div className="flex flex-col gap-3">
@@ -278,17 +279,11 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
                     <option value=";">Semicolon</option>
                   </select>
                 </div>
-                <div className="flex items-center gap-4">
-                  <label className="text-sm text-muted-foreground">Headers</label>
-                  <button
-                    type="button"
-                    onClick={() => setHasHeaders(!hasHeaders)}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${hasHeaders ? 'bg-primary' : 'bg-muted'}`}
-                  >
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${hasHeaders ? 'left-[22px]' : 'left-0.5'}`} />
-                  </button>
-                  <span className="text-sm text-foreground">{hasHeaders ? 'On' : 'Off'}</span>
-                </div>
+                <SwitchRoot checked={hasHeaders} onCheckedChange={(details) => setHasHeaders(details.checked)}>
+                  <SwitchControl><SwitchThumb /></SwitchControl>
+                  <span className="text-sm text-muted-foreground">Headers</span>
+                  <SwitchHiddenInput />
+                </SwitchRoot>
                 <div className="flex items-center gap-4">
                   <label className="text-sm text-muted-foreground">Encoding</label>
                   <input
@@ -322,22 +317,17 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
                     className="h-9 w-32 rounded-md border border-border bg-background px-3 text-sm text-foreground"
                   />
                 </div>
-                <div className="flex items-center gap-4">
-                  <label className="text-sm text-muted-foreground">Trust remote code</label>
-                  <button
-                    type="button"
-                    onClick={() => setHfTrust(!hfTrust)}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${hfTrust ? 'bg-primary' : 'bg-muted'}`}
-                  >
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${hfTrust ? 'left-[22px]' : 'left-0.5'}`} />
-                  </button>
-                </div>
+                <SwitchRoot checked={hfTrust} onCheckedChange={(details) => setHfTrust(details.checked)}>
+                  <SwitchControl><SwitchThumb /></SwitchControl>
+                  <span className="text-sm text-muted-foreground">Trust remote code</span>
+                  <SwitchHiddenInput />
+                </SwitchRoot>
               </>
             )}
           </div>
-        )}
+        </StepsContent>
 
-        {step === 'mapping' && (
+        <StepsContent index={1}>
           <div className="flex flex-col gap-5">
             <div>
               <h2 className="text-lg font-semibold text-foreground">Field Mapping</h2>
@@ -347,9 +337,9 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
             </div>
             <AgchainDatasetFieldMappingEditor fieldSpec={fieldSpec} onChange={setFieldSpec} />
           </div>
-        )}
+        </StepsContent>
 
-        {step === 'preview' && (
+        <StepsContent index={2}>
           <div className="flex flex-col gap-5">
             <h2 className="text-lg font-semibold text-foreground">Dataset Preview</h2>
 
@@ -368,9 +358,9 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
             <AgchainDatasetPreviewTable samples={previewSamples} loading={previewing} />
             <AgchainDatasetValidationPanel validation={previewValidation} loading={previewing} />
           </div>
-        )}
+        </StepsContent>
 
-        {step === 'details' && (
+        <StepsContent index={3}>
           <div className="flex flex-col gap-5">
             <h2 className="text-lg font-semibold text-foreground">Name and Submit</h2>
 
@@ -407,16 +397,27 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
               />
             </div>
 
-            <div className="flex flex-col gap-3">
-              <label className="text-sm text-muted-foreground">Tags (comma-separated)</label>
-              <input
-                type="text"
-                placeholder="legal, train, v1"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
+            <TagsInputRoot value={tags} onValueChange={(details) => setTags(details.value)}>
+              <TagsInputContext>
+                {(tagsInput) => (
+                  <>
+                    <span className="text-sm text-muted-foreground">Tags</span>
+                    <TagsInputControl>
+                      {tagsInput.value.map((value, index) => (
+                        <TagsInputItem key={index} index={index} value={value}>
+                          <TagsInputItemPreview>
+                            <TagsInputItemText>{value}</TagsInputItemText>
+                            <TagsInputItemDeleteTrigger>&times;</TagsInputItemDeleteTrigger>
+                          </TagsInputItemPreview>
+                        </TagsInputItem>
+                      ))}
+                      <TagsInputInput placeholder="Add tag..." />
+                    </TagsInputControl>
+                  </>
+                )}
+              </TagsInputContext>
+              <TagsInputHiddenInput />
+            </TagsInputRoot>
 
             <div className="flex flex-col gap-3">
               <label className="text-sm text-muted-foreground">Initial Version Label</label>
@@ -451,7 +452,7 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
               </div>
             )}
           </div>
-        )}
+        </StepsContent>
 
         {/* Navigation bar */}
         <div className="mt-6 flex items-center gap-3 border-t border-border/50 pt-4">
@@ -475,6 +476,6 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
           </Button>
         </div>
       </div>
-    </div>
+    </StepsRoot>
   );
 }

@@ -7,6 +7,7 @@ import { AgchainDatasetValidationPanel } from '@/components/agchain/datasets/Agc
 import { useAgchainDatasetDraft } from '@/hooks/agchain/useAgchainDatasetDraft';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { SwitchRoot, SwitchControl, SwitchThumb, SwitchHiddenInput } from '@/components/ui/switch';
 import type { AgchainFieldSpec } from '@/lib/agchainDatasets';
 
 export default function AgchainDatasetVersionDraftPage() {
@@ -169,16 +170,11 @@ export default function AgchainDatasetVersionDraftPage() {
         <div className="rounded-xl border border-border/70 bg-card/70 p-5">
           <h3 className="mb-3 text-sm font-semibold text-foreground">Materialization Options</h3>
           <div className="flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Shuffle Data</label>
-              <button
-                type="button"
-                onClick={() => { setShuffle(!shuffle); setDirty(true); }}
-                className={`relative h-6 w-11 rounded-full transition-colors ${shuffle ? 'bg-primary' : 'bg-muted'}`}
-              >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${shuffle ? 'left-[22px]' : 'left-0.5'}`} />
-              </button>
-            </div>
+            <SwitchRoot checked={shuffle} onCheckedChange={(details) => { setShuffle(details.checked); setDirty(true); }}>
+              <SwitchControl><SwitchThumb /></SwitchControl>
+              <span className="text-sm text-muted-foreground">Shuffle Data</span>
+              <SwitchHiddenInput />
+            </SwitchRoot>
             <div className="flex items-center gap-2">
               <label className="text-sm text-muted-foreground">Limit</label>
               <input
@@ -189,16 +185,11 @@ export default function AgchainDatasetVersionDraftPage() {
                 className="h-8 w-24 rounded-md border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Auto-generate ID</label>
-              <button
-                type="button"
-                onClick={() => { setAutoId(!autoId); setDirty(true); }}
-                className={`relative h-6 w-11 rounded-full transition-colors ${autoId ? 'bg-primary' : 'bg-muted'}`}
-              >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${autoId ? 'left-[22px]' : 'left-0.5'}`} />
-              </button>
-            </div>
+            <SwitchRoot checked={autoId} onCheckedChange={(details) => { setAutoId(details.checked); setDirty(true); }}>
+              <SwitchControl><SwitchThumb /></SwitchControl>
+              <span className="text-sm text-muted-foreground">Auto-generate ID</span>
+              <SwitchHiddenInput />
+            </SwitchRoot>
             <div className="flex items-center gap-2">
               <label className="text-sm text-muted-foreground">Deterministic Seed</label>
               <input

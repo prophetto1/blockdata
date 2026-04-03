@@ -1,6 +1,17 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
+import {
   draftFromBenchmarkStep,
   stepDraftToFormValues,
   stepFormValuesToDraft,
@@ -139,72 +150,78 @@ function AgchainBenchmarkStepInspectorContent({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="step-kind">
-              Step Kind
-            </label>
-            <select
-              id="step-kind"
-              className={inputClass}
-              value={values.step_kind}
-              onChange={(event) =>
-                setValues({
-                  ...values,
-                  step_kind: event.target.value as StepFormValues['step_kind'],
-                })
-              }
+            <span className="text-sm font-medium text-foreground">Step Kind</span>
+            <SelectRoot
+              collection={createListCollection({ items: [
+                { value: 'model', label: 'model' },
+                { value: 'judge', label: 'judge' },
+                { value: 'deterministic_post', label: 'deterministic_post' },
+                { value: 'aggregation', label: 'aggregation' },
+              ] })}
+              value={[values.step_kind]}
+              onValueChange={(details) => setValues({ ...values, step_kind: details.value[0] as StepFormValues['step_kind'] })}
               disabled={!canEdit || mutating}
             >
-              <option value="model">model</option>
-              <option value="judge">judge</option>
-              <option value="deterministic_post">deterministic_post</option>
-              <option value="aggregation">aggregation</option>
-            </select>
+              <SelectControl>
+                <SelectTrigger className="h-9 w-full text-sm"><SelectValueText /></SelectTrigger>
+              </SelectControl>
+              <SelectContent>
+                {['model', 'judge', 'deterministic_post', 'aggregation'].map((v) => (
+                  <SelectItem key={v} item={{ value: v, label: v }}><SelectItemText>{v}</SelectItemText></SelectItem>
+                ))}
+              </SelectContent>
+              <SelectHiddenSelect />
+            </SelectRoot>
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="step-api-call-boundary">
-              API Call Boundary
-            </label>
-            <select
-              id="step-api-call-boundary"
-              className={inputClass}
-              value={values.api_call_boundary}
-              onChange={(event) =>
-                setValues({
-                  ...values,
-                  api_call_boundary: event.target.value as StepFormValues['api_call_boundary'],
-                })
-              }
+            <span className="text-sm font-medium text-foreground">API Call Boundary</span>
+            <SelectRoot
+              collection={createListCollection({ items: [
+                { value: 'own_call', label: 'own_call' },
+                { value: 'continue_call', label: 'continue_call' },
+                { value: 'non_model', label: 'non_model' },
+              ] })}
+              value={[values.api_call_boundary]}
+              onValueChange={(details) => setValues({ ...values, api_call_boundary: details.value[0] as StepFormValues['api_call_boundary'] })}
               disabled={!canEdit || mutating}
             >
-              <option value="own_call">own_call</option>
-              <option value="continue_call">continue_call</option>
-              <option value="non_model">non_model</option>
-            </select>
+              <SelectControl>
+                <SelectTrigger className="h-9 w-full text-sm"><SelectValueText /></SelectTrigger>
+              </SelectControl>
+              <SelectContent>
+                {['own_call', 'continue_call', 'non_model'].map((v) => (
+                  <SelectItem key={v} item={{ value: v, label: v }}><SelectItemText>{v}</SelectItemText></SelectItem>
+                ))}
+              </SelectContent>
+              <SelectHiddenSelect />
+            </SelectRoot>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="step-scoring-mode">
-              Scoring Mode
-            </label>
-            <select
-              id="step-scoring-mode"
-              className={inputClass}
-              value={values.scoring_mode}
-              onChange={(event) =>
-                setValues({
-                  ...values,
-                  scoring_mode: event.target.value as StepFormValues['scoring_mode'],
-                })
-              }
+            <span className="text-sm font-medium text-foreground">Scoring Mode</span>
+            <SelectRoot
+              collection={createListCollection({ items: [
+                { value: 'none', label: 'none' },
+                { value: 'deterministic', label: 'deterministic' },
+                { value: 'judge', label: 'judge' },
+              ] })}
+              value={[values.scoring_mode]}
+              onValueChange={(details) => setValues({ ...values, scoring_mode: details.value[0] as StepFormValues['scoring_mode'] })}
               disabled={!canEdit || mutating}
             >
-              <option value="none">none</option>
-              <option value="deterministic">deterministic</option>
-              <option value="judge">judge</option>
-            </select>
+              <SelectControl>
+                <SelectTrigger className="h-9 w-full text-sm"><SelectValueText /></SelectTrigger>
+              </SelectControl>
+              <SelectContent>
+                {['none', 'deterministic', 'judge'].map((v) => (
+                  <SelectItem key={v} item={{ value: v, label: v }}><SelectItemText>{v}</SelectItemText></SelectItem>
+                ))}
+              </SelectContent>
+              <SelectHiddenSelect />
+            </SelectRoot>
           </div>
 
           <div className="grid gap-2">

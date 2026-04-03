@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { AgchainBenchmarkStepRow } from '@/lib/agchainBenchmarks';
 
 type AgchainBenchmarkStepsListProps = {
@@ -83,8 +84,18 @@ export function AgchainBenchmarkStepsList({
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       Step {step.step_order}
                     </p>
-                    <p className="mt-2 text-base font-medium text-foreground">{step.display_name}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{step.step_id}</p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="mt-2 truncate text-base font-medium text-foreground">{step.display_name}</p>
+                      </TooltipTrigger>
+                      <TooltipContent>{step.display_name}</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <p className="mt-1 truncate text-sm text-muted-foreground">{step.step_id}</p>
+                      </TooltipTrigger>
+                      <TooltipContent>{step.step_id}</TooltipContent>
+                    </Tooltip>
                   </button>
 
                   {canEdit ? (

@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { AgchainToolRegistryRow } from '@/lib/agchainTools';
 
@@ -68,10 +69,20 @@ export function AgchainToolsTable({
                       isSelected && 'bg-accent/30',
                     )}
                   >
-                    <td className="px-6 py-4">
+                    <td className="max-w-[18rem] px-6 py-4">
                       <div>
-                        <p className="text-sm font-medium text-foreground">{row.display_name}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{row.description || row.tool_name}</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="truncate text-sm font-medium text-foreground">{row.display_name}</p>
+                          </TooltipTrigger>
+                          <TooltipContent>{row.display_name}</TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="mt-1 truncate text-xs text-muted-foreground">{row.description || row.tool_name}</p>
+                          </TooltipTrigger>
+                          <TooltipContent>{row.description || row.tool_name}</TooltipContent>
+                        </Tooltip>
                         {row.read_only ? (
                           <p className="mt-2 text-xs font-medium text-muted-foreground">Read-only built-in</p>
                         ) : null}

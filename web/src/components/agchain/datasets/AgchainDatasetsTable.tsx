@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import type { AgchainDatasetListRow } from '@/lib/agchainDatasets';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 type AgchainDatasetsTableProps = {
@@ -100,10 +101,20 @@ export function AgchainDatasetsTable({ items, loading }: AgchainDatasetsTablePro
                     'cursor-pointer border-b border-border/60 align-top hover:bg-accent/20',
                   )}
                 >
-                  <td className="px-6 py-4">
+                  <td className="max-w-[16rem] px-6 py-4">
                     <div>
-                      <p className="text-sm font-medium text-foreground">{row.name}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{row.slug}</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                        </TooltipTrigger>
+                        <TooltipContent>{row.name}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">{row.slug}</p>
+                        </TooltipTrigger>
+                        <TooltipContent>{row.slug}</TooltipContent>
+                      </Tooltip>
                     </div>
                   </td>
                   <td className="px-6 py-4">

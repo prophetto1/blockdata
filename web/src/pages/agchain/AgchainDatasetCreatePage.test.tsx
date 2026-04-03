@@ -135,10 +135,10 @@ describe('AgchainDatasetCreatePage', () => {
       expect(screen.getByText('Source Configuration')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('1. Source')).toBeInTheDocument();
-    expect(screen.getByText('2. Mapping')).toBeInTheDocument();
-    expect(screen.getByText('3. Preview')).toBeInTheDocument();
-    expect(screen.getByText('4. Details')).toBeInTheDocument();
+    expect(screen.getByText('Source')).toBeInTheDocument();
+    expect(screen.getByText('Mapping')).toBeInTheDocument();
+    expect(screen.getByText('Preview')).toBeInTheDocument();
+    expect(screen.getByText('Details')).toBeInTheDocument();
   });
 
   it('navigates through wizard steps', async () => {
@@ -184,7 +184,7 @@ describe('AgchainDatasetCreatePage', () => {
       expect(screen.getByText('Source Configuration')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('2. Mapping'));
+    fireEvent.click(screen.getByText('Mapping'));
 
     expect(screen.getByText('Required')).toBeInTheDocument();
     expect(screen.getByText('Common optional')).toBeInTheDocument();

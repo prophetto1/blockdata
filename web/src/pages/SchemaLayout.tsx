@@ -1,5 +1,5 @@
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { Pagination } from '@ark-ui/react/pagination';
+import { PaginationRoot, PaginationPrevTrigger, PaginationNextTrigger, PaginationItem, PaginationEllipsis, PaginationContext } from '@/components/ui/pagination';
 import { RadioGroup } from '@ark-ui/react/radio-group';
 import { Switch } from '@ark-ui/react/switch';
 import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties } from 'react';
@@ -237,7 +237,7 @@ export default function SchemaLayout() {
                       ))}
                     </div>
                   </div>
-                  <Pagination.Root
+                  <PaginationRoot
                     count={docRows.length}
                     pageSize={docsPerPage}
                     siblingCount={0}
@@ -245,32 +245,32 @@ export default function SchemaLayout() {
                     onPageChange={(details) => setDocPage(details.page)}
                     className="parse-docs-pagination flex items-center gap-1"
                   >
-                    <Pagination.PrevTrigger className="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs text-muted-foreground hover:text-foreground disabled:opacity-40">
+                    <PaginationPrevTrigger className="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs text-muted-foreground hover:text-foreground disabled:opacity-40">
                       <IconChevronLeft size={14} />
-                    </Pagination.PrevTrigger>
-                    <Pagination.Context>
+                    </PaginationPrevTrigger>
+                    <PaginationContext>
                       {(pagination) =>
                         pagination.pages.map((page, index) =>
                           page.type === 'page' ? (
-                            <Pagination.Item
+                            <PaginationItem
                               key={index}
                               {...page}
                               className="inline-flex h-6 min-w-6 items-center justify-center rounded-md text-xs font-medium text-muted-foreground hover:text-foreground data-selected:bg-accent data-selected:text-foreground"
                             >
                               {page.value}
-                            </Pagination.Item>
+                            </PaginationItem>
                           ) : (
-                            <Pagination.Ellipsis key={index} index={index} className="text-xs text-muted-foreground">
+                            <PaginationEllipsis key={index} index={index} className="text-xs text-muted-foreground">
                               &hellip;
-                            </Pagination.Ellipsis>
+                            </PaginationEllipsis>
                           ),
                         )
                       }
-                    </Pagination.Context>
-                    <Pagination.NextTrigger className="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs text-muted-foreground hover:text-foreground disabled:opacity-40">
+                    </PaginationContext>
+                    <PaginationNextTrigger className="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs text-muted-foreground hover:text-foreground disabled:opacity-40">
                       <IconChevronRight size={14} />
-                    </Pagination.NextTrigger>
-                  </Pagination.Root>
+                    </PaginationNextTrigger>
+                  </PaginationRoot>
                 </div>
               </div>
             </div>

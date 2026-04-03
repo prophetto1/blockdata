@@ -2,6 +2,16 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
 import { Button } from '@/components/ui/button';
+import {
+  ComboboxRoot,
+  ComboboxControl,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxItem,
+  ComboboxItemText,
+  useListCollection,
+  useFilter,
+} from '@/components/ui/combobox';
 import { AgchainToolEditorDialog } from '@/components/agchain/tools/AgchainToolEditorDialog';
 import { AgchainToolInspector } from '@/components/agchain/tools/AgchainToolInspector';
 import { AgchainToolsTable } from '@/components/agchain/tools/AgchainToolsTable';
@@ -13,8 +23,6 @@ import { AgchainPageFrame } from './AgchainPageFrame';
 
 const selectClass =
   'flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
-const inputClass =
-  'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
 function editorStateToPayload(draft: AgchainToolEditorState): AgchainToolMutationPayload {
   const toolConfigJsonb: Record<string, unknown> = {};
@@ -76,6 +84,16 @@ export default function AgchainToolsPage() {
     publishSelectedTool,
     archiveSelectedTool,
   } = useAgchainTools();
+
+  const { contains } = useFilter({ sensitivity: 'base' });
+
+  const { collection: searchCollection, filter: filterSearch } = useListCollection({
+    initialItems: items.map((row) => ({
+      label: row.display_name,
+      value: row.tool_id ?? row.tool_ref ?? row.tool_name,
+    })),
+    filter: contains,
+  });
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -181,12 +199,34 @@ export default function AgchainToolsPage() {
       <section className="rounded-3xl border border-border/70 bg-card/70 px-6 py-4 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-col gap-3 md:flex-row">
-            <input
-              className={inputClass}
-              placeholder="Search tools"
-              value={search}
-              onChange={(event) => setSearch(event.currentTarget.value)}
-            />
+            <ComboboxRoot
+              collection={searchCollection}
+              inputValue={search}
+              onInputValueChange={(details) => {
+                setSearch(details.inputValue);
+                filterSearch(details.inputValue);
+              }}
+              onValueChange={(details) => {
+                const val = details.value[0];
+                if (val) {
+                  const row = items.find((r) => (r.tool_id ?? r.tool_ref ?? r.tool_name) === val);
+                  if (row) selectTool(row);
+                }
+              }}
+              openOnClick
+              className="flex-1"
+            >
+              <ComboboxControl>
+                <ComboboxInput placeholder="Search tools" />
+              </ComboboxControl>
+              <ComboboxContent>
+                {searchCollection.items.map((item) => (
+                  <ComboboxItem key={item.value} item={item}>
+                    <ComboboxItemText>{item.label}</ComboboxItemText>
+                  </ComboboxItem>
+                ))}
+              </ComboboxContent>
+            </ComboboxRoot>
             <select
               className={selectClass}
               value={sourceKindFilter}

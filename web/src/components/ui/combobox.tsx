@@ -7,7 +7,8 @@ import { cn } from '@/lib/utils';
 export { useListCollection, useFilter };
 
 /* ── Root ── */
-function ComboboxRoot({ className, ...props }: React.ComponentProps<typeof ArkCombobox.Root>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ComboboxRoot({ className, ...props }: React.ComponentProps<typeof ArkCombobox.Root<any>>) {
   return (
     <ArkCombobox.Root
       className={cn('flex flex-col gap-1.5', className)}

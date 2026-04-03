@@ -1,6 +1,7 @@
 import { IconArrowLeft } from '@tabler/icons-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FLOWS_SHELL_ITEMS } from '@/components/flows/flows-shell-config';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 function buildFlowDetailPath(namespace: string, flowId: string, tab: string): string {
@@ -29,30 +30,33 @@ export function FlowsDetailRail() {
       </div>
 
       <div className="flex-1 overflow-auto px-2 py-2">
-        <div className="space-y-0.5">
-          {FLOWS_SHELL_ITEMS.map((item) => {
-            const ItemIcon = item.icon;
+        <Tabs
+          value={FLOWS_SHELL_ITEMS.find((item) => {
             const path = buildFlowDetailPath(namespace, flowId, item.tab);
-            const isActive = location.pathname === path || location.pathname.startsWith(`${path}/`);
-
-            return (
-              <button
-                key={item.tab}
-                type="button"
-                onClick={() => navigate(path)}
-                className={cn(
-                  'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-sm leading-snug transition-colors',
-                  isActive
-                    ? 'bg-accent text-accent-foreground font-medium'
-                    : 'text-foreground/75 hover:bg-accent hover:text-accent-foreground',
-                )}
-              >
-                <ItemIcon size={16} stroke={1.75} className="shrink-0" />
-                <span className="truncate">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
+            return location.pathname === path || location.pathname.startsWith(`${path}/`);
+          })?.tab ?? 'overview'}
+          onValueChange={(tab) => navigate(buildFlowDetailPath(namespace, flowId, tab))}
+        >
+          <TabsList className="flex flex-col gap-0.5">
+            {FLOWS_SHELL_ITEMS.map((item) => {
+              const ItemIcon = item.icon;
+              return (
+                <TabsTrigger
+                  key={item.tab}
+                  value={item.tab}
+                  className={cn(
+                    'flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-sm leading-snug transition-colors',
+                    'data-[selected]:bg-accent data-[selected]:text-accent-foreground data-[selected]:font-medium',
+                    'text-foreground/75 hover:bg-accent hover:text-accent-foreground',
+                  )}
+                >
+                  <ItemIcon size={16} stroke={1.75} className="shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
       </div>
     </nav>
   );

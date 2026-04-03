@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import type {
   OperationalReadinessCheck,
   OperationalReadinessStatus,
   OperationalReadinessSurface,
 } from '@/lib/operationalReadiness';
+import { CollapsibleRoot, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 /* ── Status ring SVG (inspired by pipeline builder reference) ──────────── */
 
@@ -138,17 +138,7 @@ export function OperationalReadinessCheckGrid({
 }: {
   surface: OperationalReadinessSurface;
 }) {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const allOk = surface.checks.every((c) => c.status === 'ok');
-
-  function toggle(checkId: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(checkId)) next.delete(checkId);
-      else next.add(checkId);
-      return next;
-    });
-  }
 
   const summaryLine = allOk
     ? `${surface.label} — ${surface.checks.length}/${surface.checks.length} OK`
@@ -189,7 +179,6 @@ export function OperationalReadinessCheckGrid({
 
           <div className="space-y-0">
             {surface.checks.map((check, idx) => {
-              const expanded = expandedIds.has(check.check_id);
               const evidenceEntries = Object.entries(check.evidence);
               const inlineFacts = getInlineFacts(check);
               const isLast = idx === surface.checks.length - 1;
@@ -202,11 +191,9 @@ export function OperationalReadinessCheckGrid({
                 check.next_if_still_failing.length > 0;
 
               return (
-                <div key={check.check_id} className="relative">
+                <CollapsibleRoot key={check.check_id} className="relative rounded-none border-0 bg-transparent">
                   {/* ── Check row ─────────────────────────────────── */}
-                  <button
-                    type="button"
-                    onClick={() => toggle(check.check_id)}
+                  <CollapsibleTrigger
                     className={`group flex w-full items-start gap-3 rounded-xl px-0 py-2.5 text-left transition-colors hover:bg-accent/30 ${
                       check.status === 'fail' ? 'bg-rose-500/[0.04]' : check.status === 'warn' ? 'bg-amber-500/[0.03]' : ''
                     }`}
@@ -255,11 +242,11 @@ export function OperationalReadinessCheckGrid({
                         </p>
                       ) : null}
                     </div>
-                  </button>
+                  </CollapsibleTrigger>
 
-                  {/* ── Expanded evidence (inspired by pipeline "In progress" detail) ── */}
-                  {expanded && hasExpandedSections ? (
-                    <div className={`ml-[28px] ${isLast ? 'mb-1' : 'mb-2'} rounded-xl border border-border/60 bg-background/80 p-3 dark:bg-background/40`}>
+                  {/* ── Expanded evidence ── */}
+                  {hasExpandedSections ? (
+                    <CollapsibleContent className={`ml-[28px] ${isLast ? 'mb-1' : 'mb-2'} rounded-xl border border-border/60 bg-background/80 p-3 dark:bg-background/40`}>
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Check detail</span>
                         <span className="text-[11px] text-muted-foreground">Checked {formatTimestamp(check.checked_at)}</span>
@@ -320,9 +307,9 @@ export function OperationalReadinessCheckGrid({
                           </ul>
                         </div>
                       ) : null}
-                    </div>
+                    </CollapsibleContent>
                   ) : null}
-                </div>
+                </CollapsibleRoot>
               );
             })}
           </div>

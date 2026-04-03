@@ -31,6 +31,14 @@ The corrective direction is:
 
 This is a replay-remediation prerequisite, not a redesign of storage runtime behavior.
 
+## Tech Stack
+
+- Supabase CLI
+- Supabase Postgres SQL migrations
+- Postgres DDL, constraints, indexes, grants, and RLS policies
+- FastAPI backend test harness with `pytest`
+- Node/npm repo tooling for command execution and schema dump capture
+
 ## Verified Current State
 
 ### Historical isolated-environment evidence
@@ -74,7 +82,7 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
 ### Execution consequence
 
 - The approved closeout plan is correctly blocked at Task 3.
-- The new `services/platform-api/tests/test_storage_namespace_schema_contract.py` file can remain, but it cannot be verified until the replayable parser/storage base schema exists.
+- `services/platform-api/tests/test_storage_namespace_schema_contract.py` and `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md` are not present in current `master` and must be created by this remediation before they can carry replay evidence.
 
 ## Pre-Implementation Contract
 
@@ -101,9 +109,15 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
    - `public.runs`
    - `public.block_overlays`
    - parser-era compatibility columns on `public.blocks` required by later migrations
-7. The linked database remains the source of truth for the exact parser-era table DDL that must be mirrored idempotently in the bootstrap migration.
-8. After this remediation lands, the approved closeout plan resumes unchanged from Task 3.
-9. No secondary checkout is assumed by this plan. Execution must proceed from `E:\\writing-system` on local `master`.
+7. The linked database remains the source of truth for the parser/storage contract this bootstrap must satisfy, but the bootstrap may only mirror the subset that is safe at timestamp `20260220193000`.
+8. The bootstrap must not pre-create later-era additions that are introduced by unguarded later migrations. Known exclusions include:
+   - `public.source_documents.document_surface`
+   - `public.source_documents.storage_object_id`
+   - `public.block_overlays.overlay_uid`
+   - later-era foreign keys whose target tables do not yet exist at the bootstrap timestamp
+9. `public.blocks` already exists before this remediation in a legacy `doc_uid` shape. The bootstrap may only add additive compatibility columns, constraints, indexes, and policy changes required by later parser/storage migrations.
+10. After this remediation lands, the approved closeout plan resumes unchanged from Task 3.
+11. No secondary checkout is assumed by this plan. Execution must proceed from `E:\\writing-system` on local `master`.
 
 ## Locked Acceptance Contract
 
@@ -113,8 +127,8 @@ The replay remediation is only complete when all of the following are true:
 2. `npx supabase db reset --yes` replays the full migration chain with no failure before or during the storage namespace migrations.
 3. `npx supabase migration list --local` shows the new bootstrap migration applied ahead of the parser/storage chain.
 4. `cd services/platform-api && pytest -q tests/test_storage_namespace_schema_contract.py` passes against the locally reset database.
-5. The targeted backend storage namespace suite passes against the locally reset database.
-6. `supabase db push` applies the new bootstrap migration to the linked project with no destructive drift.
+5. `cd services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py` passes against the locally reset database.
+6. `supabase db push` applies the new bootstrap migration to the linked project with no destructive drift and no unresolved partial-apply state.
 7. The blocked closeout plan can then resume at Task 3 without another replay blocker.
 
 ## Locked Platform API Surface
@@ -127,22 +141,215 @@ No traces, metrics, or structured logs are added in this remediation.
 
 The zero case is intentional because this work is replayable schema repair, not runtime feature expansion.
 
+Observability attribute rules for this zero-case:
+
+- Allowed new attributes: none
+- Forbidden additions to any existing observability surface during this remediation:
+  - `owner_id`
+  - `user_id`
+  - `project_id`
+  - `source_uid`
+  - `doc_uid`
+  - `conv_uid`
+  - `run_id`
+  - `object_key`
+  - `bucket`
+  - raw SQL text
+  - linked schema dump contents
+  - access tokens
+  - database passwords
+  - signed URLs
+
 ## Database Migrations
 
 ### New migration 1
 
 - File: `supabase/migrations/20260220193000_storage_parser_compat_bootstrap.sql`
 - Schema effect:
-  - create `public.source_documents` if absent using linked-db-authoritative parser-era contract
-  - create `public.conversion_parsing` if absent using linked-db-authoritative parser-era contract
-  - create `public.conversion_representations` if absent using linked-db-authoritative parser-era contract
-  - create `public.runs` if absent using linked-db-authoritative parser-era contract
-  - create `public.block_overlays` if absent using linked-db-authoritative parser-era contract
-  - add parser-era compatibility columns and supporting indexes/constraints to `public.blocks` if absent
-  - add any grants/RLS/policies that the later parser/storage migrations assume already exist
+  - create bootstrap-safe versions of `public.source_documents`, `public.conversion_parsing`, `public.conversion_representations`, `public.runs`, and `public.block_overlays` if absent using the linked database as the reference contract
+  - exclude later unguarded additions that are owned by later migrations, including `source_documents.document_surface`, `source_documents.storage_object_id`, and `block_overlays.overlay_uid`
+  - add additive compatibility columns and supporting indexes/constraints/policies to legacy `public.blocks` so later parser/storage migrations and RPCs can target `conv_uid`-based state
+  - add only the foreign keys, checks, permissions, and policies whose dependencies already exist at the bootstrap timestamp
+  - preserve the repo's existing privilege pattern by relying on row-level security plus narrow explicit grants only; the bootstrap must not introduce broad `GRANT ALL` access for `anon` or `authenticated` on parser/storage tables
+  - satisfy the exact bootstrap-safe relation contract below
 - Data impact:
   - local replay path: tables start empty and satisfy downstream migration dependencies
   - linked-db path: idempotent no-op or additive-only column/index/constraint reconciliation
+
+### Required bootstrap-safe relation contract
+
+#### `public.source_documents`
+
+- Required columns:
+  - `source_uid TEXT NOT NULL`
+  - `owner_id UUID NOT NULL`
+  - `source_type TEXT NOT NULL`
+  - `source_filesize INTEGER`
+  - `source_total_characters INTEGER`
+  - `source_locator TEXT NOT NULL`
+  - `doc_title TEXT NOT NULL`
+  - `uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+  - `updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+  - `status TEXT NOT NULL DEFAULT 'uploaded'`
+  - `error TEXT`
+  - `conversion_job_id UUID`
+  - `project_id UUID NOT NULL`
+- Required constraints:
+  - primary key on `source_uid`
+  - `source_documents_source_uid_check`
+- Required policies and permissions:
+  - `ALTER TABLE public.source_documents ENABLE ROW LEVEL SECURITY`
+  - `CREATE POLICY source_documents_select_own`
+  - no bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
+
+#### `public.conversion_parsing`
+
+- Required columns:
+  - `conv_uid TEXT NOT NULL`
+  - `source_uid TEXT NOT NULL`
+  - `conv_status TEXT`
+  - `conv_parsing_tool TEXT`
+  - `conv_representation_type TEXT`
+  - `conv_total_blocks INTEGER`
+  - `conv_block_type_freq JSONB`
+  - `conv_total_characters INTEGER`
+  - `conv_locator TEXT`
+  - `pipeline_config JSONB DEFAULT '{}'::jsonb`
+  - `requested_pipeline_config JSONB NOT NULL DEFAULT '{}'::jsonb`
+  - `applied_pipeline_config JSONB NOT NULL DEFAULT '{}'::jsonb`
+  - `parser_runtime_meta JSONB NOT NULL DEFAULT '{}'::jsonb`
+- Required constraints and foreign keys:
+  - primary key on `conv_uid`
+  - `conversion_parsing_conv_uid_check`
+  - `conversion_parsing_source_uid_fkey` to `public.source_documents(source_uid)`
+- Required policies and permissions:
+  - `ALTER TABLE public.conversion_parsing ENABLE ROW LEVEL SECURITY`
+  - `CREATE POLICY conversion_parsing_select_own`
+  - no bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
+
+#### `public.conversion_representations`
+
+- Required columns:
+  - `representation_id UUID NOT NULL DEFAULT gen_random_uuid()`
+  - `source_uid TEXT NOT NULL`
+  - `conv_uid TEXT NOT NULL`
+  - `parsing_tool TEXT NOT NULL`
+  - `representation_type TEXT NOT NULL`
+  - `artifact_locator TEXT NOT NULL`
+  - `artifact_hash TEXT NOT NULL`
+  - `artifact_size_bytes INTEGER NOT NULL`
+  - `artifact_meta JSONB NOT NULL DEFAULT '{}'::jsonb`
+  - `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+- Required constraints, foreign keys, and indexes:
+  - primary key on `representation_id`
+  - unique constraint on `(conv_uid, representation_type)`
+  - `conversion_representations_artifact_hash_check`
+  - `conversion_representations_artifact_size_bytes_check`
+  - `conversion_representations_conv_uid_check`
+  - `conversion_representations_source_uid_fkey` to `public.source_documents(source_uid)`
+  - `idx_conversion_representations_conv_uid`
+  - `idx_conversion_representations_source_created`
+- Required policies and permissions:
+  - `ALTER TABLE public.conversion_representations ENABLE ROW LEVEL SECURITY`
+  - `CREATE POLICY conversion_representations_select_own`
+  - no bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
+
+#### `public.runs`
+
+- Required columns:
+  - `run_id UUID NOT NULL DEFAULT gen_random_uuid()`
+  - `owner_id UUID NOT NULL`
+  - `conv_uid TEXT NOT NULL`
+  - `schema_id UUID NOT NULL`
+  - `model_config JSONB`
+  - `status TEXT NOT NULL DEFAULT 'running'`
+  - `total_blocks INTEGER NOT NULL`
+  - `completed_blocks INTEGER NOT NULL DEFAULT 0`
+  - `failed_blocks INTEGER NOT NULL DEFAULT 0`
+  - `started_at TIMESTAMPTZ NOT NULL DEFAULT now()`
+  - `completed_at TIMESTAMPTZ`
+  - `failure_log JSONB DEFAULT '[]'::jsonb`
+- Required constraints, foreign keys, and indexes:
+  - primary key on `run_id`
+  - `runs_completed_blocks_check`
+  - `runs_failed_blocks_check`
+  - `runs_total_blocks_check`
+  - `runs_conv_uid_fkey` to `public.conversion_parsing(conv_uid)`
+  - `idx_runs_conv_uid`
+  - `idx_runs_owner_started`
+- Required policies and permissions:
+  - `ALTER TABLE public.runs ENABLE ROW LEVEL SECURITY`
+  - `CREATE POLICY runs_select_own`
+  - no bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
+
+#### `public.block_overlays`
+
+- Required columns:
+  - `run_id UUID NOT NULL`
+  - `block_uid TEXT NOT NULL`
+  - `overlay_jsonb_confirmed JSONB NOT NULL DEFAULT '{}'::jsonb`
+  - `status TEXT NOT NULL DEFAULT 'pending'`
+  - `claimed_by TEXT`
+  - `claimed_at TIMESTAMPTZ`
+  - `attempt_count INTEGER NOT NULL DEFAULT 0`
+  - `last_error TEXT`
+  - `overlay_jsonb_staging JSONB NOT NULL DEFAULT '{}'::jsonb`
+  - `confirmed_at TIMESTAMPTZ`
+  - `confirmed_by UUID`
+- Required constraints, foreign keys, and indexes:
+  - primary key on `(run_id, block_uid)`
+  - `block_overlays_attempt_count_check`
+  - `block_overlays_block_uid_fkey` to `public.blocks(block_uid)`
+  - `block_overlays_run_id_fkey` to `public.runs(run_id)`
+  - `idx_block_overlays_run_status`
+- Required policies and permissions:
+  - `ALTER TABLE public.block_overlays ENABLE ROW LEVEL SECURITY`
+  - `CREATE POLICY block_overlays_select_own`
+  - `CREATE POLICY block_overlays_update_own`
+  - `GRANT UPDATE(overlay_jsonb_staging) ON TABLE public.block_overlays TO authenticated`
+  - no other bootstrap-added broad table grants to `anon`, `authenticated`, or `service_role`
+
+#### `public.blocks` additive compatibility bridge
+
+- The legacy `public.blocks` table remains in place. The bootstrap must not drop or rewrite legacy `doc_uid`-based columns.
+- Required additive columns if absent:
+  - `conv_uid TEXT`
+  - `block_locator JSONB`
+  - `block_content TEXT`
+- Required additive constraints, foreign keys, indexes, and policies if absent:
+  - unique constraint on `(conv_uid, block_index)`
+  - `blocks_conv_uid_fkey` to `public.conversion_parsing(conv_uid)`
+  - `idx_blocks_conv_uid`
+  - `idx_blocks_conv_uid_index`
+  - `ALTER TABLE public.blocks ENABLE ROW LEVEL SECURITY`
+  - `CREATE POLICY blocks_select_own` using the `conversion_parsing -> source_documents -> owner_id` path
+
+### Explicit bootstrap exclusions
+
+- `public.source_documents.document_surface`
+- `public.source_documents.storage_object_id`
+- `source_documents_document_surface_check`
+- `source_documents_storage_object_id_fkey`
+- `source_documents_document_surface_idx`
+- `public.block_overlays.overlay_uid`
+- `block_overlays_confirmed_by_fkey`
+- `block_overlays_status_fkey`
+- `blocks_block_type_fkey`
+- `blocks_block_uid_check`
+- `blocks_v2_block_locator_check`
+- `conversion_parsing_conv_parsing_tool_check`
+- `conversion_parsing_conv_parsing_tool_fkey`
+- `conversion_parsing_conv_representation_type_fkey`
+- `conversion_parsing_conv_status_fkey`
+- `conversion_representations_pairing`
+- `conversion_representations_v2_parsing_tool_check`
+- `conversion_representations_parsing_tool_fkey`
+- `conversion_representations_representation_type_fkey`
+- `runs_schema_id_fkey`
+- `runs_status_fkey`
+- `source_documents_project_id_fkey`
+- `source_documents_source_type_fkey`
+- `source_documents_status_fkey`
 
 No second migration is planned in this remediation. The bootstrap file must be comprehensive enough to satisfy all later parser/storage dependencies in one additive step.
 
@@ -159,7 +366,7 @@ No frontend runtime or component changes.
 ### Backend
 
 - New migration files: `1`
-- Modified backend test files: `1`
+- New backend test files: `1`
 - Modified runtime backend files: `0`
 
 ### Frontend
@@ -168,19 +375,36 @@ No frontend runtime or component changes.
 
 ### Docs
 
-- New plan files: `1`
-- Modified verification docs: `1`
+- New plan files: `0`
+- New verification docs: `1`
 
 ## Locked File Inventory
 
 ### New files
 
 - `supabase/migrations/20260220193000_storage_parser_compat_bootstrap.sql`
-
-### Modified files
-
 - `services/platform-api/tests/test_storage_namespace_schema_contract.py`
 - `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+
+### Modified files
+- None
+
+## Frozen Seam Contract
+
+The frozen replay seam for this remediation is the schema boundary immediately before `20260220194000_040_storage_documents_preview_select_policy.sql`.
+
+Later migrations in the replay chain are allowed to rely only on:
+
+1. the bootstrap-safe relations, columns, constraints, indexes, policies, and grants listed in `## Database Migrations`
+2. the explicit exclusions remaining absent until their owning later migrations run
+3. the fact that `public.blocks` is a legacy table receiving an additive compatibility bridge rather than a destructive cutover
+
+The bootstrap migration is not allowed to:
+
+- pre-create later-era columns or foreign keys that later unguarded migrations still own
+- rewrite historical migration ownership of parser-track CHECK constraints
+- drop legacy `public.blocks` columns to force early parity with the linked final schema
+- introduce new runtime tables, endpoints, or observability surfaces outside this frozen seam
 
 ## Task Breakdown
 
@@ -188,7 +412,8 @@ No frontend runtime or component changes.
 
 **File(s):** `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
 
-**Step 1:** Dump the linked public schema or inspect the linked database catalog for:
+**Step 1:** Create `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md` as the execution evidence artifact for this remediation.
+**Step 2:** Dump the linked public schema or inspect the linked database catalog for:
 - `source_documents`
 - `conversion_parsing`
 - `conversion_representations`
@@ -196,12 +421,15 @@ No frontend runtime or component changes.
 - `block_overlays`
 - `blocks`
 
-**Step 2:** Record the exact columns, foreign keys, checks, indexes, and policies needed by the later parser/storage migrations.
-**Step 3:** Compare the linked contract to the assumptions in the current migration chain.
-**Step 4:** If the linked schema materially differs from the contract implied here, stop and revise the plan before writing the bootstrap SQL.
+**Step 3:** Record the exact columns, foreign keys, checks, indexes, and policies needed by the later parser/storage migrations.
+**Step 4:** Separate the linked contract into:
+- bootstrap-safe elements that can exist at `20260220193000`
+- later-era additions that must remain owned by later migrations
+**Step 5:** Compare that bootstrap-safe contract to the assumptions in the current migration chain.
+**Step 6:** If the linked schema materially differs from the contract implied here, stop and revise the plan before writing the bootstrap SQL.
 
 **Test command:** `cd supabase && npx supabase db dump --linked --schema public --file .temp/parser-storage-linked-schema.sql`
-**Expected output:** a linked-db schema artifact that exposes the authoritative parser-era DDL needed for the bootstrap migration.
+**Expected output:** a linked-db schema artifact plus an execution-note breakdown of which parser/storage elements are bootstrap-safe versus later-era exclusions.
 
 **Commit:** `docs(storage): capture parser replay blocker schema evidence`
 
@@ -217,22 +445,25 @@ No frontend runtime or component changes.
 - `runs`
 - `block_overlays`
 
-**Step 3:** Add the parser-era compatibility columns to `public.blocks` that later cleanup SQL expects, including `conv_uid` when absent.
-**Step 4:** Add any required indexes, foreign keys, checks, grants, and policies that later migrations assume already exist.
-**Step 5:** Do not backfill or rewrite data in existing immutable tables beyond harmless null-safe compatibility initialization.
+**Step 3:** Exclude later-era unguarded additions that are owned by later migrations, including `source_documents.document_surface`, `source_documents.storage_object_id`, and `block_overlays.overlay_uid`.
+**Step 4:** Add the parser-era compatibility columns to `public.blocks` that later cleanup SQL expects, including `conv_uid` when absent.
+**Step 5:** Add only the required indexes, foreign keys, checks, permissions, and policies whose dependencies already exist at the bootstrap timestamp.
+**Step 6:** Preserve the repo's existing privilege model by avoiding bootstrap-time `GRANT ALL` access for `anon` or `authenticated`; only narrow explicit permissions that existing downstream SQL depends on may be added.
+**Step 7:** Do not backfill or rewrite data in existing immutable tables beyond harmless null-safe compatibility initialization.
 
 **Test command:** `cd supabase && npx supabase db reset --yes`
-**Expected output:** replay proceeds past migrations `040`, `079`, `080`, `081`, `082`, and the storage namespace chain.
+**Expected output:** replay proceeds past migration `040` and through the later parser/storage and storage-namespace migration chain without bootstrap-time dependency failures.
 
 **Commit:** `fix(supabase): add parser compatibility bootstrap for replay`
 
-## Task 3: Extend the schema-contract test to cover replay prerequisites
+## Task 3: Create the schema-contract test for replay prerequisites
 
 **File(s):** `services/platform-api/tests/test_storage_namespace_schema_contract.py`
 
-**Step 1:** Extend the schema-contract test so it asserts the bootstrap relations and compatibility columns exist in the dumped post-reset schema.
-**Step 2:** Keep the existing storage namespace assertions intact.
-**Step 3:** Fail explicitly if the replayed schema still lacks any parser-era prerequisite relation.
+**Step 1:** Create `services/platform-api/tests/test_storage_namespace_schema_contract.py`.
+**Step 2:** Assert that the bootstrap relations and compatibility columns exist in the dumped post-reset schema.
+**Step 3:** Assert the expected storage namespace relations and view contract that the blocked closeout plan depends on.
+**Step 4:** Fail explicitly if the replayed schema still lacks any parser-era prerequisite relation.
 
 **Test command:** `cd services/platform-api && pytest -q tests/test_storage_namespace_schema_contract.py`
 **Expected output:** `1 passed`
@@ -264,9 +495,11 @@ No frontend runtime or component changes.
 
 **Step 1:** Capture linked migration state before apply.
 **Step 2:** Run `npx supabase db push` against the linked project.
-**Step 3:** Capture linked migration state after apply.
-**Step 4:** Record before/after state in the verification report.
-**Step 5:** If the push fails, stop and debug the linked migration application path before resuming the closeout plan.
+**Step 3:** Capture linked migration state after apply. If `db push` fails before the normal post-apply capture, rerun `npx supabase migration list` immediately before any other action so the post-failure state is recorded.
+**Step 4:** Record before/after state, CLI exit status, and any partially applied migration state in the verification report.
+**Step 5:** If the push partially applies, leaves drift, or fails after changing linked migration state, freeze further migration attempts. Do not retry `db push`, do not edit historical migration files, and do not patch linked migration history manually in this plan.
+**Step 6:** In that partial-apply case, stop execution and write a dedicated additive linked-db recovery plan before any further migration action.
+**Step 7:** Only resume the closeout plan when the linked project is either cleanly updated or blocked behind that separately approved recovery plan.
 
 **Test command:** `cd supabase && npx supabase link --project-ref $SUPABASE_PROJECT_ID && npx supabase migration list && npx supabase db push && npx supabase migration list`
 **Expected output:** the linked project shows `20260220193000_storage_parser_compat_bootstrap.sql` applied with no pending replay-remediation migration.
@@ -281,8 +514,8 @@ No frontend runtime or component changes.
 **Step 2:** Re-run the local replay, linked-db apply, CORS application, manual acceptance, and re-evaluation steps in that plan.
 **Step 3:** Do not call the storage namespace implementation complete until the closeout plan itself reaches its approval-grade verdict.
 
-**Test command:** `resume execution of docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md from Task 3`
-**Expected output:** the closeout plan no longer fails on local migration replay and can finish normally.
+**Test command:** `cd supabase && npx supabase db start && npx supabase db reset --yes && npx supabase migration list --local && cd ../services/platform-api && pytest -q tests/test_storage_namespace_schema_contract.py tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py`
+**Expected output:** the closeout plan's Task 3 verification command is green, proving the replay blocker is removed and the closeout plan can continue through its remaining linked-apply, CORS, manual acceptance, and re-evaluation steps.
 
 **Commit:** `docs(storage): resume namespace closeout after replay remediation`
 
@@ -299,6 +532,6 @@ The work is complete only when all of the following are true:
 1. The new additive bootstrap migration exists and is idempotent.
 2. The local Supabase migration chain replays from scratch with no parser/storage dependency failures.
 3. The schema-contract test proves both parser-era replay prerequisites and storage namespace schema requirements.
-4. The targeted backend storage namespace suite passes against the reset local database.
-5. The linked database shows the bootstrap migration applied successfully.
+4. `cd services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py` passes against the reset local database.
+5. The linked database shows the bootstrap migration applied successfully with no unresolved partial-apply state.
 6. The blocked storage namespace closeout plan can then resume from Task 3 and finish under its own acceptance contract.

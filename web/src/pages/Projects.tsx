@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pagination } from '@ark-ui/react/pagination';
+import { PaginationRoot, PaginationPrevTrigger, PaginationNextTrigger, PaginationItem, PaginationEllipsis, PaginationContext } from '@/components/ui/pagination';
 import { toast } from 'sonner';
 import { Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -381,7 +381,7 @@ export default function Projects() {
       {/* Pagination — outside the card */}
       {totalPages > 1 && (
         <div className="flex justify-end">
-          <Pagination.Root
+          <PaginationRoot
             count={totalCount}
             pageSize={PAGE_SIZE}
             siblingCount={1}
@@ -389,32 +389,32 @@ export default function Projects() {
             onPageChange={(details) => setPage(details.page)}
             className="flex items-center gap-1"
           >
-            <Pagination.PrevTrigger className="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-muted-foreground hover:text-foreground disabled:opacity-40">
+            <PaginationPrevTrigger className="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-muted-foreground hover:text-foreground disabled:opacity-40">
               <IconChevronLeft size={16} />
-            </Pagination.PrevTrigger>
-            <Pagination.Context>
+            </PaginationPrevTrigger>
+            <PaginationContext>
               {(pagination) =>
                 pagination.pages.map((pg, index) =>
                   pg.type === 'page' ? (
-                    <Pagination.Item
+                    <PaginationItem
                       key={index}
                       {...pg}
                       className="inline-flex h-8 min-w-8 items-center justify-center rounded text-sm font-medium text-muted-foreground hover:text-foreground data-selected:bg-accent data-selected:text-foreground"
                     >
                       {pg.value}
-                    </Pagination.Item>
+                    </PaginationItem>
                   ) : (
-                    <Pagination.Ellipsis key={index} index={index} className="text-sm text-muted-foreground">
+                    <PaginationEllipsis key={index} index={index} className="text-sm text-muted-foreground">
                       &hellip;
-                    </Pagination.Ellipsis>
+                    </PaginationEllipsis>
                   ),
                 )
               }
-            </Pagination.Context>
-            <Pagination.NextTrigger className="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-muted-foreground hover:text-foreground disabled:opacity-40">
+            </PaginationContext>
+            <PaginationNextTrigger className="inline-flex h-8 w-8 items-center justify-center rounded text-sm text-muted-foreground hover:text-foreground disabled:opacity-40">
               <IconChevronRight size={16} />
-            </Pagination.NextTrigger>
-          </Pagination.Root>
+            </PaginationNextTrigger>
+          </PaginationRoot>
         </div>
       )}
 

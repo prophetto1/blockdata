@@ -2,6 +2,7 @@ import type { AgchainProviderRow } from '@/lib/agchainModelProviders';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 type AgchainModelsTableProps = {
@@ -77,12 +78,24 @@ export function AgchainModelsTable({
                     selectedProviderSlug === provider.provider_slug && 'bg-accent/30',
                   )}
                 >
-                  <td className="px-6 py-4">
+                  <td className="max-w-[16rem] px-6 py-4">
                     <div>
-                      <p className="text-sm font-medium text-foreground">{provider.display_name}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {provider.provider_definition.supported_auth_kinds.join(', ') || 'No auth metadata'}
-                      </p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="truncate text-sm font-medium text-foreground">{provider.display_name}</p>
+                        </TooltipTrigger>
+                        <TooltipContent>{provider.display_name}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {provider.provider_definition.supported_auth_kinds.join(', ') || 'No auth metadata'}
+                          </p>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {provider.provider_definition.supported_auth_kinds.join(', ') || 'No auth metadata'}
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   </td>
                   <td className="px-6 py-4">

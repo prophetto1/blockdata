@@ -2,6 +2,7 @@ import { Field } from '@ark-ui/react/field';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SelectRoot, SelectControl, SelectTrigger, SelectValueText, SelectContent, SelectItem, SelectItemText, createListCollection } from '@/components/ui/select';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { cn } from '@/lib/utils';
@@ -187,27 +188,59 @@ export function Component() {
                     placeholder="Search policy, actor, reason, change"
                   />
                 </Field.Root>
-                <select
-                  className={inputClass}
-                  value={auditActorFilter}
-                  onChange={(event) => setAuditActorFilter(event.currentTarget.value)}
+                <SelectRoot
+                  collection={createListCollection({
+                    items: auditActorOptions.map((actor) => ({
+                      label: actor === 'all' ? 'All actors' : actor,
+                      value: actor,
+                    })),
+                  })}
+                  value={[auditActorFilter]}
+                  onValueChange={(details) => {
+                    const val = details.value[0];
+                    if (val) setAuditActorFilter(val);
+                  }}
                 >
-                  {auditActorOptions.map((actor) => (
-                    <option key={actor} value={actor}>
-                      {actor === 'all' ? 'All actors' : actor}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className={inputClass}
-                  value={auditRangeFilter}
-                  onChange={(event) => setAuditRangeFilter(event.currentTarget.value as AuditTimeRange)}
+                  <SelectControl>
+                    <SelectTrigger className={inputClass}>
+                      <SelectValueText />
+                    </SelectTrigger>
+                  </SelectControl>
+                  <SelectContent>
+                    {auditActorOptions.map((actor) => (
+                      <SelectItem key={actor} item={{ label: actor === 'all' ? 'All actors' : actor, value: actor }}>
+                        <SelectItemText>{actor === 'all' ? 'All actors' : actor}</SelectItemText>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </SelectRoot>
+                <SelectRoot
+                  collection={createListCollection({
+                    items: [
+                      { label: 'Last 24h', value: '24h' },
+                      { label: 'Last 7d', value: '7d' },
+                      { label: 'Last 30d', value: '30d' },
+                      { label: 'All time', value: 'all' },
+                    ],
+                  })}
+                  value={[auditRangeFilter]}
+                  onValueChange={(details) => {
+                    const val = details.value[0];
+                    if (val) setAuditRangeFilter(val as AuditTimeRange);
+                  }}
                 >
-                  <option value="24h">Last 24h</option>
-                  <option value="7d">Last 7d</option>
-                  <option value="30d">Last 30d</option>
-                  <option value="all">All time</option>
-                </select>
+                  <SelectControl>
+                    <SelectTrigger className={inputClass}>
+                      <SelectValueText />
+                    </SelectTrigger>
+                  </SelectControl>
+                  <SelectContent>
+                    <SelectItem item={{ label: 'Last 24h', value: '24h' }}><SelectItemText>Last 24h</SelectItemText></SelectItem>
+                    <SelectItem item={{ label: 'Last 7d', value: '7d' }}><SelectItemText>Last 7d</SelectItemText></SelectItem>
+                    <SelectItem item={{ label: 'Last 30d', value: '30d' }}><SelectItemText>Last 30d</SelectItemText></SelectItem>
+                    <SelectItem item={{ label: 'All time', value: 'all' }}><SelectItemText>All time</SelectItemText></SelectItem>
+                  </SelectContent>
+                </SelectRoot>
                 <Button
                   type="button"
                   variant="outline"
