@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const repoRoot = 'e:/writing-system';
+const repoRoot = process.cwd();
 const migrationsDir = path.join(repoRoot, 'supabase', 'migrations');
 const rawPgcryptoCreatePattern = /^\s*create extension if not exists pgcrypto\s*;/im;
 const allowedBootstrapMigration = '20260202102234_001_phase1_immutable_documents_blocks.sql';

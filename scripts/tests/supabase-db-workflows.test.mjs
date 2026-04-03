@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const repoRoot = 'e:/writing-system';
+const repoRoot = process.cwd();
+const supabaseCliVersion = '2.84.10';
 
 function readWorkflow(relativePath) {
   const fullPath = path.join(repoRoot, relativePath);
@@ -17,6 +18,11 @@ test('db validation workflow enforces PR migration verification', () => {
   assert.match(workflow, /pull_request:/, 'workflow must run on pull requests');
   assert.match(workflow, /supabase\/migrations\/\*\*/, 'workflow must watch migration changes');
   assert.match(workflow, /supabase\/setup-cli@v1/, 'workflow must install the Supabase CLI');
+  assert.match(
+    workflow,
+    new RegExp(`version:\\s*${supabaseCliVersion.replace(/\./g, '\\.')}`),
+    'workflow must pin the proven Supabase CLI version'
+  );
   assert.match(
     workflow,
     /test:supabase-extension-replay-guardrails/,
@@ -35,6 +41,11 @@ test('db deploy workflow auto-applies migrations on master', () => {
   assert.match(workflow, /SUPABASE_ACCESS_TOKEN:/, 'workflow must require a Supabase access token secret');
   assert.match(workflow, /SUPABASE_DB_PASSWORD:/, 'workflow must require a Supabase database password secret');
   assert.match(workflow, /SUPABASE_PROJECT_ID:/, 'workflow must require a Supabase project id secret');
+  assert.match(
+    workflow,
+    new RegExp(`version:\\s*${supabaseCliVersion.replace(/\./g, '\\.')}`),
+    'workflow must pin the proven Supabase CLI version'
+  );
   assert.match(workflow, /supabase link --project-ref/, 'workflow must link the remote project');
   assert.match(workflow, /supabase db push/, 'workflow must push migrations to the remote project');
 });
