@@ -205,7 +205,7 @@ Signed URL generation has an additional credential dependency. `blob.generate_si
 |----------|-------------|
 | `docs/ops/2026-04-02-live-browser-remediation-checklist.md` | Covers CORS preflight (AUTH_REDIRECT_ORIGINS), platform-api redeploy, Supabase migration push, and stale auth. This plan's deploy script change should be included in that redeploy (step 3 of the checklist). |
 | `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md` | Covers validation of storage namespace migrations and manual acceptance evidence. This plan provides the production bucket that plan's acceptance path needs. |
-| `docs/plans/2026-04-02-storage-surface-separation-status-report.md` | Describes the `source_documents` metadata collision. Independent of this plan — this plan fixes infrastructure, that report addresses data model. |
+| `docs/plans/__complete/reports/2026-04-02-storage-surface-separation-status-report.md` | Describes the `source_documents` metadata collision. Independent of this plan — this plan fixes infrastructure, that report addresses data model. |
 
 ---
 

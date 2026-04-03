@@ -140,12 +140,12 @@ describe('AgchainDatasetsPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Legal QA Dataset')).toBeInTheDocument();
+      expect(screen.getAllByText('Legal QA Dataset').length).toBeGreaterThan(0);
     });
 
-    expect(screen.getByText('legal-qa')).toBeInTheDocument();
-    expect(screen.getByText('Financial News Corpus')).toBeInTheDocument();
-    expect(screen.getByText('financial-news')).toBeInTheDocument();
+    expect(screen.getAllByText('legal-qa').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Financial News Corpus').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('financial-news').length).toBeGreaterThan(0);
     expect(screen.getByText('15,302')).toBeInTheDocument();
   });
 
@@ -157,7 +157,7 @@ describe('AgchainDatasetsPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Legal QA Dataset')).toBeInTheDocument();
+      expect(screen.getAllByText('Legal QA Dataset').length).toBeGreaterThan(0);
     });
 
     const addLink = screen.getByRole('link', { name: /add dataset/i });

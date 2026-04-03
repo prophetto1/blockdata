@@ -64,7 +64,12 @@ describe('PermissionGroupMembersModal', () => {
     });
     expect(onSearchChange).toHaveBeenCalledWith('member');
 
-    fireEvent.click(screen.getByLabelText('Select Member Person'));
+    // Ark Checkbox: click the hidden input and wait for the state machine to process
+    const checkboxInputs = screen.getAllByRole('checkbox', { hidden: true });
+    fireEvent.click(checkboxInputs[0]); // Select Member Person
+    await waitFor(() => {
+      expect(checkboxInputs[0].closest('[data-scope="checkbox"]')?.getAttribute('data-state')).toBe('checked');
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Add Selected Members' }));
 
     await waitFor(() => {

@@ -119,7 +119,7 @@ If manual acceptance reveals a real frontend defect in those files, stop and wri
 This follow-up plan intentionally modifies evidence and plan artifacts:
 
 - `docs/plans/2026-04-02-storage-namespace-separation-and-gcs-access-correction-plan.md`
-- `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+- `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 - `services/platform-api/tests/test_storage_namespace_schema_contract.py`
 
 ## Pre-Implementation Contract
@@ -209,7 +209,7 @@ The storage namespace implementation is only complete when all of the following 
 ### New files
 
 - `services/platform-api/tests/test_storage_namespace_schema_contract.py`
-- `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+- `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 ### Modified files
 
@@ -262,7 +262,7 @@ The storage namespace runtime already crossed the main migration seam. This foll
 
 ## Task 3: Validate the immutable storage migrations locally
 
-**File(s):** `supabase/migrations/20260402193000_storage_namespace_metadata_foundation.sql`, `supabase/migrations/20260402194000_pipeline_source_registry_and_fk_migration.sql`, `supabase/migrations/20260402195000_storage_namespace_backfill_and_source_document_reconciliation.sql`, `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+**File(s):** `supabase/migrations/20260402193000_storage_namespace_metadata_foundation.sql`, `supabase/migrations/20260402194000_pipeline_source_registry_and_fk_migration.sql`, `supabase/migrations/20260402195000_storage_namespace_backfill_and_source_document_reconciliation.sql`, `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 **Step 1:** Start the local Supabase environment if it is not already running.
 **Step 2:** Replay the entire migration chain from scratch with `supabase db reset`.
@@ -279,7 +279,7 @@ The storage namespace runtime already crossed the main migration seam. This foll
 
 ## Task 4: Apply the reviewed migrations to the linked Supabase project
 
-**File(s):** `.github/workflows/supabase-db-deploy.yml`, `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+**File(s):** `.github/workflows/supabase-db-deploy.yml`, `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 **Step 1:** Confirm `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, and `SUPABASE_PROJECT_ID` are available for the linked project.
 **Step 2:** Run the same CLI sequence defined in `.github/workflows/supabase-db-deploy.yml`.
@@ -296,7 +296,7 @@ The storage namespace runtime already crossed the main migration seam. This foll
 
 ## Task 5: Apply the checked-in bucket CORS policy and verify it matches the plan
 
-**File(s):** `ops/gcs/user-storage-cors.json`, `docs/ops/storage-namespace-and-gcs-policy-runbook.md`, `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+**File(s):** `ops/gcs/user-storage-cors.json`, `docs/ops/storage-namespace-and-gcs-policy-runbook.md`, `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 **Step 1:** Compare the required current app origins to the checked-in `ops/gcs/user-storage-cors.json`.
 **Step 2:** If the required origins differ from the checked-in file, stop and write a separate tiny ops/config patch plan before continuing.
@@ -311,7 +311,7 @@ The storage namespace runtime already crossed the main migration seam. This foll
 
 ## Task 6: Execute the manual acceptance path and record the results
 
-**File(s):** `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+**File(s):** `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 **Step 1:** Launch the web app and platform API against the linked database with the applied CORS policy.
 **Step 2:** Upload a document through Assets and verify it appears in Assets but not in Index Builder.
@@ -331,7 +331,7 @@ The storage namespace runtime already crossed the main migration seam. This foll
 
 ## Task 7: Reconcile the original plan, rerun the final verification sweep, and re-audit
 
-**File(s):** `docs/plans/2026-04-02-storage-namespace-separation-and-gcs-access-correction-plan.md`, `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`, `services/platform-api/tests/test_storage_namespace_schema_contract.py`
+**File(s):** `docs/plans/2026-04-02-storage-namespace-separation-and-gcs-access-correction-plan.md`, `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`, `services/platform-api/tests/test_storage_namespace_schema_contract.py`
 
 **Step 1:** Update the original storage namespace plan so its inventory counts, file inventory, status, and completion evidence match reality.
 **Step 2:** Re-run the targeted backend suite, frontend Vitest suite, and clean `web` build.

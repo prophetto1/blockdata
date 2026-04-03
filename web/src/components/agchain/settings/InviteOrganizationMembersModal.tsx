@@ -9,6 +9,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { CheckboxRoot, CheckboxControl, CheckboxIndicator, CheckboxHiddenInput } from '@/components/ui/checkbox';
 import type {
   AgchainOrganizationMemberInvitationRequest,
   AgchainOrganizationMemberInvitationResult,
@@ -150,21 +151,23 @@ function InviteOrganizationMembersModalContent({
             {hasGroups ? (
               <div className="grid gap-2 rounded-md border border-border/70 bg-card/60 p-3">
                 {permissionGroups.map((group) => (
-                  <label key={group.permission_group_id} className="flex items-center gap-3 text-sm text-foreground">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-border"
+                  <div key={group.permission_group_id} className="flex items-center gap-3 text-sm text-foreground">
+                    <CheckboxRoot
                       checked={selectedGroupIds.includes(group.permission_group_id)}
-                      onChange={() => toggleGroup(group.permission_group_id)}
-                      aria-label={group.name}
-                    />
+                      onCheckedChange={() => toggleGroup(group.permission_group_id)}
+                    >
+                      <CheckboxControl>
+                        <CheckboxIndicator />
+                      </CheckboxControl>
+                      <CheckboxHiddenInput />
+                    </CheckboxRoot>
                     <span>{group.name}</span>
                     {group.is_system_group ? (
                       <span className="rounded-full border border-border/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                         System
                       </span>
                     ) : null}
-                  </label>
+                  </div>
                 ))}
               </div>
             ) : (

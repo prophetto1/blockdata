@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Execution evidence for the approved replay-remediation plan in
-`docs/plans/2026-04-02-storage-parser-replay-remediation-plan.md`.
+Execution evidence for the replay-remediation handoff artifact in
+`docs/plans/__superseded/2026-04-02-storage-parser-replay-remediation-plan.md`.
 
 ## Task 1: Linked Parser-Era Schema Evidence
 

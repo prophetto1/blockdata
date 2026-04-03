@@ -13,10 +13,20 @@ import { Input } from '@/components/ui/input';
 import type { AgchainToolDetailResponse, AgchainToolSourceKind } from '@/lib/agchainTools';
 import type { SecretMetadata } from '@/lib/secretsApi';
 import { AgchainToolSourceEditor, type AgchainToolEditorState } from './AgchainToolSourceEditor';
+import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectItemIndicator,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
 
 const fieldClass = 'grid gap-1.5 text-sm text-foreground';
-const selectClass =
-  'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 const textAreaClass =
   'min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
@@ -138,6 +148,17 @@ function AgchainToolEditorDialogContent({
     mode === 'edit' ? buildDraftFromDetail(detail) : createEmptyDraft(sourceKindOptions[0] ?? 'custom'),
   );
 
+  const sourceKindCollection = createListCollection({
+    items: sourceKindOptions.map((sk) => ({ label: sk, value: sk })),
+  });
+
+  const approvalModeCollection = createListCollection({
+    items: [
+      { label: 'manual', value: 'manual' },
+      { label: 'auto', value: 'auto' },
+    ],
+  });
+
   const submitDisabled = useMemo(() => {
     if (!draft.toolName.trim() || !draft.displayName.trim()) {
       return true;
@@ -201,39 +222,55 @@ function AgchainToolEditorDialogContent({
           <div className="grid gap-4 md:grid-cols-2">
             <div className={fieldClass}>
               <label htmlFor="agchain-tool-source-kind">Source kind</label>
-              <select
-                id="agchain-tool-source-kind"
-                className={selectClass}
-                value={draft.sourceKind}
-                onChange={(event) => {
-                  const value = event.currentTarget.value as Exclude<AgchainToolSourceKind, 'builtin'>;
-                  setDraft((current) => ({
-                    ...current,
-                    sourceKind: value,
-                  }));
+              <SelectRoot
+                collection={sourceKindCollection}
+                value={[draft.sourceKind]}
+                onValueChange={(details) => {
+                  const val = details.value[0];
+                  if (val) setDraft((current) => ({ ...current, sourceKind: val as Exclude<AgchainToolSourceKind, 'builtin'> }));
                 }}
               >
-                {sourceKindOptions.map((sourceKind) => (
-                  <option key={sourceKind} value={sourceKind}>
-                    {sourceKind}
-                  </option>
-                ))}
-              </select>
+                <SelectControl>
+                  <SelectTrigger className="h-10">
+                    <SelectValueText />
+                  </SelectTrigger>
+                </SelectControl>
+                <SelectContent>
+                  {sourceKindCollection.items.map((item) => (
+                    <SelectItem key={item.value} item={item}>
+                      <SelectItemText>{item.label}</SelectItemText>
+                      <SelectItemIndicator>&#10003;</SelectItemIndicator>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+                <SelectHiddenSelect />
+              </SelectRoot>
             </div>
             <div className={fieldClass}>
               <label htmlFor="agchain-tool-approval-mode">Approval mode</label>
-              <select
-                id="agchain-tool-approval-mode"
-                className={selectClass}
-                value={draft.approvalMode}
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
-                  setDraft((current) => ({ ...current, approvalMode: value }));
+              <SelectRoot
+                collection={approvalModeCollection}
+                value={[draft.approvalMode]}
+                onValueChange={(details) => {
+                  const val = details.value[0];
+                  if (val) setDraft((current) => ({ ...current, approvalMode: val }));
                 }}
               >
-                <option value="manual">manual</option>
-                <option value="auto">auto</option>
-              </select>
+                <SelectControl>
+                  <SelectTrigger className="h-10">
+                    <SelectValueText />
+                  </SelectTrigger>
+                </SelectControl>
+                <SelectContent>
+                  {approvalModeCollection.items.map((item) => (
+                    <SelectItem key={item.value} item={item}>
+                      <SelectItemText>{item.label}</SelectItemText>
+                      <SelectItemIndicator>&#10003;</SelectItemIndicator>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+                <SelectHiddenSelect />
+              </SelectRoot>
             </div>
           </div>
 

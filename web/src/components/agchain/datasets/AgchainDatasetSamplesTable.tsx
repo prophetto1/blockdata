@@ -2,6 +2,18 @@ import { useState } from 'react';
 import type { AgchainDatasetSampleSummary } from '@/lib/agchainDatasets';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectItemIndicator,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
 
 type AgchainDatasetSamplesTableProps = {
   samples: AgchainDatasetSampleSummary[];
@@ -50,6 +62,15 @@ export function AgchainDatasetSamplesTable({
   const [search, setSearch] = useState('');
   const [parseStatusFilter, setParseStatusFilter] = useState<string | null>(null);
 
+  const parseStatusCollection = createListCollection({
+    items: [
+      { label: 'All statuses', value: '' },
+      { label: 'Pass', value: 'ok' },
+      { label: 'Warn', value: 'warn' },
+      { label: 'Fail', value: 'error' },
+    ],
+  });
+
   const filtered = samples.filter((sample) => {
     if (search) {
       const lower = search.toLowerCase();
@@ -74,16 +95,30 @@ export function AgchainDatasetSamplesTable({
           onChange={(e) => setSearch(e.target.value)}
           className="h-9 flex-1 rounded-md border border-border bg-background pl-3 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
-        <select
-          value={parseStatusFilter ?? ''}
-          onChange={(e) => setParseStatusFilter(e.target.value || null)}
-          className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground"
+        <SelectRoot
+          collection={parseStatusCollection}
+          value={parseStatusFilter ? [parseStatusFilter] : ['']}
+          onValueChange={(details) => {
+            const val = details.value[0];
+            setParseStatusFilter(val || null);
+          }}
+          className="w-auto"
         >
-          <option value="">All statuses</option>
-          <option value="ok">Pass</option>
-          <option value="warn">Warn</option>
-          <option value="error">Fail</option>
-        </select>
+          <SelectControl>
+            <SelectTrigger className="h-9 min-w-[10rem] text-sm">
+              <SelectValueText placeholder="All statuses" />
+            </SelectTrigger>
+          </SelectControl>
+          <SelectContent>
+            {parseStatusCollection.items.map((item) => (
+              <SelectItem key={item.value} item={item}>
+                <SelectItemText>{item.label}</SelectItemText>
+                <SelectItemIndicator>&#10003;</SelectItemIndicator>
+              </SelectItem>
+            ))}
+          </SelectContent>
+          <SelectHiddenSelect />
+        </SelectRoot>
       </div>
 
       <section className="overflow-hidden rounded-xl border border-border/70 bg-card/70">

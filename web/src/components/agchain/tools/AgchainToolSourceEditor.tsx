@@ -1,9 +1,35 @@
 import { Input } from '@/components/ui/input';
 import type { AgchainToolSourceKind } from '@/lib/agchainTools';
+import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectItemIndicator,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
 
 const fieldClass = 'grid gap-1.5 text-sm text-foreground';
-const selectClass =
-  'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
+
+const implementationKindCollection = createListCollection({
+  items: [
+    { label: 'python_callable', value: 'python_callable' },
+    { label: 'package_entrypoint', value: 'package_entrypoint' },
+    { label: 'external_ref', value: 'external_ref' },
+  ],
+});
+
+const transportTypeCollection = createListCollection({
+  items: [
+    { label: 'stdio', value: 'stdio' },
+    { label: 'http', value: 'http' },
+    { label: 'sse', value: 'sse' },
+  ],
+});
 
 export type AgchainToolEditorState = {
   sourceKind: Exclude<AgchainToolSourceKind, 'builtin'>;
@@ -32,16 +58,29 @@ export function AgchainToolSourceEditor({ draft, onChange }: AgchainToolSourceEd
       <div className="grid gap-4 md:grid-cols-2">
         <div className={fieldClass}>
           <label htmlFor="agchain-tool-implementation-kind">Implementation kind</label>
-          <select
-            id="agchain-tool-implementation-kind"
-            className={selectClass}
-            value={draft.implementationKind}
-            onChange={(event) => onChange({ implementationKind: event.currentTarget.value })}
+          <SelectRoot
+            collection={implementationKindCollection}
+            value={[draft.implementationKind]}
+            onValueChange={(details) => {
+              const val = details.value[0];
+              if (val) onChange({ implementationKind: val });
+            }}
           >
-            <option value="python_callable">python_callable</option>
-            <option value="package_entrypoint">package_entrypoint</option>
-            <option value="external_ref">external_ref</option>
-          </select>
+            <SelectControl>
+              <SelectTrigger className="h-10">
+                <SelectValueText />
+              </SelectTrigger>
+            </SelectControl>
+            <SelectContent>
+              {implementationKindCollection.items.map((item) => (
+                <SelectItem key={item.value} item={item}>
+                  <SelectItemText>{item.label}</SelectItemText>
+                  <SelectItemIndicator>&#10003;</SelectItemIndicator>
+                </SelectItem>
+              ))}
+            </SelectContent>
+            <SelectHiddenSelect />
+          </SelectRoot>
         </div>
         <div className={fieldClass}>
           <label htmlFor="agchain-tool-implementation-ref">Implementation ref</label>
@@ -82,16 +121,29 @@ export function AgchainToolSourceEditor({ draft, onChange }: AgchainToolSourceEd
     <div className="grid gap-4 md:grid-cols-2">
       <div className={fieldClass}>
         <label htmlFor="agchain-tool-transport-type">Transport type</label>
-        <select
-          id="agchain-tool-transport-type"
-          className={selectClass}
-          value={draft.transportType}
-          onChange={(event) => onChange({ transportType: event.currentTarget.value })}
+        <SelectRoot
+          collection={transportTypeCollection}
+          value={[draft.transportType]}
+          onValueChange={(details) => {
+            const val = details.value[0];
+            if (val) onChange({ transportType: val });
+          }}
         >
-          <option value="stdio">stdio</option>
-          <option value="http">http</option>
-          <option value="sse">sse</option>
-        </select>
+          <SelectControl>
+            <SelectTrigger className="h-10">
+              <SelectValueText />
+            </SelectTrigger>
+          </SelectControl>
+          <SelectContent>
+            {transportTypeCollection.items.map((item) => (
+              <SelectItem key={item.value} item={item}>
+                <SelectItemText>{item.label}</SelectItemText>
+                <SelectItemIndicator>&#10003;</SelectItemIndicator>
+              </SelectItem>
+            ))}
+          </SelectContent>
+          <SelectHiddenSelect />
+        </SelectRoot>
       </div>
 
       {draft.transportType === 'stdio' ? (

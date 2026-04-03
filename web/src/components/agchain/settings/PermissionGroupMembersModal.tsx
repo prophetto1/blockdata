@@ -9,6 +9,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { CheckboxRoot, CheckboxControl, CheckboxIndicator, CheckboxHiddenInput } from '@/components/ui/checkbox';
 import type {
   AgchainOrganizationMember,
   AgchainPermissionGroupMembersResponse,
@@ -190,19 +191,21 @@ function PermissionGroupMembersModalContent({
                       key={member.organization_member_id}
                       className="rounded-md border border-border/50 bg-background/60 p-3"
                     >
-                      <label className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          className="mt-0.5 h-4 w-4 rounded border-border"
+                      <div className="flex items-start gap-3">
+                        <CheckboxRoot
                           checked={selectedMemberIds.includes(member.organization_member_id)}
-                          onChange={() => toggleAvailableMember(member.organization_member_id)}
-                          aria-label={`Select ${member.display_name}`}
-                        />
+                          onCheckedChange={() => toggleAvailableMember(member.organization_member_id)}
+                        >
+                          <CheckboxControl className="mt-0.5">
+                            <CheckboxIndicator />
+                          </CheckboxControl>
+                          <CheckboxHiddenInput />
+                        </CheckboxRoot>
                         <span className="grid gap-1">
                           <span className="text-sm font-medium text-foreground">{member.display_name}</span>
                           <span className="text-xs text-muted-foreground">{member.email}</span>
                         </span>
-                      </label>
+                      </div>
                     </li>
                   ))}
                 </ul>

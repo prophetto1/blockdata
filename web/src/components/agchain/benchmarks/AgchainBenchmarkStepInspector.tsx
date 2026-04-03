@@ -11,6 +11,7 @@ import {
   SelectHiddenSelect,
   createListCollection,
 } from '@/components/ui/select';
+import { CheckboxRoot, CheckboxControl, CheckboxIndicator, CheckboxLabel, CheckboxHiddenInput } from '@/components/ui/checkbox';
 import {
   draftFromBenchmarkStep,
   stepDraftToFormValues,
@@ -307,16 +308,18 @@ function AgchainBenchmarkStepInspectorContent({
           />
         </div>
 
-        <label className="flex items-center gap-3 text-sm text-foreground" htmlFor="step-enabled">
-          <input
-            id="step-enabled"
-            type="checkbox"
-            checked={values.enabled}
-            onChange={(event) => setValues({ ...values, enabled: event.target.checked })}
-            disabled={!canEdit || mutating}
-          />
-          Enabled
-        </label>
+        <CheckboxRoot
+          checked={values.enabled}
+          onCheckedChange={(details) => setValues({ ...values, enabled: details.checked === true })}
+          disabled={!canEdit || mutating}
+          className="flex items-center gap-3"
+        >
+          <CheckboxControl>
+            <CheckboxIndicator />
+          </CheckboxControl>
+          <CheckboxLabel className="text-sm text-foreground">Enabled</CheckboxLabel>
+          <CheckboxHiddenInput />
+        </CheckboxRoot>
       </div>
 
       {localError ? <p className="mt-4 text-sm text-destructive">{localError}</p> : null}

@@ -154,7 +154,7 @@ describe('AgchainProjectSwitcher', () => {
     fireEvent.click(screen.getByRole('button', { name: /legal evals/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: /open project registry|create project|manage projects/i })).toHaveAttribute('href', '/app/agchain/projects?new=1');
+      expect(screen.getByRole('link', { name: /open project registry|create.*project|manage projects/i })).toHaveAttribute('href', '/app/agchain/projects?new=1');
     });
   });
 });

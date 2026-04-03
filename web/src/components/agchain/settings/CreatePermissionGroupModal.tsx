@@ -9,6 +9,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { CheckboxRoot, CheckboxControl, CheckboxIndicator, CheckboxHiddenInput } from '@/components/ui/checkbox';
 import type {
   AgchainPermissionDefinitionsResponse,
   AgchainPermissionGroupCreateRequest,
@@ -135,24 +136,26 @@ function CreatePermissionGroupModalContent({
             <legend className="text-sm font-medium text-foreground">Organization Permissions</legend>
             <div className="grid gap-2 rounded-md border border-border/70 bg-card/60 p-3">
               {organizationPermissions.map((permission) => (
-                <label
+                <div
                   key={permission.permission_key}
                   className="grid gap-1 rounded-md border border-border/50 bg-background/60 p-3"
                 >
                   <span className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-4 w-4 rounded border-border"
+                    <CheckboxRoot
                       checked={selectedPermissionKeys.includes(permission.permission_key)}
-                      onChange={() => togglePermission(permission.permission_key)}
-                      aria-label={permission.label}
-                    />
+                      onCheckedChange={() => togglePermission(permission.permission_key)}
+                    >
+                      <CheckboxControl className="mt-0.5">
+                        <CheckboxIndicator />
+                      </CheckboxControl>
+                      <CheckboxHiddenInput />
+                    </CheckboxRoot>
                     <span className="grid gap-1">
                       <span className="text-sm font-medium text-foreground">{permission.label}</span>
                       <span className="text-xs leading-6 text-muted-foreground">{permission.description}</span>
                     </span>
                   </span>
-                </label>
+                </div>
               ))}
               {!organizationPermissions.length ? (
                 <p className="text-sm text-muted-foreground">

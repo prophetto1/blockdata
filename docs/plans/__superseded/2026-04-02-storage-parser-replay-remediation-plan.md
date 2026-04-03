@@ -2,35 +2,46 @@
 
 ## Goal
 
-Restore a fully replayable local Supabase migration chain for the storage/parser surface so the approved closeout plan in `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md` can resume at Task 3 and complete without rewriting existing migration history.
+Document the storage-specific replay remediation that landed through the parser/storage seam, and hand off the remaining replay blocker at `20260309183000_073_normalize_flow_identity.sql` to the active upstream reconciliation plan in `docs/plans/2026-04-01-supabase-migration-reconciliation-plan.md`.
 
 ## Status
 
-Draft
+Blocked - storage-specific blockers cleared; broader post-`069` project-authority reconciliation now belongs to `docs/plans/2026-04-01-supabase-migration-reconciliation-plan.md`.
 
 ## Source Inputs
 
 - `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md`
 - `docs/plans/2026-04-02-storage-namespace-separation-and-gcs-access-correction-plan.md`
+- `docs/plans/2026-04-01-supabase-migration-reconciliation-plan.md`
 - local replay failure on 2026-04-02 from a clean isolated checkout: `npx supabase db start` / `npx supabase db reset`
 - current migration chain in `supabase/migrations`
 
+## Active Dependency
+
+- Active upstream plan: `docs/plans/2026-04-01-supabase-migration-reconciliation-plan.md`
+- This artifact is no longer the active completion plan for end-to-end replay.
+- Tasks 3 through 6 remain blocked until the upstream plan clears `073` and any subsequent post-`069` project-authority drift.
+
 ## Architecture
 
-The replay blocker is not in the storage namespace migrations themselves. It is a missing parser-era compatibility surface in the replayable migration history.
+This plan successfully repaired the parser/storage-specific replay seam, but it did not fully restore a replayable migration chain by itself.
 
-The corrective direction is:
+The landed work under this plan is:
 
 1. Keep the fix additive wherever replay can be repaired without touching later files.
 2. Add one additive backdated bootstrap migration that sorts before `20260220194000_040_storage_documents_preview_select_policy.sql`.
 3. In that bootstrap, create the missing parser-era physical tables, catalog relations, and compatibility columns that later migrations assume already exist.
 4. If replay then reaches a later historical migration with SQL that PostgreSQL will not parse, allow a syntax-only repair that preserves the same schema intent and constraint names.
 5. Make the bootstrap idempotent so it is safe on the linked database, which already appears to have the parser-era tables.
-6. Extend the schema-contract test so replay proves both:
-   - the parser-era bootstrap surface exists
-   - the later storage namespace surface still exists
+6. Record the next failure once replay leaves the parser/storage seam.
 
-This is a replay-remediation prerequisite, not a redesign of storage runtime behavior.
+The remaining work is no longer owned here:
+
+1. Replay now fails at `20260309183000_073_normalize_flow_identity.sql` because it still assumes `public.projects` exists after the `069` rename seam.
+2. That broader migration-history reconciliation is now owned by `docs/plans/2026-04-01-supabase-migration-reconciliation-plan.md`.
+3. This file remains as a blocked handoff artifact and storage-specific evidence trail, not as the active completion contract.
+
+This is a landed replay-remediation prerequisite plus a blocked handoff, not the active plan for end-to-end replay completion.
 
 ## Tech Stack
 
@@ -102,7 +113,7 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
 ### Execution consequence
 
 - The approved closeout plan is correctly blocked at Task 3.
-- `services/platform-api/tests/test_storage_namespace_schema_contract.py` and `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md` are not present in current `master` and must be created by this remediation before they can carry replay evidence.
+- `services/platform-api/tests/test_storage_namespace_schema_contract.py` and `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md` are not present in current `master` and must be created by this remediation before they can carry replay evidence.
 
 ## Pre-Implementation Contract
 
@@ -140,23 +151,24 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
    - `public.block_overlays.overlay_uid`
    - later-era foreign keys whose target tables do not yet exist at the bootstrap timestamp
 9. `public.blocks` already exists before this remediation in a legacy `doc_uid` shape. The bootstrap may only add additive compatibility columns, constraints, indexes, and policy changes required by later parser/storage migrations.
-10. After this remediation lands, the approved closeout plan resumes unchanged from Task 3.
+10. After this remediation cleared the storage-specific seam, the remaining replay blocker moved to the upstream reconciliation plan in `docs/plans/2026-04-01-supabase-migration-reconciliation-plan.md`; the approved closeout plan cannot resume until that upstream plan succeeds.
 11. No secondary checkout is assumed by this plan. Execution must proceed from `E:\\writing-system` on local `master`.
 12. The only allowed edits to existing historical migrations in this plan are:
    - replacing the unsupported `ADD CONSTRAINT IF NOT EXISTS` syntax in `20260227160000_052_integration_registry_actions.sql` with equivalent idempotent guarded `ALTER TABLE ... ADD CONSTRAINT` logic that preserves the same constraint names, targets, and `ON DELETE RESTRICT` behavior
    - repairing the `service_functions_view` refresh in `20260303110000_065_service_schema_extensions.sql` so replay preserves the prior view column prefix and appends the new metadata fields without changing the intended view semantics
+13. This file must not be used to claim full-chain replay completion once the next blocker is outside the parser/storage seam.
 
 ## Locked Acceptance Contract
 
-The replay remediation is only complete when all of the following are true:
+The storage parser replay remediation is complete as a blocked handoff only when all of the following are true:
 
 1. `npx supabase db start` succeeds locally from `E:\\writing-system` on `master` with a clean working tree.
-2. `npx supabase db reset --yes` replays the full migration chain with no parser/storage table or catalog failure before or during the storage namespace migrations.
+2. `npx supabase db reset --yes` replays through the storage-specific blockers at `040`, `041`, `042`, `048`, `052`, `065`, and `083`.
 3. `npx supabase migration list --local` shows the new bootstrap migration applied ahead of the parser/storage table-and-catalog chain.
-4. `cd services/platform-api && pytest -q tests/test_storage_namespace_schema_contract.py` passes against the locally reset database.
-5. `cd services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py` passes against the locally reset database.
-6. `supabase db push` applies the new bootstrap migration to the linked project with no destructive drift and no unresolved partial-apply state.
-7. The blocked closeout plan can then resume at Task 3 without another replay blocker.
+4. The verification report records the next failure at `20260309183000_073_normalize_flow_identity.sql`.
+5. The concrete error recorded for that next blocker is `ERROR: relation "public.projects" does not exist (SQLSTATE 42P01)`.
+6. Active ownership of the remaining replay blocker is transferred to `docs/plans/2026-04-01-supabase-migration-reconciliation-plan.md`.
+7. The blocked closeout plan remains intentionally paused until that upstream plan proves replay clean beyond `073`.
 
 ## Locked Platform API Surface
 
@@ -494,7 +506,7 @@ No frontend runtime or component changes.
 
 - `supabase/migrations/20260220193000_storage_parser_compat_bootstrap.sql`
 - `services/platform-api/tests/test_storage_namespace_schema_contract.py`
-- `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+- `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 ### Modified files
 - `supabase/migrations/20260227160000_052_integration_registry_actions.sql`
@@ -523,9 +535,9 @@ The bootstrap migration is not allowed to:
 
 ## Task 1: Capture authoritative parser-era DDL from the linked database
 
-**File(s):** `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+**File(s):** `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
-**Step 1:** Create `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md` as the execution evidence artifact for this remediation.
+**Step 1:** Create `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md` as the execution evidence artifact for this remediation.
 **Step 2:** Dump the linked public schema or inspect the linked database catalog for:
 - `source_documents`
 - `conversion_parsing`
@@ -596,7 +608,7 @@ The bootstrap migration is not allowed to:
 
 ## Task 4: Re-run local replay and targeted backend verification
 
-**File(s):** `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+**File(s):** `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 **Step 1:** Start the local Supabase environment.
 **Step 2:** Replay the full migration chain with `npx supabase db reset --yes`.
@@ -615,7 +627,7 @@ The bootstrap migration is not allowed to:
 
 ## Task 5: Apply the bootstrap migration to the linked database
 
-**File(s):** `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+**File(s):** `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 **Step 1:** Capture linked migration state before apply.
 **Step 2:** Run `npx supabase db push` against the linked project.
@@ -632,7 +644,7 @@ The bootstrap migration is not allowed to:
 
 ## Task 6: Resume the blocked closeout plan from Task 3
 
-**File(s):** `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md`, `docs/plans/2026-04-02-storage-namespace-closure-verification-report.md`
+**File(s):** `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md`, `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
 
 **Step 1:** Resume the approved closeout plan from Task 3.
 **Step 2:** Re-run the local replay, linked-db apply, CORS application, manual acceptance, and re-evaluation steps in that plan.
@@ -652,11 +664,10 @@ The bootstrap migration is not allowed to:
 
 ## Completion Criteria
 
-The work is complete only when all of the following are true:
+The work is complete as a blocked handoff only when all of the following are true:
 
 1. The new additive bootstrap migration exists and is idempotent.
-2. The local Supabase migration chain replays from scratch with no parser/storage table failure, catalog dependency failure, `052` syntax failure, or `065` view-refresh failure.
-3. The schema-contract test proves both parser-era replay prerequisites and storage namespace schema requirements.
-4. `cd services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py` passes against the reset local database.
-5. The linked database shows the bootstrap migration applied successfully with no unresolved partial-apply state.
-6. The blocked storage namespace closeout plan can then resume from Task 3 and finish under its own acceptance contract.
+2. The verification artifact records that replay now clears the storage-specific blockers at `040`, `041`, `042`, `048`, `052`, `065`, and `083`.
+3. The next replay blocker is recorded at `20260309183000_073_normalize_flow_identity.sql` with `public.projects` missing.
+4. The active upstream ownership of the remaining replay problem is transferred to `docs/plans/2026-04-01-supabase-migration-reconciliation-plan.md`.
+5. Tasks 3 through 6 remain intentionally pending under this file until the upstream plan succeeds.

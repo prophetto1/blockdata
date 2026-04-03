@@ -70,8 +70,8 @@ describe('AgchainModelsTable', () => {
       />,
     );
 
-    expect(screen.getByText('OpenAI')).toBeInTheDocument();
-    expect(screen.getByText('Bedrock')).toBeInTheDocument();
+    expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Bedrock').length).toBeGreaterThan(0);
     expect(screen.getByText('Configured')).toBeInTheDocument();
     expect(screen.getByText('Needs attention')).toBeInTheDocument();
   });

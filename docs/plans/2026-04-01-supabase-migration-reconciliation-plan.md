@@ -1,320 +1,319 @@
-# 2026-04-01 Supabase Migration Reconciliation Plan
-
-## Objective
-
-Bring the connected Supabase project into schema alignment with the current AGChain and pipeline runtime without replaying semantically equivalent migrations and without attempting to run local-only migrations that are currently wrong for the live `public.user_projects` authority.
-
-## Current Observed State
-
-### Evidence-backed facts
-
-- `supabase migration list` shows timestamp drift between local and remote migration histories.
-- Supabase CLI documentation states that `migration list` compares timestamps only, not semantic schema equivalence.
-- The connected database currently has `public.user_projects` and does not have `public.projects`.
-- The connected database currently does **not** have:
-  - `public.agchain_organizations`
-  - `public.agchain_organization_members`
-  - `public.agchain_project_memberships`
-  - `public.agchain_operations`
-  - `public.agchain_datasets`
-  - `public.agchain_tools`
-  - `public.agchain_scorers`
-  - `public.pipeline_jobs`
-  - `public.pipeline_deliverables`
-  - `public.pipeline_source_sets`
-  - `public.pipeline_source_set_items`
-- The connected database currently **does** have:
-  - `public.agchain_model_targets` with 29 rows
-  - `public.agchain_benchmarks` with 2 rows
-  - `public.user_projects` with 21 rows and 6 distinct owners
-- `public.user_projects` is missing the columns required by the current AGChain workspace runtime:
-  - `organization_id`
-  - `project_slug`
-  - `created_by`
-- The current org selector failure is explained by this mismatch:
-  - [AgchainOrganizationSwitcher.tsx](/E:/writing-system/web/src/components/agchain/AgchainOrganizationSwitcher.tsx) loads `/agchain/organizations`
-  - [workspace_registry.py](/E:/writing-system/services/platform-api/app/domain/agchain/workspace_registry.py) queries `agchain_organizations` and `agchain_organization_members`
-  - those tables do not exist remotely, so the backend throws an unhandled error and the UI surfaces `HTTP 500`
-
-### Data snapshot that matters for backfills
-
-- `public.user_projects`: `21` rows, `0` rows with null `owner_id`
-- distinct owners across `public.user_projects` and `public.agchain_benchmarks`: `6`
-- `public.agchain_benchmarks`: `2` rows, both owned by the same user
-- neither benchmark name currently matches an existing `user_projects.project_name` for that owner
+# Supabase Migration Reconciliation Implementation Plan
 
-Implication: the workspace backfill in [20260331213000_agchain_workspace_scope_alignment.sql](/E:/writing-system/supabase/migrations/20260331213000_agchain_workspace_scope_alignment.sql) is expected to create `2` compatibility project rows for existing benchmarks, taking `public.user_projects` from `21` to `23` rows on the current data snapshot.
+**Goal:** Restore a forward-replayable and linked-deployable Supabase migration chain after `20260305120050_069_user_projects_rename.sql` by reconciling the remaining post-rename migrations that still assume a live `public.projects` table, so the blocked storage replay handoff and downstream storage namespace closeout can resume on a truthful schema contract.
 
-## Drift Classification
+**Architecture:** Treat `public.user_projects` as the live project authority after `069`, preserve the already-landed storage parser replay repairs (`20260220193000_storage_parser_compat_bootstrap.sql`, `20260227160000_052_integration_registry_actions.sql`, and `20260303110000_065_service_schema_extensions.sql`) unchanged, and repair only the remaining local migration files that still bind foreign keys or ownership policies to `public.projects` or unqualified `projects` after the rename seam. Validate with local full-chain replay first, then use the repo's normal linked-project `supabase db push` path only after the corrected chain is proven and the connected remote history shows the targeted files are still local-only.
 
-### Bucket A: timestamp drift only, repair migration history, do not rerun DDL
+**Tech Stack:** Supabase CLI, Supabase Postgres SQL migrations, Postgres RLS and helper functions, FastAPI runtime verification, pytest.
+**Status:** Draft
+**Author:** Codex
+**Date:** 2026-04-03
 
-These local files map to semantically equivalent remote migrations already present under different remote timestamps:
+## Source Inputs
 
-| Local version | Remote version | Local file | Why repair instead of rerun |
-|---|---|---|---|
-| `20260321200000` | `20260322053958` | `20260321200000_auth_oauth_attempts.sql` | Remote migration history already contains the same feature under a later timestamped version name |
-| `20260321173000` | `20260327212558` | `20260321173000_create_user_variables.sql` | Remote already has the created secret store schema under a different timestamp |
-| `20260327110000` | `20260327212726` | `20260327110000_user_secret_store_hardening.sql` | Remote already has the hardening change under a different timestamp |
-| `20260321120000` | `20260327214221` | `20260321120000_storage_default_quota_policy.sql` | Remote already has the quota policy under a different timestamp |
-| `20260321130000` | `20260327214241` | `20260321130000_storage_source_document_bridge.sql` | Remote already has the storage/source bridge under a different timestamp |
-| `20260326170000` | `20260327214302` | `20260326170000_agchain_model_targets.sql` | Remote already has AGChain model target tables and rows |
-| `20260326234500` | `20260327214330` | `20260326234500_agchain_benchmark_registry.sql` | Remote already has AGChain benchmark registry tables and rows |
+- `docs/plans/__superseded/2026-04-02-storage-parser-replay-remediation-plan.md`
+- `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md`
+- `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
+- `docs/plans/__complete/notes/2026-04-03-supabase-migration-reconciliation-takeover-notes.md`
+- `supabase/migrations/20260305120050_069_user_projects_rename.sql`
+- `supabase/migrations/20260309183000_073_normalize_flow_identity.sql`
+- `supabase/migrations/20260314180000_091_extraction_tables.sql`
+- `supabase/migrations/20260319190000_102_user_storage_quota.sql`
 
-### Bucket B: safe local-only migrations that should run forward as-is
+## Verified Current State
 
-| Version | File | Status |
-|---|---|---|
-| `20260305120050` | `20260305120050_069_user_projects_rename.sql` | Safe no-op on current remote because `public.user_projects` already exists and `public.projects` does not |
-| `20260317230000` | `20260317230000_101_register_code_source_types.sql` | Still needed; code source types exist, but `6` `source_documents` rows are still mislabeled as `binary` |
-| `20260328103000` | `20260328103000_drop_old_reserve_user_storage_overload.sql` | Still needed; remote currently exposes both `reserve_user_storage` overloads |
-| `20260328113000` | `20260328113000_agchain_benchmark_step_reorder_atomic_rpc.sql` | Still needed; reorder RPC is not present remotely |
-| `20260330130000` | `20260330130000_pipeline_source_set_storage_contract.sql` | Forward migration once `20260330120000` is corrected and applied |
-| `20260331143000` | `20260331143000_agchain_inspect_component_registries.sql` | Still needed; AGChain tool/scorer registry tables are absent remotely |
-| `20260331213000` | `20260331213000_agchain_workspace_scope_alignment.sql` | Still needed; this is the migration that unblocks `/agchain/organizations` |
-| `20260331220000` | `20260331220000_agchain_operations_prereqs.sql` | Still needed; `public.agchain_operations` is absent remotely |
-| `20260401123000` | `20260401123000_agchain_tools_runtime_refs.sql` | Still needed after component registries land |
+- The storage-specific replay blockers at `040`, `041`, `042`, `048`, `052`, `065`, and `083` are already cleared by the landed bootstrap and replay-safe repairs.
+- Replay now fails at `20260309183000_073_normalize_flow_identity.sql` because the migration assumes `public.projects` still exists after the `069` rename seam.
+- `20260314180000_091_extraction_tables.sql` still references `public.projects` and unqualified `projects` in its `project_id` foreign key and RLS ownership checks.
+- `20260319190000_102_user_storage_quota.sql` already bridges `public.user_projects` and `public.projects` through `_storage_user_owns_project()` and is verification scope only.
+- The previously flagged late-March files now already target `public.user_projects` in the repo and are not part of the remaining edit surface:
+  - `20260327200000_pipeline_jobs_and_deliverables_foundation.sql`
+  - `20260330120000_pipeline_source_sets_foundation.sql`
+  - `20260331141000_agchain_inspect_dataset_registry.sql`
+- The connected remote still uses `public.user_projects` as the live authority and does not expose `public.projects` as the active runtime table.
 
-### Bucket C: local-only migrations that are wrong against the current project authority and must be corrected before any normal push
+### Platform API
 
-These local-only files still reference `public.projects(project_id)` even though the connected database uses `public.user_projects(project_id)`:
+No platform API endpoints are added, removed, or modified in this reconciliation plan.
 
-| Version | File | Blocking issue |
-|---|---|---|
-| `20260327200000` | `20260327200000_pipeline_jobs_and_deliverables_foundation.sql` | `pipeline_jobs.project_id` references `public.projects(project_id)` |
-| `20260330120000` | `20260330120000_pipeline_source_sets_foundation.sql` | `pipeline_source_sets.project_id` references `public.projects(project_id)` |
-| `20260331141000` | `20260331141000_agchain_inspect_dataset_registry.sql` | `agchain_datasets.project_id` references `public.projects(project_id)` |
+Existing runtime surfaces are verification-only:
 
-These three files block any clean `db push` path until corrected.
+- AGChain workspace endpoints backed by `test_agchain_workspaces.py`
+- AGChain dataset endpoints backed by `test_agchain_datasets.py`
+- Pipeline source-set and pipeline library routes backed by `test_pipeline_source_sets_routes.py`, `test_pipeline_source_sets_service.py`, `test_pipelines_routes.py`, and `test_pipeline_source_library.py`
+- Storage quota and upload routes backed by `test_storage_routes.py`, `test_storage_source_documents.py`, and `test_storage_download_url.py`
 
-## Preferred Reconciliation Path
+### Observability
 
-### Phase 0: freeze and snapshot
+No new traces, metrics, or structured logs are added in this reconciliation plan.
 
-1. Freeze further Supabase migration edits until the reconciliation commit is prepared.
-2. Capture:
-   - current `supabase migration list`
-   - current remote schema backup
-   - current row counts for `user_projects`, `agchain_benchmarks`, `agchain_model_targets`
-3. Treat the connected remote as the operational truth for existing data, but treat the repo migration chain as the source of desired forward state.
+The zero case is intentional because this work repairs migration-history ownership references instead of adding a new runtime seam.
 
-### Phase 1: repair timestamp-only drift
+Observability attribute rules:
 
-For each Bucket A pair:
+- Allowed new attributes: none
+- Forbidden additions to trace, metric, or structured-log payloads during this plan:
+  - `user_id`
+  - `owner_id`
+  - `project_id`
+  - `source_uid`
+  - `object_key`
+  - raw SQL text
+  - database passwords
+  - Supabase access tokens
 
-1. Mark the local timestamp as applied in remote migration history.
-2. Mark the remote-only timestamp as reverted.
-3. Re-run `supabase migration list`.
+### Database Migrations
 
-Expected result after this phase:
+| Migration | Creates/Alters | Affects Existing Data? |
+|-----------|----------------|------------------------|
+| `20260309183000_073_normalize_flow_identity.sql` | Replace all post-`069` references to `public.projects` with `public.user_projects` in flow-table comments, foreign keys, and ownership policies while preserving the existing namespace backfill, uniqueness, and index semantics | No new data rewrite beyond the existing namespace/default updates already in the migration |
+| `20260314180000_091_extraction_tables.sql` | Retarget `extraction_schemas.project_id` and the `extraction_schemas_*_own` RLS project-ownership checks from `public.projects` / `projects` to `public.user_projects` | No |
+| `20260319190000_102_user_storage_quota.sql` | Verification-only: keep the `_storage_user_owns_project()` bridge unchanged because it already supports either `public.user_projects` or `public.projects` | No contract changes |
 
-- the seven Bucket A discrepancies are gone
-- only the genuinely unapplied local files remain unmatched
+Notes:
 
-Exact repair pairs:
+- `20260305120050_069_user_projects_rename.sql` remains unchanged and is the frozen rename seam this plan builds on.
+- The already-landed storage replay repairs in `20260220193000_storage_parser_compat_bootstrap.sql`, `20260227160000_052_integration_registry_actions.sql`, and `20260303110000_065_service_schema_extensions.sql` are preserved as-is and are not edit scope in this plan.
+- If connected or otherwise shared migration history proves `073` or `091` has already been applied outside local-only history, stop and write a dedicated additive cutover plan instead of editing those files in place.
 
-| Apply local | Revert remote |
-|---|---|
-| `20260321200000` | `20260322053958` |
-| `20260321173000` | `20260327212558` |
-| `20260327110000` | `20260327212726` |
-| `20260321120000` | `20260327214221` |
-| `20260321130000` | `20260327214241` |
-| `20260326170000` | `20260327214302` |
-| `20260326234500` | `20260327214330` |
+### Edge Functions
 
-Use Supabase CLI `migration repair` only for this bucket. Do not use it to pretend Bucket B or Bucket C DDL is already present.
+No edge functions created or modified.
 
-### Phase 2: correct the broken local-only files before any push
+### Frontend Surface Area
 
-Because these files are local-only and are not present in the connected remote history, the preferred path is to fix them in place before rollout:
+No frontend runtime or component changes.
 
-1. Edit [20260327200000_pipeline_jobs_and_deliverables_foundation.sql](/E:/writing-system/supabase/migrations/20260327200000_pipeline_jobs_and_deliverables_foundation.sql)
-   - replace `REFERENCES public.projects(project_id)` with `REFERENCES public.user_projects(project_id)`
-2. Edit [20260330120000_pipeline_source_sets_foundation.sql](/E:/writing-system/supabase/migrations/20260330120000_pipeline_source_sets_foundation.sql)
-   - replace `REFERENCES public.projects(project_id)` with `REFERENCES public.user_projects(project_id)`
-3. Edit [20260331141000_agchain_inspect_dataset_registry.sql](/E:/writing-system/supabase/migrations/20260331141000_agchain_inspect_dataset_registry.sql)
-   - replace `REFERENCES public.projects(project_id)` with `REFERENCES public.user_projects(project_id)`
+## Pre-Implementation Contract
 
-No other semantic rewrite is needed in those files unless review finds additional `public.projects` assumptions beyond the direct foreign key.
+No major product, database-seam, API, or rollout decision may be improvised during implementation. If `073` or `091` is discovered to be applied on a shared database, or if replay exposes another post-`069` project-authority break outside the locked file inventory below, implementation must stop and this plan must be revised before any further SQL edits.
 
-### Decision gate for editing historical local files
+### Locked Product Decisions
 
-Use the preferred in-place correction only if those three timestamps have not been applied to any shared database.
+1. `public.user_projects` is the live project authority after `20260305120050_069_user_projects_rename.sql`; no post-`069` migration may continue treating `public.projects` as the active runtime table.
+2. The storage parser bootstrap work that landed in `20260220193000_storage_parser_compat_bootstrap.sql`, `20260227160000_052_integration_registry_actions.sql`, and `20260303110000_065_service_schema_extensions.sql` remains valid prerequisite work and is not to be reworked under this plan.
+3. The only migration files in edit scope are `20260309183000_073_normalize_flow_identity.sql` and `20260314180000_091_extraction_tables.sql`.
+4. `20260319190000_102_user_storage_quota.sql` stays unchanged because its `_storage_user_owns_project()` helper already bridges both table names correctly.
+5. No platform API, observability, edge-function, backend runtime, or frontend redesign is allowed in this plan; runtime code is verification scope only.
+6. The preferred path is in-place correction of the local migration files because current evidence shows the connected remote has not applied the remaining broken files.
+7. If any shared-environment evidence contradicts that local-only assumption, stop and write a new additive cutover plan instead of improvising a hybrid approach.
+8. The April 2 storage parser replay plan becomes a blocked handoff artifact, and the storage namespace closeout plan may not resume until this reconciliation plan proves the upstream chain is truthful again.
 
-Current evidence:
+### Locked Acceptance Contract
 
-- they are not applied on the connected remote
-- their target tables do not exist on the connected remote
+The reconciliation is only complete when all of the following are true:
 
-If another shared branch database has already applied any of those timestamps, do **not** edit that file in place. In that case, use the fallback path in the final section of this document.
+1. From `E:\writing-system`, `cd supabase && npx supabase db start && npx supabase db reset --yes` replays cleanly past `073` and `091` with no `public.projects` or unqualified `projects` failure after the `069` rename seam.
+2. `20260309183000_073_normalize_flow_identity.sql` contains no remaining post-`069` references to `public.projects`.
+3. `20260314180000_091_extraction_tables.sql` contains no remaining `public.projects` or unqualified `projects` ownership references.
+4. `20260319190000_102_user_storage_quota.sql` still bridges both table names unchanged.
+5. `cd services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py tests/test_agchain_workspaces.py tests/test_agchain_datasets.py` passes against the replayed local database.
+6. `cd supabase && npx supabase link --project-ref $SUPABASE_PROJECT_ID && npx supabase migration list && npx supabase db push && npx supabase migration list` applies the corrected local history to the linked project with no unresolved drift.
+7. The reconciliation verification report records the green replay and linked-apply evidence, and only then the blocked storage closeout plan may resume at Task 3.
 
-### Phase 3: rehearse the forward-only migration run on a disposable environment
+### Locked Platform API Surface
 
-Rehearse on a disposable database that starts from the current remote state after Phase 1 and the corrected files from Phase 2.
+No platform API endpoints are added or modified.
 
-Recommended order:
+Verification-only endpoints/routes:
 
-1. `20260305120050_069_user_projects_rename.sql`
-2. `20260317230000_101_register_code_source_types.sql`
-3. corrected `20260327200000_pipeline_jobs_and_deliverables_foundation.sql`
-4. `20260328103000_drop_old_reserve_user_storage_overload.sql`
-5. `20260328113000_agchain_benchmark_step_reorder_atomic_rpc.sql`
-6. corrected `20260330120000_pipeline_source_sets_foundation.sql`
-7. `20260330130000_pipeline_source_set_storage_contract.sql`
-8. corrected `20260331141000_agchain_inspect_dataset_registry.sql`
-9. `20260331143000_agchain_inspect_component_registries.sql`
-10. `20260331213000_agchain_workspace_scope_alignment.sql`
-11. `20260331220000_agchain_operations_prereqs.sql`
-12. `20260401123000_agchain_tools_runtime_refs.sql`
+1. Existing AGChain workspace routes exercised by `test_agchain_workspaces.py`
+2. Existing AGChain dataset routes exercised by `test_agchain_datasets.py`
+3. Existing storage quota and upload routes exercised by `test_storage_routes.py`, `test_storage_source_documents.py`, and `test_storage_download_url.py`
+4. Existing pipeline source-set and pipeline library routes exercised by `test_pipeline_source_sets_routes.py`, `test_pipeline_source_sets_service.py`, `test_pipeline_source_library.py`, and `test_pipelines_routes.py`
 
-Why this order is correct:
+### Locked Observability Surface
 
-- it preserves timestamp order
-- it lets the still-needed code-source and storage cleanup land before later schema work
-- it lands the pipeline foundations before source-set constraints
-- it lands AGChain benchmark/tool/dataset registry prerequisites before workspace and operations runtime
-- it lands tool runtime ref widening only after `agchain_tools` and `agchain_benchmark_version_tools` exist
+No new observability surface is introduced.
 
-### Phase 4: verification gates on the disposable environment
+Allowed new attributes: none.
 
-#### Migration-history gates
+Forbidden additions in any verification logging for this plan:
 
-- `supabase migration list` shows no unmatched rows for Buckets A, B, or C
+1. `user_id`
+2. `owner_id`
+3. `project_id`
+4. `source_uid`
+5. raw SQL text
+6. Supabase credentials or signed URLs
 
-#### Schema gates
-
-Verify these relations now exist:
+### Locked Inventory Counts
 
-- `public.pipeline_jobs`
-- `public.pipeline_deliverables`
-- `public.pipeline_source_sets`
-- `public.pipeline_source_set_items`
-- `public.agchain_datasets`
-- `public.agchain_dataset_versions`
-- `public.agchain_tools`
-- `public.agchain_tool_versions`
-- `public.agchain_scorers`
-- `public.agchain_scorer_versions`
-- `public.agchain_organizations`
-- `public.agchain_organization_members`
-- `public.agchain_project_memberships`
-- `public.agchain_operations`
-
-Verify these columns now exist:
-
-- `public.user_projects.organization_id`
-- `public.user_projects.project_slug`
-- `public.user_projects.created_by`
-- `public.agchain_benchmarks.project_id`
-- `public.agchain_tools.source_kind`
-- `public.agchain_benchmark_version_tools.tool_ref`
-
-#### Data/backfill gates
-
-On the current connected-data snapshot, the disposable rehearsal should prove:
-
-- `public.user_projects` count becomes `23`
-- `public.agchain_organizations` count becomes `6`
-- `public.agchain_organization_members` count becomes `6`
-- `public.agchain_project_memberships` count becomes `23`
-- `public.agchain_benchmarks` rows with null `project_id` becomes `0`
-- `public.user_projects` rows with null `organization_id` becomes `0`
-- `public.user_projects` rows with null `project_slug` becomes `0`
-- `public.user_projects` rows with null `created_by` becomes `0`
-- `source_documents` rows still mislabeled as binary for known code extensions becomes `0`
-
-#### Runtime/API gates
-
-After the disposable migration rehearsal, verify authenticated API reads for:
-
-- `GET /agchain/organizations`
-- `GET /agchain/projects`
-- `GET /agchain/datasets`
-- `GET /agchain/tools`
-
-The org selector must return `200` and at least one organization row instead of `HTTP 500`.
-
-### Phase 5: production rollout
-
-Only after the disposable environment passes all gates:
-
-1. apply the same Phase 1 repairs on the production-linked remote migration history
-2. deploy the corrected migration files
-3. run the forward migration sequence once against the linked production project
-4. rerun the verification queries
-5. smoke-test the AGChain org selector and project registry in the live web app
-
-## Verification Queries
-
-Use these as the canonical post-rollout checks.
-
-```sql
-select to_regclass('public.agchain_organizations') as agchain_organizations,
-       to_regclass('public.agchain_organization_members') as agchain_organization_members,
-       to_regclass('public.agchain_project_memberships') as agchain_project_memberships,
-       to_regclass('public.agchain_operations') as agchain_operations,
-       to_regclass('public.agchain_datasets') as agchain_datasets,
-       to_regclass('public.agchain_tools') as agchain_tools,
-       to_regclass('public.agchain_scorers') as agchain_scorers,
-       to_regclass('public.pipeline_jobs') as pipeline_jobs,
-       to_regclass('public.pipeline_deliverables') as pipeline_deliverables,
-       to_regclass('public.pipeline_source_sets') as pipeline_source_sets,
-       to_regclass('public.pipeline_source_set_items') as pipeline_source_set_items;
-```
-
-```sql
-select
-  count(*) filter (where organization_id is null) as user_projects_without_org,
-  count(*) filter (where project_slug is null) as user_projects_without_slug,
-  count(*) filter (where created_by is null) as user_projects_without_created_by
-from public.user_projects;
-```
-
-```sql
-select count(*) as benchmarks_without_project
-from public.agchain_benchmarks
-where project_id is null;
-```
-
-```sql
-select
-  (select count(*) from public.user_projects) as user_projects_count,
-  (select count(*) from public.agchain_organizations) as organizations_count,
-  (select count(*) from public.agchain_organization_members) as organization_members_count,
-  (select count(*) from public.agchain_project_memberships) as project_memberships_count;
-```
-
-```sql
-select count(*) as binary_code_source_rows
-from public.source_documents
-where source_type = 'binary'
-  and (
-    source_locator like '%.py'
-    or source_locator like '%.java'
-    or source_locator like '%.js'
-    or source_locator like '%.jsx'
-    or source_locator like '%.ts'
-    or source_locator like '%.tsx'
-    or source_locator like '%.go'
-    or source_locator like '%.rs'
-    or source_locator like '%.cs'
-  );
-```
-
-## Fallback Path If Local-Only Files Cannot Be Edited In Place
-
-If any shared environment has already applied `20260327200000`, `20260330120000`, or `20260331141000`:
-
-1. do not mutate those historical files
-2. create a new one-time reconciliation cutover migration, following the precedent in [20260316050000_096_reconciliation_cutover.sql](/E:/writing-system/supabase/migrations/20260316050000_096_reconciliation_cutover.sql)
-3. make that cutover migration:
-   - create the missing pipeline and AGChain tables against `public.user_projects`
-   - alter `public.user_projects`
-   - alter `public.agchain_benchmarks`
-   - backfill orgs, memberships, project slugs, created-by values, and benchmark project links
-   - add the missing RPC/function changes
-4. after the cutover succeeds, repair remote migration history to mark the superseded local timestamps as applied
-5. resume normal forward-only migrations from the next timestamp after the cutover
-
-This fallback is heavier than the preferred path and should be used only if shared-environment application history blocks safe in-place correction.
+#### Database
+
+- Modified existing migration files: `2`
+- New migration files: `0`
+
+#### Backend
+
+- Modified runtime backend files: `0`
+
+#### Frontend
+
+- Modified frontend files: `0`
+
+#### Tests
+
+- New test modules: `0`
+- Modified test modules: `0`
+- Verification suites run: `9`
+
+#### Docs
+
+- New verification docs: `1`
+
+### Locked File Inventory
+
+#### New files
+
+- `docs/plans/2026-04-03-supabase-migration-reconciliation-verification-report.md`
+
+#### Modified files
+
+- `supabase/migrations/20260309183000_073_normalize_flow_identity.sql`
+- `supabase/migrations/20260314180000_091_extraction_tables.sql`
+
+#### Verification-only files
+
+- `supabase/migrations/20260305120050_069_user_projects_rename.sql`
+- `supabase/migrations/20260319190000_102_user_storage_quota.sql`
+- `docs/plans/__superseded/2026-04-02-storage-parser-replay-remediation-plan.md`
+- `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md`
+
+## Frozen Project Authority Contract
+
+`20260305120050_069_user_projects_rename.sql` is the rename seam. Before that timestamp, historical migrations may legitimately reference `public.projects`. After that timestamp, new or corrected migrations in this chain must target `public.user_projects` as the live authority.
+
+Do not solve this by recreating `public.projects` after `069`.
+Do not add a compatibility view or alias to mask the drift.
+Do not reopen the storage parser bootstrap files to paper over post-`069` project-authority mistakes.
+
+## Explicit Risks Accepted In This Plan
+
+1. Current evidence only proves the connected remote has not applied the remaining broken files; if another shared environment has, this plan must stop and hand off to a cutover plan.
+2. Local replay may expose another post-`069` `projects` reference later in the chain; if that happens, implementation must stop, record the new failure, and revise the plan instead of silently expanding scope.
+3. The linked project may still contain semantic drift beyond the `projects` / `user_projects` seam; linked apply evidence must be captured before the storage closeout plan is resumed.
+4. The shared working tree may still contain unrelated application changes; migration verification must rely on the locked SQL files and targeted backend suites rather than on a whole-repo build.
+
+## Task 1: Capture reconciliation takeover evidence
+
+**File(s):** `docs/plans/2026-04-03-supabase-migration-reconciliation-verification-report.md`
+
+**Step 1:** Create `docs/plans/2026-04-03-supabase-migration-reconciliation-verification-report.md`.
+**Step 2:** Record the inherited-plan summary: April 2 storage replay work cleared the storage-specific blockers through `065` and now fails at `073`.
+**Step 3:** Record the exact remaining post-`069` references found in `073`, `091`, and `102`.
+**Step 4:** Record that the late-March pipeline and AGChain migrations already use `public.user_projects` and are no longer edit scope.
+
+**Test command:** `cd supabase && npx supabase migration list && rg -n "public\.projects|FROM projects|REFERENCES projects" migrations/20260309183000_073_normalize_flow_identity.sql migrations/20260314180000_091_extraction_tables.sql migrations/20260319190000_102_user_storage_quota.sql`
+**Expected output:** migration history snapshot plus hits only in `073`, `091`, and the fallback branch inside `102`.
+
+**Commit:** `docs(db): capture project-authority reconciliation evidence`
+
+## Task 2: Verify the in-place correction gate
+
+**File(s):** `docs/plans/2026-04-03-supabase-migration-reconciliation-verification-report.md`
+
+**Step 1:** Capture the connected remote migration list before any local SQL edits are treated as deployable.
+**Step 2:** Confirm `20260309183000_073_normalize_flow_identity.sql` and `20260314180000_091_extraction_tables.sql` are not applied on the connected project.
+**Step 3:** If either timestamp is already applied on a shared database, stop execution immediately.
+**Step 4:** In that blocked case, record the evidence and replace this plan with a dedicated additive cutover plan before editing SQL.
+
+**Test command:** `cd supabase && npx supabase link --project-ref $SUPABASE_PROJECT_ID && npx supabase migration list`
+**Expected output:** connected history shows `073` and `091` absent from the applied remote set, keeping the preferred in-place correction path valid.
+
+**Commit:** `docs(db): record in-place reconciliation gate`
+
+## Task 3: Repair post-069 flow identity ownership in `073`
+
+**File(s):** `supabase/migrations/20260309183000_073_normalize_flow_identity.sql`
+
+**Step 1:** Replace `COMMENT ON TABLE public.projects` with the equivalent comment on `public.user_projects`.
+**Step 2:** Replace both `flow_executions.project_id` and `flow_logs.project_id` foreign-key references from `public.projects(project_id)` to `public.user_projects(project_id)`.
+**Step 3:** Replace every `FROM public.projects p` ownership policy reference in the file with `FROM public.user_projects p`.
+**Step 4:** Leave the namespace backfill, uniqueness, index, and comment semantics unchanged.
+
+**Test command:** `rg -n "public\.projects|FROM projects|REFERENCES projects" supabase/migrations/20260309183000_073_normalize_flow_identity.sql`
+**Expected output:** no matches.
+
+**Commit:** `fix(db): reconcile flow identity migration to user_projects`
+
+## Task 4: Repair extraction schema ownership in `091`
+
+**File(s):** `supabase/migrations/20260314180000_091_extraction_tables.sql`
+
+**Step 1:** Replace `extraction_schemas.project_id` to reference `public.user_projects(project_id)`.
+**Step 2:** Replace both `SELECT project_id FROM projects WHERE owner_id = auth.uid()` ownership checks with `SELECT project_id FROM public.user_projects WHERE owner_id = auth.uid()`.
+**Step 3:** Leave extraction job tables, indexes, and non-project RLS behavior unchanged.
+
+**Test command:** `rg -n "public\.projects|FROM projects|REFERENCES projects" supabase/migrations/20260314180000_091_extraction_tables.sql`
+**Expected output:** no matches.
+
+**Commit:** `fix(db): reconcile extraction schema ownership to user_projects`
+
+## Task 5: Rehearse the full local migration chain
+
+**File(s):** `docs/plans/2026-04-03-supabase-migration-reconciliation-verification-report.md`
+
+**Step 1:** Start the local Supabase environment from `E:\writing-system`.
+**Step 2:** Run a full `supabase db reset --yes`.
+**Step 3:** Capture `supabase migration list --local`.
+**Step 4:** Record whether replay clears `073`, `091`, `102`, and the later storage, pipeline, and AGChain migrations.
+
+**Test command:** `cd supabase && npx supabase db start && npx supabase db reset --yes && npx supabase migration list --local`
+**Expected output:** full reset succeeds with no post-`069` `projects`-table failure.
+
+**Commit:** `docs(db): record local reconciliation replay`
+
+## Task 6: Run targeted backend verification
+
+**File(s):** `docs/plans/2026-04-03-supabase-migration-reconciliation-verification-report.md`
+
+**Step 1:** Run the storage route and source-document tests against the reset database.
+**Step 2:** Run the pipeline source-set and pipeline library tests against the same database.
+**Step 3:** Run the AGChain workspace and dataset tests against the same database.
+**Step 4:** Record the pass/fail evidence in the reconciliation verification report.
+
+**Test command:** `cd services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py tests/test_pipelines_routes.py tests/test_pipeline_source_sets_routes.py tests/test_pipeline_source_sets_service.py tests/test_pipeline_source_library.py tests/test_agchain_workspaces.py tests/test_agchain_datasets.py`
+**Expected output:** targeted suites pass against the replayed database.
+
+**Commit:** `docs(db): record reconciliation backend verification`
+
+## Task 7: Apply the corrected local history to the linked project
+
+**File(s):** `docs/plans/2026-04-03-supabase-migration-reconciliation-verification-report.md`
+
+**Step 1:** Capture linked migration state before apply.
+**Step 2:** Run `npx supabase db push` through the repo's linked-project flow.
+**Step 3:** Capture linked migration state after apply.
+**Step 4:** Record any drift, partial apply, or stop condition.
+**Step 5:** If apply fails after changing linked history, stop and write an additive recovery plan before any retry.
+
+**Test command:** `cd supabase && npx supabase link --project-ref $SUPABASE_PROJECT_ID && npx supabase migration list && npx supabase db push && npx supabase migration list`
+**Expected output:** linked project reflects the corrected `073` and `091` history with no unresolved partial-apply state.
+
+**Commit:** `docs(db): record linked reconciliation apply`
+
+## Task 8: Hand the chain back to the storage closeout path
+
+**File(s):** `docs/plans/2026-04-03-supabase-migration-reconciliation-verification-report.md`, `docs/plans/__complete/reports/2026-04-02-storage-namespace-closure-verification-report.md`
+
+**Step 1:** Record in the reconciliation report that the upstream `public.user_projects` seam is now repaired.
+**Step 2:** Update the storage namespace closure verification report with the local replay result that unblocks Task 3.
+**Step 3:** Hand off to `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md` to resume its locked verification path from Task 3.
+**Step 4:** Do not mark the storage closeout complete inside this plan.
+
+**Test command:** `cd supabase && npx supabase migration list --local && cd ../services/platform-api && pytest -q tests/test_storage_routes.py tests/test_storage_source_documents.py tests/test_storage_download_url.py`
+**Expected output:** local history remains green and the downstream storage closeout plan is unblocked, not completed.
+
+**Commit:** `docs(db): hand off reconciliation success to storage closeout`
+
+## Completion Criteria
+
+The work is complete only when all of the following are true:
+
+1. The locked migration edit surface in this plan remains exactly `073` and `091`.
+2. Local replay succeeds with no post-`069` `public.projects` or unqualified `projects` failures.
+3. `102` remains unchanged and still bridges either project table correctly.
+4. The locked backend verification command is green against the replayed local database.
+5. The linked project shows the corrected local-only history applied with no unresolved partial-apply state.
+6. The reconciliation verification report exists and records enough evidence for the blocked storage closeout plan to resume from Task 3.

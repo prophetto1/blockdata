@@ -13,7 +13,7 @@
 
 This plan is derived from:
 
-- `docs/plans/2026-04-02-storage-surface-separation-status-report.md`
+- `docs/plans/__complete/reports/2026-04-02-storage-surface-separation-status-report.md`
 - `docs/plans/2026-04-02-gcs-download-url-and-preview-resolver-migration-plan.md`
 - the current `storage.py`, `pipelines.py`, `pipeline_source_sets.py`, `pipeline_storage.py`, and `storage_source_documents.py` runtime behavior
 - the current Supabase storage, source-document, and pipeline schema as of 2026-04-02

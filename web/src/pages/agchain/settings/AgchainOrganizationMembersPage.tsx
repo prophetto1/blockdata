@@ -4,6 +4,18 @@ import { AgchainPageHeader } from '@/components/agchain/AgchainPageHeader';
 import { InviteOrganizationMembersModal } from '@/components/agchain/settings/InviteOrganizationMembersModal';
 import { OrganizationMembersTable } from '@/components/agchain/settings/OrganizationMembersTable';
 import { Button } from '@/components/ui/button';
+import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectItemIndicator,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { useAgchainOrganizationMembers } from '@/hooks/agchain/useAgchainOrganizationMembers';
 import { AgchainPageFrame } from '@/pages/agchain/AgchainPageFrame';
@@ -11,6 +23,14 @@ import { AgchainPageFrame } from '@/pages/agchain/AgchainPageFrame';
 export default function AgchainOrganizationMembersPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const scopeState = useAgchainScopeState('organization');
+  const statusCollection = createListCollection({
+    items: [
+      { label: 'All', value: 'all' },
+      { label: 'Active', value: 'active' },
+      { label: 'Disabled', value: 'disabled' },
+    ],
+  });
+
   const {
     items,
     permissionGroups,
@@ -113,17 +133,29 @@ export default function AgchainOrganizationMembersPage() {
                 >
                   Show
                 </label>
-                <select
-                  id="organization-members-status"
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value as 'active' | 'disabled' | 'all')}
-                  aria-label="Show members by status"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                <SelectRoot
+                  collection={statusCollection}
+                  value={[statusFilter]}
+                  onValueChange={(details) => {
+                    const val = details.value[0];
+                    if (val) setStatusFilter(val as 'active' | 'disabled' | 'all');
+                  }}
                 >
-                  <option value="all">All</option>
-                  <option value="active">Active</option>
-                  <option value="disabled">Disabled</option>
-                </select>
+                  <SelectControl>
+                    <SelectTrigger className="w-full text-sm" aria-label="Show members by status">
+                      <SelectValueText />
+                    </SelectTrigger>
+                  </SelectControl>
+                  <SelectContent>
+                    {statusCollection.items.map((item) => (
+                      <SelectItem key={item.value} item={item}>
+                        <SelectItemText>{item.label}</SelectItemText>
+                        <SelectItemIndicator>&#10003;</SelectItemIndicator>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                  <SelectHiddenSelect />
+                </SelectRoot>
               </div>
             </div>
           </div>

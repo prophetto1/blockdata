@@ -52,7 +52,8 @@ describe('CreatePermissionGroupModal', () => {
       />,
     );
 
-    expect(screen.queryByLabelText('Create projects')).not.toBeInTheDocument();
+    // project.create (user_assignable: false) should not render a checkbox
+    expect(screen.queryByText('Create projects')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Name'), {
       target: { value: 'Analysts' },
@@ -60,8 +61,18 @@ describe('CreatePermissionGroupModal', () => {
     fireEvent.change(screen.getByLabelText('Description'), {
       target: { value: 'Read-only org members' },
     });
-    fireEvent.click(screen.getByLabelText('Read members'));
-    fireEvent.click(screen.getByLabelText('Read permission groups'));
+
+    // Ark Checkbox: click the hidden input and wait for the state machine to process
+    const checkboxInputs = screen.getAllByRole('checkbox', { hidden: true });
+    fireEvent.click(checkboxInputs[0]); // Read members
+    await waitFor(() => {
+      expect(checkboxInputs[0].closest('[data-scope="checkbox"]')?.getAttribute('data-state')).toBe('checked');
+    });
+    fireEvent.click(checkboxInputs[1]); // Read permission groups
+    await waitFor(() => {
+      expect(checkboxInputs[1].closest('[data-scope="checkbox"]')?.getAttribute('data-state')).toBe('checked');
+    });
+
     fireEvent.click(screen.getByRole('button', { name: 'Create Permission Group' }));
 
     await waitFor(() => {

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Select, createListCollection } from '@ark-ui/react/select';
 import { Portal } from '@ark-ui/react/portal';
 import { IconChevronDown } from '@tabler/icons-react';
+import { CheckboxRoot, CheckboxControl, CheckboxIndicator, CheckboxLabel, CheckboxHiddenInput } from '@/components/ui/checkbox';
 import type { AgchainProviderDefinition } from '@/lib/agchainModels';
 import type { ModelTargetDraft } from './modelTargetDraft';
 
@@ -250,30 +251,36 @@ export function ModelTargetFormFields({
       </div>
 
       <div className="grid gap-2 rounded-xl border border-border/70 bg-card/60 p-4 md:grid-cols-3">
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <input
-            type="checkbox"
-            checked={draft.supports_evaluated}
-            onChange={(event) => setField('supports_evaluated', event.target.checked)}
-          />
-          Evaluated-compatible
-        </label>
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <input
-            type="checkbox"
-            checked={draft.supports_judge}
-            onChange={(event) => setField('supports_judge', event.target.checked)}
-          />
-          Judge-compatible
-        </label>
-        <label className="flex items-center gap-2 text-sm text-foreground">
-          <input
-            type="checkbox"
-            checked={draft.enabled}
-            onChange={(event) => setField('enabled', event.target.checked)}
-          />
-          Enabled
-        </label>
+        <CheckboxRoot
+          checked={draft.supports_evaluated}
+          onCheckedChange={(details) => setField('supports_evaluated', details.checked === true)}
+        >
+          <CheckboxControl>
+            <CheckboxIndicator />
+          </CheckboxControl>
+          <CheckboxLabel className="text-sm text-foreground">Evaluated-compatible</CheckboxLabel>
+          <CheckboxHiddenInput />
+        </CheckboxRoot>
+        <CheckboxRoot
+          checked={draft.supports_judge}
+          onCheckedChange={(details) => setField('supports_judge', details.checked === true)}
+        >
+          <CheckboxControl>
+            <CheckboxIndicator />
+          </CheckboxControl>
+          <CheckboxLabel className="text-sm text-foreground">Judge-compatible</CheckboxLabel>
+          <CheckboxHiddenInput />
+        </CheckboxRoot>
+        <CheckboxRoot
+          checked={draft.enabled}
+          onCheckedChange={(details) => setField('enabled', details.checked === true)}
+        >
+          <CheckboxControl>
+            <CheckboxIndicator />
+          </CheckboxControl>
+          <CheckboxLabel className="text-sm text-foreground">Enabled</CheckboxLabel>
+          <CheckboxHiddenInput />
+        </CheckboxRoot>
       </div>
     </div>
   );

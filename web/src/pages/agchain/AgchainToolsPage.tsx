@@ -12,6 +12,18 @@ import {
   useListCollection,
   useFilter,
 } from '@/components/ui/combobox';
+import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectItemIndicator,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
 import { AgchainToolEditorDialog } from '@/components/agchain/tools/AgchainToolEditorDialog';
 import { AgchainToolInspector } from '@/components/agchain/tools/AgchainToolInspector';
 import { AgchainToolsTable } from '@/components/agchain/tools/AgchainToolsTable';
@@ -21,8 +33,6 @@ import { useAgchainTools } from '@/hooks/agchain/useAgchainTools';
 import type { AgchainToolMutationPayload } from '@/lib/agchainTools';
 import { AgchainPageFrame } from './AgchainPageFrame';
 
-const selectClass =
-  'flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1';
 
 function editorStateToPayload(draft: AgchainToolEditorState): AgchainToolMutationPayload {
   const toolConfigJsonb: Record<string, unknown> = {};
@@ -84,6 +94,14 @@ export default function AgchainToolsPage() {
     publishSelectedTool,
     archiveSelectedTool,
   } = useAgchainTools();
+
+  const sourceKindFilterCollection = useMemo(() => createListCollection({
+    items: [
+      { label: 'All source kinds', value: 'all' },
+      { label: 'builtin', value: 'builtin' },
+      ...sourceKindOptions.map((sk) => ({ label: sk, value: sk })),
+    ],
+  }), [sourceKindOptions]);
 
   const { contains } = useFilter({ sensitivity: 'base' });
 
@@ -227,20 +245,30 @@ export default function AgchainToolsPage() {
                 ))}
               </ComboboxContent>
             </ComboboxRoot>
-            <select
-              className={selectClass}
-              value={sourceKindFilter}
-              onChange={(event) => setSourceKindFilter(event.currentTarget.value)}
-              aria-label="Filter source kind"
+            <SelectRoot
+              collection={sourceKindFilterCollection}
+              value={[sourceKindFilter]}
+              onValueChange={(details) => {
+                const val = details.value[0];
+                if (val) setSourceKindFilter(val);
+              }}
+              className="w-auto"
             >
-              <option value="all">All source kinds</option>
-              <option value="builtin">builtin</option>
-              {sourceKindOptions.map((sourceKind) => (
-                <option key={sourceKind} value={sourceKind}>
-                  {sourceKind}
-                </option>
-              ))}
-            </select>
+              <SelectControl>
+                <SelectTrigger className="h-9 min-w-[10rem] text-sm" aria-label="Filter source kind">
+                  <SelectValueText />
+                </SelectTrigger>
+              </SelectControl>
+              <SelectContent>
+                {sourceKindFilterCollection.items.map((item) => (
+                  <SelectItem key={item.value} item={item}>
+                    <SelectItemText>{item.label}</SelectItemText>
+                    <SelectItemIndicator>&#10003;</SelectItemIndicator>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+              <SelectHiddenSelect />
+            </SelectRoot>
           </div>
 
           <Button

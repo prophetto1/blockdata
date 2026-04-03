@@ -259,13 +259,13 @@ describe('AgchainModelsPage', () => {
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText('OpenAI')).toBeInTheDocument();
+      expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
     });
 
-    expect(screen.getByText('Anthropic')).toBeInTheDocument();
-    expect(screen.getByText('Gemini')).toBeInTheDocument();
-    expect(screen.getByText('Needs attention')).toBeInTheDocument();
-    expect(screen.getByText('No targets')).toBeInTheDocument();
+    expect(screen.getAllByText('Anthropic').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Gemini').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Needs attention').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('No targets').length).toBeGreaterThan(0);
     expect(screen.queryByText('Registered Model Targets')).not.toBeInTheDocument();
     expect(screen.queryByText('Qualified Model')).not.toBeInTheDocument();
 
@@ -277,7 +277,7 @@ describe('AgchainModelsPage', () => {
       within(panel).getByText('This credential applies to all targets under this provider for your account.'),
     ).toBeInTheDocument();
     expect(within(panel).getAllByText('GPT-4.1 Mini').length).toBeGreaterThan(0);
-    expect(within(panel).getByText('GPT-5.4 Default')).toBeInTheDocument();
+    expect(within(panel).getAllByText('GPT-5.4 Default').length).toBeGreaterThan(0);
     expect(within(panel).getByText('Recent health checks')).toBeInTheDocument();
   });
 
@@ -289,7 +289,7 @@ describe('AgchainModelsPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('OpenAI')).toBeInTheDocument();
+      expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
     });
 
     expect(
@@ -305,7 +305,7 @@ describe('AgchainModelsPage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('OpenAI')).toBeInTheDocument();
+      expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Configure OpenAI' }));

@@ -11,7 +11,7 @@ import { useAgchainDatasetDraft } from '@/hooks/agchain/useAgchainDatasetDraft';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent, TabsIndicator } from '@/components/ui/tabs';
 
 type DetailTab = 'samples' | 'versions' | 'source' | 'mapping' | 'validation';
 
@@ -223,16 +223,13 @@ export default function AgchainDatasetDetailPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => handleTabChange(v as DetailTab)}>
-          <TabsList className="flex border-b border-border">
+          <TabsList>
             {TABS.map((tab) => (
-              <TabsTrigger
-                key={tab.key}
-                value={tab.key}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[selected]:border-b-2 data-[selected]:border-primary data-[selected]:text-foreground"
-              >
+              <TabsTrigger key={tab.key} value={tab.key}>
                 {tab.label}
               </TabsTrigger>
             ))}
+            <TabsIndicator />
           </TabsList>
 
           <TabsContent value="samples">

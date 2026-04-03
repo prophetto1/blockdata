@@ -5,6 +5,18 @@ import { StepsRoot, StepsList, StepsItem, StepsTrigger, StepsIndicator, StepsSep
 import { SwitchRoot, SwitchControl, SwitchThumb, SwitchHiddenInput } from '@/components/ui/switch';
 import { SegmentGroupRoot, SegmentGroupItem, SegmentGroupIndicator, SegmentGroupItemHiddenInput, SegmentGroupItemControl } from '@/components/ui/segment-group';
 import { TagsInputRoot, TagsInputContext, TagsInputControl, TagsInputItem, TagsInputItemPreview, TagsInputItemText, TagsInputItemDeleteTrigger, TagsInputInput, TagsInputHiddenInput } from '@/components/ui/tags-input';
+import {
+  SelectRoot,
+  SelectControl,
+  SelectTrigger,
+  SelectValueText,
+  SelectContent,
+  SelectItem,
+  SelectItemText,
+  SelectItemIndicator,
+  SelectHiddenSelect,
+  createListCollection,
+} from '@/components/ui/select';
 import { AgchainDatasetFieldMappingEditor } from './AgchainDatasetFieldMappingEditor';
 import { AgchainDatasetPreviewTable } from './AgchainDatasetPreviewTable';
 import { AgchainDatasetValidationPanel } from './AgchainDatasetValidationPanel';
@@ -65,6 +77,14 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
   const [sourceType, setSourceType] = useState<string>('csv');
   const [sourceUri, setSourceUri] = useState('');
   const [delimiter, setDelimiter] = useState(',');
+  const delimiterCollection = createListCollection({
+    items: [
+      { label: 'Comma', value: ',' },
+      { label: 'Tab', value: '\t' },
+      { label: 'Pipe', value: '|' },
+      { label: 'Semicolon', value: ';' },
+    ],
+  });
   const [hasHeaders, setHasHeaders] = useState(true);
   const [encoding, setEncoding] = useState('utf-8');
   const [hfPath, setHfPath] = useState('');
@@ -268,16 +288,30 @@ export function AgchainDatasetWizard({ projectId, bootstrap }: AgchainDatasetWiz
               <>
                 <div className="flex items-center gap-4">
                   <label className="text-sm text-muted-foreground">Delimiter</label>
-                  <select
-                    value={delimiter}
-                    onChange={(e) => setDelimiter(e.target.value)}
-                    className="h-9 rounded-md border border-border bg-background px-3 text-sm text-foreground"
+                  <SelectRoot
+                    collection={delimiterCollection}
+                    value={[delimiter]}
+                    onValueChange={(details) => {
+                      const val = details.value[0];
+                      if (val) setDelimiter(val);
+                    }}
+                    className="w-auto"
                   >
-                    <option value=",">Comma</option>
-                    <option value="\t">Tab</option>
-                    <option value="|">Pipe</option>
-                    <option value=";">Semicolon</option>
-                  </select>
+                    <SelectControl>
+                      <SelectTrigger className="h-9 min-w-[8rem] text-sm">
+                        <SelectValueText />
+                      </SelectTrigger>
+                    </SelectControl>
+                    <SelectContent>
+                      {delimiterCollection.items.map((item) => (
+                        <SelectItem key={item.value} item={item}>
+                          <SelectItemText>{item.label}</SelectItemText>
+                          <SelectItemIndicator>&#10003;</SelectItemIndicator>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                    <SelectHiddenSelect />
+                  </SelectRoot>
                 </div>
                 <SwitchRoot checked={hasHeaders} onCheckedChange={(details) => setHasHeaders(details.checked)}>
                   <SwitchControl><SwitchThumb /></SwitchControl>

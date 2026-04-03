@@ -14,6 +14,18 @@ vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
   useAgchainScopeState: () => useAgchainScopeStateMock(),
 }));
 
+// Ark UI Select relies on DOM APIs not available in JSDOM
+if (!Element.prototype.scrollTo) {
+  Element.prototype.scrollTo = () => {};
+}
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof globalThis.ResizeObserver;
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -158,10 +170,15 @@ describe('AgchainOrganizationMembersPage', () => {
     });
     expect(setSearchMock).toHaveBeenCalledWith('owner');
 
-    fireEvent.change(screen.getByLabelText(/show/i), {
-      target: { value: 'disabled' },
+    // Ark Select: click the combobox trigger, then click the desired option
+    fireEvent.click(screen.getByRole('combobox', { name: /show members by status/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Disabled' })).toBeInTheDocument();
     });
-    expect(setStatusFilterMock).toHaveBeenCalledWith('disabled');
+    fireEvent.click(screen.getByRole('option', { name: 'Disabled' }));
+    await waitFor(() => {
+      expect(setStatusFilterMock).toHaveBeenCalledWith('disabled');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Disable member' }));
     await waitFor(() => {

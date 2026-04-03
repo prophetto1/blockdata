@@ -42,8 +42,16 @@ describe('InviteOrganizationMembersModal', () => {
         value: 'owner@example.com\nanalyst@example.com',
       },
     });
-    fireEvent.click(screen.getByLabelText('Owners'));
-    fireEvent.click(screen.getByLabelText('Analysts'));
+    // Ark Checkbox: click the hidden input and wait for the state machine to process
+    const checkboxInputs = screen.getAllByRole('checkbox', { hidden: true });
+    fireEvent.click(checkboxInputs[0]); // Owners
+    await waitFor(() => {
+      expect(checkboxInputs[0].closest('[data-scope="checkbox"]')?.getAttribute('data-state')).toBe('checked');
+    });
+    fireEvent.click(checkboxInputs[1]); // Analysts
+    await waitFor(() => {
+      expect(checkboxInputs[1].closest('[data-scope="checkbox"]')?.getAttribute('data-state')).toBe('checked');
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create Invites' }));
 
     await waitFor(() => {

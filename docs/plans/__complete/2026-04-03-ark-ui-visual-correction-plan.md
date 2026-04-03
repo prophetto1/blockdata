@@ -218,6 +218,7 @@ export function TabsIndicator({ className, ...props }: ComponentProps<typeof Ark
     <ArkTabs.Indicator
       data-slot="tabs-indicator"
       className={cn(
+        // z-[-1] places the indicator behind trigger content — breaks if a trigger gets an opaque bg
         'absolute z-[-1] rounded-sm bg-accent/80',
         'transition-[width,height,left,top] duration-200 ease-out',
         'data-[orientation=horizontal]:h-[2px] data-[orientation=horizontal]:bottom-0',
@@ -374,6 +375,14 @@ onValueChange={(details) => {
 }}
 ```
 
+**Exception — `AgchainDatasetSamplesTable.tsx`:** This file uses `value=""` for its "All statuses" option and maps `''` to `null` via `setParseStatusFilter(e.target.value || null)`. The standard `if (val)` pattern above would make this empty-string selection falsy, preventing the filter from clearing back to "All". Use this handler instead:
+```tsx
+onValueChange={(details) => {
+  const val = details.value[0];
+  setParseStatusFilter(val || null);
+}}
+```
+
 **Test command:** `cd web && npx tsc --noEmit --pretty 2>&1 | grep -iE "(select|SamplesTable|ToolEditor|ToolSource|Wizard|ToolsPage|MembersPage)" | head -20`
 **Expected output:** No type errors in any of the 6 files.
 
@@ -414,7 +423,16 @@ onValueChange={(details) => {
 
 The `details.checked === true` coercion is required because `details.checked` can be `boolean | 'indeterminate'`. For all 7 checkboxes in this plan, indeterminate state is not used, so coercing to boolean is correct.
 
-**Step 3:** For the 3 modal files where checkboxes render inside `.map()` loops, preserve the existing label text and layout. The `<label>` wrapper becomes a `<CheckboxLabel>` or remains a plain `<label>` wrapping the `CheckboxRoot` — match the existing layout structure.
+**Step 3:** Handle the existing `<label>` wrappers correctly. `CheckboxRoot` renders as an `HTMLLabelElement`, so nesting it inside another `<label>` produces invalid HTML. The 5 files break down into two patterns:
+
+**Wrapping-label pattern (4 files — replace outer `<label>` with `<div>` or remove it):**
+- `AgchainModelsToolbar.tsx` lines 253, 261, 269: `<label className="flex items-center gap-2 ...">` wraps `<input>`. Replace the outer `<label>` with a `<div>` or remove it entirely, since `CheckboxRoot` already renders as `<label>`.
+- `CreatePermissionGroupModal.tsx` line 142: `<label>` wraps `<input>` inside a `<span>`. Replace outer `<label>` with `<div>`.
+- `InviteOrganizationMembersModal.tsx` line 153: `<label>` wraps `<input>`. Replace outer `<label>` with `<div>`.
+- `PermissionGroupMembersModal.tsx` line 193: `<label>` wraps `<input>`. Replace outer `<label>` with `<div>`.
+
+**Adjacent-label pattern (1 file — safe, no nesting risk):**
+- `AgchainBenchmarkStepInspector.tsx` line 310: `<label htmlFor="step-enabled">` is adjacent to `<input id="step-enabled">`, not wrapping it. Replace the `<input>` with `CheckboxRoot` and remove the `htmlFor`/`id` pair (Ark handles the association internally via `CheckboxLabel`).
 
 **Test command:** `cd web && npx tsc --noEmit --pretty 2>&1 | grep -iE "(checkbox|StepInspector|ModelsToolbar|PermissionGroup|InviteOrganization)" | head -20`
 **Expected output:** No type errors in any of the 5 files.
