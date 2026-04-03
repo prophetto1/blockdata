@@ -108,25 +108,45 @@ def enforce_per_file_limit(size_bytes: int, max_bytes: int) -> None:
         raise ValueError("file too large")
 
 
+def _signing_email() -> str | None:
+    """Return the SA email for signBlob-based signing on Cloud Run.
+
+    On Cloud Run there is no local private key, so the GCS library must
+    fall back to the IAM signBlob API.  Passing ``service_account_email``
+    triggers that path.  Locally (with a key-file), this returns None and
+    the library signs in-process.
+    """
+    creds = _gcs_client()._credentials
+    return getattr(creds, "service_account_email", None)
+
+
 def create_signed_upload_url(bucket_name: str, object_key: str, content_type: str) -> str:
     bucket = _gcs_client().bucket(bucket_name)
     blob = bucket.blob(object_key)
-    return blob.generate_signed_url(
+    kwargs: dict = dict(
         version="v4",
         expiration=timedelta(minutes=SIGNED_URL_MINUTES),
         method="PUT",
         content_type=content_type,
     )
+    email = _signing_email()
+    if email:
+        kwargs["service_account_email"] = email
+    return blob.generate_signed_url(**kwargs)
 
 
 def create_signed_download_url(*, bucket_name: str, object_key: str) -> str:
     bucket = _gcs_client().bucket(bucket_name)
     blob = bucket.blob(object_key)
-    return blob.generate_signed_url(
+    kwargs: dict = dict(
         version="v4",
         expiration=timedelta(minutes=SIGNED_URL_MINUTES),
         method="GET",
     )
+    email = _signing_email()
+    if email:
+        kwargs["service_account_email"] = email
+    return blob.generate_signed_url(**kwargs)
 
 
 def get_object_size_bytes(bucket_name: str, object_key: str) -> int | None:

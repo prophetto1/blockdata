@@ -22,7 +22,7 @@ export default {
   // AGChain docs are shown in the dedicated AGChain sidebar tab, not the main Sections view.
   agchain: {
     label: 'AGChain',
-    order: ['platform', 'builders', 'benchmark', 'bridge', 'other'],
+    order: ['platform', 'builders', 'benchmark', 'bridge'],
   },
 
   'agchain/platform': {
@@ -32,7 +32,6 @@ export default {
 
   'agchain/builders': {
     label: 'Builders',
-    order: ['eu-builders', 'benchmark-builders', 'payload'],
   },
 
   'agchain/benchmark': {
@@ -49,20 +48,11 @@ export default {
     order: ['datasets', 'legal-10'],
   },
 
-  'agchain/benchmark/legalchain/legal-10': {
-    label: 'Legal-10',
-    order: ['fdq'],
-  },
-
-  'agchain/bridge': {
+'agchain/bridge': {
     label: 'Bridge',
   },
 
-  'agchain/other': {
-    label: 'Other',
-  },
-
-  internal: {
+internal: {
     label: 'Internal',
     order: ['docs-site-direction', 'shell-contract-spec', 'arango-cloud', 'gcp-benchmark-access', 'style-guide'],
   },

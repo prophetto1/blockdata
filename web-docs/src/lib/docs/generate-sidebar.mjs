@@ -79,7 +79,8 @@ function buildSidebarItems(relativeDir = '') {
       if (children.length === 0) continue;
       const isLeafDirectory = children.every((child) => !('items' in child));
       const depth = nextRelativePath.split('/').length;
-      if (isLeafDirectory && depth >= 3) {
+      const isAgchain = nextRelativePath.startsWith('agchain/');
+      if (isLeafDirectory && depth >= 3 && !isAgchain) {
         items.push(...children);
         continue;
       }
