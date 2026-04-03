@@ -1,7 +1,7 @@
 ---
 title: "CLI prototype to platform bridge analysis"
 sidebar:
-  order: 3
+  order: 4
 ---
 
 # 3-Step CLI Prototype → AGChain Platform: Bridge Analysis

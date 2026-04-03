@@ -255,6 +255,21 @@ body {
   overflow: hidden;
 }
 
+/* Match sidebar font to the app shell nav style:
+   items = 13px medium, group headers = 12px normal uppercase */
+.sidebar-pane :is(a, summary) {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.sidebar-pane .large,
+.sidebar-pane .top-level > li > details > summary {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
 .sidebar-content {
   min-height: 0;
   display: flex;
@@ -410,7 +425,13 @@ h1#_top {
     --sl-content-width: 65rem;
   }
 
-  [data-has-sidebar][data-has-toc] .wa-preview {
+  /* Narrow the right TOC sidebar, widen center content */
+  .right-sidebar-container {
+    width: calc(12rem + (100% - var(--sl-content-width) - 12rem) / 2) !important;
+  }
+
+  [data-has-sidebar][data-has-toc]:not([data-shell-mode='filetree']) .wa-preview {
     --sl-content-margin-inline: 0 auto;
+    width: calc(var(--sl-content-width) + (100% - var(--sl-content-width) - 12rem) / 2) !important;
   }
 }

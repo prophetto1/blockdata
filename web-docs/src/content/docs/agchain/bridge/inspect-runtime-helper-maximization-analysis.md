@@ -1,7 +1,7 @@
 ---
 title: "Inspect integration strategy"
 sidebar:
-  order: 5
+  order: 6
 ---
 
 # Inspect Runtime Helper Maximization Analysis

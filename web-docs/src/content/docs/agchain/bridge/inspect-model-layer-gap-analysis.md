@@ -1,7 +1,7 @@
 ---
 title: "Inspect model layer: next steps"
 sidebar:
-  order: 6
+  order: 7
 ---
 
 # Inspect AI Model Layer: What AGChain Needs Next

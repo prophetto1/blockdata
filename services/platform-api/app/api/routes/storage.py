@@ -113,17 +113,22 @@ def _signblob_kwargs() -> dict:
 
     On Cloud Run there is no local private key, so the GCS library must
     use the IAM signBlob API.  This requires both ``service_account_email``
-    and ``access_token``.  Locally (with a key-file), the credentials have
-    a signer and these extras are not needed.
+    and ``access_token``.  The GCS client's own credentials only carry
+    storage scopes, so we obtain a separate token with the cloud-platform
+    scope that covers IAM signBlob.  Locally (with a key-file), the
+    credentials have a signer and these extras are not needed.
     """
     creds = _gcs_client()._credentials
     email = getattr(creds, "service_account_email", None)
     if not email or hasattr(creds, "sign_bytes"):
         return {}
-    # Refresh to ensure we have a current access token for the signBlob call.
+    from google import auth
     from google.auth.transport import requests as auth_requests
-    creds.refresh(auth_requests.Request())
-    return {"service_account_email": email, "access_token": creds.token}
+    signing_creds, _ = auth.default(
+        scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    )
+    signing_creds.refresh(auth_requests.Request())
+    return {"service_account_email": email, "access_token": signing_creds.token}
 
 
 def create_signed_upload_url(bucket_name: str, object_key: str, content_type: str) -> str:

@@ -1,7 +1,7 @@
 ---
 title: "Prompt protocol foundation (v1.0)"
 sidebar:
-  order: 7
+  order: 8
 ---
 
 # Prompts v1.0 - Prompt as State Protocol

@@ -1,7 +1,7 @@
 ---
 title: "Environment profile and Inspect integration"
 sidebar:
-  order: 5
+  order: 3
 ---
 
 # AG chain Environment Profile & Inspect Integration Canon

@@ -1,7 +1,7 @@
 ---
 title: "Inspect AI architecture reference"
 sidebar:
-  order: 4
+  order: 5
 ---
 
 # Inspect AI — Complete Architecture Analysis

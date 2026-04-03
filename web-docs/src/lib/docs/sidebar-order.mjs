@@ -22,21 +22,21 @@ export default {
   // AGChain docs are shown in the dedicated AGChain sidebar tab, not the main Sections view.
   agchain: {
     label: 'AGChain',
-    order: ['platform', 'builders', 'benchmark', 'bridge'],
+    order: ['platform', 'benchmark', 'bridge'],
   },
 
   'agchain/platform': {
     label: 'Platform Features',
-    order: ['general', 'runner', 'multi-tasks', 'prompts', 'statefulness', 'security'],
-  },
-
-  'agchain/builders': {
-    label: 'Builders',
+    order: ['general'],
   },
 
   'agchain/benchmark': {
     label: 'Benchmark',
-    order: ['datasets', 'fdq'],
+    order: ['builders', 'datasets', 'fdq'],
+  },
+
+  'agchain/benchmark/builders': {
+    label: 'Builders',
   },
 
   'agchain/benchmark/datasets': {

@@ -2,12 +2,12 @@
   --workbench-surface-bg: var(--card);
   --workbench-document-inset: var(--shell-panel-inset);
   --workbench-editor-document-padding: var(--shell-panel-inset) var(--shell-panel-inset) calc(var(--shell-panel-inset) * 3);
-  --workbench-prose-font-size: 1rem;
+  --workbench-prose-font-size: 0.875rem;
   --workbench-prose-line-height: 1.6;
   --workbench-prose-block-gap: 0.8rem;
   --workbench-prose-heading-letter-spacing: -0.02em;
-  --workbench-prose-h1-size: clamp(1.8rem, 2.6vw, 2.35rem);
-  --workbench-prose-h2-size: clamp(1.3rem, 2vw, 1.6rem);
+  --workbench-prose-h1-size: clamp(1.4rem, 2vw, 1.65rem);
+  --workbench-prose-h2-size: clamp(1.1rem, 1.6vw, 1.35rem);
   --workbench-prose-h3-size: clamp(1.1rem, 1.6vw, 1.25rem);
   --workbench-prose-h4-size: 1.05rem;
   --workbench-prose-h2-top: 1.55rem;

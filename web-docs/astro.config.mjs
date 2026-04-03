@@ -51,7 +51,7 @@ export default defineConfig({
           `,
         },
       ],
-      tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 3 },
+      tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 2 },
       editLink: {
         baseUrl: 'https://github.com/prophetto1/blockdata-ct/edit/main/',
       },
