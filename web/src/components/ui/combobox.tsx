@@ -94,7 +94,7 @@ function ComboboxContent({ className, ...props }: React.ComponentProps<typeof Ar
       <ArkCombobox.Positioner>
         <ArkCombobox.Content
           className={cn(
-            'z-50 min-w-[var(--reference-width)] overflow-y-auto rounded-md border border-[#3a3a3a] bg-popover p-1 shadow-lg shadow-black/30',
+            'z-50 min-w-[var(--reference-width)] overflow-y-auto rounded-md border border-[#3a3a3a] bg-popover p-1 shadow-[0_4px_6px_-1px_rgb(0_0_0/0.2),0_2px_4px_-2px_rgb(0_0_0/0.12)]',
             'max-h-[min(var(--available-height,300px),300px)]',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
@@ -114,8 +114,8 @@ function ComboboxItem({ className, ...props }: React.ComponentProps<typeof ArkCo
     <ArkCombobox.Item
       className={cn(
         'flex cursor-default select-none items-center justify-between gap-2 rounded-sm px-2 py-1.5 text-sm outline-none',
-        'data-[highlighted]:bg-white/5',
-        'data-[state=checked]:text-primary data-[state=checked]:font-medium',
+        'data-[highlighted]:bg-[#222221]',
+        'data-[state=checked]:text-[#f47a5c] data-[state=checked]:font-medium',
         'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className,
       )}

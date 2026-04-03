@@ -1,6 +1,9 @@
 /* ------------------------------------------------------------------ */
-/*  Ark UI ScrollArea — custom thin scrollbar                          */
+/*  Ark UI ScrollArea                                                  */
+/*  Values extracted from the Ark UI dark-mode demo site.              */
 /* ------------------------------------------------------------------ */
+
+/* ---- root ---- */
 
 .scroll-area-root {
   display: flex;
@@ -10,31 +13,44 @@
   position: relative;
 }
 
+/* ---- viewport ---- */
+
 .scroll-area-viewport {
-  min-height: 0;
-  min-width: 0;
-  flex: 1;
-  scrollbar-width: none;
+  height: 100%;
   overscroll-behavior: contain;
-  will-change: scroll-position;
+  scrollbar-width: none;
 }
 
 .scroll-area-viewport::-webkit-scrollbar {
   display: none;
 }
 
+.scroll-area-viewport:focus-visible {
+  outline: 2px solid #e2503f;
+}
+
 /* ---- scrollbar track ---- */
 
 .scroll-area-scrollbar {
-  position: absolute;
-  z-index: 10;
+  display: flex;
+  position: relative;
+  background-color: #31312e;
+  border-radius: 0.375rem;
+  margin: 0.5rem;
   opacity: 0;
-  transition: opacity 150ms ease;
+  transition: opacity 150ms;
   pointer-events: none;
   user-select: none;
   touch-action: none;
-  background: transparent;
-  contain: layout size style;
+}
+
+.scroll-area-scrollbar::before {
+  content: '';
+  position: absolute;
+}
+
+.scroll-area-scrollbar[data-scrolling] {
+  transition-duration: 0ms;
 }
 
 .scroll-area-scrollbar[data-hover],
@@ -45,37 +61,45 @@
 }
 
 .scroll-area-scrollbar[data-orientation='vertical'] {
-  top: 2px;
-  right: 2px;
-  bottom: 2px;
-  width: 6px;
+  width: 0.25rem;
+}
+
+.scroll-area-scrollbar[data-orientation='vertical']::before {
+  width: 1.25rem;
+  height: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.scroll-area-scrollbar[data-orientation='vertical']:not([data-overflow-y]) {
+  display: none;
 }
 
 .scroll-area-scrollbar[data-orientation='horizontal'] {
-  left: 2px;
-  right: 2px;
-  bottom: 2px;
-  height: 6px;
+  height: 0.25rem;
+}
+
+.scroll-area-scrollbar[data-orientation='horizontal']::before {
+  width: 100%;
+  height: 1.25rem;
+  left: 0;
+  right: 0;
+  bottom: -0.5rem;
+}
+
+.scroll-area-scrollbar[data-orientation='horizontal']:not([data-overflow-x]) {
+  display: none;
 }
 
 /* ---- thumb ---- */
 
 .scroll-area-thumb {
-  border-radius: 999px;
-  background: light-dark(rgba(0, 0, 0, 0.22), rgba(255, 255, 255, 0.22));
-  transition: background 120ms ease;
-  will-change: transform;
-}
-
-.scroll-area-thumb:hover,
-.scroll-area-scrollbar[data-dragging] .scroll-area-thumb {
-  background: light-dark(rgba(0, 0, 0, 0.38), rgba(255, 255, 255, 0.38));
-}
-
-.scroll-area-scrollbar[data-orientation='vertical'] .scroll-area-thumb {
-  min-height: 24px;
+  width: 100%;
+  border-radius: inherit;
+  background-color: #6f6d66;
 }
 
 .scroll-area-scrollbar[data-orientation='horizontal'] .scroll-area-thumb {
-  min-width: 24px;
+  width: unset;
+  height: 100%;
 }

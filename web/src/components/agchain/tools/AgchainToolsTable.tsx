@@ -26,7 +26,7 @@ export function AgchainToolsTable({
   onInspect,
 }: AgchainToolsTableProps) {
   return (
-    <section className="flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/70 shadow-sm">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/70 shadow-sm">
       <div className="border-b border-border/70 px-6 py-4">
         <h2 className="text-base font-semibold text-foreground">Tool registry</h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -65,8 +65,8 @@ export function AgchainToolsTable({
                   <tr
                     key={rowKey}
                     className={cn(
-                      'border-b border-border/60 align-top hover:bg-accent/20',
-                      isSelected && 'bg-accent/30',
+                      'border-b border-border/60 align-top hover:bg-[#222221]',
+                      isSelected && 'bg-[#55221e]',
                     )}
                   >
                     <td className="max-w-[18rem] px-6 py-4">

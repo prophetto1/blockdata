@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AgchainProjectCreateDialog } from '@/components/agchain/AgchainProjectCreateDialog';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { useAgchainWorkspace } from '@/contexts/AgchainWorkspaceContext';
@@ -104,7 +105,7 @@ export default function AgchainProjectsPage() {
 
   return (
     <AgchainPageFrame className="gap-6 py-8">
-      <header className="flex flex-col gap-2" data-testid="agchain-projects-page">
+      <header className="flex shrink-0 flex-col gap-2" data-testid="agchain-projects-page">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           AGChain Projects
         </p>
@@ -130,13 +131,14 @@ export default function AgchainProjectsPage() {
         error={error}
         onCreate={handleCreateProject}
       />
-      <section className="rounded-3xl border border-border/70 bg-card/70 shadow-sm">
-        <div className="border-b border-border/70 px-6 py-4">
+      <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/70 shadow-sm">
+        <div className="shrink-0 border-b border-border/70 px-6 py-4">
           <h2 className="text-lg font-semibold text-foreground">Project registry</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Each row anchors one AGChain workspace. Benchmarks remain child resources under the selected project.
           </p>
         </div>
+        <ScrollArea className="min-h-0 flex-1">
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-left text-sm">
             <thead className="bg-muted/30 text-xs uppercase tracking-[0.16em] text-muted-foreground">
@@ -181,6 +183,7 @@ export default function AgchainProjectsPage() {
             </tbody>
           </table>
         </div>
+        </ScrollArea>
       </section>
     </AgchainPageFrame>
   );

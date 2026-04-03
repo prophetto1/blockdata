@@ -31,11 +31,11 @@ export function FileUpload({
         className={cn(
           'flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-[#3a3a3a] p-6 text-center',
           'cursor-pointer transition-colors duration-150',
-          'hover:bg-white/5',
+          'hover:bg-[#222221]',
           'data-[dragging]:border-primary data-[dragging]:border-solid data-[dragging]:bg-primary/5',
           'data-[invalid]:border-destructive',
           'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
-          'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+          'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
         )}
       >
         <UploadIcon className="h-10 w-10 text-muted-foreground" />
@@ -80,7 +80,7 @@ export function FileUpload({
                   className={cn(
                     'flex h-6 w-6 items-center justify-center rounded bg-transparent text-muted-foreground',
                     'cursor-pointer border-none hover:text-foreground',
-                    'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+                    'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
                   )}
                 >
                   <XIcon className="h-4 w-4" />

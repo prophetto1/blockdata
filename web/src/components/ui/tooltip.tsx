@@ -49,7 +49,7 @@ const TooltipContent = React.forwardRef<
         <ArkTooltip.Content
           ref={ref}
           className={cn(
-            'z-50 overflow-hidden rounded-md border border-[#3a3a3a] bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-lg shadow-black/30',
+            'z-50 overflow-hidden rounded-md border border-[#3a3a3a] bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-[0_4px_6px_-1px_rgb(0_0_0/0.2),0_2px_4px_-2px_rgb(0_0_0/0.12)]',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
             className,

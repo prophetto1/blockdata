@@ -205,7 +205,7 @@ export default function AgchainToolsPage() {
 
   return (
     <AgchainPageFrame className="gap-4 py-6">
-      <section className="rounded-3xl border border-border/70 bg-card/70 px-6 py-5 shadow-sm">
+      <section className="shrink-0 rounded-3xl border border-border/70 bg-card/70 px-6 py-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">AGChain project</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Tools</h1>
         <p className="mt-2 max-w-4xl text-sm leading-6 text-muted-foreground">
@@ -214,7 +214,7 @@ export default function AgchainToolsPage() {
         </p>
       </section>
 
-      <section className="rounded-3xl border border-border/70 bg-card/70 px-6 py-4 shadow-sm">
+      <section className="shrink-0 rounded-3xl border border-border/70 bg-card/70 px-6 py-4 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-col gap-3 md:flex-row">
             <ComboboxRoot

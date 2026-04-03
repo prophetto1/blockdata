@@ -57,7 +57,7 @@ function DialogContent({
       <DialogPositioner>
         <ArkDialog.Content
           className={cn(
-            'relative flex w-96 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] flex-col rounded-lg border border-[#3a3a3a] bg-popover p-6 shadow-lg shadow-black/30 outline-none',
+            'relative flex w-96 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] flex-col rounded-lg border border-[#3a3a3a] bg-popover p-6 shadow-[0_4px_6px_-1px_rgb(0_0_0/0.2),0_2px_4px_-2px_rgb(0_0_0/0.12)] outline-none',
             'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
             'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
             className,
@@ -103,8 +103,8 @@ function DialogCloseTrigger({
     <ArkDialog.CloseTrigger
       className={cn(
         'absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded border-none bg-transparent text-muted-foreground',
-        'transition-colors hover:bg-white/5 hover:text-foreground',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+        'transition-colors hover:bg-[#222221] hover:text-foreground',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
         'cursor-pointer',
         className,
       )}

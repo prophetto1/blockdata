@@ -14,7 +14,7 @@ function CollapsibleTrigger({ className, ...props }: React.ComponentProps<typeof
   return (
     <ArkCollapsible.Trigger
       className={cn(
-        'flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-foreground hover:bg-white/5',
+        'flex w-full items-center justify-between px-3 py-2 text-sm font-bold text-foreground hover:bg-[#222221]',
         className,
       )}
       {...props}

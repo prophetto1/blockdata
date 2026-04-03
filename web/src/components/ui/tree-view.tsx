@@ -57,9 +57,9 @@ function TreeViewBranchControl({ className, ...props }: React.ComponentProps<typ
     <ArkTreeView.BranchControl
       className={cn(
         'flex w-full items-center gap-2 rounded-md bg-transparent border-0 px-2 py-1 text-left text-foreground',
-        'hover:bg-white/5',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
-        'data-[selected]:bg-white/5 data-[selected]:text-primary',
+        'hover:bg-[#222221]',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
+        'data-[selected]:bg-[#222221] data-[selected]:text-[#f47a5c]',
         className,
       )}
       data-slot="tree-view-branch-control"
@@ -122,9 +122,9 @@ function TreeViewItem({ className, ...props }: React.ComponentProps<typeof ArkTr
     <ArkTreeView.Item
       className={cn(
         'flex w-full items-center gap-2 rounded-md bg-transparent border-0 px-2 py-1 text-left text-foreground',
-        'hover:bg-white/5',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
-        'data-[selected]:bg-white/5 data-[selected]:text-primary',
+        'hover:bg-[#222221]',
+        'focus-visible:outline-2 focus-visible:outline-[#e2503f] focus-visible:outline-offset-2',
+        'data-[selected]:bg-[#222221] data-[selected]:text-[#f47a5c]',
         className,
       )}
       data-slot="tree-view-item"

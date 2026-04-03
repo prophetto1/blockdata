@@ -54,7 +54,7 @@ function TagsInputItemPreview({ className, ...props }: React.ComponentProps<type
   return (
     <ArkTagsInput.ItemPreview
       className={cn(
-        'inline-flex items-center gap-1 rounded px-2 py-0.5 text-sm bg-white/5 text-foreground',
+        'inline-flex items-center gap-1 rounded px-2 py-0.5 text-sm bg-[#31312e] text-foreground',
         'data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground',
         className,
       )}
@@ -87,7 +87,7 @@ function TagsInputItemDeleteTrigger({ className, ...props }: React.ComponentProp
 function TagsInputItemInput({ className, ...props }: React.ComponentProps<typeof ArkTagsInput.ItemInput>) {
   return (
     <ArkTagsInput.ItemInput
-      className={cn('min-w-16 rounded border border-[#3a3a3a] bg-white/5 px-2 py-0.5 text-sm text-foreground outline-none', className)}
+      className={cn('min-w-16 rounded border border-[#3a3a3a] bg-[#31312e] px-2 py-0.5 text-sm text-foreground outline-none', className)}
       data-slot="tags-input-item-input"
       {...props}
     />

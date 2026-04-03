@@ -8,10 +8,10 @@ type AgchainPageFrameProps = {
 
 export function AgchainPageFrame({ children, className }: AgchainPageFrameProps) {
   return (
-    <div className="min-h-full bg-background">
+    <div className="flex h-full flex-col overflow-hidden bg-background">
       <div
         data-testid="agchain-page-frame"
-        className={cn('flex w-full flex-col px-4', className)}
+        className={cn('flex min-h-0 w-full flex-1 flex-col px-4', className)}
       >
         {children}
       </div>
