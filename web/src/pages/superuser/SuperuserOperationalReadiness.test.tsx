@@ -68,7 +68,14 @@ describe('SuperuserOperationalReadiness', () => {
               verify_after: [],
               next_if_still_failing: [],
               actionability: 'info_only',
-              evidence: { ready: true },
+              evidence: {
+                ready: true,
+                runtime_environment: 'cloud_run',
+                service_name: 'blockdata-platform-api',
+                revision_name: 'blockdata-platform-api-00067-6pm',
+                configuration_name: 'blockdata-platform-api',
+                service_account_email: 'blockdata-platform-api-sa@agchain.iam.gserviceaccount.com',
+              },
               remediation: 'No action required.',
               checked_at: '2026-03-30T16:00:00Z',
             },
@@ -156,7 +163,7 @@ describe('SuperuserOperationalReadiness', () => {
     });
   });
 
-  it('renders the operator dashboard with the dev recovery panel, summary, surfaces, and client panel', () => {
+  it('renders the operator dashboard with the dev recovery panel, summary runtime identity, surfaces, and client panel', () => {
     render(<SuperuserOperationalReadiness />);
 
     expect(screen.getByRole('heading', { level: 1, name: 'Operational Readiness' })).toBeInTheDocument();
@@ -172,6 +179,10 @@ describe('SuperuserOperationalReadiness', () => {
     expect(screen.getByText('OK')).toBeInTheDocument();
     expect(screen.getByText('WARN')).toBeInTheDocument();
     expect(screen.getByText('FAIL')).toBeInTheDocument();
+    expect(screen.getByText('Active runtime')).toBeInTheDocument();
+    expect(screen.getAllByText('blockdata-platform-api').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('blockdata-platform-api-00067-6pm').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('blockdata-platform-api-sa@agchain.iam.gserviceaccount.com').length).toBeGreaterThanOrEqual(1);
 
     // Surfaces render in order
     expect(screen.getByText('Platform API readiness')).toBeInTheDocument();

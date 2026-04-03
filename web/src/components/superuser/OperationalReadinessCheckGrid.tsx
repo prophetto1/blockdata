@@ -66,6 +66,19 @@ const CATEGORY_LABELS: Record<OperationalReadinessCheck['category'], string> = {
   product: 'Product',
 };
 
+const INLINE_FACT_KEYS = [
+  'service_name',
+  'revision_name',
+  'service_account_email',
+  'bucket_name',
+  'signing_mode',
+  'error_reason',
+  'error_service',
+  'cors_rule_count',
+  'allowed_origins',
+  'allowed_methods',
+] as const;
+
 /* ── Helpers ───────────────────────────────────────────────────────────── */
 
 function formatTimestamp(value: string): string {
@@ -83,6 +96,34 @@ function formatEvidenceValue(value: unknown): string {
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'string' || typeof value === 'number') return String(value);
   try { return JSON.stringify(value); } catch { return String(value); }
+}
+
+function formatCompactFactValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    const items = value.map((entry) => formatEvidenceValue(entry)).filter(Boolean);
+    if (items.length === 0) return 'None';
+    const visible = items.slice(0, 2);
+    return items.length > visible.length
+      ? `${visible.join(', ')} (+${items.length - visible.length} more)`
+      : visible.join(', ');
+  }
+  return formatEvidenceValue(value);
+}
+
+function getInlineFacts(check: OperationalReadinessCheck): Array<{ label: string; value: string }> {
+  return INLINE_FACT_KEYS
+    .map((key) => {
+      const value = check.evidence[key];
+      if (value === null || value === undefined) return null;
+      if (Array.isArray(value) && value.length === 0) return null;
+      if (typeof value === 'string' && !value.trim()) return null;
+      return {
+        label: formatEvidenceKey(key),
+        value: formatCompactFactValue(value),
+      };
+    })
+    .filter((fact): fact is { label: string; value: string } => fact !== null)
+    .slice(0, 3);
 }
 
 function isNoActionRemediation(text: string): boolean {
@@ -150,8 +191,15 @@ export function OperationalReadinessCheckGrid({
             {surface.checks.map((check, idx) => {
               const expanded = expandedIds.has(check.check_id);
               const evidenceEntries = Object.entries(check.evidence);
+              const inlineFacts = getInlineFacts(check);
               const isLast = idx === surface.checks.length - 1;
               const hasRemediation = !isNoActionRemediation(check.remediation);
+              const showCause = (check.status === 'fail' || check.status === 'warn') && Boolean(check.cause);
+              const hasExpandedSections =
+                evidenceEntries.length > 0 ||
+                check.available_actions.length > 0 ||
+                check.verify_after.length > 0 ||
+                check.next_if_still_failing.length > 0;
 
               return (
                 <div key={check.check_id} className="relative">
@@ -180,6 +228,26 @@ export function OperationalReadinessCheckGrid({
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">{check.summary}</p>
+                      {showCause ? (
+                        <p className="mt-1 text-sm text-foreground">
+                          <span className="font-medium text-muted-foreground">Cause: </span>
+                          {check.cause}
+                        </p>
+                      ) : null}
+                      {inlineFacts.length > 0 ? (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                          <span className="font-medium text-muted-foreground">Key facts:</span>
+                          {inlineFacts.map((fact) => (
+                            <span
+                              key={`${check.check_id}-${fact.label}`}
+                              className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-foreground"
+                            >
+                              <span className="text-muted-foreground">{fact.label}: </span>
+                              <span className="font-medium">{fact.value}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                       {hasRemediation ? (
                         <p className="mt-1 text-sm text-foreground">
                           <span className="font-medium text-muted-foreground">Fix: </span>
@@ -190,20 +258,68 @@ export function OperationalReadinessCheckGrid({
                   </button>
 
                   {/* ── Expanded evidence (inspired by pipeline "In progress" detail) ── */}
-                  {expanded && evidenceEntries.length > 0 ? (
+                  {expanded && hasExpandedSections ? (
                     <div className={`ml-[28px] ${isLast ? 'mb-1' : 'mb-2'} rounded-xl border border-border/60 bg-background/80 p-3 dark:bg-background/40`}>
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Evidence</span>
+                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Check detail</span>
                         <span className="text-[11px] text-muted-foreground">Checked {formatTimestamp(check.checked_at)}</span>
                       </div>
-                      <div className="grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[minmax(0,160px)_1fr]">
-                        {evidenceEntries.map(([key, value]) => (
-                          <div key={key} className="contents">
-                            <dt className="text-muted-foreground">{formatEvidenceKey(key)}</dt>
-                            <dd className="min-w-0 break-words font-medium text-foreground">{formatEvidenceValue(value)}</dd>
+
+                      {evidenceEntries.length > 0 ? (
+                        <div>
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Evidence</span>
+                          <div className="mt-2 grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[minmax(0,160px)_1fr]">
+                            {evidenceEntries.map(([key, value]) => (
+                              <div key={key} className="contents">
+                                <dt className="text-muted-foreground">{formatEvidenceKey(key)}</dt>
+                                <dd className="min-w-0 break-words font-medium text-foreground">{formatEvidenceValue(value)}</dd>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ) : null}
+
+                      {check.available_actions.length > 0 ? (
+                        <div className="mt-4">
+                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Available actions</h4>
+                          <ul className="mt-2 space-y-2 text-sm">
+                            {check.available_actions.map((action) => (
+                              <li key={`${check.check_id}-${action.action_kind}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                                <p className="font-medium text-foreground">{action.label}</p>
+                                <p className="mt-1 text-muted-foreground">{action.description}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {check.verify_after.length > 0 ? (
+                        <div className="mt-4">
+                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Verify after</h4>
+                          <ul className="mt-2 space-y-2 text-sm">
+                            {check.verify_after.map((target) => (
+                              <li key={`${check.check_id}-${target.probe_kind}-${target.route}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                                <p className="font-medium text-foreground">{target.label}</p>
+                                <p className="mt-1 text-muted-foreground">{target.route}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {check.next_if_still_failing.length > 0 ? (
+                        <div className="mt-4">
+                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Next if still failing</h4>
+                          <ul className="mt-2 space-y-2 text-sm">
+                            {check.next_if_still_failing.map((step) => (
+                              <li key={`${check.check_id}-${step.step_kind}-${step.label}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                                <p className="font-medium text-foreground">{step.label}</p>
+                                <p className="mt-1 text-muted-foreground">{step.description}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>

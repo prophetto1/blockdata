@@ -1,6 +1,6 @@
 # User Storage Namespace Remediation and Linked DB Closure Implementation Plan
 
-**Goal:** Close the remaining approval gaps after the initial storage-namespace implementation by validating the immutable storage SQL locally, adding a schema-contract test, applying the reviewed migrations to the linked Supabase project, rerunning final verification in a clean buildable worktree, and recording the manual acceptance evidence required for approval.
+**Goal:** Close the remaining approval gaps after the initial storage-namespace implementation by validating the immutable storage SQL locally, adding a schema-contract test, applying the reviewed migrations to the linked Supabase project, rerunning final verification from a clean buildable `master` working tree, and recording the manual acceptance evidence required for approval.
 
 **Architecture:** Treat the currently landed storage namespace code as the candidate implementation. This follow-up plan does not redesign storage behavior. It closes proof, deployment, and audit gaps. The existing storage migrations remain immutable and are validated by local replay plus schema-contract testing; the linked database is then advanced through the repo-defined `supabase db push` deploy path. Completion requires a clean `web` build, a linked-project migration state with the storage namespace migrations applied, and recorded manual acceptance evidence for upload, listing, preview/download, delete, and quota behavior.
 
@@ -31,8 +31,8 @@ This follow-up plan is derived from:
 
 ### Remaining approval blockers
 
-- `cd web && npm run build` is not currently green in the shared dirty worktree because unrelated AGChain benchmark edits in `web/src/components/agchain/benchmarks/AgchainBenchmarkStepInspector.tsx` break TypeScript compilation.
-- The current storage evaluation therefore cannot honestly claim final build success from the shared worktree.
+- `cd web && npm run build` is not currently green in the shared dirty working tree because unrelated AGChain benchmark edits in `web/src/components/agchain/benchmarks/AgchainBenchmarkStepInspector.tsx` break TypeScript compilation.
+- The current storage evaluation therefore cannot honestly claim final build success from the shared working tree.
 - The linked Supabase project migration state has not yet been recorded before/after `supabase db push`.
 - The checked-in CORS artifact and runbook exist, but live bucket-policy application and the full manual acceptance path have not yet been recorded as evidence.
 - The original storage namespace plan now has inventory drift relative to what actually landed, so the plan document needs a closeout update before final re-evaluation.
@@ -130,7 +130,7 @@ No new product, API, data-model, or observability decisions may be improvised du
 
 1. The storage namespace architecture that landed in the first implementation remains the candidate design. This follow-up does not redesign namespace ownership.
 2. The existing storage migration chain is immutable. SQL review happens through replay and contract testing, not by editing historical migration files.
-3. Final build evidence must come from a clean buildable worktree or branch that excludes unrelated AGChain benchmark breakage.
+3. Final build evidence must come from local `master` itself, using a clean buildable working tree that excludes unrelated AGChain benchmark breakage. No secondary checkout is part of this plan.
 4. The storage task is not complete until the linked Supabase project shows the storage namespace migrations as applied.
 5. The storage task is not complete until the Task 8 manual acceptance path is recorded in a verification artifact.
 6. Existing runtime code in `services/platform-api` and `web/src` is verification scope, not redesign scope, for this follow-up.
@@ -141,7 +141,7 @@ No new product, API, data-model, or observability decisions may be improvised du
 
 The storage namespace implementation is only complete when all of the following are true:
 
-1. A clean storage-scoped worktree or branch can run `cd web && npm run build` successfully.
+1. Local `master`, in a clean storage-scoped working tree, can run `cd web && npm run build` successfully.
 2. `cd supabase && supabase db reset` replays the local migration chain successfully, including `20260402193000`, `20260402194000`, and `20260402195000`.
 3. `services/platform-api/tests/test_storage_namespace_schema_contract.py` proves the expected namespace schema and view contract after replay.
 4. The targeted backend storage test sweep passes against the locally reset schema.
@@ -220,13 +220,13 @@ The storage namespace implementation is only complete when all of the following 
 The storage namespace runtime already crossed the main migration seam. This follow-up must not reopen it casually.
 
 - Do not edit the existing storage namespace migration files. If a migration defect is proven, create a separate additive migration plan.
-- Do not treat a dirty shared worktree as acceptable evidence for final build status.
+- Do not treat a dirty shared working tree as acceptable evidence for final build status.
 - Do not treat local test success as a substitute for linked-project migration application.
 - Do not downscope the manual acceptance path to “tests only.” The bucket CORS apply and cross-surface user flows are part of completion.
 
 ## Explicit Risks Accepted In This Plan
 
-1. Unrelated AGChain work may require a clean worktree or branch to produce truthful storage closeout evidence.
+1. Unrelated AGChain work may require a temporarily clean working tree on local `master` to produce truthful storage closeout evidence.
 2. Linked Supabase project apply requires valid `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, and `SUPABASE_PROJECT_ID`; without them, the task cannot be called complete.
 3. The checked-in CORS file may already be correct; this plan does not invent a config patch unless real origin drift is proven.
 4. If linked-project data reveals a backfill issue that local reset did not expose, this closure plan must stop and hand off to a dedicated additive remediation plan.
@@ -236,12 +236,12 @@ The storage namespace runtime already crossed the main migration seam. This foll
 **File(s):** `web/src/components/agchain/benchmarks/AgchainBenchmarkStepInspector.tsx` (read-only blocker reference)
 
 **Step 1:** Confirm the current `web` build failure comes from unrelated AGChain benchmark edits and not from storage namespace files.
-**Step 2:** Create or switch to a clean storage-scoped worktree or branch that contains the storage namespace changes without the unrelated AGChain benchmark breakage.
+**Step 2:** Stay on local `master` and establish a clean storage-scoped working tree that contains the storage namespace changes without the unrelated AGChain benchmark breakage.
 **Step 3:** Run the `web` build once in that clean environment to establish a truthful verification baseline.
 **Step 4:** If the build is still blocked by non-storage changes, stop and resolve workspace isolation before continuing.
 
 **Test command:** `cd web && npm run build`
-**Expected output:** The clean storage-scoped worktree builds successfully.
+**Expected output:** The clean storage-scoped working tree on `master` builds successfully.
 
 **Commit:** `none - environment isolation only`
 
@@ -347,7 +347,7 @@ The storage namespace runtime already crossed the main migration seam. This foll
 
 The work is complete only when all of the following are true:
 
-1. The clean storage-scoped worktree builds successfully.
+1. The clean storage-scoped working tree on `master` builds successfully.
 2. The immutable storage migration chain replays locally with no schema-contract failures.
 3. The linked Supabase project shows the storage namespace migrations as applied.
 4. The checked-in bucket CORS policy is applied and verified against the target bucket.

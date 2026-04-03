@@ -85,6 +85,14 @@ def test_get_runtime_readiness_returns_grouped_snapshot(superuser_client, monkey
                         "status": "ok",
                         "label": "Platform API readiness",
                         "summary": "Platform API process is ready.",
+                        "cause": "The process is serving and its runtime identity is available.",
+                        "cause_confidence": "high",
+                        "depends_on": [],
+                        "blocked_by": [],
+                        "available_actions": [],
+                        "verify_after": [],
+                        "next_if_still_failing": [],
+                        "actionability": "info_only",
                         "evidence": {"ready": True},
                         "remediation": "No action required.",
                         "checked_at": "2026-03-30T16:00:00Z",
@@ -102,7 +110,39 @@ def test_get_runtime_readiness_returns_grouped_snapshot(superuser_client, monkey
                         "status": "fail",
                         "label": "Bucket CORS",
                         "summary": "Browser upload CORS is not configured.",
-                        "evidence": {"cors_configured": False},
+                        "cause": "The bucket has no browser-upload CORS rules.",
+                        "cause_confidence": "high",
+                        "depends_on": [],
+                        "blocked_by": [],
+                        "available_actions": [
+                            {
+                                "action_kind": "storage_browser_upload_cors_reconcile",
+                                "label": "Reconcile bucket CORS policy",
+                                "description": "Apply the checked-in browser upload CORS policy to the user-storage bucket.",
+                                "route": "/admin/runtime/storage/browser-upload-cors/reconcile",
+                                "requires_confirmation": True,
+                            }
+                        ],
+                        "verify_after": [
+                            {
+                                "probe_kind": "readiness_check_verify",
+                                "label": "Refresh the readiness snapshot",
+                                "route": "/admin/runtime/readiness?surface=blockdata",
+                            }
+                        ],
+                        "next_if_still_failing": [
+                            {
+                                "step_kind": "inspect_dependency",
+                                "label": "Inspect the live bucket policy",
+                                "description": "Verify the live bucket CORS rules match the checked-in artifact.",
+                            }
+                        ],
+                        "actionability": "backend_action",
+                        "evidence": {
+                            "cors_configured": False,
+                            "bucket_name": "blockdata-user-content-prod",
+                            "allowed_origins": [],
+                        },
                         "remediation": "Apply bucket CORS rules.",
                         "checked_at": "2026-03-30T16:00:00Z",
                     }
@@ -136,7 +176,10 @@ def test_get_runtime_readiness_returns_grouped_snapshot(superuser_client, monkey
     assert body["summary"] == {"ok": 3, "warn": 1, "fail": 1, "unknown": 0}
     assert [surface["id"] for surface in body["surfaces"]] == ["shared", "blockdata", "agchain"]
     assert body["surfaces"][0]["checks"][0]["label"] == "Platform API readiness"
-    assert body["surfaces"][1]["checks"][0]["evidence"] == {"cors_configured": False}
+    assert body["surfaces"][0]["checks"][0]["cause_confidence"] == "high"
+    assert body["surfaces"][1]["checks"][0]["actionability"] == "backend_action"
+    assert body["surfaces"][1]["checks"][0]["available_actions"][0]["action_kind"] == "storage_browser_upload_cors_reconcile"
+    assert body["surfaces"][1]["checks"][0]["evidence"]["bucket_name"] == "blockdata-user-content-prod"
 
 
 def test_get_runtime_readiness_returns_snapshot_when_snapshot_metrics_raise(superuser_client, monkeypatch):
@@ -155,6 +198,14 @@ def test_get_runtime_readiness_returns_snapshot_when_snapshot_metrics_raise(supe
                         "status": "ok",
                         "label": "Platform API readiness",
                         "summary": "Platform API process is ready.",
+                        "cause": "The process is serving and its runtime identity is available.",
+                        "cause_confidence": "high",
+                        "depends_on": [],
+                        "blocked_by": [],
+                        "available_actions": [],
+                        "verify_after": [],
+                        "next_if_still_failing": [],
+                        "actionability": "info_only",
                         "evidence": {"ready": True},
                         "remediation": "No action required.",
                         "checked_at": "2026-03-30T16:00:00Z",

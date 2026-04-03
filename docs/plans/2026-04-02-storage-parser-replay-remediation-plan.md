@@ -12,7 +12,7 @@ Draft
 
 - `docs/plans/2026-04-02-storage-namespace-remediation-and-linked-db-closure-plan.md`
 - `docs/plans/2026-04-02-storage-namespace-separation-and-gcs-access-correction-plan.md`
-- local replay failure on 2026-04-02 in the clean worktree: `npx supabase db start` / `npx supabase db reset`
+- local replay failure on 2026-04-02 from a clean isolated checkout: `npx supabase db start` / `npx supabase db reset`
 - current migration chain in `supabase/migrations`
 
 ## Architecture
@@ -33,14 +33,14 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
 
 ## Verified Current State
 
-### Clean worktree evidence
+### Historical isolated-environment evidence
 
-- A clean storage-scoped worktree exists at `E:\\writing-system-storage-closeout` on branch `codex/storage-namespace-closeout`.
-- `cd web && npm run build` succeeds in that clean worktree after dependency install.
+- At the time the replay blocker was first isolated, a temporary storage-scoped checkout existed outside the main repository.
+- That temporary checkout has since been retired. Active execution for this plan now occurs from `E:\\writing-system` on local `master` only, using a clean working tree when replay or build verification requires isolation.
 
 ### Replay failure evidence
 
-- `npx supabase db start` begins local replay in the clean worktree and fails during `20260220194000_040_storage_documents_preview_select_policy.sql`.
+- `npx supabase db start` began local replay in the isolated verification environment and failed during `20260220194000_040_storage_documents_preview_select_policy.sql`.
 - The concrete failure is:
   - `ERROR: relation "public.source_documents" does not exist (SQLSTATE 42P01)`
 - That means the current migration chain is not replayable from scratch before the storage namespace closeout can even validate its own SQL.
@@ -103,12 +103,13 @@ This is a replay-remediation prerequisite, not a redesign of storage runtime beh
    - parser-era compatibility columns on `public.blocks` required by later migrations
 7. The linked database remains the source of truth for the exact parser-era table DDL that must be mirrored idempotently in the bootstrap migration.
 8. After this remediation lands, the approved closeout plan resumes unchanged from Task 3.
+9. No secondary checkout is assumed by this plan. Execution must proceed from `E:\\writing-system` on local `master`.
 
 ## Locked Acceptance Contract
 
 The replay remediation is only complete when all of the following are true:
 
-1. `npx supabase db start` succeeds locally in the clean worktree.
+1. `npx supabase db start` succeeds locally from `E:\\writing-system` on `master` with a clean working tree.
 2. `npx supabase db reset --yes` replays the full migration chain with no failure before or during the storage namespace migrations.
 3. `npx supabase migration list --local` shows the new bootstrap migration applied ahead of the parser/storage chain.
 4. `cd services/platform-api && pytest -q tests/test_storage_namespace_schema_contract.py` passes against the locally reset database.

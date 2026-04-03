@@ -9,6 +9,11 @@ import { Button } from '@/components/ui/button';
 import { useOperationalReadiness } from '@/hooks/useOperationalReadiness';
 import { usePlatformApiDevRecovery } from '@/hooks/usePlatformApiDevRecovery';
 
+function getEvidenceString(evidence: Record<string, unknown>, key: string): string | null {
+  const value = evidence[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
 export function Component() {
   useShellHeaderTitle({
     title: 'Operational Readiness',
@@ -29,6 +34,20 @@ export function Component() {
   const devRecovery = usePlatformApiDevRecovery({
     onRecovered: refresh,
   });
+  const runtimeIdentityCheck = surfaces
+    .find((surface) => surface.id === 'shared')
+    ?.checks.find((check) => check.check_id === 'shared.platform_api.ready');
+  const runtimeIdentityEvidence =
+    runtimeIdentityCheck && typeof runtimeIdentityCheck.evidence === 'object' && runtimeIdentityCheck.evidence !== null
+      ? runtimeIdentityCheck.evidence
+      : {};
+  const runtimeIdentity = {
+    runtimeEnvironment: getEvidenceString(runtimeIdentityEvidence, 'runtime_environment'),
+    serviceName: getEvidenceString(runtimeIdentityEvidence, 'service_name'),
+    revisionName: getEvidenceString(runtimeIdentityEvidence, 'revision_name'),
+    configurationName: getEvidenceString(runtimeIdentityEvidence, 'configuration_name'),
+    serviceAccountEmail: getEvidenceString(runtimeIdentityEvidence, 'service_account_email'),
+  };
 
   async function handleRefresh() {
     if (devRecovery.enabled) {
@@ -79,7 +98,11 @@ export function Component() {
 
       {bootstrap.snapshot_available && summary ? (
         <>
-          <OperationalReadinessSummary summary={summary} refreshedAt={refreshedAt} />
+          <OperationalReadinessSummary
+            summary={summary}
+            refreshedAt={refreshedAt}
+            runtimeIdentity={runtimeIdentity}
+          />
 
           <div className="space-y-6">
             {surfaces.map((surface) => (

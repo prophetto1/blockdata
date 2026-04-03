@@ -1,5 +1,13 @@
 import type { OperationalReadinessSummary as Summary } from '@/lib/operationalReadiness';
 
+type RuntimeIdentity = {
+  runtimeEnvironment: string | null;
+  serviceName: string | null;
+  revisionName: string | null;
+  configurationName: string | null;
+  serviceAccountEmail: string | null;
+};
+
 const SUMMARY_ITEMS: Array<{ key: keyof Summary; label: string; tone: string }> = [
   {
     key: 'ok',
@@ -30,14 +38,30 @@ function formatRefreshTime(value: string | null): string {
   return `Last refresh ${parsed.toLocaleString()}`;
 }
 
+function hasRuntimeIdentity(identity: RuntimeIdentity | null): identity is RuntimeIdentity {
+  if (!identity) return false;
+  return Object.values(identity).some((value) => Boolean(value));
+}
+
+function formatRuntimeEnvironment(value: string | null): string | null {
+  if (!value) return null;
+  if (value === 'cloud_run') return 'Cloud Run';
+  if (value === 'local') return 'Local';
+  return value.replace(/[_-]+/g, ' ');
+}
+
 export function OperationalReadinessSummary({
   summary,
   refreshedAt,
+  runtimeIdentity,
 }: {
   summary: Summary | null;
   refreshedAt: string | null;
+  runtimeIdentity: RuntimeIdentity | null;
 }) {
   if (!summary) return null;
+
+  const showRuntimeIdentity = hasRuntimeIdentity(runtimeIdentity);
 
   return (
     <section className="rounded-[28px] border border-border/70 bg-card/75 p-3 shadow-sm">
@@ -53,12 +77,56 @@ export function OperationalReadinessSummary({
 
         <div
           aria-live="polite"
-          className="rounded-2xl border border-dashed border-border/80 bg-background/70 px-4 py-3 text-sm text-muted-foreground"
+          className={`grid gap-3 ${showRuntimeIdentity ? 'sm:grid-cols-2' : ''}`}
         >
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            Authoritative Snapshot
-          </p>
-          <p className="mt-2 text-base font-medium text-foreground">{formatRefreshTime(refreshedAt)}</p>
+          <div className="rounded-2xl border border-dashed border-border/80 bg-background/70 px-4 py-3 text-sm text-muted-foreground">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+              Authoritative Snapshot
+            </p>
+            <p className="mt-2 text-base font-medium text-foreground">{formatRefreshTime(refreshedAt)}</p>
+          </div>
+
+          {showRuntimeIdentity ? (
+            <div className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3 text-sm text-muted-foreground">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                Active runtime
+              </p>
+              <dl className="mt-2 grid gap-x-3 gap-y-1.5 sm:grid-cols-[max-content_1fr]">
+                {runtimeIdentity.serviceName ? (
+                  <>
+                    <dt className="text-muted-foreground">Service</dt>
+                    <dd className="break-words font-medium text-foreground">{runtimeIdentity.serviceName}</dd>
+                  </>
+                ) : null}
+                {runtimeIdentity.revisionName ? (
+                  <>
+                    <dt className="text-muted-foreground">Revision</dt>
+                    <dd className="break-words font-medium text-foreground">{runtimeIdentity.revisionName}</dd>
+                  </>
+                ) : null}
+                {runtimeIdentity.serviceAccountEmail ? (
+                  <>
+                    <dt className="text-muted-foreground">Identity</dt>
+                    <dd className="break-words font-medium text-foreground">{runtimeIdentity.serviceAccountEmail}</dd>
+                  </>
+                ) : null}
+                {formatRuntimeEnvironment(runtimeIdentity.runtimeEnvironment) ? (
+                  <>
+                    <dt className="text-muted-foreground">Environment</dt>
+                    <dd className="break-words font-medium text-foreground">
+                      {formatRuntimeEnvironment(runtimeIdentity.runtimeEnvironment)}
+                    </dd>
+                  </>
+                ) : null}
+                {runtimeIdentity.configurationName ? (
+                  <>
+                    <dt className="text-muted-foreground">Config</dt>
+                    <dd className="break-words font-medium text-foreground">{runtimeIdentity.configurationName}</dd>
+                  </>
+                ) : null}
+              </dl>
+            </div>
+          ) : null}
         </div>
       </div>
     </section>
