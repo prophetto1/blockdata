@@ -11,10 +11,6 @@ vi.mock('@/auth/AuthContext', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useSuperuserProbe', () => ({
-  useSuperuserProbe: () => true,
-}));
-
 vi.mock('@/components/shell/LeftRailShadcn', () => ({
   LeftRailShadcn: () => <div data-testid="mock-platform-rail-content">platform rail</div>,
 }));
@@ -25,7 +21,15 @@ function renderWithRouter(path = '/app/superuser') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
-        <Route path="/app/superuser" element={<AdminShellLayout />}>
+        <Route path="/app/superuser/*" element={<AdminShellLayout />}>
+          <Route index element={<div data-testid="outlet-child">outlet</div>} />
+          <Route path="*" element={<div data-testid="outlet-child">outlet</div>} />
+        </Route>
+        <Route path="/app/blockdata-admin/*" element={<AdminShellLayout />}>
+          <Route index element={<div data-testid="outlet-child">outlet</div>} />
+          <Route path="*" element={<div data-testid="outlet-child">outlet</div>} />
+        </Route>
+        <Route path="/app/agchain-admin/*" element={<AdminShellLayout />}>
           <Route index element={<div data-testid="outlet-child">outlet</div>} />
           <Route path="*" element={<div data-testid="outlet-child">outlet</div>} />
         </Route>
@@ -42,12 +46,12 @@ describe('AdminShellLayout', () => {
   });
 
   it('does not render the secondary rail on routes without secondary nav', () => {
-    renderWithRouter('/app/superuser/audit');
+    renderWithRouter('/app/superuser/operational-readiness');
     expect(screen.queryByTestId('admin-secondary-rail')).not.toBeInTheDocument();
   });
 
   it('renders the secondary rail on routes with secondary nav', () => {
-    renderWithRouter('/app/superuser/instance-config');
+    renderWithRouter('/app/blockdata-admin/instance-config');
     expect(screen.getByTestId('admin-secondary-rail')).toBeInTheDocument();
   });
 

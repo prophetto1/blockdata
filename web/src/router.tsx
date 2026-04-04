@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
 import { MarketingLayout } from '@/components/layout/MarketingLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
@@ -53,7 +54,7 @@ import LogsPage from '@/pages/kestra/LogsPage';
 import TestsPage from '@/pages/kestra/TestsPage';
 import { FlowsShellLayout } from '@/components/layout/FlowsShellLayout';
 import { featureFlags } from '@/lib/featureFlags';
-import { SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
+import { BlockdataAdminGuard, AgchainAdminGuard, SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
 import NotFound from '@/pages/NotFound';
 import { AdminShellLayout } from '@/components/layout/AdminShellLayout';
 import { AgchainShellLayout } from '@/components/layout/AgchainShellLayout';
@@ -69,14 +70,14 @@ function LegacyToTransform() {
 function LegacySettingsAdminRedirect() {
   const { category } = useParams<{ category?: string }>();
   const targetByCategory: Record<string, string> = {
-    'instance-config': '/app/superuser/instance-config',
-    'worker-config': '/app/superuser/worker-config',
-    audit: '/app/superuser/audit',
-    'parsers-docling': '/app/superuser/parsers-docling',
-    'platform-config': '/app/superuser/instance-config',
+    'instance-config': '/app/blockdata-admin/instance-config',
+    'worker-config': '/app/blockdata-admin/worker-config',
+    audit: '/app/blockdata-admin/audit',
+    'parsers-docling': '/app/blockdata-admin/parsers-docling',
+    'platform-config': '/app/blockdata-admin/instance-config',
   };
 
-  return <Navigate to={targetByCategory[category ?? ''] ?? '/app/superuser/instance-config'} replace />;
+  return <Navigate to={targetByCategory[category ?? ''] ?? '/app/blockdata-admin/instance-config'} replace />;
 }
 
 function LegacyPipelineServicesRedirect() {
@@ -183,7 +184,7 @@ export const router = createBrowserRouter([
           { path: '/app/secrets', element: <SecretsPage /> },
           { path: '/app/tests', element: <TestsPage /> },
           { path: '/app/logs', element: <LogsPage /> },
-          { path: '/app/test-integrations', element: <Navigate to="/app/superuser/test-integrations" replace /> },
+          { path: '/app/test-integrations', element: <Navigate to="/app/blockdata-admin/test-integrations" replace /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
           { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },
@@ -227,13 +228,13 @@ export const router = createBrowserRouter([
               { path: 'profile', element: <SettingsAccount /> },
               { path: 'themes', element: <SettingsThemes /> },
               { path: 'secrets', element: <SettingsSecrets /> },
-              { path: 'ai', element: <Navigate to="/app/superuser/ai-providers" replace /> },
-              { path: 'ai/:providerId', element: <Navigate to="/app/superuser/ai-providers" replace /> },
-              { path: 'model-roles', element: <Navigate to="/app/superuser/model-roles" replace /> },
-              { path: 'mcp', element: <Navigate to="/app/superuser/mcp" replace /> },
-              { path: 'connections', element: <Navigate to="/app/superuser/connections" replace /> },
+              { path: 'ai', element: <Navigate to="/app/blockdata-admin/ai-providers" replace /> },
+              { path: 'ai/:providerId', element: <Navigate to="/app/blockdata-admin/ai-providers" replace /> },
+              { path: 'model-roles', element: <Navigate to="/app/blockdata-admin/model-roles" replace /> },
+              { path: 'mcp', element: <Navigate to="/app/blockdata-admin/mcp" replace /> },
+              { path: 'connections', element: <Navigate to="/app/blockdata-admin/connections" replace /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
-              { path: 'admin', element: <Navigate to="/app/superuser/instance-config" replace /> },
+              { path: 'admin', element: <Navigate to="/app/blockdata-admin/instance-config" replace /> },
               { path: 'admin/:category', element: <LegacySettingsAdminRedirect /> },
             ],
           },
@@ -263,8 +264,8 @@ export const router = createBrowserRouter([
             path: '/app/onboarding/agents/connect/:agentSlug/:authMethod',
             element: featureFlags.agentsConfigUI ? <AgentOnboardingConnect /> : <Navigate to="/app/settings" replace />,
           },
-          // /app/mcp removed — MCP now lives at /app/superuser/mcp
-          { path: '/app/mcp', element: <Navigate to="/app/superuser/mcp" replace /> },
+          // /app/mcp removed — MCP now lives at /app/blockdata-admin/mcp
+          { path: '/app/mcp', element: <Navigate to="/app/blockdata-admin/mcp" replace /> },
           {
             path: '/app/commands',
             element: featureFlags.commandsUI ? <Commands /> : <Navigate to="/app/settings" replace />,
@@ -284,26 +285,99 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        element: <AdminShellLayout />,
+        path: '/app/superuser/parsers-docling',
+        element: <Navigate to="/app/blockdata-admin/parsers-docling" replace />,
+      },
+      {
+        path: '/app/superuser/instance-config',
+        element: <Navigate to="/app/blockdata-admin/instance-config" replace />,
+      },
+      {
+        path: '/app/superuser/worker-config',
+        element: <Navigate to="/app/blockdata-admin/worker-config" replace />,
+      },
+      {
+        path: '/app/superuser/audit',
+        element: <Navigate to="/app/blockdata-admin/audit" replace />,
+      },
+      {
+        path: '/app/superuser/api-endpoints',
+        element: <Navigate to="/app/blockdata-admin/api-endpoints" replace />,
+      },
+      {
+        path: '/app/superuser/test-integrations',
+        element: <Navigate to="/app/blockdata-admin/test-integrations" replace />,
+      },
+      {
+        path: '/app/superuser/ai-providers',
+        element: <Navigate to="/app/blockdata-admin/ai-providers" replace />,
+      },
+      {
+        path: '/app/superuser/ai-providers/:providerId',
+        element: <Navigate to="/app/blockdata-admin/ai-providers" replace />,
+      },
+      {
+        path: '/app/superuser/model-roles',
+        element: <Navigate to="/app/blockdata-admin/model-roles" replace />,
+      },
+      {
+        path: '/app/superuser/connections',
+        element: <Navigate to="/app/blockdata-admin/connections" replace />,
+      },
+      {
+        path: '/app/superuser/mcp',
+        element: <Navigate to="/app/blockdata-admin/mcp" replace />,
+      },
+      {
+        path: '/app/blockdata-admin',
+        element: <BlockdataAdminGuard />,
         children: [
           {
-            path: '/app/superuser',
-            element: <SuperuserGuard />,
+            element: <AdminShellLayout />,
             children: [
               { index: true, lazy: () => import('@/pages/superuser/SuperuserWorkspace') },
               { path: 'parsers-docling', lazy: () => import('@/pages/settings/DoclingConfigPanel') },
               { path: 'instance-config', lazy: () => import('@/pages/superuser/SuperuserInstanceConfig') },
               { path: 'worker-config', lazy: () => import('@/pages/superuser/SuperuserWorkerConfig') },
               { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
-              { path: 'operational-readiness', lazy: () => import('@/pages/superuser/SuperuserOperationalReadiness') },
               { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
               { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
-              { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
               { path: 'ai-providers', element: <SettingsAiOverview /> },
               { path: 'ai-providers/:providerId', element: <SettingsProviderForm /> },
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'connections', element: <ConnectionsPanel /> },
               { path: 'mcp', element: <McpServers /> },
+            ],
+          },
+        ],
+      },
+      {
+        path: '/app/agchain-admin',
+        element: <AgchainAdminGuard />,
+        children: [
+          {
+            element: <AdminShellLayout />,
+            children: [
+              { index: true, element: <Navigate to="/app/agchain-admin/models" replace /> },
+              {
+                path: 'models',
+                lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminModelsPage')).default }),
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: '/app/superuser',
+        element: <SuperuserGuard />,
+        children: [
+          {
+            element: <AdminShellLayout />,
+            children: [
+              { index: true, element: <Navigate to="/app/superuser/operational-readiness" replace /> },
+              { path: 'operational-readiness', lazy: () => import('@/pages/superuser/SuperuserOperationalReadiness') },
+              { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
+              { path: 'plan-tracker', lazy: () => import('@/pages/superuser/PlanTracker') },
             ],
           },
         ],

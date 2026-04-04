@@ -66,10 +66,10 @@ def _verify_supabase_jwt(token: str) -> Any:
     return response.user
 
 
-def _check_superuser(email: str) -> bool:
-    """Check if email is in registry_superuser_profiles with is_active=True.
+def _check_registry_role(email: str, table_name: str) -> bool:
+    """Check if email is designated in a registry table with is_active=True.
 
-    Mirrors the TypeScript requireSuperuser() logic from
+    Mirrors the TypeScript registry-backed access helpers from
     supabase/functions/_shared/superuser.ts.
     """
     from supabase import create_client
@@ -77,10 +77,10 @@ def _check_superuser(email: str) -> bool:
     supabase_url, service_role_key = _require_supabase_auth_settings()
     admin = create_client(supabase_url, service_role_key)
 
-    # First check if any active superuser profiles exist at all
+    # First check if any active designated profiles exist at all
     any_active = (
-        admin.table("registry_superuser_profiles")
-        .select("superuser_profile_id")
+        admin.table(table_name)
+        .select("email_normalized")
         .eq("is_active", True)
         .limit(1)
         .execute()
@@ -88,17 +88,32 @@ def _check_superuser(email: str) -> bool:
     if not any_active.data:
         return False
 
-    # Check if this specific email is a superuser
+    # Check if this specific email is designated for the surface
     normalized = email.strip().lower()
     match = (
-        admin.table("registry_superuser_profiles")
-        .select("superuser_profile_id")
+        admin.table(table_name)
+        .select("email_normalized")
         .eq("email_normalized", normalized)
         .eq("is_active", True)
         .limit(1)
         .execute()
     )
     return bool(match.data)
+
+
+def _check_superuser(email: str) -> bool:
+    """Check if email is in registry_superuser_profiles with is_active=True."""
+    return _check_registry_role(email, "registry_superuser_profiles")
+
+
+def _check_blockdata_admin(email: str) -> bool:
+    """Check if email is in registry_blockdata_admin_profiles with is_active=True."""
+    return _check_registry_role(email, "registry_blockdata_admin_profiles")
+
+
+def _check_agchain_admin(email: str) -> bool:
+    """Check if email is in registry_agchain_admin_profiles with is_active=True."""
+    return _check_registry_role(email, "registry_agchain_admin_profiles")
 
 
 async def require_auth(
@@ -124,7 +139,7 @@ async def require_auth(
             return AuthPrincipal(
                 subject_type="machine",
                 subject_id="m2m-caller",
-                roles=frozenset({"platform_admin"}),
+                roles=frozenset({"platform_admin", "blockdata_admin", "agchain_admin"}),
                 auth_source="m2m_bearer",
             )
 
@@ -141,13 +156,17 @@ async def require_auth(
         email = (user.email or "").strip().lower()
         roles: set[str] = {"authenticated"}
 
-        # Check superuser status
-        try:
-            if email and _check_superuser(email):
-                roles.add("platform_admin")
-        except Exception as e:
-            logger.warning(f"Superuser check failed for {email}: {e}")
-            # Non-fatal: user still gets authenticated role
+        for role_name, checker, label in (
+            ("platform_admin", _check_superuser, "superuser"),
+            ("blockdata_admin", _check_blockdata_admin, "blockdata_admin"),
+            ("agchain_admin", _check_agchain_admin, "agchain_admin"),
+        ):
+            try:
+                if email and checker(email):
+                    roles.add(role_name)
+            except Exception as e:
+                logger.warning(f"{label} check failed for {email}: {e}")
+                # Non-fatal: user still gets any successfully resolved roles
 
         return AuthPrincipal(
             subject_type="user",
@@ -163,7 +182,7 @@ async def require_auth(
             return AuthPrincipal(
                 subject_type="machine",
                 subject_id="legacy-caller",
-                roles=frozenset({"platform_admin"}),
+                roles=frozenset({"platform_admin", "blockdata_admin", "agchain_admin"}),
                 auth_source="legacy_header",
             )
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -186,6 +205,8 @@ def require_role(role: str) -> Callable:
 # Backward-compatible aliases for admin_services.py migration
 SuperuserContext = AuthPrincipal
 require_superuser = require_role("platform_admin")
+require_blockdata_admin = require_role("blockdata_admin")
+require_agchain_admin = require_role("agchain_admin")
 
 
 async def require_user_auth(

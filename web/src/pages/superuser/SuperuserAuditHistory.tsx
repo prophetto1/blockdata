@@ -92,7 +92,7 @@ function isAuditRowInRange(changedAt: string, range: AuditTimeRange): boolean {
 }
 
 export function Component() {
-  useShellHeaderTitle({ title: 'Audit History', breadcrumbs: ['Settings', 'Admin', 'Audit History'] });
+  useShellHeaderTitle({ title: 'Audit History', breadcrumbs: ['Blockdata Admin', 'Audit History'] });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

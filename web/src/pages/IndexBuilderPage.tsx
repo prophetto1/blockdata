@@ -2,8 +2,8 @@ import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useIndexBuilderList } from '@/hooks/useIndexBuilderList';
 import { useIndexBuilderJob } from '@/hooks/useIndexBuilderJob';
+import { IndexBuilderHeader } from '@/components/pipelines/IndexBuilderHeader';
 import { IndexJobsList } from '@/components/pipelines/IndexJobsList';
-import { IndexJobStatusChip } from '@/components/pipelines/IndexJobStatusChip';
 import { IndexJobFilesTab } from '@/components/pipelines/IndexJobFilesTab';
 import { IndexJobConfigTab } from '@/components/pipelines/IndexJobConfigTab';
 import { IndexJobRunsTab } from '@/components/pipelines/IndexJobRunsTab';
@@ -48,11 +48,6 @@ export default function IndexBuilderPage() {
     updateSelectedJobId('new');
   }
 
-  function backToList() {
-    updateSelectedJobId(null);
-    void list.refreshList();
-  }
-
   const handleDiscard = () => {
     if (job.isNewJob) {
       updateSelectedJobId(null);
@@ -81,12 +76,12 @@ export default function IndexBuilderPage() {
           <div className="min-h-0 flex flex-1 flex-col">
             {!isDetailView ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-                <h2 className="text-lg font-semibold text-foreground">No index job selected</h2>
+                <h2 className="text-lg font-semibold text-foreground">No definition selected</h2>
                 <p className="max-w-md text-sm text-muted-foreground">
-                  Select an index job or create a new one to edit file membership, review runs, and download outputs.
+                  Select a saved definition or create one to edit file membership, review the latest run, and download outputs.
                 </p>
                 <Button type="button" size="sm" onClick={createNewJob}>
-                  Create new job
+                  Create definition
                 </Button>
               </div>
             ) : job.isLoading ? (
@@ -98,93 +93,36 @@ export default function IndexBuilderPage() {
             ) : job.loadError ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
                 <p className="text-sm text-destructive">{job.loadError}</p>
-                <Button type="button" size="sm" variant="outline" onClick={backToList}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    updateSelectedJobId(null);
+                    void list.refreshList();
+                  }}
+                >
                   Return to list
                 </Button>
               </div>
             ) : (
               <>
                 {isDetailReady ? (
-                  <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={backToList}
-                        className="shrink-0 text-sm font-medium text-muted-foreground hover:text-foreground"
-                      >
-                        Index Jobs
-                      </button>
-                      <span className="shrink-0 text-sm text-muted-foreground">/</span>
-                      <input
-                        type="text"
-                        value={job.jobName}
-                        onChange={(e) => job.updateName(e.target.value)}
-                        className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:rounded-sm focus-visible:px-1"
-                        placeholder="Untitled index job"
-                      />
-                      <IndexJobStatusChip status={job.status} hasUnsavedChanges={job.hasUnsavedChanges} />
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {job.status === 'draft' ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => { void job.saveDraft(); }}
-                          disabled={job.pipelineSourceSet.isPersisting}
-                        >
-                          {job.pipelineSourceSet.isPersisting ? 'Saving...' : 'Save draft'}
-                        </Button>
-                      ) : null}
-                      {job.hasUnsavedChanges && job.status !== 'draft' ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => { void job.startRun(); }}
-                          disabled={job.pipelineSourceSet.isPersisting || job.pipelineJob.isTriggering}
-                        >
-                          {job.pipelineSourceSet.isPersisting ? 'Saving...' : 'Save and start'}
-                        </Button>
-                      ) : null}
-                      {job.status === 'ready' && !job.hasUnsavedChanges ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => { void job.startRun(); }}
-                          disabled={job.pipelineJob.isTriggering}
-                        >
-                          {job.pipelineJob.isTriggering ? 'Starting...' : 'Start run'}
-                        </Button>
-                      ) : null}
-                      {job.status === 'running' ? (
-                        <Button type="button" size="sm" disabled>Running...</Button>
-                      ) : null}
-                      {job.status === 'failed' && !job.hasUnsavedChanges ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => { void job.retryRun(); }}
-                          disabled={job.pipelineJob.isTriggering}
-                        >
-                          {job.pipelineJob.isTriggering ? 'Starting...' : 'Retry run'}
-                        </Button>
-                      ) : null}
-                      {job.status === 'complete' && !job.hasUnsavedChanges ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => { void job.retryRun(); }}
-                          disabled={job.pipelineJob.isTriggering}
-                        >
-                          Run again
-                        </Button>
-                      ) : null}
-                      {(job.hasUnsavedChanges || job.isNewJob) ? (
-                        <Button type="button" size="sm" variant="outline" onClick={handleDiscard}>
-                          Discard
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
+                  <IndexBuilderHeader
+                    title={job.jobName}
+                    onTitleChange={job.updateName}
+                    isNewDefinition={job.isNewJob}
+                    hasUnsavedChanges={job.hasUnsavedChanges}
+                    memberCount={job.pipelineSourceSet.selectedSourceUids.length}
+                    status={job.status}
+                    latestJob={job.pipelineJob.job}
+                    isPersisting={job.pipelineSourceSet.isPersisting}
+                    isTriggering={job.pipelineJob.isTriggering}
+                    onSave={job.saveDraft}
+                    onStartRun={job.startRun}
+                    onRetryRun={job.retryRun}
+                    onDiscard={handleDiscard}
+                  />
                 ) : null}
 
                 <div className="min-h-0 flex-1 overflow-y-auto">

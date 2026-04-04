@@ -1,10 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LeftRailShadcn } from './LeftRailShadcn';
 
 const rpcMock = vi.fn();
+const superuserProbeMock = vi.fn();
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -18,7 +19,7 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 vi.mock('@/hooks/useSuperuserProbe', () => ({
-  useSuperuserProbe: () => false,
+  useSuperuserProbe: () => superuserProbeMock(),
 }));
 
 vi.mock('@/hooks/useProjectFocus', () => ({
@@ -62,6 +63,8 @@ describe('LeftRailShadcn', () => {
   beforeEach(() => {
     window.localStorage.clear();
     rpcMock.mockReset();
+    superuserProbeMock.mockReset();
+    superuserProbeMock.mockReturnValue(false);
     rpcMock.mockResolvedValue({
       data: [
         {
@@ -73,6 +76,36 @@ describe('LeftRailShadcn', () => {
       ],
       error: null,
     });
+  });
+
+  it('renders the cleaned account menu without admin, settings, theme label, or changelog controls', async () => {
+    superuserProbeMock.mockReturnValue(true);
+
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
+        <LeftRailShadcn userLabel="jon@example.com" onSignOut={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Go to home' })).toBeInTheDocument();
+
+    const accountMenuTrigger = screen.getByRole('button', { name: 'Account menu' });
+    fireEvent.pointerDown(accountMenuTrigger);
+    fireEvent.click(accountMenuTrigger);
+
+    const menuScope = within(await screen.findByRole('menu'));
+
+    expect(menuScope.queryByRole('button', { name: 'Admin' })).not.toBeInTheDocument();
+    expect(menuScope.queryByRole('button', { name: 'Settings' })).not.toBeInTheDocument();
+    expect(menuScope.queryByText('Theme')).not.toBeInTheDocument();
+    expect(menuScope.queryByText('Changelog')).not.toBeInTheDocument();
+
+    expect(menuScope.getByLabelText('Theme: System')).toBeInTheDocument();
+    expect(menuScope.getByLabelText('Theme: Light')).toBeInTheDocument();
+    expect(menuScope.getByLabelText('Theme: Dark')).toBeInTheDocument();
+    expect(menuScope.getByText('Help')).toBeInTheDocument();
+    expect(menuScope.getByText('Docs')).toBeInTheDocument();
+    expect(menuScope.getByText('Log Out')).toBeInTheDocument();
   });
 
   it('renders the brand logo and top-level nav items without inline drill children', async () => {

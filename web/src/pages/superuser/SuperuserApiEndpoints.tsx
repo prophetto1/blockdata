@@ -105,7 +105,7 @@ const inputClass =
 /* ------------------------------------------------------------------ */
 
 export function Component() {
-  useShellHeaderTitle({ title: 'API Endpoints', breadcrumbs: ['Superuser', 'API Endpoints'] });
+  useShellHeaderTitle({ title: 'API Endpoints', breadcrumbs: ['Blockdata Admin', 'API Endpoints'] });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

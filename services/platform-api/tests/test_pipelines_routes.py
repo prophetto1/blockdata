@@ -417,6 +417,49 @@ async def test_get_latest_pipeline_job_reads_by_source_set(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_get_latest_pipeline_job_returns_none_when_backend_has_no_rows(monkeypatch):
+    from app.api.routes.pipelines import get_latest_pipeline_job
+
+    class _LatestQuery:
+        def select(self, *_a, **_k):
+            return self
+
+        def eq(self, *_a, **_k):
+            return self
+
+        def order(self, *_a, **_k):
+            return self
+
+        def limit(self, *_a, **_k):
+            return self
+
+        def maybe_single(self):
+            return self
+
+        def execute(self):
+            return None
+
+    class _Admin:
+        def table(self, name):
+            assert name == "pipeline_jobs"
+            return _LatestQuery()
+
+    monkeypatch.setattr("app.api.routes.pipelines.get_supabase_admin", lambda: _Admin())
+    monkeypatch.setattr(
+        "app.api.routes.pipelines._load_owned_source_set",
+        lambda *_a, **_k: {
+            "source_set_id": "set-1",
+            "project_id": "project-1",
+            "member_count": 2,
+        },
+    )
+
+    result = await get_latest_pipeline_job("markdown_index_builder", "set-1", _user_auth())
+
+    assert result == {"job": None}
+
+
+@pytest.mark.asyncio
 async def test_get_pipeline_job_rejects_unowned_job(monkeypatch):
     from app.api.routes.pipelines import get_pipeline_job
 

@@ -18,8 +18,15 @@ const defaultDeps: SuperuserDeps = {
   createAdminClient,
 };
 
-export async function requireSuperuser(
+type RegistryAccessOptions = {
+  registryTable: string;
+  notConfiguredMessage: string;
+  forbiddenMessage: string;
+};
+
+async function requireRegistryAccess(
   req: Request,
+  options: RegistryAccessOptions,
   deps: SuperuserDeps = defaultDeps,
 ): Promise<SuperuserContext> {
   const authHeader = req.headers.get("Authorization");
@@ -37,32 +44,77 @@ export async function requireSuperuser(
   const admin = deps.createAdminClient();
 
   const { data: anyActiveRows, error: anyActiveError } = await admin
-    .from("registry_superuser_profiles")
-    .select("superuser_profile_id")
+    .from(options.registryTable)
+    .select("email_normalized")
     .eq("is_active", true)
     .limit(1);
   if (anyActiveError) {
-    throw new Error(`Failed to load superuser registry: ${anyActiveError.message}`);
+    throw new Error(`Failed to load registry access: ${anyActiveError.message}`);
   }
   if (!anyActiveRows || anyActiveRows.length === 0) {
-    throw new Error("Superuser access is not configured");
+    throw new Error(options.notConfiguredMessage);
   }
 
   const { data: matchingRows, error: matchError } = await admin
-    .from("registry_superuser_profiles")
-    .select("superuser_profile_id")
+    .from(options.registryTable)
+    .select("email_normalized")
     .eq("email_normalized", email)
     .eq("is_active", true)
     .limit(1);
   if (matchError) {
-    throw new Error(`Failed to evaluate superuser access: ${matchError.message}`);
+    throw new Error(`Failed to evaluate registry access: ${matchError.message}`);
   }
   if (!matchingRows || matchingRows.length === 0) {
-    throw new Error("Forbidden: superuser access required");
+    throw new Error(options.forbiddenMessage);
   }
 
   return {
     userId: user.id,
     email,
   };
+}
+
+export async function requireSuperuser(
+  req: Request,
+  deps: SuperuserDeps = defaultDeps,
+): Promise<SuperuserContext> {
+  return requireRegistryAccess(
+    req,
+    {
+      registryTable: "registry_superuser_profiles",
+      notConfiguredMessage: "Superuser access is not configured",
+      forbiddenMessage: "Forbidden: superuser access required",
+    },
+    deps,
+  );
+}
+
+export async function requireBlockdataAdmin(
+  req: Request,
+  deps: SuperuserDeps = defaultDeps,
+): Promise<SuperuserContext> {
+  return requireRegistryAccess(
+    req,
+    {
+      registryTable: "registry_blockdata_admin_profiles",
+      notConfiguredMessage: "Blockdata Admin access is not configured",
+      forbiddenMessage: "Forbidden: blockdata admin access required",
+    },
+    deps,
+  );
+}
+
+export async function requireAgchainAdmin(
+  req: Request,
+  deps: SuperuserDeps = defaultDeps,
+): Promise<SuperuserContext> {
+  return requireRegistryAccess(
+    req,
+    {
+      registryTable: "registry_agchain_admin_profiles",
+      notConfiguredMessage: "AGChain Admin access is not configured",
+      forbiddenMessage: "Forbidden: agchain admin access required",
+    },
+    deps,
+  );
 }

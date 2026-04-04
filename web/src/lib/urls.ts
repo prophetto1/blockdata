@@ -1,1 +1,1 @@
-export const DOCS_URL = 'https://www.blockdata.run/docs';
+export const DOCS_URL = 'https://blockdata-ct.vercel.app/';

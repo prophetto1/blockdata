@@ -49,7 +49,7 @@ export function useIndexBuilderList() {
       );
     } catch {
       setIndexJobs([]);
-      setError('Unable to load index jobs.');
+      setError('Unable to load index definitions.');
     } finally {
       setIsLoading(false);
     }

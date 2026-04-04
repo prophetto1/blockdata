@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from opentelemetry import metrics, trace
 from pydantic import BaseModel, Field
 
-from app.auth.dependencies import require_superuser, require_user_auth
+from app.auth.dependencies import require_agchain_admin, require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.agchain import (
     connect_model_key,
@@ -156,7 +156,7 @@ async def get_model(
 @router.post("", summary="Create an AG chain model target")
 async def create_model(
     body: ModelTargetCreateRequest,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_agchain_admin),
 ):
     with tracer.start_as_current_span("agchain.models.create") as span:
         model_target_id = create_model_target(user_id=auth.user_id, payload=body.model_dump())
@@ -180,7 +180,7 @@ async def create_model(
 async def patch_model(
     model_target_id: UUID,
     body: ModelTargetUpdateRequest,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_agchain_admin),
 ):
     with tracer.start_as_current_span("agchain.models.update") as span:
         model_target_id_str = str(model_target_id)
@@ -252,7 +252,7 @@ async def disconnect_model_key_route(
 @router.post("/{model_target_id}/refresh-health", summary="Refresh health for an AG chain model target")
 async def refresh_model_health(
     model_target_id: UUID,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_agchain_admin),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.models.refresh_health") as span:

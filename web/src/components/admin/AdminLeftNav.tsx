@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Link, useLocation } from 'react-router-dom';
 import {
   IconServer,
@@ -25,40 +26,59 @@ export type AdminNavSection = {
   items: AdminNavItem[];
 };
 
-export const NAV_SECTIONS: AdminNavSection[] = [
+export const BLOCKDATA_ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
     label: 'CONFIG',
     items: [
-      { label: 'Instance', icon: IconServer, path: '/app/superuser/instance-config' },
-      { label: 'Workers', icon: IconServer, path: '/app/superuser/worker-config' },
-      { label: 'Docling', icon: IconSettings, path: '/app/superuser/parsers-docling' },
+      { label: 'Instance', icon: IconServer, path: '/app/blockdata-admin/instance-config' },
+      { label: 'Workers', icon: IconServer, path: '/app/blockdata-admin/worker-config' },
+      { label: 'Docling', icon: IconSettings, path: '/app/blockdata-admin/parsers-docling' },
     ],
   },
   {
     label: 'OPERATIONS',
     items: [
-      { label: 'AI Providers', icon: IconKey, path: '/app/superuser/ai-providers' },
-      { label: 'Model Roles', icon: IconWand, path: '/app/superuser/model-roles' },
-      { label: 'Connections', icon: IconDatabase, path: '/app/superuser/connections' },
-      { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/superuser/mcp' },
+      { label: 'AI Providers', icon: IconKey, path: '/app/blockdata-admin/ai-providers' },
+      { label: 'Model Roles', icon: IconWand, path: '/app/blockdata-admin/model-roles' },
+      { label: 'Connections', icon: IconDatabase, path: '/app/blockdata-admin/connections' },
+      { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/blockdata-admin/mcp' },
     ],
   },
   {
     label: 'SYSTEM',
     items: [
-      { label: 'Audit History', icon: IconClipboardList, path: '/app/superuser/audit' },
-      { label: 'API Endpoints', icon: IconCode, path: '/app/superuser/api-endpoints' },
-      { label: 'Test Integrations', icon: IconTestPipe, path: '/app/superuser/test-integrations' },
+      { label: 'Audit History', icon: IconClipboardList, path: '/app/blockdata-admin/audit' },
+      { label: 'API Endpoints', icon: IconCode, path: '/app/blockdata-admin/api-endpoints' },
+      { label: 'Test Integrations', icon: IconTestPipe, path: '/app/blockdata-admin/test-integrations' },
     ],
   },
+];
+
+export const SUPERUSER_NAV_SECTIONS: AdminNavSection[] = [
   {
     label: 'DEV ONLY',
     items: [
       { label: 'Operational Readiness', icon: IconServer, path: '/app/superuser/operational-readiness' },
       { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
+      { label: 'Plan Tracker', icon: IconClipboardList, path: '/app/superuser/plan-tracker' },
     ],
   },
 ];
+
+export const AGCHAIN_ADMIN_NAV_SECTIONS: AdminNavSection[] = [
+  {
+    label: '',
+    items: [
+      { label: 'Models', icon: IconWand, path: '/app/agchain-admin/models' },
+    ],
+  },
+];
+
+export function getAdminNavSections(pathname: string): AdminNavSection[] {
+  if (pathname.startsWith('/app/blockdata-admin')) return BLOCKDATA_ADMIN_NAV_SECTIONS;
+  if (pathname.startsWith('/app/agchain-admin')) return AGCHAIN_ADMIN_NAV_SECTIONS;
+  return SUPERUSER_NAV_SECTIONS;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Per-page secondary rail menus (former third rails)                 */
@@ -93,8 +113,8 @@ const WORKER_SECTIONS: SecondarySection[] = [
 ];
 
 export function getSecondaryNav(pathname: string): SecondarySection[] {
-  if (pathname.startsWith('/app/superuser/instance-config')) return INSTANCE_SECTIONS;
-  if (pathname.startsWith('/app/superuser/worker-config')) return WORKER_SECTIONS;
+  if (pathname.startsWith('/app/blockdata-admin/instance-config')) return INSTANCE_SECTIONS;
+  if (pathname.startsWith('/app/blockdata-admin/worker-config')) return WORKER_SECTIONS;
   return [];
 }
 

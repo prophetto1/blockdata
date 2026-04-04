@@ -5,8 +5,11 @@ function formatBytes(value?: number) {
   if (!value || value <= 0) return '0 B';
   if (value < 1024) return `${value} B`;
   const kb = value / 1024;
+  if (kb < 10) return `${kb.toFixed(2)} KB`;
   if (kb < 1024) return `${kb.toFixed(1)} KB`;
-  return `${(kb / 1024).toFixed(1)} MB`;
+  const mb = kb / 1024;
+  if (mb < 10) return `${mb.toFixed(2)} MB`;
+  return `${mb.toFixed(1)} MB`;
 }
 
 export function IndexJobFilesTab({

@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
-import { AdminLeftNav, getSecondaryNav, NAV_SECTIONS } from '@/components/admin/AdminLeftNav';
+import { AdminLeftNav, getAdminNavSections, getSecondaryNav } from '@/components/admin/AdminLeftNav';
 import { LeftRailShadcn as AdminChromeRail } from '@/components/shell/LeftRailShadcn';
 import { styleTokens } from '@/lib/styleTokens';
 
@@ -13,6 +13,7 @@ export function AdminShellLayout() {
   const { pathname } = useLocation();
   const { user, profile, signOut } = useAuth();
   const hasSecondaryRail = getSecondaryNav(pathname).length > 0;
+  const navSections = getAdminNavSections(pathname);
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     if (typeof window === 'undefined') return styleTokens.shell.navbarWidth;
     const stored = window.localStorage.getItem(SIDEBAR_WIDTH_KEY);
@@ -94,7 +95,7 @@ export function AdminShellLayout() {
           userLabel={profile?.display_name || profile?.email || user?.email}
           onSignOut={handleSignOut}
           disableAutoDrill
-          navSections={NAV_SECTIONS}
+          navSections={navSections}
         />
         <div
           role="separator"

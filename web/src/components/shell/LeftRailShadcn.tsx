@@ -10,15 +10,11 @@ import {
   IconDeviceDesktop,
   IconSun,
   IconMoon,
-  IconFileText,
   IconHelp,
   IconBook2,
   IconLogout,
-  IconSettings,
-  IconShieldCog,
 } from '@tabler/icons-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useSuperuserProbe } from '@/hooks/useSuperuserProbe';
 
 import {
   PIPELINE_NAV,
@@ -97,38 +93,35 @@ const THEME_OPTIONS: { value: ThemeChoice; icon: typeof IconSun; label: string }
 function ThemeToggleRow() {
   const { choice, setTheme } = useTheme();
   return (
-    <div className="flex items-center justify-between px-3 py-2">
-      <span className="text-sm">Theme</span>
-      <ToggleGroup.Root
-        value={[choice]}
-        onValueChange={(details) => {
-          const next = details.value[0] as ThemeChoice | undefined;
-          if (next) setTheme(next);
-        }}
-        className="flex items-center gap-0.5 rounded-md border border-border bg-muted/50 p-0.5"
-      >
-        {THEME_OPTIONS.map((opt) => {
-          const Icon = opt.icon;
-          return (
-            <ToggleGroup.Item
-              key={opt.value}
-              value={opt.value}
-              onClick={(e) => e.stopPropagation()}
-              className={cn(
-                'inline-flex h-7 w-7 items-center justify-center rounded transition-colors',
-                choice === opt.value
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-              title={opt.label}
-              aria-label={`Theme: ${opt.label}`}
-            >
-              <Icon size={16} stroke={1.75} />
-            </ToggleGroup.Item>
-          );
-        })}
-      </ToggleGroup.Root>
-    </div>
+    <ToggleGroup.Root
+      value={[choice]}
+      onValueChange={(details) => {
+        const next = details.value[0] as ThemeChoice | undefined;
+        if (next) setTheme(next);
+      }}
+      className="flex items-center gap-0.5 rounded-md border border-border bg-muted/50 p-0.5"
+    >
+      {THEME_OPTIONS.map((opt) => {
+        const Icon = opt.icon;
+        return (
+          <ToggleGroup.Item
+            key={opt.value}
+            value={opt.value}
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              'inline-flex h-7 w-7 items-center justify-center rounded transition-colors',
+              choice === opt.value
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+            title={opt.label}
+            aria-label={`Theme: ${opt.label}`}
+          >
+            <Icon size={16} stroke={1.75} />
+          </ToggleGroup.Item>
+        );
+      })}
+    </ToggleGroup.Root>
   );
 }
 
@@ -139,21 +132,15 @@ function ThemeToggleRow() {
 function AccountMenuContent({
   userLabel,
   docsSiteUrl,
-  onNavigate,
   onSignOut,
-  isSuperuser,
-  onAdminNavigate,
 }: {
   userLabel?: string;
   docsSiteUrl: string;
-  onNavigate: () => void;
   onSignOut?: () => void | Promise<void>;
-  isSuperuser?: boolean;
-  onAdminNavigate?: () => void;
 }) {
   return (
     <MenuContent className="min-w-64 p-0">
-      {/* Account header -- username + email, action icons right */}
+      {/* Account header -- username + email, theme controls right */}
       <div className="flex items-start justify-between px-3 pb-2 pt-3">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-foreground">
@@ -163,43 +150,13 @@ function AccountMenuContent({
             {userLabel ?? 'No email'}
           </p>
         </div>
-        <div className="ml-2 mt-0.5 flex shrink-0 items-center gap-1.5">
-          {isSuperuser && onAdminNavigate && (
-            <button
-              type="button"
-              onClick={onAdminNavigate}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              title="Admin"
-              aria-label="Admin"
-            >
-              <IconShieldCog size={18} stroke={1.75} />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onNavigate}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            title="Settings"
-            aria-label="Settings"
-          >
-            <IconSettings size={18} stroke={1.75} />
-          </button>
+        <div className="ml-3 mt-0.5 shrink-0">
+          <ThemeToggleRow />
         </div>
       </div>
 
       {/* Flat menu list -- label left, icon right (Vercel style) */}
       <div className="py-1.5">
-        {/* Theme row (custom, not a MenuItem) */}
-        <ThemeToggleRow />
-
-        <MenuItem
-          value="changelog"
-          className="flex items-center justify-between px-3 py-2"
-          onClick={() => { /* placeholder */ }}
-        >
-          <span>Changelog</span>
-          <IconFileText size={18} stroke={1.75} className="text-muted-foreground" />
-        </MenuItem>
         <MenuItem
           value="help"
           className="flex items-center justify-between px-3 py-2"
@@ -251,9 +208,6 @@ export function LeftRailShadcn({
   const navigate = useNavigate();
   const location = useLocation();
   const docsSiteUrl = DOCS_URL;
-  // TODO: remove fallback once auth bypass is disabled
-  const superuserProbe = useSuperuserProbe();
-  const isSuperuser = superuserProbe === true || superuserProbe === null;
 
   const activeNav = PIPELINE_NAV;
   const compactNav = PIPELINE_NAV.filter(isNavItem);
@@ -280,6 +234,8 @@ export function LeftRailShadcn({
 
   // Auto-drill based on current route — only activates drills reachable from
   // the current nav style so pipeline-only drills don't fire in classic view.
+  // This shell intentionally mirrors route state into drill state.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (disableAutoDrill) {
       if (activeDrillId !== null) setActiveDrillId(null);
@@ -300,6 +256,7 @@ export function LeftRailShadcn({
       }
     }
   }, [disableAutoDrill, location.pathname, validDrillIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /**
    * Back out of drill view. Only switches the sidebar to the top-level nav --
@@ -746,13 +703,7 @@ export function LeftRailShadcn({
               <AccountMenuContent
                 userLabel={userLabel}
                 docsSiteUrl={docsSiteUrl}
-                onNavigate={() => { navigate('/app/settings'); onNavigate?.(); }}
                 onSignOut={onSignOut}
-                isSuperuser={isSuperuser}
-                onAdminNavigate={() => {
-                  setActiveDrillId('superuser');
-                  navigateTo('/app/superuser');
-                }}
               />
             </MenuPositioner>
           </MenuRoot>
@@ -761,10 +712,6 @@ export function LeftRailShadcn({
     </SidebarProvider>
   );
 }
-
-
-
-
 
 
 

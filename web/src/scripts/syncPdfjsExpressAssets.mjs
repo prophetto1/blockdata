@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, realpathSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,14 +6,45 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..', '..');
 const require = createRequire(import.meta.url);
-const pdfjsExpressDir = path.dirname(require.resolve('@pdftron/pdfjs-express/package.json'));
-const sourceDir = path.resolve(pdfjsExpressDir, 'public');
-const targetDir = path.resolve(projectRoot, 'public', 'vendor', 'pdfjs-express');
+const requiredAssetMarkers = ['ui/index.html', 'core/webviewer-core.min.js'];
 
-if (!existsSync(sourceDir)) {
-  console.error('PDF.js Express assets were not found. Run npm install first.');
-  process.exit(1);
+function hasPdfjsExpressAssets(directory) {
+  return requiredAssetMarkers.every((relativePath) => existsSync(path.join(directory, relativePath)));
 }
 
-mkdirSync(path.dirname(targetDir), { recursive: true });
-cpSync(sourceDir, targetDir, { recursive: true, force: true });
+export function syncPdfjsExpressAssets({
+  packageDir = path.dirname(require.resolve('@pdftron/pdfjs-express/package.json')),
+  destinationDir = path.resolve(projectRoot, 'public', 'vendor', 'pdfjs-express'),
+} = {}) {
+  const sourceDir = path.resolve(packageDir, 'public');
+
+  if (hasPdfjsExpressAssets(sourceDir)) {
+    mkdirSync(path.dirname(destinationDir), { recursive: true });
+    cpSync(sourceDir, destinationDir, { recursive: true, force: true });
+    return { mode: 'copied', sourceDir, destinationDir };
+  }
+
+  if (hasPdfjsExpressAssets(destinationDir)) {
+    console.warn(
+      `PDF.js Express package assets were not found at ${sourceDir}. Using committed assets in ${destinationDir}.`
+    );
+    return { mode: 'fallback', sourceDir, destinationDir };
+  }
+
+  throw new Error(
+    `PDF.js Express assets were not found at ${sourceDir}, and no committed fallback exists at ${destinationDir}.`
+  );
+}
+
+const entryPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+const currentFilePath = fileURLToPath(import.meta.url);
+const isDirectRun = entryPath === currentFilePath;
+
+if (isDirectRun) {
+  try {
+    syncPdfjsExpressAssets();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+}

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Tabs } from '@ark-ui/react/tabs';
 import { AccordionRoot, AccordionItem, AccordionItemTrigger, AccordionItemContent, AccordionItemIndicator } from '@/components/ui/accordion';
 import { Highlight } from '@ark-ui/react/highlight';
 import { JsonTreeView } from '@ark-ui/react/json-tree-view';
+import { useAuth } from '@/auth/AuthContext';
 import {
   IconArrowRight,
   IconUpload,
@@ -259,6 +260,19 @@ function ScrollToTop() {
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (session) {
+    return <Navigate to="/app" replace />;
+  }
 
   return (
     <div className="overflow-hidden">

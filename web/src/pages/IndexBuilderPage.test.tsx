@@ -6,10 +6,6 @@ import IndexBuilderPage from './IndexBuilderPage';
 import type { IndexJobViewModel } from '@/lib/indexJobStatus';
 import type { PipelineJob, PipelineSource } from '@/lib/pipelineService';
 
-/* ------------------------------------------------------------------ */
-/*  Mocks                                                              */
-/* ------------------------------------------------------------------ */
-
 const mockUseIndexBuilderList = vi.fn();
 vi.mock('@/hooks/useIndexBuilderList', () => ({
   useIndexBuilderList: () => mockUseIndexBuilderList(),
@@ -19,10 +15,6 @@ const mockUseIndexBuilderJob = vi.fn();
 vi.mock('@/hooks/useIndexBuilderJob', () => ({
   useIndexBuilderJob: (...args: unknown[]) => mockUseIndexBuilderJob(...args),
 }));
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
 
 beforeAll(() => {
   if (typeof globalThis.ResizeObserver === 'undefined') {
@@ -143,10 +135,6 @@ function renderPage(initialEntry = '/app/pipeline-services/index-builder') {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Tests: List view                                                   */
-/* ------------------------------------------------------------------ */
-
 describe('IndexBuilderPage — list view', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -156,36 +144,65 @@ describe('IndexBuilderPage — list view', () => {
 
   it('renders empty state when no jobs exist', () => {
     renderPage();
-    expect(screen.getByText('No index jobs yet.')).toBeInTheDocument();
-    expect(screen.getByText(/select an index job or create a new one/i)).toBeInTheDocument();
+    expect(screen.getByText('No index definitions yet.')).toBeInTheDocument();
+    expect(screen.getByText(/select a saved definition or create one/i)).toBeInTheDocument();
+    expect(screen.queryByText('Index Definitions')).not.toBeInTheDocument();
   });
 
-  it('renders job rows with name and status', () => {
+  it('renders job rows with definition counts', () => {
     const jobs: IndexJobViewModel[] = [
-      { id: 'set-1', name: 'Legal corpus', status: 'complete', memberCount: 3, totalBytes: 50000, createdAt: '2026-03-30T08:00:00Z', updatedAt: '2026-03-30T08:30:00Z', lastRunAt: '2026-03-30T08:10:00Z', latestJob: null },
-      { id: 'set-2', name: 'Onboarding docs', status: 'ready', memberCount: 1, totalBytes: 12000, createdAt: null, updatedAt: null, lastRunAt: null, latestJob: null },
+      {
+        id: 'set-1',
+        name: 'Legal corpus',
+        status: 'complete',
+        memberCount: 3,
+        totalBytes: 50000,
+        createdAt: '2026-03-30T08:00:00Z',
+        updatedAt: '2026-03-30T08:30:00Z',
+        lastRunAt: '2026-03-30T08:10:00Z',
+        latestJob: null,
+      },
+      {
+        id: 'set-2',
+        name: 'Onboarding docs',
+        status: 'ready',
+        memberCount: 1,
+        totalBytes: 12000,
+        createdAt: null,
+        updatedAt: null,
+        lastRunAt: null,
+        latestJob: null,
+      },
     ];
     mockUseIndexBuilderList.mockReturnValue({ ...defaultListHook(), indexJobs: jobs });
     renderPage();
     expect(screen.getByText('Legal corpus')).toBeInTheDocument();
     expect(screen.getByText('Onboarding docs')).toBeInTheDocument();
+    expect(screen.getByText('3 documents')).toBeInTheDocument();
+    expect(screen.getByText('1 document')).toBeInTheDocument();
   });
 });
-
-/* ------------------------------------------------------------------ */
-/*  Tests: Job detail view                                             */
-/* ------------------------------------------------------------------ */
 
 describe('IndexBuilderPage — job detail view', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     const jobs: IndexJobViewModel[] = [
-      { id: 'set-1', name: 'Test Job', status: 'ready', memberCount: 2, totalBytes: 30000, createdAt: '2026-03-30T08:00:00Z', updatedAt: '2026-03-30T08:30:00Z', lastRunAt: null, latestJob: null },
+      {
+        id: 'set-1',
+        name: 'Test Job',
+        status: 'ready',
+        memberCount: 2,
+        totalBytes: 30000,
+        createdAt: '2026-03-30T08:00:00Z',
+        updatedAt: '2026-03-30T08:30:00Z',
+        lastRunAt: null,
+        latestJob: null,
+      },
     ];
     mockUseIndexBuilderList.mockReturnValue({ ...defaultListHook(), indexJobs: jobs });
     mockUseIndexBuilderJob.mockImplementation((jobId: string | null) => (
       jobId === 'new'
-        ? { ...defaultJobHook(), isNewJob: true, status: 'draft', jobName: 'Untitled index job' }
+        ? { ...defaultJobHook(), isNewJob: true, status: 'draft', jobName: 'Untitled definition' }
         : defaultJobHook()
     ));
   });
@@ -193,10 +210,11 @@ describe('IndexBuilderPage — job detail view', () => {
   it('clicking a job row shows job detail', () => {
     renderPage();
     fireEvent.click(screen.getByText('Test Job'));
-    // After click, job header should appear with the editable name
     expect(screen.getByDisplayValue('Test Job')).toBeInTheDocument();
-    expect(screen.getAllByText('Ready').length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getAllByText('Never run').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2 documents')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: /new definition/i })).toBeInTheDocument();
     expect(screen.getByTestId('location-display')).toHaveTextContent(
       '/app/pipeline-services/index-builder?job=set-1',
     );
@@ -215,29 +233,46 @@ describe('IndexBuilderPage — job detail view', () => {
     renderPage();
     fireEvent.click(screen.getByText('Test Job'));
     expect(screen.getByText('Unable to load this job.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new definition/i })).toBeInTheDocument();
   });
 
   it('renders files and config side by side', () => {
     renderPage();
     fireEvent.click(screen.getByText('Test Job'));
     expect(screen.getByText(/drop markdown files here/i)).toBeInTheDocument();
-    expect(screen.getByText('Processing configuration')).toBeInTheDocument();
+    expect(screen.getByText('Current processing defaults')).toBeInTheDocument();
   });
 
-  it('renders download area', () => {
+  it('renders latest run empty state and download area', () => {
     renderPage();
     fireEvent.click(screen.getByText('Test Job'));
+    expect(screen.getByRole('heading', { name: 'Latest run' })).toBeInTheDocument();
     expect(screen.getByText(/no artifacts yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/save this definition and start a run when you're ready/i)).not.toBeInTheDocument();
   });
 
   it('renders downloads when run is complete', () => {
     const completeJob: PipelineJob = {
-      job_id: 'job-1', pipeline_kind: 'markdown_index_builder', source_set_id: 'set-1',
-      status: 'complete', stage: 'packaging',
+      job_id: 'job-1',
+      pipeline_kind: 'markdown_index_builder',
+      source_set_id: 'set-1',
+      status: 'complete',
+      stage: 'packaging',
       deliverables: [
-        { deliverable_kind: 'lexical_sqlite', filename: 'asset.lexical.sqlite', content_type: 'application/octet-stream', byte_size: 102400, created_at: '2026-03-30T08:20:00Z' },
-        { deliverable_kind: 'semantic_zip', filename: 'asset.semantic.zip', content_type: 'application/zip', byte_size: 204800, created_at: '2026-03-30T08:20:00Z' },
+        {
+          deliverable_kind: 'lexical_sqlite',
+          filename: 'asset.lexical.sqlite',
+          content_type: 'application/octet-stream',
+          byte_size: 102400,
+          created_at: '2026-03-30T08:20:00Z',
+        },
+        {
+          deliverable_kind: 'semantic_zip',
+          filename: 'asset.semantic.zip',
+          content_type: 'application/zip',
+          byte_size: 204800,
+          created_at: '2026-03-30T08:20:00Z',
+        },
       ],
     };
     mockUseIndexBuilderJob.mockReturnValue({
@@ -251,31 +286,28 @@ describe('IndexBuilderPage — job detail view', () => {
     expect(screen.getByText('asset.semantic.zip')).toBeInTheDocument();
   });
 
-  it('back button returns to list', () => {
-    renderPage();
-    fireEvent.click(screen.getByText('Test Job'));
-    expect(screen.getByDisplayValue('Test Job')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Index Jobs' }));
-    // Should be back to list view — the job row reappears
-    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
-    // The detail header input should be gone
-    expect(screen.queryByDisplayValue('Test Job')).not.toBeInTheDocument();
-    expect(screen.getByTestId('location-display')).toHaveTextContent(
-      '/app/pipeline-services/index-builder',
-    );
-  });
 });
 
 describe('IndexBuilderPage — one-page search params', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     const jobs: IndexJobViewModel[] = [
-      { id: 'set-1', name: 'Test Job', status: 'ready', memberCount: 2, totalBytes: 30000, createdAt: '2026-03-30T08:00:00Z', updatedAt: '2026-03-30T08:30:00Z', lastRunAt: null, latestJob: null },
+      {
+        id: 'set-1',
+        name: 'Test Job',
+        status: 'ready',
+        memberCount: 2,
+        totalBytes: 30000,
+        createdAt: '2026-03-30T08:00:00Z',
+        updatedAt: '2026-03-30T08:30:00Z',
+        lastRunAt: null,
+        latestJob: null,
+      },
     ];
     mockUseIndexBuilderList.mockReturnValue({ ...defaultListHook(), indexJobs: jobs });
     mockUseIndexBuilderJob.mockImplementation((jobId: string | null) => {
       if (jobId === 'new') {
-        return { ...defaultJobHook(), isNewJob: true, status: 'draft', jobName: 'Untitled index job' };
+        return { ...defaultJobHook(), isNewJob: true, status: 'draft', jobName: 'Untitled definition' };
       }
 
       if (jobId === 'missing') {
@@ -290,7 +322,7 @@ describe('IndexBuilderPage — one-page search params', () => {
     renderPage('/app/pipeline-services/index-builder?job=set-1');
 
     expect(screen.getByDisplayValue('Test Job')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new definition/i })).toBeInTheDocument();
     expect(screen.getByTestId('location-display')).toHaveTextContent(
       '/app/pipeline-services/index-builder?job=set-1',
     );
@@ -299,15 +331,15 @@ describe('IndexBuilderPage — one-page search params', () => {
   it('opens the draft flow from ?job=new on first render', () => {
     renderPage('/app/pipeline-services/index-builder?job=new');
 
-    expect(screen.getByDisplayValue('Untitled index job')).toBeInTheDocument();
-    expect(screen.getByText('Save draft')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Untitled definition')).toBeInTheDocument();
+    expect(screen.getByText('Save definition')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new definition/i })).toBeInTheDocument();
   });
 
   it('treats a blank job query as list view', () => {
     renderPage('/app/pipeline-services/index-builder?job=');
 
-    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new definition/i })).toBeInTheDocument();
     expect(screen.queryByDisplayValue('Test Job')).not.toBeInTheDocument();
   });
 
@@ -316,7 +348,7 @@ describe('IndexBuilderPage — one-page search params', () => {
 
     expect(screen.getByText('Unable to load this job.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /return to list/i }));
-    expect(screen.getByRole('button', { name: /new index job/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /new definition/i })).toBeInTheDocument();
     expect(screen.getByTestId('location-display')).toHaveTextContent(
       '/app/pipeline-services/index-builder',
     );
@@ -331,7 +363,7 @@ describe('IndexBuilderPage — one-page search params', () => {
           ...defaultJobHook(),
           isNewJob: true,
           status: 'draft',
-          jobName: 'Untitled index job',
+          jobName: 'Untitled definition',
           saveDraft: vi.fn(() => options?.onJobSaved?.('set-created')),
         };
       }
@@ -339,7 +371,7 @@ describe('IndexBuilderPage — one-page search params', () => {
     });
 
     renderPage('/app/pipeline-services/index-builder?job=new');
-    fireEvent.click(screen.getByRole('button', { name: /save draft/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save definition/i }));
 
     expect(refreshList).toHaveBeenCalled();
     expect(screen.getByTestId('location-display')).toHaveTextContent(

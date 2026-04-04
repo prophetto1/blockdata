@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.auth.dependencies import require_superuser
+from app.auth.dependencies import require_blockdata_admin
 from app.auth.principals import AuthPrincipal
 from app.infra.supabase_client import get_supabase_admin
 from app.observability.admin_config_docling_metrics import (
@@ -101,9 +101,9 @@ def _update_docling_blocks_mode(
     }
 
 
-@router.get("", openapi_extra={"x-required-role": "platform_admin"})
+@router.get("", openapi_extra={"x-required-role": "blockdata_admin"})
 async def get_docling_config(
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_blockdata_admin),
     supabase_admin=Depends(get_supabase_admin),
 ):
     _ = auth
@@ -126,10 +126,10 @@ async def get_docling_config(
             raise
 
 
-@router.patch("", openapi_extra={"x-required-role": "platform_admin"})
+@router.patch("", openapi_extra={"x-required-role": "blockdata_admin"})
 async def patch_docling_config(
     payload: UpdateDoclingConfigRequest,
-    auth: AuthPrincipal = Depends(require_superuser),
+    auth: AuthPrincipal = Depends(require_blockdata_admin),
     supabase_admin=Depends(get_supabase_admin),
 ):
     started = perf_counter()
@@ -144,7 +144,7 @@ async def patch_docling_config(
             logger.info(
                 "admin.config.docling.updated",
                 extra={
-                    "actor_role": "platform_admin",
+                    "actor_role": "blockdata_admin",
                     "policy_key": POLICY_KEY,
                     "old_value": None,
                     "new_value": payload.docling_blocks_mode,

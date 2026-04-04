@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
-import { edgeFetch } from '@/lib/edge';
-import { useAuth } from '@/auth/AuthContext';
+import { useAdminSurfaceAccessState } from '@/hooks/useAdminSurfaceAccess';
 
 /**
  * Probes the admin-config endpoint to determine if the current user
@@ -8,26 +6,11 @@ import { useAuth } from '@/auth/AuthContext';
  * Re-probes when the authenticated user changes.
  */
 export function useSuperuserProbe(): boolean | null {
-  const { user } = useAuth();
-  const userId = user?.id ?? null;
-  const [isSuperuser, setIsSuperuser] = useState<boolean | null>(null);
+  const { access, status } = useAdminSurfaceAccessState();
 
-  useEffect(() => {
-    if (!userId) {
-      setIsSuperuser(null);
-      return;
-    }
+  if (status === 'loading' || status === 'idle') {
+    return null;
+  }
 
-    let cancelled = false;
-    edgeFetch('admin-config?audit_limit=0', { method: 'GET' })
-      .then((resp) => {
-        if (!cancelled) setIsSuperuser(resp.ok);
-      })
-      .catch(() => {
-        if (!cancelled) setIsSuperuser(false);
-      });
-    return () => { cancelled = true; };
-  }, [userId]);
-
-  return isSuperuser;
+  return Boolean(access?.superuser);
 }

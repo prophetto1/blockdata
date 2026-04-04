@@ -23,7 +23,7 @@ function renderContent(tabId: string) {
 }
 
 export function Component() {
-  useShellHeaderTitle({ title: 'Superuser Workspace', breadcrumbs: ['Superuser'] });
+  useShellHeaderTitle({ title: 'Blockdata Admin', breadcrumbs: ['Blockdata Admin'] });
 
   return (
     <div className="h-full w-full min-h-0 p-2">

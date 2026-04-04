@@ -23,7 +23,7 @@ type SavedJobSnapshot = {
   selectedSourceUids: string[];
 };
 
-const DEFAULT_JOB_NAME = 'Untitled index job';
+const DEFAULT_JOB_NAME = 'Untitled definition';
 
 function orderSourceUids(sourceSet: PipelineSourceSet) {
   return sourceSet.items

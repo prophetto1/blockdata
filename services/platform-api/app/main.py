@@ -124,7 +124,7 @@ def create_app() -> FastAPI:
     from app.api.routes.conversion import router as conversion_router
     app.include_router(conversion_router)
 
-    # 3. Admin routes (platform_admin role required)
+    # 3. Admin routes (surface-specific admin roles required)
     from app.api.routes.admin_services import router as admin_router
     app.include_router(admin_router)
     from app.api.routes.admin_storage import router as admin_storage_router
@@ -185,7 +185,11 @@ def create_app() -> FastAPI:
     from app.api.routes.auth_oauth import router as auth_oauth_router
     app.include_router(auth_oauth_router)
 
-    # 5j. AG chain model registry (user + superuser, before plugin catch-all)
+    # 5i2. Auth access probe (authenticated, before plugin catch-all)
+    from app.api.routes.auth_access import router as auth_access_router
+    app.include_router(auth_access_router)
+
+    # 5j. AG chain model registry (user + agchain admin, before plugin catch-all)
     from app.api.routes.agchain_models import router as agchain_models_router
     app.include_router(agchain_models_router)
 

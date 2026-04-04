@@ -108,7 +108,7 @@ def _load_deliverables_for_job(admin, job_id: str) -> list[dict]:
 
 
 def _load_latest_job(admin, owner_id: str, pipeline_kind: str, source_set_id: str) -> dict | None:
-    return (
+    response = (
         admin.table("pipeline_jobs")
         .select("*")
         .eq("owner_id", owner_id)
@@ -118,8 +118,10 @@ def _load_latest_job(admin, owner_id: str, pipeline_kind: str, source_set_id: st
         .limit(1)
         .maybe_single()
         .execute()
-        .data
     )
+    if response is None:
+        return None
+    return response.data
 
 
 def _load_owned_job(admin, owner_id: str, job_id: str) -> dict | None:

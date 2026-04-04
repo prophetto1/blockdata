@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 import httpx
 
-from app.auth.dependencies import require_superuser, require_user_auth
+from app.auth.dependencies import require_agchain_admin, require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.agchain.model_registry import list_model_targets
 from app.main import create_app
@@ -24,34 +24,34 @@ def _mock_user_principal():
     )
 
 
-def _mock_superuser_principal():
+def _mock_agchain_admin_principal():
     return AuthPrincipal(
         subject_type="user",
         subject_id="user-1",
-        roles=frozenset({"authenticated", "platform_admin"}),
+        roles=frozenset({"authenticated", "agchain_admin"}),
         auth_source="test",
         email="admin@example.com",
     )
 
 
-def _reject_superuser():
-    raise HTTPException(status_code=403, detail="Role required: platform_admin")
+def _reject_agchain_admin():
+    raise HTTPException(status_code=403, detail="Role required: agchain_admin")
 
 
 @pytest.fixture
 def client():
     app = create_app()
     app.dependency_overrides[require_user_auth] = _mock_user_principal
-    app.dependency_overrides[require_superuser] = _reject_superuser
+    app.dependency_overrides[require_agchain_admin] = _reject_agchain_admin
     yield TestClient(app)
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def superuser_client():
+def agchain_admin_client():
     app = create_app()
     app.dependency_overrides[require_user_auth] = _mock_user_principal
-    app.dependency_overrides[require_superuser] = _mock_superuser_principal
+    app.dependency_overrides[require_agchain_admin] = _mock_agchain_admin_principal
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -302,10 +302,10 @@ def test_create_model_requires_superuser(client):
     assert response.status_code == 403
 
 
-def test_create_model_creates_row_for_superuser(superuser_client):
+def test_create_model_creates_row_for_agchain_admin(agchain_admin_client):
     with patch("app.api.routes.agchain_models.create_model_target") as mock_create:
         mock_create.return_value = "model-1"
-        response = superuser_client.post(
+        response = agchain_admin_client.post(
             "/agchain/models",
             json={
                 "label": "OpenAI GPT 5",
@@ -329,10 +329,10 @@ def test_create_model_creates_row_for_superuser(superuser_client):
     assert response.json() == {"ok": True, "model_target_id": "model-1"}
 
 
-def test_patch_model_validates_provider_changes(superuser_client):
+def test_patch_model_validates_provider_changes(agchain_admin_client):
     with patch("app.api.routes.agchain_models.update_model_target") as mock_update:
         mock_update.return_value = "model-1"
-        response = superuser_client.patch(
+        response = agchain_admin_client.patch(
             f"/agchain/models/{MODEL_ID}",
             json={"label": "Updated label", "enabled": False},
         )
@@ -341,7 +341,7 @@ def test_patch_model_validates_provider_changes(superuser_client):
     assert response.json()["model_target_id"] == "model-1"
 
 
-def test_refresh_health_writes_history_and_updates_status(superuser_client):
+def test_refresh_health_writes_history_and_updates_status(agchain_admin_client):
     with patch("app.api.routes.agchain_models.refresh_model_target_health", new_callable=AsyncMock) as mock_refresh:
         mock_refresh.return_value = {
             "health_status": "healthy",
@@ -350,7 +350,7 @@ def test_refresh_health_writes_history_and_updates_status(superuser_client):
             "message": "probe ok",
             "probe_strategy": "http_openai_models",
         }
-        response = superuser_client.post(f"/agchain/models/{MODEL_ID}/refresh-health")
+        response = agchain_admin_client.post(f"/agchain/models/{MODEL_ID}/refresh-health")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -896,9 +896,9 @@ def test_get_model_rejects_invalid_model_target_id(client):
     assert response.status_code == 422
 
 
-def test_patch_model_rejects_invalid_model_target_id(superuser_client):
+def test_patch_model_rejects_invalid_model_target_id(agchain_admin_client):
     with patch("app.api.routes.agchain_models.update_model_target", side_effect=AssertionError("update should not be reached")):
-        response = superuser_client.patch(
+        response = agchain_admin_client.patch(
             "/agchain/models/not-a-uuid",
             json={"label": "Updated label"},
         )
@@ -906,13 +906,13 @@ def test_patch_model_rejects_invalid_model_target_id(superuser_client):
     assert response.status_code == 422
 
 
-def test_refresh_health_rejects_invalid_model_target_id(superuser_client):
+def test_refresh_health_rejects_invalid_model_target_id(agchain_admin_client):
     with patch(
         "app.api.routes.agchain_models.refresh_model_target_health",
         new_callable=AsyncMock,
         side_effect=AssertionError("refresh should not be reached"),
     ):
-        response = superuser_client.post("/agchain/models/not-a-uuid/refresh-health")
+        response = agchain_admin_client.post("/agchain/models/not-a-uuid/refresh-health")
 
     assert response.status_code == 422
 
