@@ -14,7 +14,7 @@ export function Component() {
 
   return (
     <div className="h-full w-full min-h-0 p-2" data-testid="plan-tracker-shell">
-      <div className="flex h-full min-h-0 overflow-hidden rounded-md border border-border bg-card">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
         <Workbench
           tabs={PLAN_TRACKER_TABS}
           defaultPanes={PLAN_TRACKER_DEFAULT_PANES}

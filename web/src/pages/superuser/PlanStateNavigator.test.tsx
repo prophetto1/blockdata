@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { PlanStateNavigator } from './PlanStateNavigator';
@@ -70,6 +70,7 @@ describe('PlanStateNavigator', () => {
             artifacts: [createPlan().artifacts[0]],
           }),
         ]}
+        hasDirectory
         selectedPlanId={null}
         selectedArtifactId={null}
         onSelectPlan={vi.fn()}
@@ -91,6 +92,7 @@ describe('PlanStateNavigator', () => {
         activeState="under-review"
         onChangeState={vi.fn()}
         planUnits={[plan]}
+        hasDirectory
         selectedPlanId="plan-1"
         selectedArtifactId={plan.artifacts[0].artifactId}
         onSelectPlan={vi.fn()}
@@ -102,5 +104,27 @@ describe('PlanStateNavigator', () => {
 
     expect(screen.getByText('Approval Note')).toBeInTheDocument();
     expect(onSelectArtifact).toHaveBeenCalledWith(plan.artifacts[1].artifactId);
+  });
+
+  it('shows the pre-directory scaffold before a plans directory is connected', () => {
+    const { container } = render(
+      <PlanStateNavigator
+        activeState="under-review"
+        onChangeState={vi.fn()}
+        planUnits={[createPlan()]}
+        hasDirectory={false}
+        selectedPlanId={null}
+        selectedArtifactId={null}
+        onSelectPlan={vi.fn()}
+        onSelectArtifact={vi.fn()}
+      />,
+    );
+
+    const navigator = container.querySelector('[data-testid="plan-state-navigator"]');
+    expect(navigator).not.toBeNull();
+    const scoped = within(navigator as HTMLElement);
+
+    expect(scoped.getByText('Open the plans directory')).toBeInTheDocument();
+    expect(scoped.queryByText('Refactor Database Schema')).not.toBeInTheDocument();
   });
 });

@@ -144,7 +144,7 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
   const [pendingAction, setPendingAction] = useState<PendingWorkflowAction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [viewMode, setViewMode] = useState<MdxViewMode>('rich-text');
+  const [viewMode] = useState<MdxViewMode>('rich-text');
 
   const directoryHandleRef = useRef<FileSystemDirectoryHandle | null>(null);
   const artifactNodeMapRef = useRef<Map<string, FsNode>>(new Map());
@@ -237,6 +237,7 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
       try {
         const tree = await readDirectory(handle);
         const markdownNodes = flattenMarkdownNodes(tree);
+        const artifactNodes = new Map<string, FsNode>();
         const documents = await Promise.all(
           markdownNodes.map(async (node) => {
             const content = await readFileContent(node.handle as FileSystemFileHandle);
@@ -245,6 +246,11 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
         );
 
         const grouped = groupPlanDocuments(documents.map(({ path, content }) => ({ path, content })));
+
+        for (const document of documents) {
+          const pathArtifactId = `${document.path.replace(/\\/g, '/')}`;
+          artifactNodes.set(pathArtifactId, document.node);
+        }
 
         const nodeMap = new Map<string, FsNode>();
         for (const plan of grouped) {
@@ -483,104 +489,97 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
   }, [loadFromHandle, selectedArtifact, selectedPlan]);
 
   const executeWorkflowAction = useCallback(async (actionId: WorkflowActionId) => {
-    try {
-      if (!selectedPlan || !selectedArtifact || !isActionAvailable(actionId)) {
-        return false;
-      }
+    if (!selectedPlan || !selectedArtifact || !isActionAvailable(actionId)) {
+      return false;
+    }
 
-      const timestamp = new Date().toISOString();
-      const selectedArtifactMetadata = buildNormalizedMetadata(
-        selectedArtifact,
-        isTrackerMetadataComplete(selectedArtifact) ? { updatedAt: timestamp } : { updatedAt: timestamp },
-        selectedPlan,
-      );
+    const timestamp = new Date().toISOString();
+    const selectedArtifactMetadata = buildNormalizedMetadata(
+      selectedArtifact,
+      isTrackerMetadataComplete(selectedArtifact) ? { updatedAt: timestamp } : { updatedAt: timestamp },
+      selectedPlan,
+    );
 
-      if (!isTrackerMetadataComplete(selectedArtifact)) {
-        await writeExistingArtifact(selectedArtifact, selectedArtifactMetadata, documentContent);
-      }
+    if (!isTrackerMetadataComplete(selectedArtifact)) {
+      await writeExistingArtifact(selectedArtifact, selectedArtifactMetadata, documentContent);
+    }
 
-      const targetPlanArtifact =
-        resolveControllingArtifact(selectedPlan) ?? latestPlanArtifact(selectedPlan.artifacts) ?? selectedArtifact;
-      const planStatus = workflowPlanStatus(actionId);
-      const artifactType = workflowArtifactType(actionId);
-      const artifactVersion = targetPlanArtifact.version;
+    const targetPlanArtifact = resolveControllingArtifact(selectedPlan) ?? latestPlanArtifact(selectedPlan.artifacts) ?? selectedArtifact;
+    const planStatus = workflowPlanStatus(actionId);
+    const artifactType = workflowArtifactType(actionId);
+    const artifactVersion = targetPlanArtifact.version;
 
-      const updatedPlanMetadata = buildNormalizedMetadata(
-        targetPlanArtifact,
-        { status: planStatus, updatedAt: timestamp },
-        selectedPlan,
-      );
-      const targetPlanBody =
-        targetPlanArtifact.artifactId === selectedArtifact.artifactId ? documentContent : targetPlanArtifact.body;
-      await writeExistingArtifact(targetPlanArtifact, updatedPlanMetadata, targetPlanBody);
+    const updatedPlanMetadata = buildNormalizedMetadata(
+      targetPlanArtifact,
+      { status: planStatus, updatedAt: timestamp },
+      selectedPlan,
+    );
+    const targetPlanBody =
+      targetPlanArtifact.artifactId === selectedArtifact.artifactId ? documentContent : targetPlanArtifact.body;
+    await writeExistingArtifact(targetPlanArtifact, updatedPlanMetadata, targetPlanBody);
 
-      if (artifactType === 'plan') {
-        if (directoryHandleRef.current) {
-          await loadFromHandle(
-            directoryHandleRef.current,
-            selectedPlan.planId,
-            targetPlanArtifact.artifactId,
-          );
-        }
-
-        return true;
-      }
-
-      const selectedArtifactNode = artifactNodeMapRef.current.get(selectedArtifact.artifactId);
-      if (!selectedArtifactNode || selectedArtifactNode.kind !== 'file' || !selectedArtifactNode.parentHandle) {
-        throw new Error('Selected artifact parent directory is not writable.');
-      }
-
-      const sequence = nextArtifactSequence(selectedPlan.artifacts, artifactType, artifactVersion);
-      const artifactTitle = workflowArtifactTitle(actionId, selectedPlan.title, artifactVersion, sequence);
-      const artifactBody = buildWorkflowArtifactBody(actionId, artifactTitle, selectedPlan.title);
-      const artifactStatus = workflowArtifactStatus(actionId);
-
-      const fileName = buildArtifactFilename({
-        planStem: derivePlanStem(targetPlanArtifact.path),
-        artifactType,
-        version: artifactVersion,
-        sequence,
-      });
-      const newHandle = await createFile(selectedArtifactNode.parentHandle, fileName);
-      const artifactMetadata: PlanTrackerMetadata = {
-        title: artifactTitle,
-        description: `${artifactTitle} for ${selectedPlan.title}.`,
-        planId: selectedPlan.planId,
-        artifactType,
-        status: artifactStatus,
-        version: artifactVersion,
-        createdAt: timestamp,
-        productArea: selectedPlan.productArea ?? selectedArtifact.metadata.productArea,
-        functionalArea: selectedPlan.functionalArea ?? selectedArtifact.metadata.functionalArea,
-        productL1: selectedArtifact.metadata.productL1,
-        productL2: selectedArtifact.metadata.productL2,
-        productL3: selectedArtifact.metadata.productL3,
-        updatedAt: timestamp,
-        priority: selectedArtifact.metadata.priority,
-        owner: selectedArtifact.metadata.owner,
-        reviewer: selectedArtifact.metadata.reviewer,
-        trackerId: selectedArtifact.metadata.trackerId,
-        tags: selectedArtifact.metadata.tags,
-        relatedArtifacts: [targetPlanArtifact.path],
-        notes: selectedArtifact.metadata.notes,
-      };
-      await writeFileContent(newHandle, serializePlanTrackerDocument(artifactMetadata, artifactBody));
-
+    if (artifactType === 'plan') {
       if (directoryHandleRef.current) {
         await loadFromHandle(
           directoryHandleRef.current,
           selectedPlan.planId,
-          `${selectedPlan.planId}:${siblingPath(targetPlanArtifact.path, fileName)}`,
+          targetPlanArtifact.artifactId,
         );
       }
 
       return true;
-    } catch (err) {
-      console.error('[usePlanTracker] workflow action failed', err);
-      setError(err instanceof Error ? err.message : 'Workflow action failed');
-      return false;
     }
+
+    const selectedArtifactNode = artifactNodeMapRef.current.get(selectedArtifact.artifactId);
+    if (!selectedArtifactNode || selectedArtifactNode.kind !== 'file' || !selectedArtifactNode.parentHandle) {
+      throw new Error('Selected artifact parent directory is not writable.');
+    }
+
+    const sequence = nextArtifactSequence(selectedPlan.artifacts, artifactType, artifactVersion);
+    const artifactTitle = workflowArtifactTitle(actionId, selectedPlan.title, artifactVersion, sequence);
+    const artifactBody = buildWorkflowArtifactBody(actionId, artifactTitle, selectedPlan.title);
+    const artifactStatus = workflowArtifactStatus(actionId);
+
+    const fileName = buildArtifactFilename({
+      planStem: derivePlanStem(targetPlanArtifact.path),
+      artifactType,
+      version: artifactVersion,
+      sequence,
+    });
+    const newHandle = await createFile(selectedArtifactNode.parentHandle, fileName);
+    const artifactMetadata: PlanTrackerMetadata = {
+      title: artifactTitle,
+      description: `${artifactTitle} for ${selectedPlan.title}.`,
+      planId: selectedPlan.planId,
+      artifactType,
+      status: artifactStatus,
+      version: artifactVersion,
+      createdAt: timestamp,
+      productArea: selectedPlan.productArea ?? selectedArtifact.metadata.productArea,
+      functionalArea: selectedPlan.functionalArea ?? selectedArtifact.metadata.functionalArea,
+      productL1: selectedArtifact.metadata.productL1,
+      productL2: selectedArtifact.metadata.productL2,
+      productL3: selectedArtifact.metadata.productL3,
+      updatedAt: timestamp,
+      priority: selectedArtifact.metadata.priority,
+      owner: selectedArtifact.metadata.owner,
+      reviewer: selectedArtifact.metadata.reviewer,
+      trackerId: selectedArtifact.metadata.trackerId,
+      tags: selectedArtifact.metadata.tags,
+      relatedArtifacts: [targetPlanArtifact.path],
+      notes: selectedArtifact.metadata.notes,
+    };
+    await writeFileContent(newHandle, serializePlanTrackerDocument(artifactMetadata, artifactBody));
+
+    if (directoryHandleRef.current) {
+      await loadFromHandle(
+        directoryHandleRef.current,
+        selectedPlan.planId,
+        `${selectedPlan.planId}:${siblingPath(targetPlanArtifact.path, fileName)}`,
+      );
+    }
+
+    return true;
   }, [buildNormalizedMetadata, documentContent, isActionAvailable, loadFromHandle, selectedArtifact, selectedPlan, writeExistingArtifact]);
 
   const requestWorkflowAction = useCallback((actionId: WorkflowActionId) => {
@@ -601,7 +600,8 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
       return false;
     }
 
-    return await executeWorkflowAction(actionId);
+    await executeWorkflowAction(actionId);
+    return true;
   }, [executeWorkflowAction, requestWorkflowAction]);
 
   const saveCurrentDocument = useCallback(async () => {
@@ -642,33 +642,21 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
     if (choice === 'discard') {
       setDocumentContentState(originalContent);
       setPendingAction(null);
-      const ok = await executeWorkflowAction(actionId);
+      await executeWorkflowAction(actionId);
       return {
         actionId,
-        shouldProceed: ok,
+        shouldProceed: true,
         resolution: 'discard',
       };
     }
 
-    try {
-      await saveCurrentDocument();
-    } catch (err) {
-      console.error('[usePlanTracker] save before workflow', err);
-      setError(err instanceof Error ? err.message : 'Failed to save document');
-      setPendingAction(null);
-      return {
-        actionId,
-        shouldProceed: false,
-        resolution: 'save',
-      };
-    }
-
+    await saveCurrentDocument();
     setPendingAction(null);
-    const ok = await executeWorkflowAction(actionId);
+    await executeWorkflowAction(actionId);
     setPendingAction(null);
     return {
       actionId,
-      shouldProceed: ok,
+      shouldProceed: true,
       resolution: 'save',
     };
   }, [executeWorkflowAction, originalContent, pendingAction, saveCurrentDocument]);
@@ -711,6 +699,7 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
             selectedArtifactId={selectedArtifact?.artifactId ?? null}
             onSelectPlan={selectPlan}
             onSelectArtifact={selectArtifact}
+            onOpenPlansDirectory={() => void openPlansDirectory()}
           />
         );
       }
@@ -725,11 +714,9 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
             viewMode={viewMode}
             dirty={dirty}
             hasDirectory={hasDirectory}
-            loading={loading}
             onChange={setDocumentContent}
             onSave={() => void saveCurrentDocument()}
             onOpenPlansDirectory={() => void openPlansDirectory()}
-            onViewModeChange={setViewMode}
           />
         );
       }
@@ -780,7 +767,6 @@ export function usePlanTracker(storeKey = 'plan-tracker-dir'): UsePlanTrackerRes
       setDocumentContent,
       showLegacyPaneFallback,
       viewMode,
-      setViewMode,
     ],
   );
 

@@ -377,6 +377,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="/app/superuser/operational-readiness" replace /> },
               { path: 'operational-readiness', lazy: () => import('@/pages/superuser/SuperuserOperationalReadiness') },
               { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
+              { path: 'skill-driven-dev', lazy: () => import('@/pages/superuser/SkillDrivenDev') },
               { path: 'plan-tracker', lazy: () => import('@/pages/superuser/PlanTracker') },
             ],
           },

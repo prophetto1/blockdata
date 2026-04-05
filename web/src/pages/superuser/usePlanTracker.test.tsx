@@ -171,6 +171,10 @@ describe('usePlanTracker', () => {
     return render(<>{result.current.renderContent('metadata')}</>);
   }
 
+  function mountDocument(result: { current: ReturnType<typeof usePlanTracker> }) {
+    return render(<>{result.current.renderContent('document')}</>);
+  }
+
   function latestCreatedFile() {
     expect(createdFiles.length).toBeGreaterThan(0);
     return createdFiles.at(-1)!;
@@ -358,6 +362,16 @@ describe('usePlanTracker', () => {
     expect(result.current.selectedPlan).toBeNull();
     expect(result.current.selectedArtifact).toBeNull();
     expect(result.current.documentContent).toBe('');
+
+    const documentView = mountDocument(result);
+    expect(documentView.getByText('Document Workspace')).toBeInTheDocument();
+    expect(documentView.getByText('No artifact selected')).toBeInTheDocument();
+    documentView.unmount();
+
+    const metadataView = mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
+    expect(metadataView.getByTestId('plan-metadata-pane-stub')).toBeInTheDocument();
+    metadataView.unmount();
   });
 
   it('passes lifecycle-gated actions with no legacy fallback vocabulary into the metadata pane', async () => {

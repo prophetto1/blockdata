@@ -1,4 +1,0 @@
-interface:
-  display_name: "Frontend Foundation Audit"
-  short_description: "Audit shell, tokens, shared components, and page-pattern conflicts before writing a canonical frontend foundation contract."
-  default_prompt: "Use frontend-foundation-audit to map this repo's frontend foundation, group conflicts into discussion-ready bundles, and emit a deterministic audit report."
