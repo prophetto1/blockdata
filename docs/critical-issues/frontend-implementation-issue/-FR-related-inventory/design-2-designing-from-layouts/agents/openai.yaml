@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design From Layout Contract"
+  short_description: "Generate fixed page reproduction contracts"
+  default_prompt: "Use $designing-from-layout-contract to turn a measured layout capture into a fixed page reproduction contract."
