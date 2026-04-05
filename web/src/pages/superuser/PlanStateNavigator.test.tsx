@@ -35,7 +35,7 @@ function createPlan(overrides: Partial<PlanUnit> = {}): PlanUnit {
         artifactId: 'plan-1:/docs/plans/refactor-database-schema.v1.approval.1.md',
         planId: 'plan-1',
         title: 'Approval Note',
-        artifactType: 'approval',
+        artifactType: 'approval-note',
         status: 'approved',
         version: 1,
         path: 'docs/plans/refactor-database-schema.v1.approval.1.md',
@@ -44,7 +44,7 @@ function createPlan(overrides: Partial<PlanUnit> = {}): PlanUnit {
         metadata: {
           title: 'Approval Note',
           planId: 'plan-1',
-          artifactType: 'approval',
+          artifactType: 'approval-note',
           status: 'approved',
           version: 1,
           updatedAt: '2026-04-04T00:00:00Z',

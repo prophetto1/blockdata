@@ -161,12 +161,12 @@ describe('usePlanTracker', () => {
     path: string;
   }>;
 
-  function mountNavigator(result: ReturnType<typeof renderHook<typeof usePlanTracker>>['result']) {
+  function mountNavigator(result: { current: ReturnType<typeof usePlanTracker> }) {
     capturedNavigatorProps = null;
     return render(<>{result.current.renderContent('plan-state')}</>);
   }
 
-  function mountMetadata(result: ReturnType<typeof renderHook<typeof usePlanTracker>>['result']) {
+  function mountMetadata(result: { current: ReturnType<typeof usePlanTracker> }) {
     capturedMetadataProps = null;
     return render(<>{result.current.renderContent('metadata')}</>);
   }
