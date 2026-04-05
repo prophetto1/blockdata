@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extract Platform Page Contract"
+  short_description: "Build one-page platform contract packages"
+  default_prompt: "Use $extracting-platform-page-contract to turn one measured page into a deterministic platform design package."

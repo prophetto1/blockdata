@@ -1,0 +1,731 @@
+{
+  "repoName": "writing-system/web",
+  "auditDate": "2026-04-04",
+  "scope": {
+    "repoRoot": "web",
+    "capturesReviewed": [],
+    "tokenFilesReviewed": [
+      "web/src/tailwind.css",
+      "web/src/theme.css",
+      "web/src/lib/color-contract.ts",
+      "web/src/lib/font-contract.ts",
+      "web/src/lib/icon-contract.ts",
+      "web/src/lib/iconTokens.ts",
+      "web/src/lib/toolbar-contract.ts",
+      "web/src/lib/styleTokens.ts",
+      "web/src/scalar-host/theme-contract.ts",
+      "web/src/styles/mdxeditor-overrides.css",
+      "web/src/lib/agGridTheme.ts",
+      "web/src/lib/codemirrorTheme.ts"
+    ],
+    "majorDirectories": [
+      "web/src/components",
+      "web/src/pages",
+      "web/src/lib",
+      "web/src/styles",
+      "web/src/auth",
+      "web/src/hooks",
+      "web/src/contexts",
+      "web/src/scalar-host"
+    ],
+    "exclusions": [
+      "web/src/components/marketing",
+      "web/src/pages/experiments"
+    ],
+    "surfaceAreaEstimate": {
+      "shellFiles": 30,
+      "tokenFiles": 30,
+      "sharedComponents": 273,
+      "pageFiles": 178
+    },
+    "samplingMode": "sampled",
+    "samplingNotes": "Shell, tokens, and navigation audited in full. Page patterns sampled by structural type (list, detail, settings, workspace, admin). 273 shared components — sampled by directory (ui, shell, common, layout, flows, agchain, admin). Feature-specific one-offs (pipelines, documents, blocks, kv, agents, mcp) skipped unless they surfaced a foundation-level conflict."
+  },
+  "shellOwnership": [
+    {
+      "region": "top-header",
+      "ownerFiles": ["web/src/components/shell/TopCommandBar.tsx"],
+      "runtimeRole": "Fixed top bar with search, project switcher, theme toggle. Shared across AppLayout and AgchainShellLayout.",
+      "stateOwner": "web/src/components/shell/HeaderCenterContext.tsx",
+      "clarityRating": "clear",
+      "notes": "Single implementation. Pages inject title/actions via HeaderCenterProvider context.",
+      "evidence": [
+        "web/src/components/shell/TopCommandBar.tsx renders <header> with fixed position",
+        "web/src/components/shell/HeaderCenterContext.tsx provides useHeaderCenter() hook",
+        "TopCommandBar imported by AppLayout.tsx:~line 8 and AgchainShellLayout.tsx:~line 6"
+      ]
+    },
+    {
+      "region": "left-rail-primary",
+      "ownerFiles": ["web/src/components/shell/LeftRailShadcn.tsx"],
+      "runtimeRole": "Main app sidebar navigation with collapsible/compact mode, project switcher, workspace selector",
+      "stateOwner": "web/src/components/shell/nav-config.ts",
+      "clarityRating": "clear",
+      "notes": "Single primary rail for /app/* routes under AppLayout. Other shell layouts use section-specific secondary rails instead.",
+      "evidence": [
+        "web/src/components/shell/LeftRailShadcn.tsx renders <aside> with nav links",
+        "web/src/components/shell/nav-config.ts defines navigation structure and drill configs",
+        "LeftRailShadcn imported only by AppLayout.tsx"
+      ]
+    },
+    {
+      "region": "left-rail-secondary",
+      "ownerFiles": [
+        "web/src/components/admin/AdminLeftNav.tsx",
+        "web/src/components/agchain/AgchainLeftNav.tsx",
+        "web/src/components/agchain/AgchainBenchmarkNav.tsx",
+        "web/src/components/agchain/settings/AgchainSettingsNav.tsx",
+        "web/src/components/flows/FlowsDetailRail.tsx"
+      ],
+      "runtimeRole": "Section-specific secondary navigation rails for admin, AGChain, and flows detail surfaces",
+      "stateOwner": null,
+      "clarityRating": "ambiguous",
+      "notes": "Five different secondary nav components with no shared base, contract, or width token. Each section builds its own rail from scratch. AdminLeftNav serves superuser + blockdata-admin + agchain-admin. AgchainLeftNav serves /app/agchain/*. FlowsDetailRail serves /app/flows/:id/*. Two AGChain sub-navs (Benchmark, Settings) add a third level.",
+      "evidence": [
+        "web/src/components/admin/AdminLeftNav.tsx renders admin section links",
+        "web/src/components/agchain/AgchainLeftNav.tsx renders AGChain workspace links",
+        "web/src/components/flows/FlowsDetailRail.tsx renders flow detail tabs as rail links",
+        "web/src/components/agchain/AgchainBenchmarkNav.tsx and AgchainSettingsNav.tsx add sub-section navs",
+        "No shared SecondaryRail base component or width token found"
+      ]
+    },
+    {
+      "region": "right-rail",
+      "ownerFiles": ["web/src/components/shell/RightRailShell.tsx"],
+      "runtimeRole": "Right panel container for help content and AI chat. Toggleable, with detachable chat window.",
+      "stateOwner": "web/src/components/shell/RightRailContext.tsx",
+      "clarityRating": "clear",
+      "notes": "Single implementation with clear context provider. Persists open/closed and active tab to localStorage.",
+      "evidence": [
+        "web/src/components/shell/RightRailShell.tsx renders <aside> for right panel",
+        "web/src/components/shell/RightRailContext.tsx manages open/close, active tab, chat detach state",
+        "web/src/components/shell/RightRailChatPanel.tsx and HomeHelpRail.tsx are content panels, not competing shells"
+      ]
+    },
+    {
+      "region": "content-area",
+      "ownerFiles": [
+        "web/src/components/layout/AppLayout.tsx",
+        "web/src/components/layout/AdminShellLayout.tsx",
+        "web/src/components/layout/AgchainShellLayout.tsx",
+        "web/src/components/layout/FlowsShellLayout.tsx"
+      ],
+      "runtimeRole": "Four authenticated shell layouts each frame <main> differently: AppLayout uses AppPageShell for constrained/fluid modes; AdminShellLayout uses fixed two-column; AgchainShellLayout mirrors AppLayout with AGChain workspace context; FlowsShellLayout uses full-height fixed sidebar + content.",
+      "stateOwner": null,
+      "clarityRating": "ambiguous",
+      "notes": "AppLayout and AgchainShellLayout overlap significantly (both have header + left rail + optional right rail + content). AdminShellLayout and FlowsShellLayout serve genuinely different layouts. The overlap between AppLayout and AgchainShellLayout is the main ambiguity.",
+      "evidence": [
+        "web/src/components/layout/AppLayout.tsx wraps /app/* routes with TopCommandBar + LeftRailShadcn + RightRailShell",
+        "web/src/components/layout/AgchainShellLayout.tsx wraps /app/agchain/* with TopCommandBar + AgchainLeftNav + content",
+        "web/src/components/layout/AdminShellLayout.tsx wraps /app/superuser/*, /app/blockdata-admin/*, /app/agchain-admin/*",
+        "web/src/components/layout/FlowsShellLayout.tsx wraps /app/flows/:namespace/:flowId/*",
+        "web/src/components/layout/AppPageShell.tsx provides constrained/fluid content modes inside AppLayout"
+      ]
+    },
+    {
+      "region": "public-shells",
+      "ownerFiles": [
+        "web/src/components/layout/MarketingLayout.tsx",
+        "web/src/components/layout/PublicFullBleedLayout.tsx",
+        "web/src/components/layout/PublicLayout.tsx"
+      ],
+      "runtimeRole": "Three public-facing layouts: MarketingLayout for landing/integrations pages, PublicFullBleedLayout for login/register, PublicLayout for auth callbacks. All share PublicNav header.",
+      "stateOwner": null,
+      "clarityRating": "clear",
+      "notes": "Intentionally separate layouts for distinct public surfaces. No overlap or conflict — each serves a unique route group.",
+      "evidence": [
+        "web/src/router.tsx assigns MarketingLayout to /, /integrations",
+        "web/src/router.tsx assigns PublicFullBleedLayout to /login, /register, /early-access",
+        "web/src/router.tsx assigns PublicLayout to /auth/callback, /auth/welcome"
+      ]
+    }
+  ],
+  "tokenInventory": [
+    {
+      "source": "CSS custom properties (tailwind.css)",
+      "files": ["web/src/tailwind.css"],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": true,
+      "lightCoverage": "full",
+      "darkCoverage": "full",
+      "driftNotes": "Primary token source. 100+ CSS variables with complete light/dark via :root and :root[data-theme='light']. Also contains @theme inline mapping for Tailwind utility generation. Includes shell layout dimension tokens (header height, navbar width, content max-width).",
+      "evidence": [
+        "web/src/tailwind.css:1-317 defines --background, --foreground, --card, --primary, --secondary, --muted, --border, --accent, --ring, --destructive and 50+ additional tokens",
+        "Dark mode defaults in :root, light overrides in :root[data-theme='light']"
+      ]
+    },
+    {
+      "source": "AG Grid / data grid theming (theme.css)",
+      "files": ["web/src/theme.css"],
+      "semanticTokensPresent": false,
+      "rawValuesPresent": true,
+      "lightCoverage": "partial",
+      "darkCoverage": "partial",
+      "driftNotes": "2,235 lines of AG Grid and react-data-grid (rdg) customization. Uses color-mix() utilities and references some CSS custom properties but also contains raw values. Grid-specific, not foundation-wide.",
+      "evidence": [
+        "web/src/theme.css:1-2235 defines block viewer grid density, column alignment, cell styling, rdg styling"
+      ]
+    },
+    {
+      "source": "TypeScript color contract",
+      "files": ["web/src/lib/color-contract.ts"],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": true,
+      "lightCoverage": "full",
+      "darkCoverage": "full",
+      "driftNotes": "Exports SURFACE_TOKENS, TEXT_TOKENS, BORDER_TOKENS, BRAND_TOKENS, ADMIN_CONFIG_TOKENS with hex pairs + cssVar references. Used by superadmin Design Standards page for live comparison. Should be the TypeScript accessor for CSS tokens, not an independent source.",
+      "evidence": [
+        "web/src/lib/color-contract.ts defines day/night pairs with cssVar references like '--background'",
+        "Used by superadmin Design Standards page for live comparison"
+      ]
+    },
+    {
+      "source": "TypeScript font contract",
+      "files": ["web/src/lib/font-contract.ts"],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": true,
+      "lightCoverage": "full",
+      "darkCoverage": "full",
+      "driftNotes": "FONT_FAMILIES, FONT_SIZES (2xs-4xl), FONT_WEIGHTS, FONT_RECIPES (11 usage recipes mapping contexts to Tailwind classes). Clean, well-structured.",
+      "evidence": [
+        "web/src/lib/font-contract.ts exports FONT_FAMILIES, FONT_SIZES, FONT_WEIGHTS, FONT_STANDARD, FONT_RECIPES"
+      ]
+    },
+    {
+      "source": "TypeScript icon contract",
+      "files": ["web/src/lib/icon-contract.ts", "web/src/lib/iconTokens.ts"],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": false,
+      "lightCoverage": "full",
+      "darkCoverage": "full",
+      "driftNotes": "Two icon token files: icon-contract.ts (ICON_SIZES, ICON_CONTEXT_SIZE, ICON_STROKES, ICON_TONE_CLASS) and iconTokens.ts (defineIconToken factory for shell icons). icon-contract.ts notes Hugeicons migration in progress. iconTokens.ts may be superseded by migration.",
+      "evidence": [
+        "web/src/lib/icon-contract.ts defines ICON_SIZES xs-xxl, ICON_STROKES, ICON_TONE_CLASS",
+        "web/src/lib/iconTokens.ts defines ICON_TOKENS with defineIconToken factory",
+        "icon-contract.ts ICON_STANDARD notes: Hugeicons migration in progress"
+      ]
+    },
+    {
+      "source": "TypeScript toolbar contract",
+      "files": ["web/src/lib/toolbar-contract.ts"],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": false,
+      "lightCoverage": "full",
+      "darkCoverage": "full",
+      "driftNotes": null,
+      "evidence": [
+        "web/src/lib/toolbar-contract.ts defines TOOLBAR_BUTTON, TOOLBAR_BUTTON_STATES, TOOLBAR_STRIP, TOOLBAR_BUTTON_BASE"
+      ]
+    },
+    {
+      "source": "Runtime style tokens (styleTokens.ts)",
+      "files": ["web/src/lib/styleTokens.ts"],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": true,
+      "lightCoverage": "partial",
+      "darkCoverage": "partial",
+      "driftNotes": "Runtime object with shell dimensions (header 60px/44px, navbar 220px/60px), grid light/dark color objects with raw hex, marketing tokens, admin nav width. Overlaps with CSS custom properties for shell dimensions. Grid colors duplicate what agGridTheme.ts consumes.",
+      "evidence": [
+        "web/src/lib/styleTokens.ts exports shell.headerHeight (60px), shell.navbarWidth (220px), grid.dark/light objects with hex colors",
+        "Shell dimension tokens also defined as CSS custom properties in tailwind.css"
+      ]
+    },
+    {
+      "source": "Scalar host theme bridge",
+      "files": ["web/src/scalar-host/theme-contract.ts"],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": false,
+      "lightCoverage": "full",
+      "darkCoverage": "full",
+      "driftNotes": "Maps 40+ shell tokens to Scalar API client tokens. Intentional bridge, not a competing source. Clean.",
+      "evidence": [
+        "web/src/scalar-host/theme-contract.ts maps --primary to --scalar-color-accent, --background to --scalar-background-1, etc."
+      ]
+    },
+    {
+      "source": "Raw hex bypasses in UI primitives",
+      "files": [
+        "web/src/components/ui/accordion.tsx",
+        "web/src/components/ui/checkbox.tsx",
+        "web/src/components/ui/collapsible.tsx",
+        "web/src/components/ui/combobox.tsx",
+        "web/src/components/ui/dialog.tsx",
+        "web/src/components/ui/file-upload.tsx",
+        "web/src/components/ui/menu.tsx"
+      ],
+      "semanticTokensPresent": false,
+      "rawValuesPresent": true,
+      "lightCoverage": "none",
+      "darkCoverage": "partial",
+      "driftNotes": "7 Ark UI primitive wrappers use hardcoded hex: border-[#3a3a3a] (dark border), hover:bg-[#222221] (dark hover), outline-[#e2503f] (focus ring ~primary). These bypass --border, --accent, --primary tokens entirely. No light mode equivalents — dark-only hex values. This is the primary token system drift.",
+      "evidence": [
+        "web/src/components/ui/accordion.tsx uses border-[#3a3a3a] and outline-[#e2503f]",
+        "web/src/components/ui/combobox.tsx uses border-[#3a3a3a], data-[highlighted]:bg-[#222221], data-[state=checked]:text-[#f47a5c]",
+        "web/src/components/ui/dialog.tsx uses border-[#3a3a3a], hover:bg-[#222221], outline-[#e2503f]",
+        "7 files total with same hex patterns"
+      ]
+    }
+  ],
+  "componentContracts": [
+    {
+      "role": "data-grid",
+      "canonicalCandidates": ["web/src/components/blocks/BlockViewerGridRDG.tsx"],
+      "competingImplementations": ["web/src/components/marketing/MarketingGrid.tsx", "web/src/pages/settings/SettingsGridSample.tsx"],
+      "ownerFiles": ["web/src/components/blocks/BlockViewerGridRDG.tsx"],
+      "usageNotes": "react-data-grid used for block viewer and settings sample. ag-grid used for marketing demo and theme factory. Two grid libraries in dependencies (ag-grid-react, react-data-grid).",
+      "visibleStateCoverage": ["default", "loading", "empty"],
+      "evidence": [
+        "web/src/components/blocks/BlockViewerGridRDG.tsx imports react-data-grid",
+        "web/src/components/marketing/MarketingGrid.tsx imports ag-grid-react",
+        "web/src/pages/settings/SettingsGridSample.tsx imports react-data-grid",
+        "web/src/lib/agGridTheme.ts creates AG Grid theme"
+      ]
+    },
+    {
+      "role": "empty-state",
+      "canonicalCandidates": ["web/src/components/agchain/AgchainEmptyState.tsx"],
+      "competingImplementations": ["web/src/components/flows/tabs/FlowEmptyState.tsx"],
+      "ownerFiles": ["web/src/components/agchain/AgchainEmptyState.tsx"],
+      "usageNotes": "AgchainEmptyState: semi-transparent card with title, description, optional action and eyebrow. FlowEmptyState: gradient icon container with title and subtitle. Different visual language for same role.",
+      "visibleStateCoverage": ["empty"],
+      "evidence": [
+        "web/src/components/agchain/AgchainEmptyState.tsx used in AGChain pages",
+        "web/src/components/flows/tabs/FlowEmptyState.tsx used in flow tab views",
+        "No shared EmptyState in components/ui/ or components/common/"
+      ]
+    },
+    {
+      "role": "error-alert",
+      "canonicalCandidates": ["web/src/components/common/ErrorAlert.tsx"],
+      "competingImplementations": [],
+      "ownerFiles": ["web/src/components/common/ErrorAlert.tsx"],
+      "usageNotes": "Single dismissible error alert with HugeIcons icon and destructive color. Used by DatabasePlaceholder and other pages for inline error display.",
+      "visibleStateCoverage": ["error"],
+      "evidence": [
+        "web/src/components/common/ErrorAlert.tsx renders dismissible error banner",
+        "Imported by web/src/pages/DatabasePlaceholder.tsx"
+      ]
+    },
+    {
+      "role": "skeleton-loader",
+      "canonicalCandidates": ["web/src/components/ui/skeleton.tsx"],
+      "competingImplementations": [],
+      "ownerFiles": ["web/src/components/ui/skeleton.tsx"],
+      "usageNotes": "Single Skeleton component with animate-pulse. Clean, no competing implementation.",
+      "visibleStateCoverage": ["loading"],
+      "evidence": [
+        "web/src/components/ui/skeleton.tsx exports Skeleton with animate-pulse class"
+      ]
+    },
+    {
+      "role": "page-header",
+      "canonicalCandidates": ["web/src/components/shell/ShellPageHeader.tsx"],
+      "competingImplementations": [],
+      "ownerFiles": ["web/src/components/shell/ShellPageHeader.tsx"],
+      "usageNotes": "Shell-level page header used via HeaderCenterContext. Pages inject title and actions through the context provider, not by rendering the header directly.",
+      "visibleStateCoverage": ["default"],
+      "evidence": [
+        "web/src/components/shell/ShellPageHeader.tsx renders page-level header",
+        "web/src/components/shell/HeaderCenterContext.tsx provides injection hook"
+      ]
+    },
+    {
+      "role": "breadcrumbs",
+      "canonicalCandidates": ["web/src/components/common/AppBreadcrumbs.tsx"],
+      "competingImplementations": [],
+      "ownerFiles": ["web/src/components/common/AppBreadcrumbs.tsx"],
+      "usageNotes": "Single breadcrumb implementation. Usage scope not fully traced in sampling.",
+      "visibleStateCoverage": ["default"],
+      "evidence": [
+        "web/src/components/common/AppBreadcrumbs.tsx exists as sole breadcrumb component"
+      ]
+    }
+  ],
+  "pagePatterns": [
+    {
+      "patternName": "registry-list",
+      "strongestExample": "web/src/pages/Projects.tsx",
+      "competingExamples": ["web/src/pages/superuser/PlanTracker list views"],
+      "structureNotes": "Projects.tsx: data table with pagination, loading, and toast feedback. Superuser list pages (FlowsList, plan tracker) use similar table pattern but with different table components.",
+      "shellAlignmentNotes": "Aligns with AppLayout + AppPageShell constrained mode.",
+      "evidence": [
+        "web/src/pages/Projects.tsx uses pagination, loading states, toast",
+        "Superuser pages use table-based list patterns under AdminShellLayout"
+      ]
+    },
+    {
+      "patternName": "detail-workspace",
+      "strongestExample": "web/src/pages/flows/FlowDetail (via FlowsShellLayout)",
+      "competingExamples": ["web/src/pages/superuser/ workspace editors"],
+      "structureNotes": "FlowDetail uses FlowsShellLayout with fixed sidebar rail + main content with tabs. Superuser workspace editors use AdminShellLayout with a different rail pattern.",
+      "shellAlignmentNotes": "FlowDetail has its own shell layout. Superuser detail workspaces share AdminShellLayout.",
+      "evidence": [
+        "web/src/components/layout/FlowsShellLayout.tsx wraps flow detail with FlowsDetailRail",
+        "web/src/pages/superuser/ detail pages use AdminShellLayout with PlanArtifactsRail or PlanUnitsRail"
+      ]
+    },
+    {
+      "patternName": "settings-page",
+      "strongestExample": "web/src/pages/settings/SettingsLayout.tsx",
+      "competingExamples": ["web/src/components/agchain/settings/AgchainSettingsNav.tsx"],
+      "structureNotes": "SettingsLayout wraps /app/settings/* under AppLayout. AGChain has its own settings surface under AgchainShellLayout with a separate settings nav. Two settings architectures.",
+      "shellAlignmentNotes": "App settings nest inside AppLayout. AGChain settings nest inside AgchainShellLayout.",
+      "evidence": [
+        "web/src/pages/settings/SettingsLayout.tsx wraps settings pages with Outlet",
+        "web/src/components/agchain/settings/AgchainSettingsNav.tsx provides AGChain-specific settings navigation"
+      ]
+    },
+    {
+      "patternName": "admin-table-inspector",
+      "strongestExample": "web/src/pages/superuser/PlanMetadataPane.tsx",
+      "competingExamples": [],
+      "structureNotes": "Table + inspector pane pattern used in superuser surfaces. AdminShellLayout provides the two-column frame. Inspector panes appear as rails.",
+      "shellAlignmentNotes": "Fully aligned with AdminShellLayout.",
+      "evidence": [
+        "web/src/pages/superuser/PlanMetadataPane.tsx renders detail inspector",
+        "web/src/pages/superuser/PlanArtifactsRail.tsx and PlanUnitsRail.tsx serve as inspection rails"
+      ]
+    },
+    {
+      "patternName": "agchain-workspace",
+      "strongestExample": "web/src/pages/agchain/ (40 files)",
+      "competingExamples": [],
+      "structureNotes": "40 AGChain page files under AgchainShellLayout with AgchainWorkspaceProvider context. Workspace-scoped with organization/project selection. Distinct surface with its own nav, settings, and empty states.",
+      "shellAlignmentNotes": "Self-contained under AgchainShellLayout. Does not use AppLayout patterns.",
+      "evidence": [
+        "web/src/pages/agchain/ contains 40 page-level files",
+        "web/src/contexts/AgchainWorkspaceContext.tsx manages workspace scope"
+      ]
+    },
+    {
+      "patternName": "database-explorer",
+      "strongestExample": "web/src/pages/DatabasePlaceholder.tsx",
+      "competingExamples": [],
+      "structureNotes": "Multi-panel explorer with table catalog sidebar, column metadata, row grid. Handles catalog loading, row loading, empty, and error states individually.",
+      "shellAlignmentNotes": "Runs inside AppLayout.",
+      "evidence": [
+        "web/src/pages/DatabasePlaceholder.tsx manages catalogError, rowsError, loadingCatalog, loadingRows states"
+      ]
+    }
+  ],
+  "navigationStructure": {
+    "primaryOwners": [
+      "web/src/components/shell/LeftRailShadcn.tsx",
+      "web/src/components/shell/nav-config.ts"
+    ],
+    "secondaryOwners": [
+      "web/src/components/admin/AdminLeftNav.tsx",
+      "web/src/components/agchain/AgchainLeftNav.tsx",
+      "web/src/components/agchain/AgchainBenchmarkNav.tsx",
+      "web/src/components/agchain/settings/AgchainSettingsNav.tsx",
+      "web/src/components/flows/FlowsDetailRail.tsx"
+    ],
+    "routeMapping": "web/src/router.tsx defines the full route tree with nested layout wrappers. Routes group under MarketingLayout, PublicFullBleedLayout, PublicLayout (public), and AuthGuard → AppLayout, AdminShellLayout, AgchainShellLayout, FlowsShellLayout (authenticated).",
+    "breadcrumbConventions": "AppBreadcrumbs component exists but usage scope not fully traced. Pages primarily use ShellPageHeader via HeaderCenterContext for page identity.",
+    "actionPlacement": "Primary actions placed in page headers via HeaderCenterContext right slot. Table row actions use dropdown menus. Toolbar actions use toolbar-contract.ts patterns.",
+    "evidence": [
+      "web/src/router.tsx groups routes under layout components with nested Outlet rendering",
+      "web/src/components/shell/LeftRailShadcn.tsx is the sole primary rail",
+      "web/src/components/shell/nav-config.ts defines navigation items and drill configs",
+      "5 different secondary navigation components with no shared base"
+    ]
+  },
+  "statePresentation": {
+    "loading": "Mixed. AuthGuard and SuperuserGuard use inline spinners/text ('Verifying access...'). AgchainProjectPlaceholderPage uses 'Loading AGChain project...' text. DatabasePlaceholder tracks loadingCatalog and loadingRows separately. Skeleton component exists but is not the universal pattern.",
+    "empty": "Fragmented. AgchainEmptyState (card with title/description/action) and FlowEmptyState (gradient icon + title/subtitle) serve the same role with different visual language. DatabasePlaceholder has inline 'No tables match...' and 'No rows...' text. No shared foundation EmptyState component.",
+    "error": "ErrorAlert component exists in components/common/ but is not universally used. AGChain placeholder pages have their own error-with-retry pattern. SuperuserGuard has inline error text with retry. No ErrorBoundary at shell level detected.",
+    "success": "Consistent. Sonner toast library via UIProvider positioned top-right with rich colors. toast() imported from 'sonner' across pages.",
+    "permission": "Well-structured. AuthGuard redirects unauthenticated to /login. SuperuserGuard handles three admin surface tiers (superuser, blockdata-admin, agchain-admin) with AdminSurfaceGuard. Auth bypass available via VITE_AUTH_BYPASS in development.",
+    "async": "No shared long-running/polling pattern identified. Suspense used in one place (useWorkspaceEditor for lazy-loaded editors).",
+    "evidence": [
+      "web/src/auth/AuthGuard.tsx shows spinner during session check, redirects to /login",
+      "web/src/pages/superuser/SuperuserGuard.tsx shows 'Verifying access...' with retry",
+      "web/src/components/agchain/AgchainEmptyState.tsx and web/src/components/flows/tabs/FlowEmptyState.tsx are two competing empty state components",
+      "web/src/components/common/ErrorAlert.tsx is the only shared error component",
+      "web/src/components/ui/provider.tsx renders Toaster from sonner at top-right",
+      "web/src/components/ui/skeleton.tsx exports Skeleton with animate-pulse"
+    ]
+  },
+  "accessibilityNotes": [
+    "Focus rings present on interactive elements via Tailwind ring utilities and outline-[#e2503f] in UI primitives, but the focus ring color is hardcoded hex rather than using --ring token.",
+    "Three icon libraries with different size conventions may produce inconsistent touch targets.",
+    "No ARIA landmarks audited at shell level beyond semantic HTML elements (<header>, <nav>, <main>, <aside>).",
+    "Dark mode uses :root[data-theme='light'] override pattern — contrast ratios for muted text not verified.",
+    "UI primitive hex bypasses (#3a3a3a borders) are dark-mode-only values with no light mode equivalent, which would break if the component is rendered in light mode with the hardcoded border."
+  ],
+  "conflictBundles": [
+    {
+      "bundleName": "icon-library-fragmentation",
+      "roleUnderDispute": "Canonical icon library and icon component contract",
+      "competingImplementations": [
+        {
+          "name": "Tabler Icons",
+          "location": "@tabler/icons-react (101 importing files)",
+          "whatItSolves": "Legacy/primary icon library with widest current usage across the codebase"
+        },
+        {
+          "name": "Hugeicons",
+          "location": "@hugeicons/react (27 importing files)",
+          "whatItSolves": "Migration target per icon-contract.ts. Richer icon set with stroke weight control. Used in newer components."
+        },
+        {
+          "name": "Lucide React",
+          "location": "lucide-react (8 importing files)",
+          "whatItSolves": "Used in UI primitives (likely from shadcn/ui scaffolding). Lightweight, consistent with shadcn conventions."
+        }
+      ],
+      "evidence": [
+        "grep shows @tabler/icons-react imported in 101 files",
+        "grep shows @hugeicons/react imported in 27 files",
+        "grep shows lucide-react imported in 8 files",
+        "web/src/lib/icon-contract.ts ICON_STANDARD notes 'Hugeicons migration in progress'",
+        "web-docs/src/content/docs/internal/style-guide/icon-unification.md documents full migration plan"
+      ],
+      "whyNoSingleContract": "Three icon libraries accumulated over time. Tabler was the original choice. Hugeicons was selected as the migration target for its richer set and stroke control. Lucide came in via shadcn/ui primitives. Migration plan exists in docs but Phase 1 has not been executed. All three coexist in production.",
+      "recommendedDirection": "Execute the documented Hugeicons migration plan. Hugeicons is already the declared target with an AppIcon abstraction planned. Phase 1 (foundation: AppIcon redesign, nav config, UI primitives, shell) should precede Phase 2 (systematic file-by-file migration). Decision rule 2 (broadest legitimate reuse) favors Tabler short-term but rule 6 (easiest to enforce) favors Hugeicons with the AppIcon contract.",
+      "discussionQuestions": [
+        "Is the Hugeicons migration still the intended direction, or has the team reconsidered?",
+        "Should the AppIcon abstraction be built first (gating all future icon usage) or should migration proceed file-by-file?",
+        "What is the timeline priority for icon migration vs other foundation work?"
+      ]
+    },
+    {
+      "bundleName": "raw-hex-token-bypass-in-ui-primitives",
+      "roleUnderDispute": "Token system compliance in Ark UI wrapper components",
+      "competingImplementations": [
+        {
+          "name": "CSS custom property tokens",
+          "location": "web/src/tailwind.css",
+          "whatItSolves": "Semantic border, accent, and primary tokens with full light/dark coverage (--border, --accent, --primary, --ring)"
+        },
+        {
+          "name": "Hardcoded hex values in UI primitives",
+          "location": "web/src/components/ui/accordion.tsx, checkbox.tsx, collapsible.tsx, combobox.tsx, dialog.tsx, file-upload.tsx, menu.tsx",
+          "whatItSolves": "Quick dark-mode-specific styling for Ark UI component wrappers. Uses #3a3a3a (border), #222221 (hover bg), #e2503f (focus ring), #f47a5c (checked state)."
+        }
+      ],
+      "evidence": [
+        "web/src/components/ui/accordion.tsx uses border-[#3a3a3a] and outline-[#e2503f]",
+        "web/src/components/ui/combobox.tsx uses border-[#3a3a3a], bg-[#222221], text-[#f47a5c]",
+        "web/src/components/ui/dialog.tsx uses border-[#3a3a3a], bg-[#222221], outline-[#e2503f]",
+        "web/src/tailwind.css defines --border, --ring, --accent, --primary as semantic tokens",
+        "Hex values have no light-mode equivalents — dark-only"
+      ],
+      "whyNoSingleContract": "The Ark UI primitives were likely scaffolded with inline hex values before the token system was mature, or were copied from an external source without token adaptation. The values approximate the semantic tokens but do not reference them, creating a parallel dark-mode-only style layer.",
+      "recommendedDirection": "Replace all hardcoded hex values in the 7 UI primitive files with the corresponding CSS custom property references: border-[#3a3a3a] → border-border, hover:bg-[#222221] → hover:bg-accent, outline-[#e2503f] → outline-ring (or outline-primary). This is a low-risk, high-impact cleanup that immediately restores light mode correctness and token system authority. Decision rule 1 (foundation-owned) and rule 4 (light+dark coherence).",
+      "discussionQuestions": [
+        "Are these hex values intentional dark-mode-specific overrides, or accidental drift from the token system?",
+        "Should the cleanup be done as a batch (all 7 files at once) or file-by-file with visual verification?",
+        "Are there other Ark UI primitives beyond these 7 that also bypass tokens?"
+      ]
+    },
+    {
+      "bundleName": "data-grid-library-fragmentation",
+      "roleUnderDispute": "Canonical data grid component for tabular data display",
+      "competingImplementations": [
+        {
+          "name": "react-data-grid",
+          "location": "web/src/components/blocks/BlockViewerGridRDG.tsx, web/src/pages/settings/SettingsGridSample.tsx",
+          "whatItSolves": "Lightweight data grid for block viewer and settings sample. MIT-licensed, smaller bundle."
+        },
+        {
+          "name": "ag-grid-react",
+          "location": "web/src/components/marketing/MarketingGrid.tsx, web/src/lib/agGridTheme.ts",
+          "whatItSolves": "Feature-rich commercial grid for marketing demo page. Has dedicated theme factory."
+        }
+      ],
+      "evidence": [
+        "web/src/components/blocks/BlockViewerGridRDG.tsx imports react-data-grid",
+        "web/src/pages/settings/SettingsGridSample.tsx imports react-data-grid",
+        "web/src/components/marketing/MarketingGrid.tsx imports ag-grid-react",
+        "web/src/lib/agGridTheme.ts creates AG Grid theme via themeQuartz.withParams()",
+        "Both ag-grid-react and react-data-grid listed in web/package.json dependencies"
+      ],
+      "whyNoSingleContract": "Two grid libraries serve different surfaces (marketing vs app). Neither was chosen as the canonical grid. AG Grid has a theme factory but is only used in marketing. react-data-grid is used in the actual app surfaces but has no theme factory.",
+      "recommendedDirection": "Standardize on react-data-grid for app surfaces. ag-grid is only used in the marketing demo — evaluate whether the marketing page can be rebuilt with react-data-grid or whether ag-grid should remain as a marketing-only dependency. Decision rule 2 (broadest reuse) favors react-data-grid for app code.",
+      "discussionQuestions": [
+        "Is ag-grid needed for any planned app features, or is it marketing-only?",
+        "Can the marketing grid demo be rebuilt with react-data-grid to eliminate the ag-grid dependency?",
+        "Should react-data-grid get a theme factory similar to agGridTheme.ts?"
+      ]
+    },
+    {
+      "bundleName": "secondary-navigation-rail-fragmentation",
+      "roleUnderDispute": "Secondary navigation rail component contract",
+      "competingImplementations": [
+        {
+          "name": "AdminLeftNav",
+          "location": "web/src/components/admin/AdminLeftNav.tsx",
+          "whatItSolves": "Left nav for superuser, blockdata-admin, and agchain-admin surfaces under AdminShellLayout"
+        },
+        {
+          "name": "AgchainLeftNav",
+          "location": "web/src/components/agchain/AgchainLeftNav.tsx",
+          "whatItSolves": "Left nav for AGChain workspace under AgchainShellLayout"
+        },
+        {
+          "name": "FlowsDetailRail",
+          "location": "web/src/components/flows/FlowsDetailRail.tsx",
+          "whatItSolves": "Fixed sidebar rail for flow detail view under FlowsShellLayout"
+        },
+        {
+          "name": "AgchainBenchmarkNav + AgchainSettingsNav",
+          "location": "web/src/components/agchain/AgchainBenchmarkNav.tsx, web/src/components/agchain/settings/AgchainSettingsNav.tsx",
+          "whatItSolves": "Sub-section navigation within AGChain for benchmark and settings views"
+        }
+      ],
+      "evidence": [
+        "web/src/components/admin/AdminLeftNav.tsx renders admin section links",
+        "web/src/components/agchain/AgchainLeftNav.tsx renders AGChain workspace links",
+        "web/src/components/flows/FlowsDetailRail.tsx renders flow detail tabs as rail links",
+        "web/src/components/agchain/AgchainBenchmarkNav.tsx and AgchainSettingsNav.tsx add AGChain sub-navs",
+        "No shared SecondaryRail, SectionNav, or DetailRail base component found"
+      ],
+      "whyNoSingleContract": "Each section built its own secondary rail independently. Admin, AGChain, and Flows all need a left rail with section links, but no shared primitive was extracted. Width, padding, active-state styling, and link rendering differ across implementations.",
+      "recommendedDirection": "Extract a shared SecondaryRail or SectionNav primitive that accepts a link config array and renders consistently. AdminLeftNav is the broadest current user (serves 3 admin surfaces) and should be the structural reference. Section-specific content (AGChain workspace scope, flow detail tabs) can be injected via render props or slots. Decision rule 2 (broadest reuse) and rule 7 (clearest ownership).",
+      "discussionQuestions": [
+        "Should all secondary rails share a single width token, or should different sections be allowed different widths?",
+        "Should the secondary rail support collapse behavior like the primary LeftRailShadcn?",
+        "Should the AGChain sub-navs (BenchmarkNav, SettingsNav) be expressed as nested sections within AgchainLeftNav rather than separate components?"
+      ]
+    },
+    {
+      "bundleName": "empty-state-component-fragmentation",
+      "roleUnderDispute": "Reusable empty-state component for pages and tab views",
+      "competingImplementations": [
+        {
+          "name": "AgchainEmptyState",
+          "location": "web/src/components/agchain/AgchainEmptyState.tsx",
+          "whatItSolves": "Semi-transparent card with title, description, optional action button and eyebrow label"
+        },
+        {
+          "name": "FlowEmptyState",
+          "location": "web/src/components/flows/tabs/FlowEmptyState.tsx",
+          "whatItSolves": "Gradient background icon container with title and optional subtitle"
+        }
+      ],
+      "evidence": [
+        "web/src/components/agchain/AgchainEmptyState.tsx renders card-style empty state",
+        "web/src/components/flows/tabs/FlowEmptyState.tsx renders gradient-icon empty state",
+        "No shared EmptyState component in web/src/components/ui/ or web/src/components/common/",
+        "web/src/pages/DatabasePlaceholder.tsx uses inline text for empty states, not either component"
+      ],
+      "whyNoSingleContract": "AGChain and Flows built their own empty states independently with different visual language. Neither lives in a shared location. DatabasePlaceholder uses neither and has inline empty text. No foundation-level empty state contract was established.",
+      "recommendedDirection": "Create a shared EmptyState component in components/common/ or components/ui/ that supports the AgchainEmptyState's feature set (title, description, action, eyebrow) as it covers the broader API. FlowEmptyState's gradient icon treatment can be a variant prop. Decision rule 1 (foundation-owned) and rule 3 (fewest local overrides).",
+      "discussionQuestions": [
+        "Should the canonical empty state use the card style (AgchainEmptyState) or the gradient icon style (FlowEmptyState)?",
+        "Should it support both as variants, or should one visual language be chosen?",
+        "Should inline empty text (like DatabasePlaceholder's 'No rows...') also use the component, or are simple text empties acceptable?"
+      ]
+    },
+    {
+      "bundleName": "app-vs-agchain-shell-overlap",
+      "roleUnderDispute": "Authenticated shell layout for header + left-rail + content surfaces",
+      "competingImplementations": [
+        {
+          "name": "AppLayout",
+          "location": "web/src/components/layout/AppLayout.tsx",
+          "whatItSolves": "Main application shell with TopCommandBar, LeftRailShadcn, RightRailShell, HeaderCenterProvider, and RightRailProvider"
+        },
+        {
+          "name": "AgchainShellLayout",
+          "location": "web/src/components/layout/AgchainShellLayout.tsx",
+          "whatItSolves": "AGChain workspace shell with TopCommandBar, AgchainLeftNav, HeaderCenterProvider, and AgchainWorkspaceProvider — structurally mirrors AppLayout but with different left rail and workspace context"
+        }
+      ],
+      "evidence": [
+        "web/src/components/layout/AppLayout.tsx renders TopCommandBar + LeftRailShadcn + RightRailShell + Outlet",
+        "web/src/components/layout/AgchainShellLayout.tsx renders TopCommandBar + AgchainLeftNav + Outlet with resizable sidebar",
+        "Both use HeaderCenterProvider for page title injection",
+        "Both use TopCommandBar as the header",
+        "Both implement resizable left sidebar with localStorage persistence",
+        "AppLayout has right rail; AgchainShellLayout does not"
+      ],
+      "whyNoSingleContract": "AgchainShellLayout was built as a separate layout to accommodate AGChain's workspace context and different left rail. However, its structural shell (header + resizable sidebar + content) is nearly identical to AppLayout. The two diverged because AGChain needed AgchainWorkspaceProvider at the layout level, but the shell framing could have been shared.",
+      "recommendedDirection": "Evaluate whether AgchainShellLayout can be expressed as AppLayout with a different left-rail slot and an additional context provider. If AppLayout supported slot injection for the left rail, AGChain could use it directly with AgchainLeftNav + AgchainWorkspaceProvider. This would reduce shell duplication and ensure shell behavior (resize, persistence, header) stays in sync. Decision rule 5 (composes cleanly with shell model) and rule 6 (easiest to enforce).",
+      "discussionQuestions": [
+        "Should AppLayout become a configurable shell that accepts left-rail and context-provider slots?",
+        "Does AGChain need its own shell long-term, or should it converge with the main app shell?",
+        "Should the right rail (help/AI) be available in AGChain workspace, or is its absence intentional?"
+      ]
+    }
+  ],
+  "cleanAreas": [
+    {
+      "area": "top-header",
+      "summary": "TopCommandBar is the single header component shared across AppLayout and AgchainShellLayout. HeaderCenterContext provides a clean injection mechanism for page-specific content. No competing header implementations.",
+      "evidence": [
+        "web/src/components/shell/TopCommandBar.tsx is the sole header component",
+        "web/src/components/shell/HeaderCenterContext.tsx provides useHeaderCenter() hook",
+        "TopCommandBar imported by AppLayout.tsx and AgchainShellLayout.tsx"
+      ]
+    },
+    {
+      "area": "right-rail",
+      "summary": "RightRailShell + RightRailContext provide a single-owner right panel with help and AI chat tabs. State persists to localStorage. AssistantDockHost handles detached chat window. No competing implementations.",
+      "evidence": [
+        "web/src/components/shell/RightRailShell.tsx renders the right panel",
+        "web/src/components/shell/RightRailContext.tsx manages panel state",
+        "web/src/components/shell/RightRailChatPanel.tsx and HomeHelpRail.tsx are content, not competing shells"
+      ]
+    },
+    {
+      "area": "authentication",
+      "summary": "AuthGuard is the single authentication wrapper. Redirects unauthenticated users to /login. Supports VITE_AUTH_BYPASS for development. Clean, no competing auth patterns.",
+      "evidence": [
+        "web/src/auth/AuthGuard.tsx wraps all /app/* routes in router.tsx",
+        "web/src/auth/AuthContext.tsx provides useAuth() hook"
+      ]
+    },
+    {
+      "area": "toast-notifications",
+      "summary": "Sonner toast library is the single notification mechanism. UIProvider renders Toaster at top-right with rich colors. toast() imported consistently from 'sonner' across pages.",
+      "evidence": [
+        "web/src/components/ui/provider.tsx renders <Toaster> from sonner",
+        "toast() imported from 'sonner' in Projects.tsx, BlockViewerGridRDG.tsx, and other pages"
+      ]
+    },
+    {
+      "area": "theme-switching",
+      "summary": "Single useTheme hook with data-theme attribute on :root. Theme persists to localStorage. Hydrated in main.tsx before React render to prevent flash. No competing theme mechanisms.",
+      "evidence": [
+        "web/src/hooks/useTheme.ts provides useTheme() hook",
+        "web/src/main.tsx hydrates theme from localStorage before mount",
+        "web/src/tailwind.css uses :root and :root[data-theme='light'] for token overrides"
+      ]
+    },
+    {
+      "area": "css-custom-property-system",
+      "summary": "tailwind.css is the single source of truth for CSS custom properties. 100+ semantic tokens with full light/dark coverage via :root and :root[data-theme='light']. @theme inline mapping generates Tailwind utilities. No competing CSS token source.",
+      "evidence": [
+        "web/src/tailwind.css defines all semantic CSS custom properties",
+        "TypeScript contracts (color-contract.ts, font-contract.ts) reference CSS vars, not replace them",
+        "No separate tokens.css or theme-variables.css competing"
+      ]
+    },
+    {
+      "area": "admin-permission-guards",
+      "summary": "SuperuserGuard handles three admin surface tiers (superuser, blockdata-admin, agchain-admin) via a shared AdminSurfaceGuard pattern. Clean three-tier access model with consistent loading, error, and redirect behavior.",
+      "evidence": [
+        "web/src/pages/superuser/SuperuserGuard.tsx exports SuperuserGuard, BlockdataAdminGuard, AgchainAdminGuard",
+        "All three use AdminSurfaceGuard internally with surface-specific access checks"
+      ]
+    },
+    {
+      "area": "typography-contract",
+      "summary": "font-contract.ts provides a single, well-structured typography contract with FONT_FAMILIES, FONT_SIZES, FONT_WEIGHTS, and 11 FONT_RECIPES mapping contexts to Tailwind classes. No competing typography definitions.",
+      "evidence": [
+        "web/src/lib/font-contract.ts exports complete typography contract",
+        "FONT_RECIPES map page-title, section-heading, body-text, nav, badges, code-cells to exact Tailwind classes"
+      ]
+    },
+    {
+      "area": "public-shell-layouts",
+      "summary": "Three public layouts (MarketingLayout, PublicFullBleedLayout, PublicLayout) serve distinct route groups with no overlap. PublicNav shared header. Intentionally separate, not competing.",
+      "evidence": [
+        "web/src/router.tsx assigns each public layout to specific route groups",
+        "web/src/components/layout/PublicNav.tsx is the shared public header"
+      ]
+    }
+  ]
+}

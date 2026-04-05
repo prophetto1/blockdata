@@ -1,0 +1,582 @@
+{
+  "repoName": "example-app",
+  "contractDate": "2026-04-04",
+  "contractVersion": "1.0.0",
+  "auditSource": "foundation-audit.json",
+  "mode": "canonical",
+
+  "resolvedBundles": [
+    {
+      "bundleName": "left-rail-ownership",
+      "chosenDirection": "Unify into CollapsibleNav as the single rail component. Static Sidebar behavior expressed as CollapsibleNav with collapse disabled.",
+      "rationale": "CollapsibleNav already handles the complex case. Sidebar is a subset of its capabilities. Unifying avoids two rail code paths and lets the width token be shared.",
+      "decidedBy": "team discussion 2026-04-02",
+      "migrationNote": "Sidebar.tsx to be replaced on dashboard routes. Three dashboard pages must switch imports."
+    },
+    {
+      "bundleName": "token-source-fragmentation",
+      "chosenDirection": "CSS custom properties in tokens.css are the single source of truth. TypeScript theme object must be auto-generated from tokens.css. Tailwind config must reference CSS variables via var(), not define independent values.",
+      "rationale": "CSS tokens already have full light/dark coverage. The TS theme and Tailwind extensions were ad hoc additions that introduced drift. One source eliminates the 'three different primary blue' problem.",
+      "decidedBy": "team discussion 2026-04-02",
+      "migrationNote": "colors.ts must be replaced with a generated file. tailwind.config.ts color extensions must be rewritten to use var(). Charting library confirmed it can consume CSS variables."
+    }
+  ],
+
+  "shellContract": {
+    "principle": "The app shell is a single owner-based layout. Every route renders inside the same shell. Shell regions are fixed-position, never re-mounted across navigation, and own their own state persistence.",
+    "regions": [
+      {
+        "name": "top-header",
+        "ownerFile": "src/layouts/AppShell.tsx",
+        "element": "<header>",
+        "position": "fixed top-0 left-0 right-0",
+        "height": "48px",
+        "heightToken": "--shell-header-height",
+        "zIndex": "var(--z-shell-header)",
+        "slots": [
+          { "name": "logo", "position": "left", "content": "App logo, links to /" },
+          { "name": "global-nav", "position": "center-left", "content": "Top-level section links" },
+          { "name": "search", "position": "center", "content": "Global search trigger" },
+          { "name": "user-menu", "position": "right", "content": "Avatar, settings, logout" },
+          { "name": "theme-toggle", "position": "right", "content": "Light/dark mode switch" }
+        ],
+        "stateOwner": "src/stores/shellStore.ts",
+        "persistenceRule": "Theme preference persisted in localStorage key 'theme'. No other header state persisted.",
+        "modes": {
+          "default": "Full header, all slots visible",
+          "fullscreen": "Header hidden. Content area expands to fill viewport.",
+          "mobile": "Logo and hamburger only. Global nav moves to drawer."
+        }
+      },
+      {
+        "name": "left-rail",
+        "ownerFile": "src/layouts/CollapsibleNav.tsx",
+        "element": "<aside>",
+        "position": "fixed top-[var(--shell-header-height)] left-0 bottom-0",
+        "widthExpanded": "240px",
+        "widthCollapsed": "64px",
+        "widthToken": "--shell-rail-width",
+        "zIndex": "var(--z-shell-rail)",
+        "slots": [
+          { "name": "section-links", "position": "top", "content": "Primary navigation for the active section" },
+          { "name": "workspace-selector", "position": "bottom", "content": "Workspace or project context switcher" }
+        ],
+        "stateOwner": "src/stores/shellStore.ts",
+        "persistenceRule": "Collapse state persisted in localStorage key 'rail-collapsed'. Restored on mount.",
+        "modes": {
+          "expanded": "240px, icon + label links, nested sections visible",
+          "collapsed": "64px, icon-only links, nested sections hidden behind hover",
+          "fullscreen": "Rail hidden entirely. Content area fills to left edge.",
+          "mobile": "Rail becomes a drawer overlay. Opened via hamburger in header."
+        },
+        "replacedBy": "This component replaces src/layouts/Sidebar.tsx (see resolvedBundles[0])."
+      },
+      {
+        "name": "content-area",
+        "ownerFile": "src/layouts/PageFrame.tsx",
+        "element": "<main>",
+        "position": "margin-top: var(--shell-header-height); margin-left: var(--shell-rail-width)",
+        "overflow": "auto (page-level scroll, not body scroll)",
+        "padding": "var(--content-padding-x) horizontal, var(--content-padding-y) vertical",
+        "slots": [
+          { "name": "page-header", "position": "top", "content": "PageHeader component: title, breadcrumbs, primary actions" },
+          { "name": "page-content", "position": "fill", "content": "Page-specific content" }
+        ],
+        "stateOwner": null,
+        "persistenceRule": "No content-area state persisted. Scroll position resets on navigation.",
+        "modes": {
+          "default": "Offset by header height and rail width",
+          "fullscreen": "No offset. Fills entire viewport.",
+          "rail-collapsed": "margin-left shrinks to collapsed rail width"
+        }
+      }
+    ],
+    "shellStateModel": {
+      "owner": "src/stores/shellStore.ts",
+      "technology": "Zustand store with localStorage persistence middleware",
+      "fields": [
+        { "name": "theme", "type": "'light' | 'dark'", "persisted": true, "key": "theme" },
+        { "name": "railCollapsed", "type": "boolean", "persisted": true, "key": "rail-collapsed" },
+        { "name": "fullscreen", "type": "boolean", "persisted": false, "key": null }
+      ]
+    },
+    "rules": [
+      "Every route must render inside AppShell. No page may mount its own header or rail.",
+      "Shell regions use CSS custom property tokens for all dimensions. No hardcoded px values in page code.",
+      "Fullscreen mode is toggled from content-area pages, not from the shell itself. The shell reacts to the store.",
+      "The rail is always CollapsibleNav. No route may substitute a different rail component.",
+      "Mobile breakpoint (< 768px): rail becomes drawer, header collapses to logo + hamburger."
+    ]
+  },
+
+  "navigationContract": {
+    "primaryOwner": "src/layouts/CollapsibleNav.tsx",
+    "secondaryOwner": null,
+    "routeConfigFile": "src/router.tsx",
+    "structure": {
+      "topLevel": "Section links in the left rail. Each section is a route group with its own child routes.",
+      "withinSection": "Child routes render in the content area. Nested navigation uses tabs within the page, not additional rail items.",
+      "crossSection": "Global search in the header. No cross-section breadcrumbs."
+    },
+    "actionPlacement": {
+      "primary": "PageHeader right slot. One primary action per page maximum.",
+      "secondary": "PageHeader right slot, to the left of the primary action.",
+      "row": "Dropdown menu on each row, triggered by a three-dot icon.",
+      "bulk": "Toolbar above the table when rows are selected.",
+      "create": "Primary action button in PageHeader. Opens a create page or modal depending on complexity.",
+      "forbidden": "No floating action buttons. No action buttons in the rail."
+    },
+    "breadcrumbs": "None. Nested pages use a back-link in PageHeader instead.",
+    "urlConventions": {
+      "list": "/{section}",
+      "detail": "/{section}/{id}",
+      "create": "/{section}/new",
+      "edit": "/{section}/{id}/edit",
+      "settings": "/settings/{subsection}"
+    },
+    "rules": [
+      "Navigation hierarchy is: rail section -> page -> tabs within page. Never more than three levels.",
+      "The active rail section is derived from the current route, not from user click state.",
+      "Tab navigation within a page does not change the URL unless the tabs represent distinct sub-resources."
+    ]
+  },
+
+  "tokenContract": {
+    "principle": "One source of truth for all visual tokens. Every component and page must consume tokens through CSS custom properties. No raw values in component code.",
+    "canonicalSource": {
+      "file": "src/styles/tokens.css",
+      "format": "CSS custom properties on :root and [data-theme='dark']",
+      "lightSelector": ":root",
+      "darkSelector": "[data-theme='dark']"
+    },
+    "generatedConsumers": [
+      {
+        "file": "src/theme/tokens.ts",
+        "format": "Auto-generated TypeScript export. Maps token names to var() references for JS consumers.",
+        "generationMethod": "Build script reads tokens.css and emits tokens.ts. Manual edits to tokens.ts are forbidden.",
+        "usage": "Import from tokens.ts when a JS value is required (e.g., charting libraries). Prefer CSS var() in all other cases."
+      }
+    ],
+    "forbiddenPatterns": [
+      "Raw hex values in component files (e.g., '#3b82f6'). Use var(--color-*) instead.",
+      "Tailwind arbitrary values for colors (e.g., 'bg-[#3b82f6]'). Use the mapped utility class.",
+      "Independent color definitions in tailwind.config.ts. All Tailwind color extensions must reference var().",
+      "Component-scoped CSS variables that shadow token names.",
+      "Direct import of tokens.css values into JS. Use the generated tokens.ts export."
+    ],
+    "namingConvention": "--{category}-{property}-{variant}",
+    "categories": [
+      {
+        "category": "color",
+        "description": "All color tokens",
+        "examples": ["--color-bg-primary", "--color-bg-secondary", "--color-bg-muted", "--color-text-primary", "--color-text-secondary", "--color-text-muted", "--color-border-default", "--color-border-strong"],
+        "statusColors": {
+          "success": "--color-status-success",
+          "warning": "--color-status-warning",
+          "error": "--color-status-error",
+          "info": "--color-status-info"
+        }
+      },
+      {
+        "category": "spacing",
+        "description": "Spacing scale for padding, margin, and gap",
+        "scale": ["--spacing-0", "--spacing-1", "--spacing-2", "--spacing-3", "--spacing-4", "--spacing-6", "--spacing-8", "--spacing-12", "--spacing-16"],
+        "usage": "Use spacing tokens for all padding, margin, and gap. Page-level padding uses --content-padding-x and --content-padding-y."
+      },
+      {
+        "category": "radius",
+        "description": "Border radius scale",
+        "scale": ["--radius-none", "--radius-sm", "--radius-md", "--radius-lg", "--radius-full"],
+        "usage": "Cards use --radius-md. Buttons use --radius-sm. Avatars use --radius-full."
+      },
+      {
+        "category": "typography",
+        "description": "Font size, weight, line height, and letter spacing",
+        "scale": ["--text-xs", "--text-sm", "--text-base", "--text-lg", "--text-xl", "--text-2xl", "--text-3xl"],
+        "fontFamily": "--font-sans for body, --font-mono for code",
+        "headings": "h1 uses --text-3xl/--font-weight-bold, h2 uses --text-2xl/--font-weight-semibold, h3 uses --text-xl/--font-weight-semibold"
+      },
+      {
+        "category": "shadow",
+        "description": "Box shadow scale",
+        "scale": ["--shadow-none", "--shadow-sm", "--shadow-md", "--shadow-lg"],
+        "usage": "Cards use --shadow-sm. Modals use --shadow-lg. Dropdowns use --shadow-md."
+      },
+      {
+        "category": "z-index",
+        "description": "Layering scale for shell and overlay elements",
+        "scale": ["--z-base", "--z-dropdown", "--z-shell-rail", "--z-shell-header", "--z-modal", "--z-toast"],
+        "usage": "Only shell regions and overlays use z-index tokens. Page content must not set z-index."
+      }
+    ],
+    "tailwindIntegration": {
+      "method": "tailwind.config.ts extends theme by referencing CSS variables via var()",
+      "example": "colors: { primary: 'var(--color-primary)', ... }",
+      "rule": "Every Tailwind color, spacing, and radius extension must map to a CSS custom property. No independent values."
+    },
+    "howToAddAToken": [
+      "1. Define the token in src/styles/tokens.css under :root.",
+      "2. Define the dark variant under [data-theme='dark'].",
+      "3. If the token needs a Tailwind utility, add the var() mapping in tailwind.config.ts.",
+      "4. Run the build script to regenerate src/theme/tokens.ts.",
+      "5. Never add a token only in Tailwind or only in JS. The CSS file is always the source."
+    ],
+    "rules": [
+      "tokens.css is the single source of truth. All other token consumers are derived.",
+      "Every color must have both a light and dark value. No light-only or dark-only tokens.",
+      "Semantic names only. No 'blue-500' or 'gray-200'. Use 'bg-primary', 'text-muted', 'border-default'.",
+      "Status colors (success, warning, error, info) use the --color-status-* namespace.",
+      "New tokens require both the CSS definition and the dark variant before use."
+    ]
+  },
+
+  "componentContract": {
+    "principle": "Every shared UI role has exactly one canonical component. Pages must use the canonical component, not build local alternatives. New components require justification that no existing canonical component covers the use case.",
+    "primitiveSource": "src/components/ui/",
+    "compositeSource": "src/components/shell/",
+    "roles": [
+      {
+        "role": "data-table",
+        "canonicalComponent": "DataTable",
+        "importPath": "src/components/ui/DataTable.tsx",
+        "allowedVariants": ["default", "compact", "borderless"],
+        "requiredStates": ["default", "loading", "empty", "error"],
+        "stateComponents": {
+          "loading": "Renders skeleton rows. Count matches the page's default page-size.",
+          "empty": "Renders centered EmptyState component with configurable icon, title, and action.",
+          "error": "Renders centered error message with retry button."
+        },
+        "props": {
+          "required": ["columns", "data"],
+          "common": ["loading", "error", "emptyMessage", "onRowClick", "sortable", "selectable"],
+          "forbidden": "Do not pass raw className for layout. Use the variant prop."
+        },
+        "replaces": ["src/components/dashboard/InlineTable.tsx", "src/pages/settings/SettingsGrid.tsx"],
+        "rules": [
+          "All tabular data must use DataTable. No raw <table> elements in new work.",
+          "Column definitions use the DataTable column API. No custom cell renderers that bypass the API.",
+          "Sorting, filtering, and pagination are DataTable concerns. Pages do not build their own."
+        ]
+      },
+      {
+        "role": "page-header",
+        "canonicalComponent": "PageHeader",
+        "importPath": "src/components/shell/PageHeader.tsx",
+        "allowedVariants": ["default", "with-tabs"],
+        "requiredStates": ["default"],
+        "props": {
+          "required": ["title"],
+          "common": ["backLink", "actions", "tabs", "subtitle", "badge"],
+          "forbidden": "Do not use PageHeader for non-page contexts. Section headers inside a page use heading elements directly."
+        },
+        "replaces": [],
+        "rules": [
+          "Every page must render PageHeader as the first child inside the content area.",
+          "The title prop is always a string. No JSX in titles.",
+          "Primary action is the rightmost element. Maximum one primary action per page."
+        ]
+      },
+      {
+        "role": "empty-state",
+        "canonicalComponent": "EmptyState",
+        "importPath": "src/components/ui/EmptyState.tsx",
+        "allowedVariants": ["default", "compact"],
+        "requiredStates": ["default"],
+        "props": {
+          "required": ["title"],
+          "common": ["icon", "description", "action"],
+          "forbidden": "Do not render custom empty markup. Use EmptyState."
+        },
+        "replaces": ["Any inline 'no items' or 'nothing here' markup"],
+        "rules": [
+          "All empty states must use EmptyState. No custom empty markup in new work.",
+          "The action prop is a single CTA button. Multi-action empty states are not supported."
+        ]
+      },
+      {
+        "role": "modal",
+        "canonicalComponent": "Dialog",
+        "importPath": "src/components/ui/Dialog.tsx",
+        "allowedVariants": ["default", "destructive", "form"],
+        "requiredStates": ["default", "loading"],
+        "props": {
+          "required": ["open", "onOpenChange", "title"],
+          "common": ["description", "footer", "size"],
+          "forbidden": "Do not build custom overlays. Use Dialog."
+        },
+        "replaces": [],
+        "rules": [
+          "All modal interactions use Dialog. No custom portals or overlay divs.",
+          "Destructive actions (delete, archive) use the destructive variant with explicit confirmation.",
+          "Focus is trapped inside the dialog. Escape closes it."
+        ]
+      },
+      {
+        "role": "toast",
+        "canonicalComponent": "useToast",
+        "importPath": "src/hooks/useToast.ts",
+        "allowedVariants": ["success", "error", "info", "warning"],
+        "requiredStates": ["default"],
+        "props": {
+          "required": ["message"],
+          "common": ["variant", "duration", "action"]
+        },
+        "replaces": [],
+        "rules": [
+          "All transient feedback uses useToast. No custom notification components.",
+          "Success toasts auto-dismiss. Error toasts persist until dismissed.",
+          "Maximum one toast visible at a time."
+        ]
+      }
+    ]
+  },
+
+  "pagePatternContract": {
+    "principle": "Every page follows one of the canonical page patterns. New pages must identify which pattern they implement and follow its structure. Pages that do not fit any pattern require explicit justification and may establish a new pattern.",
+    "patterns": [
+      {
+        "patternName": "registry-list",
+        "description": "A filterable, sortable list of resources. The primary landing page for a section.",
+        "canonicalExample": "src/pages/ProjectsListPage.tsx",
+        "structure": {
+          "frame": "PageFrame",
+          "header": "PageHeader with title and primary 'Create' action",
+          "content": "Optional filter toolbar above DataTable",
+          "table": "DataTable with sortable columns, row click navigates to detail"
+        },
+        "requiredStates": {
+          "loading": "DataTable shows skeleton rows",
+          "empty": "EmptyState with 'Create your first X' CTA",
+          "error": "DataTable error state with retry"
+        },
+        "rules": [
+          "Filter toolbar is optional but must use shared filter components when present.",
+          "Row click always navigates to the detail page. No inline expansion.",
+          "Pagination is handled by DataTable. Pages do not build custom pagination."
+        ]
+      },
+      {
+        "patternName": "detail-workspace",
+        "description": "A tabbed workspace for viewing and editing a single resource.",
+        "canonicalExample": "src/pages/ProjectDetailPage.tsx",
+        "structure": {
+          "frame": "PageFrame",
+          "header": "PageHeader with back-link, resource title, and contextual actions",
+          "content": "TabsContainer with tab panels for different aspects of the resource"
+        },
+        "requiredStates": {
+          "loading": "Full-page skeleton until resource loads",
+          "notFound": "EmptyState with 'Resource not found' and back-link",
+          "error": "Inline error banner with retry"
+        },
+        "rules": [
+          "Tabs represent logical aspects (overview, settings, history), not sub-resources.",
+          "Tab state is local, not URL-driven, unless tabs represent distinct API-backed views.",
+          "The back-link in PageHeader always returns to the parent registry-list page."
+        ]
+      },
+      {
+        "patternName": "create-wizard",
+        "description": "A multi-step form for creating a new resource.",
+        "canonicalExample": "src/pages/ProjectCreatePage.tsx",
+        "structure": {
+          "frame": "PageFrame",
+          "header": "PageHeader with back-link and 'New {Resource}' title",
+          "content": "Step indicator + form sections. Final step shows summary + submit."
+        },
+        "requiredStates": {
+          "loading": "None (form renders immediately)",
+          "submitting": "Submit button shows spinner. Form fields disabled.",
+          "error": "Inline error banner above the form. Fields remain editable.",
+          "success": "Redirect to the new resource's detail page. Success toast."
+        },
+        "rules": [
+          "Wizards use at most 4 steps. More steps means the form should be broken into smaller resources.",
+          "Back navigation within the wizard preserves entered data.",
+          "Browser back navigates to previous step, not previous page, until the user explicitly cancels."
+        ]
+      },
+      {
+        "patternName": "settings-page",
+        "description": "A form-based page for viewing and editing configuration.",
+        "canonicalExample": "src/pages/settings/GeneralSettingsPage.tsx",
+        "structure": {
+          "frame": "PageFrame",
+          "header": "PageHeader with section title",
+          "content": "Stacked form sections with labels and descriptions. Save button at the bottom."
+        },
+        "requiredStates": {
+          "loading": "Skeleton placeholders for form fields",
+          "saving": "Save button shows spinner. Fields disabled.",
+          "error": "Inline error near the failed field or top banner for general errors",
+          "success": "Success toast. Form returns to view mode."
+        },
+        "rules": [
+          "Settings pages are always full-width inside the content area. No side panels.",
+          "Form sections are stacked vertically. No multi-column layouts for settings.",
+          "Destructive settings (delete account, revoke access) are separated into their own section at the bottom with a warning border."
+        ]
+      }
+    ]
+  },
+
+  "stateContract": {
+    "principle": "Every user-visible state has a canonical component or pattern. Pages must not invent custom state presentation. Consistent state handling is a foundation concern, not a feature concern.",
+    "states": [
+      {
+        "state": "loading",
+        "canonicalApproach": "Skeleton loaders for content areas. Spinner only for inline actions (button submits, row actions).",
+        "canonicalComponent": "Skeleton from src/components/ui/Skeleton.tsx for content. Spinner from src/components/ui/Spinner.tsx for inline.",
+        "rules": [
+          "Never show 'Loading...' text. Use Skeleton or Spinner.",
+          "Skeleton shape must approximate the content it replaces (table skeleton for tables, card skeleton for cards).",
+          "Full-page loading uses a centered Skeleton group, not a single spinner."
+        ]
+      },
+      {
+        "state": "empty",
+        "canonicalApproach": "EmptyState component with icon, title, description, and optional CTA.",
+        "canonicalComponent": "EmptyState from src/components/ui/EmptyState.tsx",
+        "rules": [
+          "Every list, table, and collection must handle the empty case explicitly.",
+          "Empty states always suggest a next action when one exists.",
+          "Never show a blank page or an empty table with just column headers."
+        ]
+      },
+      {
+        "state": "error",
+        "canonicalApproach": "ErrorBoundary at the shell level catches unexpected errors. Page-level errors use inline error banners. Mutation errors use toast.",
+        "canonicalComponent": "ErrorBoundary from src/components/shell/ErrorBoundary.tsx for crashes. InlineError from src/components/ui/InlineError.tsx for page-level. useToast for mutation errors.",
+        "rules": [
+          "Page-level fetch errors show InlineError with retry button, not toast.",
+          "Mutation errors (save, delete, create) show error toast.",
+          "Unexpected crashes are caught by ErrorBoundary and show a 'Something went wrong' page with a reload button.",
+          "Never silently swallow errors. Every error must be visible to the user."
+        ]
+      },
+      {
+        "state": "success",
+        "canonicalApproach": "Success toast via useToast. Auto-dismisses after 3 seconds.",
+        "canonicalComponent": "useToast from src/hooks/useToast.ts",
+        "rules": [
+          "All successful mutations show a success toast.",
+          "Success toasts are brief: '{Resource} saved' or '{Resource} created'.",
+          "No success pages or success modals. Toast only."
+        ]
+      },
+      {
+        "state": "permission-denied",
+        "canonicalApproach": "Permission guard component renders an access-denied state instead of the page content.",
+        "canonicalComponent": "PermissionGuard from src/components/shell/PermissionGuard.tsx",
+        "rules": [
+          "Pages that require specific permissions wrap their content in PermissionGuard.",
+          "The denied state shows an explanation and a link to request access or navigate elsewhere.",
+          "Never show a blank page or redirect silently when permission is denied."
+        ]
+      },
+      {
+        "state": "async-polling",
+        "canonicalApproach": "usePolling hook with configurable interval. Visual indicator shows operation is in progress.",
+        "canonicalComponent": "usePolling from src/hooks/usePolling.ts. ProgressBadge from src/components/ui/ProgressBadge.tsx.",
+        "rules": [
+          "Default polling interval is 5 seconds. Never poll faster than 2 seconds.",
+          "Long-running operations show a ProgressBadge near the triggering element.",
+          "Polling stops automatically when the operation completes or the component unmounts.",
+          "Never use setTimeout chains. Use usePolling."
+        ]
+      }
+    ]
+  },
+
+  "accessibilityBaseline": {
+    "principle": "Foundation-level accessibility is a shell and shared-component concern. Pages that use canonical components inherit baseline accessibility. Pages that deviate must maintain the same baseline.",
+    "rules": [
+      "All interactive elements have visible focus rings via Tailwind ring utilities.",
+      "The left rail traps focus when open on mobile. Escape closes it and returns focus to the hamburger.",
+      "All modals trap focus. Escape closes them. Focus returns to the trigger element.",
+      "DataTable has an aria-label describing its content. Rows are keyboard-navigable.",
+      "All form inputs have associated labels. No placeholder-only inputs.",
+      "Color is never the sole indicator of state. Icons or text accompany status colors.",
+      "Dark mode contrast ratios meet WCAG AA (4.5:1 for normal text, 3:1 for large text).",
+      "Skip-to-content link is the first focusable element in the shell."
+    ]
+  },
+
+  "acceptedLegacyExceptions": [
+    {
+      "file": "src/layouts/Sidebar.tsx",
+      "reason": "Still mounted on 3 dashboard routes until migration is complete.",
+      "migrationTarget": "Replace with CollapsibleNav (collapse disabled). Target: next sprint.",
+      "severity": "high"
+    },
+    {
+      "file": "src/theme/colors.ts",
+      "reason": "Still imported by the charting library wrapper until the generated tokens.ts is available.",
+      "migrationTarget": "Replace with auto-generated tokens.ts. Target: same sprint as token consolidation.",
+      "severity": "high"
+    },
+    {
+      "file": "src/components/dashboard/InlineTable.tsx",
+      "reason": "Used in 3 dashboard pages. Not yet migrated to DataTable.",
+      "migrationTarget": "Replace with DataTable compact variant. Target: next sprint.",
+      "severity": "medium"
+    },
+    {
+      "file": "src/pages/settings/SettingsGrid.tsx",
+      "reason": "One-off table in settings. Low traffic.",
+      "migrationTarget": "Replace with DataTable. Target: backlog.",
+      "severity": "low"
+    }
+  ],
+
+  "cleanupBacklog": [
+    {
+      "item": "Remove Sidebar.tsx after dashboard route migration",
+      "priority": "high",
+      "blockedBy": "CollapsibleNav collapse-disabled mode must be verified on dashboard routes first"
+    },
+    {
+      "item": "Replace manual colors.ts with generated tokens.ts",
+      "priority": "high",
+      "blockedBy": "Build script for token generation must be written and tested"
+    },
+    {
+      "item": "Rewrite tailwind.config.ts color extensions to use var() references",
+      "priority": "high",
+      "blockedBy": "Token source consolidation must be complete first"
+    },
+    {
+      "item": "Migrate InlineTable consumers to DataTable compact variant",
+      "priority": "medium",
+      "blockedBy": null
+    },
+    {
+      "item": "Migrate SettingsGrid to DataTable",
+      "priority": "low",
+      "blockedBy": null
+    },
+    {
+      "item": "Add aria-label to existing DataTable instances",
+      "priority": "medium",
+      "blockedBy": null
+    },
+    {
+      "item": "Verify dark mode contrast ratios across all muted-text usages",
+      "priority": "medium",
+      "blockedBy": null
+    }
+  ],
+
+  "deferredDecisions": [
+    {
+      "decision": "Whether to support a second-rail or inspector panel as a shell region",
+      "reason": "No current use case, but some future workspaces may need it. Defer until the need is concrete.",
+      "revisitTrigger": "When a feature plan requires a persistent right panel that is not page-specific."
+    },
+    {
+      "decision": "Whether to add a notification center to the header",
+      "reason": "No notification system exists yet. Do not reserve a header slot until the feature is planned.",
+      "revisitTrigger": "When a notification or alert feature is scoped."
+    }
+  ]
+}

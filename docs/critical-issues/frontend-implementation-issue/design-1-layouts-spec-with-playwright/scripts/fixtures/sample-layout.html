@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sample Layout</title>
+    <style>
+      :root {
+        --page-max: 1280px;
+        --card-radius: 12px;
+        --card-border: rgb(48, 54, 61);
+        --hero-width: 640px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Arial", sans-serif;
+        background: rgb(10, 12, 16);
+        color: rgb(244, 247, 250);
+      }
+
+      .shell {
+        max-width: var(--page-max);
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 0;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: var(--hero-width) 1fr;
+        gap: 32px;
+        padding: 32px 0 40px;
+      }
+
+      .eyebrow {
+        font-size: 14px;
+        line-height: 16px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgb(160, 170, 180);
+      }
+
+      h1 {
+        margin: 12px 0 16px;
+        font-size: 72px;
+        line-height: 80px;
+        font-weight: 400;
+      }
+
+      p {
+        margin: 0;
+        font-size: 18px;
+        line-height: 28px;
+        color: rgb(205, 212, 219);
+      }
+
+      .request {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        width: 280px;
+      }
+
+      .search {
+        width: 280px;
+        height: 64px;
+        border: 1px solid rgb(148, 140, 45);
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 20px 20px 20px 36px;
+        color: inherit;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        padding-top: 24px;
+      }
+
+      .card {
+        min-height: 220px;
+        padding: 20px;
+        border: 1px solid var(--card-border);
+        border-radius: var(--card-radius);
+        background: rgb(18, 22, 28);
+      }
+
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="nav">
+        <div>Brand</div>
+        <nav>
+          <a href="#cards">Cards</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div>
+            <div class="eyebrow">Reference Surface</div>
+            <h1>Measure this layout</h1>
+            <p>Use this page as a deterministic fixture for viewport-aware layout extraction.</p>
+          </div>
+          <aside class="request">
+            <input class="search" value="Search integrations" />
+            <div class="card">
+              <h2>Request access</h2>
+              <p>Ask for additional integrations and providers.</p>
+            </div>
+          </aside>
+        </section>
+
+        <section id="cards" class="grid">
+          <article class="card"><h2>Card one</h2><p>First card.</p></article>
+          <article class="card"><h2>Card two</h2><p>Second card.</p></article>
+          <article class="card"><h2>Card three</h2><p>Third card.</p></article>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

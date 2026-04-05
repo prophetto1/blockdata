@@ -5,7 +5,12 @@ from fastapi import FastAPI, Depends
 from fastapi.testclient import TestClient
 
 from app.auth.principals import AuthPrincipal
-from app.auth.dependencies import _check_blockdata_admin, require_auth, require_role
+from app.auth.dependencies import (
+    ADMIN_ROLE_VERIFICATION_UNAVAILABLE_DETAIL,
+    _check_blockdata_admin,
+    require_auth,
+    require_role,
+)
 
 
 def test_auth_principal_has_role():
@@ -265,6 +270,52 @@ def test_supabase_jwt_auth_adds_blockdata_and_agchain_admin_roles(monkeypatch):
     get_settings.cache_clear()
 
 
+def test_supabase_jwt_marks_admin_role_verification_failure(monkeypatch):
+    monkeypatch.setenv("PLATFORM_API_M2M_TOKEN", "m2m-token")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-service-key")
+
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+
+    app = FastAPI()
+
+    @app.get("/test")
+    async def test_route(auth: AuthPrincipal = Depends(require_auth)):
+        return {
+            "roles": sorted(auth.roles),
+            "admin_role_verification_failed": auth.admin_role_verification_failed,
+        }
+
+    client = TestClient(app)
+
+    mock_user = MagicMock()
+    mock_user.id = "user-verification-error"
+    mock_user.email = "ops@example.com"
+    mock_user.role = "authenticated"
+
+    with patch("app.auth.dependencies._verify_supabase_jwt") as mock_verify:
+        mock_verify.return_value = mock_user
+        with (
+            patch("app.auth.dependencies._check_superuser") as mock_super,
+            patch("app.auth.dependencies._check_blockdata_admin") as mock_blockdata,
+            patch("app.auth.dependencies._check_agchain_admin") as mock_agchain,
+        ):
+            mock_super.side_effect = RuntimeError("registry unavailable")
+            mock_blockdata.return_value = False
+            mock_agchain.return_value = False
+
+            resp = client.get("/test", headers={"Authorization": "Bearer user-jwt"})
+            assert resp.status_code == 200
+            assert resp.json() == {
+                "roles": ["authenticated"],
+                "admin_role_verification_failed": True,
+            }
+
+    get_settings.cache_clear()
+
+
 def test_check_blockdata_admin_queries_generic_registry_columns(monkeypatch):
     monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
     monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-service-key")
@@ -350,9 +401,58 @@ def test_require_role_rejects_non_admin_user(monkeypatch):
 
     with patch("app.auth.dependencies._verify_supabase_jwt") as mock_verify:
         mock_verify.return_value = mock_user
-        with patch("app.auth.dependencies._check_superuser") as mock_super:
+        with (
+            patch("app.auth.dependencies._check_superuser") as mock_super,
+            patch("app.auth.dependencies._check_blockdata_admin") as mock_blockdata,
+            patch("app.auth.dependencies._check_agchain_admin") as mock_agchain,
+        ):
             mock_super.return_value = False
+            mock_blockdata.return_value = False
+            mock_agchain.return_value = False
             resp = client.get("/admin-test", headers={"Authorization": "Bearer user-jwt"})
             assert resp.status_code == 403
+
+    get_settings.cache_clear()
+
+
+def test_require_role_returns_503_when_admin_role_verification_is_unavailable(
+    monkeypatch,
+):
+    monkeypatch.setenv("PLATFORM_API_M2M_TOKEN", "m2m-token")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake")
+
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+
+    app = FastAPI()
+    admin_only = require_role("platform_admin")
+
+    @app.get("/admin-test")
+    async def admin_route(auth: AuthPrincipal = Depends(admin_only)):
+        return {"ok": True}
+
+    client = TestClient(app)
+
+    mock_user = MagicMock()
+    mock_user.id = "user-xyz"
+    mock_user.email = "ops@example.com"
+    mock_user.role = "authenticated"
+
+    with patch("app.auth.dependencies._verify_supabase_jwt") as mock_verify:
+        mock_verify.return_value = mock_user
+        with (
+            patch("app.auth.dependencies._check_superuser") as mock_super,
+            patch("app.auth.dependencies._check_blockdata_admin") as mock_blockdata,
+            patch("app.auth.dependencies._check_agchain_admin") as mock_agchain,
+        ):
+            mock_super.side_effect = RuntimeError("registry unavailable")
+            mock_blockdata.return_value = False
+            mock_agchain.return_value = False
+
+            resp = client.get("/admin-test", headers={"Authorization": "Bearer user-jwt"})
+            assert resp.status_code == 503
+            assert resp.json()["detail"] == ADMIN_ROLE_VERIFICATION_UNAVAILABLE_DETAIL
 
     get_settings.cache_clear()

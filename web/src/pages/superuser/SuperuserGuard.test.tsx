@@ -174,6 +174,24 @@ describe('SuperuserGuard surfaces', () => {
 
     renderGuard('/app/superuser/operational-readiness');
 
-    expect(screen.getByTestId('app-home')).toBeInTheDocument();
+    expect(screen.getByText(/unable to verify admin access/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
+  });
+
+  it('preserves a previously resolved surface grant even when a background refresh has errored', () => {
+    useAdminSurfaceAccessStateMock.mockReturnValue({
+      access: {
+        blockdataAdmin: true,
+        agchainAdmin: false,
+        superuser: false,
+      },
+      status: 'ready',
+      error: 'network down',
+      refresh: vi.fn(),
+    });
+
+    renderGuard('/app/blockdata-admin');
+
+    expect(screen.getByTestId('protected-surface')).toHaveTextContent('blockdata admin');
   });
 });

@@ -1,5 +1,6 @@
 import { cleanup, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 const platformApiFetchMock = vi.fn();
 const useAuthMock = vi.fn();
@@ -21,6 +22,13 @@ describe('useAdminSurfaceAccess', () => {
     vi.resetModules();
     platformApiFetchMock.mockReset();
     useAuthMock.mockReset();
+    if (typeof globalThis.ResizeObserver === 'undefined') {
+      globalThis.ResizeObserver = class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      } as unknown as typeof ResizeObserver;
+    }
   });
 
   afterEach(() => {
@@ -107,6 +115,46 @@ describe('useAdminSurfaceAccess', () => {
     expect(platformApiFetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('shares one access probe across the real workspace selector and blockdata guard', async () => {
+    useAuthMock.mockReturnValue({
+      loading: false,
+      user: { id: 'user-1' },
+      session: { access_token: 'token-1' },
+    });
+    platformApiFetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        blockdata_admin: true,
+        agchain_admin: false,
+        superuser: false,
+      }),
+    });
+
+    const [{ ShellWorkspaceSelector }, { BlockdataAdminGuard }] = await Promise.all([
+      import('@/components/shell/ShellWorkspaceSelector'),
+      import('@/pages/superuser/SuperuserGuard'),
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/app/blockdata-admin/instance-config']}>
+        <ShellWorkspaceSelector />
+        <Routes>
+          <Route path="/app" element={<div data-testid="app-home">app home</div>} />
+          <Route path="/app/blockdata-admin/*" element={<BlockdataAdminGuard />}>
+            <Route path="*" element={<div data-testid="protected-surface">protected</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('protected-surface')).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: /workspace/i })).toHaveValue('Blockdata Admin');
+    });
+
+    expect(platformApiFetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('reuses resolved access after a consumer remount instead of probing again', async () => {
     useAuthMock.mockReturnValue({
       loading: false,
@@ -164,7 +212,7 @@ describe('useAdminSurfaceAccess', () => {
     expect(result.current.error).toContain('network down');
   });
 
-  it('refreshes access when the authenticated session token changes', async () => {
+  it('refreshes access when the authenticated session token changes without dropping the last ready access', async () => {
     let authState = {
       loading: false,
       user: { id: 'user-1' },
@@ -210,6 +258,15 @@ describe('useAdminSurfaceAccess', () => {
 
     rerender();
 
+    expect(result.current).toMatchObject({
+      status: 'ready',
+      access: {
+        blockdataAdmin: false,
+        agchainAdmin: false,
+        superuser: true,
+      },
+    });
+
     await waitFor(() => {
       expect(result.current).toMatchObject({
         status: 'ready',
@@ -222,5 +279,57 @@ describe('useAdminSurfaceAccess', () => {
     });
 
     expect(platformApiFetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the last known access when a token-refresh probe fails', async () => {
+    let authState = {
+      loading: false,
+      user: { id: 'user-1' },
+      session: { access_token: 'token-1' },
+    };
+    useAuthMock.mockImplementation(() => authState);
+
+    platformApiFetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        blockdata_admin: true,
+        agchain_admin: false,
+        superuser: false,
+      }),
+    });
+
+    const { useAdminSurfaceAccessState } = await importAccessHooks();
+    const { result, rerender } = renderHook(() => useAdminSurfaceAccessState());
+
+    await waitFor(() => {
+      expect(result.current).toMatchObject({
+        status: 'ready',
+        access: {
+          blockdataAdmin: true,
+          agchainAdmin: false,
+          superuser: false,
+        },
+      });
+    });
+
+    authState = {
+      ...authState,
+      session: { access_token: 'token-2' },
+    };
+    platformApiFetchMock.mockRejectedValueOnce(new Error('refresh failed'));
+
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current).toMatchObject({
+        status: 'ready',
+        access: {
+          blockdataAdmin: true,
+          agchainAdmin: false,
+          superuser: false,
+        },
+      });
+      expect(result.current.error).toContain('refresh failed');
+    });
   });
 });

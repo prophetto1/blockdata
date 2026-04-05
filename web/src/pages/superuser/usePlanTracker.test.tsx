@@ -1,5 +1,5 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, render, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FsNode } from '@/lib/fs-access';
 import {
@@ -25,6 +25,23 @@ vi.mock('@/lib/fs-access', () => ({
 
 vi.mock('./MdxEditorSurface', () => ({
   MdxEditorSurface: ({ content }: { content: string }) => <div data-testid="mdx-editor-surface">{content}</div>,
+}));
+
+let capturedNavigatorProps: Record<string, unknown> | null = null;
+let capturedMetadataProps: Record<string, unknown> | null = null;
+
+vi.mock('./PlanStateNavigator', () => ({
+  PlanStateNavigator: (props: Record<string, unknown>) => {
+    capturedNavigatorProps = props;
+    return <div data-testid="plan-state-navigator-stub" />;
+  },
+}));
+
+vi.mock('./PlanMetadataPane', () => ({
+  PlanMetadataPane: (props: Record<string, unknown>) => {
+    capturedMetadataProps = props;
+    return <div data-testid="plan-metadata-pane-stub" />;
+  },
 }));
 
 function createFileNode(
@@ -65,19 +82,75 @@ function createDirectoryNode(
   };
 }
 
+function buildPlanMarkdown(input: {
+  title: string;
+  planId: string;
+  status: string;
+  version: number;
+  productL3: string;
+  body: string;
+}) {
+  return `---
+title: ${input.title}
+planId: ${input.planId}
+artifactType: plan
+status: ${input.status}
+version: ${input.version}
+productL1: blockdata
+productL2: frontend
+productL3: ${input.productL3}
+createdAt: 2026-04-03T10:00:00Z
+updatedAt: 2026-04-04T10:00:00Z
+---
+# ${input.title}
+
+${input.body}
+`;
+}
+
+function buildNoteMarkdown(input: {
+  title: string;
+  planId: string;
+  artifactType: string;
+  status: string;
+  version: number;
+  body: string;
+}) {
+  return `---
+title: ${input.title}
+planId: ${input.planId}
+artifactType: ${input.artifactType}
+status: ${input.status}
+version: ${input.version}
+productL1: blockdata
+productL2: frontend
+productL3: ${input.planId}
+createdAt: 2026-04-03T11:00:00Z
+updatedAt: 2026-04-04T11:00:00Z
+---
+# ${input.title}
+
+${input.body}
+`;
+}
+
 describe('usePlanTracker', () => {
   const rootHandle = {
     name: 'plans',
     queryPermission: vi.fn(async () => 'granted'),
   } as unknown as FileSystemDirectoryHandle;
-  const nestedDirHandle = {
-    name: 'agchain',
+  const archiveDirHandle = {
+    name: 'archive',
     queryPermission: vi.fn(async () => 'granted'),
   } as unknown as FileSystemDirectoryHandle;
 
-  const refactorPlanHandle = {} as FileSystemFileHandle;
-  const refactorEvalHandle = {} as FileSystemFileHandle;
-  const kickoffHandle = {} as FileSystemFileHandle;
+  const todoPlanHandle = {} as FileSystemFileHandle;
+  const reviewPlanHandle = {} as FileSystemFileHandle;
+  const reviewNoteHandle = {} as FileSystemFileHandle;
+  const approvedPlanHandle = {} as FileSystemFileHandle;
+  const lineagePlanHandle = {} as FileSystemFileHandle;
+  const lineageApprovalHandle = {} as FileSystemFileHandle;
+  const implementedPlanHandle = {} as FileSystemFileHandle;
 
   let tree: FsNode[];
   let fileContents: Map<FileSystemFileHandle, string>;
@@ -88,59 +161,130 @@ describe('usePlanTracker', () => {
     path: string;
   }>;
 
+  function mountNavigator(result: ReturnType<typeof renderHook<typeof usePlanTracker>>['result']) {
+    capturedNavigatorProps = null;
+    return render(<>{result.current.renderContent('plan-state')}</>);
+  }
+
+  function mountMetadata(result: ReturnType<typeof renderHook<typeof usePlanTracker>>['result']) {
+    capturedMetadataProps = null;
+    return render(<>{result.current.renderContent('metadata')}</>);
+  }
+
+  function latestCreatedFile() {
+    expect(createdFiles.length).toBeGreaterThan(0);
+    return createdFiles.at(-1)!;
+  }
+
+  function actionIds() {
+    return ((capturedMetadataProps?.availableActions as Array<{ id: string }>) ?? []).map((action) => action.id);
+  }
+
   function setTree() {
     tree = [
-      createFileNode('refactor-database-schema.md', rootHandle, refactorPlanHandle),
+      createFileNode('access-control-refactor.v1.md', rootHandle, todoPlanHandle),
+      createFileNode('schema-hardening.v1.md', rootHandle, reviewPlanHandle),
+      createFileNode('schema-hardening.v1.evaluation.1.md', rootHandle, reviewNoteHandle),
+      createFileNode('rollout-automation.v1.md', rootHandle, lineagePlanHandle),
+      createFileNode('rollout-automation.v1.approval.1.md', rootHandle, lineageApprovalHandle),
+      createFileNode('deployment-validation.v1.md', rootHandle, implementedPlanHandle),
       createDirectoryNode(
-        'agchain',
+        'archive',
         rootHandle,
-        nestedDirHandle,
-        [
-          createFileNode('refactor-database-schema-plan-evaluation.md', nestedDirHandle, refactorEvalHandle, 'agchain'),
-          createFileNode('initial-project-setup-plan-evaluation.md', nestedDirHandle, kickoffHandle, 'agchain'),
-        ],
+        archiveDirHandle,
+        [createFileNode('launch-readiness.v1.md', archiveDirHandle, approvedPlanHandle, 'archive')],
       ),
     ];
   }
 
   function setFileContents() {
     fileContents = new Map<FileSystemFileHandle, string>([
-      [refactorPlanHandle, '# Refactor Database Schema\n\nDraft plan body.'],
       [
-        refactorEvalHandle,
-        `---
-title: Schema Evaluation
-planId: refactor-database-schema
-artifactType: evaluation
-status: under-review
-version: 1
----
-# Schema Evaluation
-
-Current schema limitations identified.`,
+        todoPlanHandle,
+        buildPlanMarkdown({
+          title: 'Access Control Refactor',
+          planId: 'access-control-refactor',
+          status: 'draft',
+          version: 1,
+          productL3: 'access-control',
+          body: 'Draft access control changes.',
+        }),
       ],
       [
-        kickoffHandle,
-        `---
-title: Project Kickoff Review
-planId: initial-project-setup
-artifactType: evaluation
-status: under-review
-version: 1
----
-# Project Kickoff Review
-
-Initial setup is ready for review.`,
+        reviewPlanHandle,
+        buildPlanMarkdown({
+          title: 'Schema Hardening',
+          planId: 'schema-hardening',
+          status: 'under-review',
+          version: 1,
+          productL3: 'schema-hardening',
+          body: 'Database schema hardening proposal.',
+        }),
+      ],
+      [
+        reviewNoteHandle,
+        buildNoteMarkdown({
+          title: 'Schema Review Note',
+          planId: 'schema-hardening',
+          artifactType: 'evaluation',
+          status: 'under-review',
+          version: 1,
+          body: 'Legacy review note content.',
+        }),
+      ],
+      [
+        approvedPlanHandle,
+        buildPlanMarkdown({
+          title: 'Launch Readiness',
+          planId: 'launch-readiness',
+          status: 'approved',
+          version: 1,
+          productL3: 'launch-readiness',
+          body: 'Approved launch plan body.',
+        }),
+      ],
+      [
+        lineagePlanHandle,
+        buildPlanMarkdown({
+          title: 'Rollout Automation',
+          planId: 'rollout-automation',
+          status: 'in-progress',
+          version: 1,
+          productL3: 'rollout-automation',
+          body: 'Implementation is underway.',
+        }),
+      ],
+      [
+        lineageApprovalHandle,
+        buildNoteMarkdown({
+          title: 'Rollout Approval Note',
+          planId: 'rollout-automation',
+          artifactType: 'approval',
+          status: 'approved',
+          version: 1,
+          body: 'Approval has already been recorded.',
+        }),
+      ],
+      [
+        implementedPlanHandle,
+        buildPlanMarkdown({
+          title: 'Deployment Validation',
+          planId: 'deployment-validation',
+          status: 'implemented',
+          version: 1,
+          productL3: 'deployment-validation',
+          body: 'Implementation is complete and ready for verification.',
+        }),
       ],
     ]);
   }
 
   function addCreatedFile(parentHandle: FileSystemDirectoryHandle, name: string, handle: FileSystemFileHandle) {
-    const parentPath = parentHandle === nestedDirHandle ? 'agchain' : '';
+    const parentPath = parentHandle === archiveDirHandle ? 'archive' : '';
     const node = createFileNode(name, parentHandle, handle, parentPath);
 
-    if (parentHandle === nestedDirHandle) {
-      const nestedDirectory = tree.find((entry) => entry.kind === 'directory' && entry.handle === nestedDirHandle);
+    if (parentHandle === archiveDirHandle) {
+      const nestedDirectory = tree.find((entry) => entry.kind === 'directory' && entry.handle === archiveDirHandle);
       nestedDirectory!.children = [...(nestedDirectory!.children ?? []), node];
     } else {
       tree = [...tree, node];
@@ -151,12 +295,10 @@ Initial setup is ready for review.`,
     fileContents.set(handle, '');
   }
 
-  function latestCreatedFile() {
-    expect(createdFiles.length).toBeGreaterThan(0);
-    return createdFiles.at(-1)!;
-  }
-
   beforeEach(() => {
+    capturedNavigatorProps = null;
+    capturedMetadataProps = null;
+
     vi.mocked(createFile).mockReset();
     vi.mocked(restoreDirectoryHandle).mockReset();
     vi.mocked(readDirectory).mockReset();
@@ -182,300 +324,314 @@ Initial setup is ready for review.`,
     });
   });
 
-  it('restores a previously chosen plans directory and groups markdown files into plan units', async () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('keeps selection coherent when the lifecycle tab changes and clears selection for an empty state', async () => {
     const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
 
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
+    const navigatorView = mountNavigator(result);
+    await waitFor(() => expect(capturedNavigatorProps).not.toBeNull());
 
-    expect(restoreDirectoryHandle).toHaveBeenCalledWith('plan-tracker-test');
-    expect(readDirectory).toHaveBeenCalledWith(rootHandle);
-    expect(result.current.selectedPlan?.planId).toBe('initial-project-setup');
-    expect(result.current.planUnits.map((unit) => unit.planId)).toEqual([
-      'initial-project-setup',
-      'refactor-database-schema',
+    expect(result.current.activeState).toBe('to-do');
+    expect(result.current.selectedPlan?.planId).toBe('access-control-refactor');
+
+    await act(async () => {
+      (capturedNavigatorProps!.onChangeState as (state: string) => void)('under-review');
+    });
+
+    await waitFor(() => expect(result.current.activeState).toBe('under-review'));
+    expect(result.current.selectedPlan?.planId).toBe('schema-hardening');
+    expect(result.current.selectedArtifact?.artifactType).toBe('plan');
+
+    navigatorView.unmount();
+    mountNavigator(result);
+    await waitFor(() => expect(capturedNavigatorProps).not.toBeNull());
+
+    await act(async () => {
+      (capturedNavigatorProps!.onChangeState as (state: string) => void)('closed');
+    });
+
+    await waitFor(() => expect(result.current.activeState).toBe('closed'));
+    expect(result.current.selectedPlan).toBeNull();
+    expect(result.current.selectedArtifact).toBeNull();
+    expect(result.current.documentContent).toBe('');
+  });
+
+  it('passes lifecycle-gated actions with no legacy fallback vocabulary into the metadata pane', async () => {
+    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
+
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
+
+    act(() => {
+      result.current.selectPlan('schema-hardening');
+    });
+
+    const metadataView = mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
+
+    expect(capturedMetadataProps!.availableActions).toEqual([
+      { id: 'send-back', label: 'Send Back' },
+      { id: 'approve', label: 'Approve' },
     ]);
+    expect(actionIds()).not.toContain('approve-with-notes');
+    expect(actionIds()).not.toContain('reject-with-notes');
+    expect(typeof capturedMetadataProps!.onCreateNote).toBe('function');
+
+    metadataView.unmount();
   });
 
-  it('updates the selected artifact when a different plan unit is selected', async () => {
+  it('creates artifact-backed notes using the coarse phase-based note mapping without changing lifecycle state', async () => {
     const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
 
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
 
     act(() => {
-      result.current.selectPlan('refactor-database-schema');
+      result.current.selectPlan('launch-readiness');
     });
 
-    expect(result.current.selectedPlan?.planId).toBe('refactor-database-schema');
-    expect(result.current.selectedArtifact?.title).toBe('Refactor Database Schema');
-
-    const evaluation = result.current.selectedPlan?.artifacts.find((artifact) => artifact.artifactType === 'evaluation');
-    expect(evaluation).toBeDefined();
-
-    act(() => {
-      result.current.selectArtifact(evaluation!.artifactId);
-    });
-
-    expect(result.current.selectedArtifact?.title).toBe('Schema Evaluation');
-    expect(result.current.documentContent).toContain('Current schema limitations identified.');
-  });
-
-  it('saves the active document and refreshes plan units after a write', async () => {
-    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
-
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
-
-    act(() => {
-      result.current.selectPlan('refactor-database-schema');
-      result.current.setDocumentContent('# Refactor Database Schema\n\nUpdated after review.');
-    });
-
-    expect(result.current.dirty).toBe(true);
+    mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
 
     await act(async () => {
-      await result.current.saveCurrentDocument();
-    });
-
-    await waitFor(() => expect(result.current.dirty).toBe(false));
-
-    expect(writeFileContent).toHaveBeenCalledWith(refactorPlanHandle, '# Refactor Database Schema\n\nUpdated after review.');
-    expect(vi.mocked(readDirectory).mock.calls.length).toBeGreaterThanOrEqual(2);
-    expect(result.current.documentContent).toContain('Updated after review.');
-  });
-
-  it('gates dirty workflow actions until the user saves, discards, or cancels', async () => {
-    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
-
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
-
-    act(() => {
-      result.current.selectPlan('refactor-database-schema');
-    });
-
-    await waitFor(() => expect(result.current.selectedPlan?.planId).toBe('refactor-database-schema'));
-
-    act(() => {
-      result.current.setDocumentContent('# Refactor Database Schema\n\nDirty edits.');
-    });
-
-    expect(result.current.dirty).toBe(true);
-
-    act(() => {
-      expect(result.current.requestWorkflowAction('create-revision')).toBe(false);
-    });
-
-    expect(result.current.pendingAction).toEqual({ actionId: 'create-revision' });
-
-    await act(async () => {
-      const resolution = await result.current.resolvePendingAction('cancel');
-      expect(resolution).toEqual({
-        actionId: 'create-revision',
-        shouldProceed: false,
-        resolution: 'cancel',
+      await (capturedMetadataProps!.onCreateNote as (input: { title: string; body: string }) => Promise<void>)({
+        title: 'Implementation Journal',
+        body: 'Started rollout sequencing.',
       });
-    });
-
-    expect(result.current.pendingAction).toBeNull();
-    expect(result.current.dirty).toBe(true);
-    expect(result.current.documentContent).toContain('Dirty edits.');
-    expect(writeFileContent).not.toHaveBeenCalled();
-
-    act(() => {
-      expect(result.current.requestWorkflowAction('create-revision')).toBe(false);
-    });
-
-    await act(async () => {
-      const resolution = await result.current.resolvePendingAction('discard');
-      expect(resolution).toEqual({
-        actionId: 'create-revision',
-        shouldProceed: true,
-        resolution: 'discard',
-      });
-    });
-
-    expect(result.current.pendingAction).toBeNull();
-    expect(result.current.dirty).toBe(false);
-    const createdRevision = latestCreatedFile();
-    expect(createdRevision.name).toBe('refactor-database-schema.v2.md');
-    expect(fileContents.get(refactorPlanHandle)).toContain('status: superseded');
-    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe(createdRevision.path));
-  });
-
-  it('saves the active document before allowing a gated workflow action to continue', async () => {
-    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
-
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
-
-    act(() => {
-      result.current.selectPlan('refactor-database-schema');
-    });
-
-    await waitFor(() => expect(result.current.selectedPlan?.planId).toBe('refactor-database-schema'));
-
-    act(() => {
-      result.current.setDocumentContent('# Refactor Database Schema\n\nReady for save gate.');
-    });
-
-    act(() => {
-      expect(result.current.requestWorkflowAction('approve-with-notes')).toBe(false);
-    });
-
-    await act(async () => {
-      const resolution = await result.current.resolvePendingAction('save');
-      expect(resolution).toEqual({
-        actionId: 'approve-with-notes',
-        shouldProceed: true,
-        resolution: 'save',
-      });
-    });
-
-    await waitFor(() => expect(result.current.dirty).toBe(false));
-
-    expect(writeFileContent).toHaveBeenCalledWith(refactorPlanHandle, '# Refactor Database Schema\n\nReady for save gate.');
-    const createdApproval = latestCreatedFile();
-    expect(createdApproval.name).toBe('refactor-database-schema.v1.approval.1.md');
-    expect(result.current.pendingAction).toBeNull();
-    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe(createdApproval.path));
-  });
-
-  it('creates a rejection artifact and normalizes the selected legacy file in place', async () => {
-    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
-
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
-
-    act(() => {
-      result.current.selectPlan('refactor-database-schema');
-    });
-
-    await waitFor(() => expect(result.current.selectedArtifact?.artifactType).toBe('plan'));
-
-    await act(async () => {
-      await result.current.runWorkflowAction('reject-with-notes');
     });
 
     const created = latestCreatedFile();
-    expect(created.parentHandle).toBe(rootHandle);
-    expect(created.name).toBe('refactor-database-schema.v1.evaluation.2.md');
-    expect(fileContents.get(refactorPlanHandle)).toContain('artifactType: plan');
-    expect(fileContents.get(refactorPlanHandle)).toContain('status: rejected');
-    expect(fileContents.get(refactorPlanHandle)).toContain('planId: refactor-database-schema');
-    expect(fileContents.get(created.handle)).toContain('artifactType: evaluation');
-    expect(fileContents.get(created.handle)).toContain('status: rejected');
-    await waitFor(() => expect(result.current.selectedPlan?.status).toBe('rejected'));
-    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe(created.path));
+    expect(created.parentHandle).toBe(archiveDirHandle);
+    expect(created.name).toBe('launch-readiness.v1.implementation.1.md');
+    expect(fileContents.get(created.handle)).toContain('artifactType: implementation-note');
+    expect(result.current.selectedPlan?.status).toBe('approved');
+    expect(result.current.activeState).toBe('approved');
   });
 
-  it('continues an approval action after the save gate resolves and creates an approval artifact', async () => {
+  it('runs start-work and submit-for-review as plan-only updates and rejects mark-implemented before approval exists', async () => {
     const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
 
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
 
     act(() => {
-      result.current.selectPlan('refactor-database-schema');
-    });
-
-    await waitFor(() => expect(result.current.selectedPlan?.planId).toBe('refactor-database-schema'));
-
-    act(() => {
-      result.current.setDocumentContent('# Refactor Database Schema\n\nReady for approval.');
+      result.current.selectPlan('access-control-refactor');
     });
 
     await act(async () => {
-      const started = await result.current.runWorkflowAction('approve-with-notes');
+      const started = await result.current.runWorkflowAction('start-work');
+      expect(started).toBe(true);
+    });
+
+    expect(createdFiles).toHaveLength(0);
+    expect(fileContents.get(todoPlanHandle)).toContain('status: in-progress');
+    await waitFor(() => expect(result.current.activeState).toBe('in-progress'));
+    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe('access-control-refactor.v1.md'));
+
+    mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
+    expect(capturedMetadataProps!.availableActions).toEqual([{ id: 'submit-for-review', label: 'Submit for Review' }]);
+
+    await act(async () => {
+      const disallowed = await result.current.runWorkflowAction('mark-implemented');
+      expect(disallowed).toBe(false);
+    });
+
+    expect(createdFiles).toHaveLength(0);
+    expect(fileContents.get(todoPlanHandle)).not.toContain('status: implemented');
+
+    await act(async () => {
+      const submitted = await result.current.runWorkflowAction('submit-for-review');
+      expect(submitted).toBe(true);
+    });
+
+    expect(createdFiles).toHaveLength(0);
+    expect(fileContents.get(todoPlanHandle)).toContain('status: under-review');
+    await waitFor(() => expect(result.current.activeState).toBe('under-review'));
+  });
+
+  it('creates a review note on send-back and keeps the plan selected in its new lifecycle tab', async () => {
+    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
+
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
+
+    act(() => {
+      result.current.selectPlan('schema-hardening');
+    });
+
+    await act(async () => {
+      const sentBack = await result.current.runWorkflowAction('send-back');
+      expect(sentBack).toBe(true);
+    });
+
+    const created = latestCreatedFile();
+    expect(created.name).toBe('schema-hardening.v1.review.2.md');
+    expect(fileContents.get(reviewPlanHandle)).toContain('status: in-progress');
+    expect(fileContents.get(created.handle)).toContain('artifactType: review-note');
+    await waitFor(() => expect(result.current.selectedPlan?.status).toBe('in-progress'));
+    await waitFor(() => expect(result.current.activeState).toBe('in-progress'));
+    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe(created.path));
+  });
+
+  it('creates an approval note, moves to approved, and only exposes mark-implementing from approved', async () => {
+    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
+
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
+
+    act(() => {
+      result.current.selectPlan('schema-hardening');
+    });
+
+    await act(async () => {
+      const approved = await result.current.runWorkflowAction('approve');
+      expect(approved).toBe(true);
+    });
+
+    const created = latestCreatedFile();
+    expect(created.name).toBe('schema-hardening.v1.approval.1.md');
+    expect(fileContents.get(reviewPlanHandle)).toContain('status: approved');
+    expect(fileContents.get(created.handle)).toContain('artifactType: approval-note');
+    await waitFor(() => expect(result.current.activeState).toBe('approved'));
+
+    mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
+    expect(capturedMetadataProps!.availableActions).toEqual([{ id: 'mark-implementing', label: 'Mark Implementing' }]);
+  });
+
+  it('does not allow close outside verified and marks implementing from approved with an implementation note', async () => {
+    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
+
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
+
+    act(() => {
+      result.current.selectPlan('launch-readiness');
+    });
+
+    mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
+    expect(capturedMetadataProps!.availableActions).toEqual([{ id: 'mark-implementing', label: 'Mark Implementing' }]);
+
+    await act(async () => {
+      const closed = await result.current.runWorkflowAction('close');
+      expect(closed).toBe(false);
+    });
+
+    expect(createdFiles).toHaveLength(0);
+
+    await act(async () => {
+      const marked = await result.current.runWorkflowAction('mark-implementing');
+      expect(marked).toBe(true);
+    });
+
+    const created = latestCreatedFile();
+    expect(created.name).toBe('launch-readiness.v1.implementation.1.md');
+    expect(fileContents.get(approvedPlanHandle)).toContain('status: in-progress');
+    expect(fileContents.get(created.handle)).toContain('artifactType: implementation-note');
+    await waitFor(() => expect(result.current.activeState).toBe('in-progress'));
+  });
+
+  it('allows mark-implemented only when approval exists for the current lineage', async () => {
+    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
+
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
+
+    act(() => {
+      result.current.selectPlan('rollout-automation');
+    });
+
+    mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
+    expect(capturedMetadataProps!.availableActions).toEqual([
+      { id: 'submit-for-review', label: 'Submit for Review' },
+      { id: 'mark-implemented', label: 'Mark Implemented' },
+    ]);
+
+    await act(async () => {
+      const marked = await result.current.runWorkflowAction('mark-implemented');
+      expect(marked).toBe(true);
+    });
+
+    const created = latestCreatedFile();
+    expect(created.name).toBe('rollout-automation.v1.implementation.1.md');
+    expect(fileContents.get(lineagePlanHandle)).toContain('status: implemented');
+    expect(fileContents.get(created.handle)).toContain('artifactType: implementation-note');
+    await waitFor(() => expect(result.current.activeState).toBe('implemented'));
+  });
+
+  it('requests verification and then closes, creating verification and closure artifacts only on the locked states', async () => {
+    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
+
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
+
+    act(() => {
+      result.current.selectPlan('deployment-validation');
+    });
+
+    mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
+    expect(capturedMetadataProps!.availableActions).toEqual([
+      { id: 'request-verification', label: 'Request Verification' },
+    ]);
+
+    await act(async () => {
+      const verified = await result.current.runWorkflowAction('request-verification');
+      expect(verified).toBe(true);
+    });
+
+    const verificationFile = latestCreatedFile();
+    expect(verificationFile.name).toBe('deployment-validation.v1.verification.1.md');
+    expect(fileContents.get(implementedPlanHandle)).toContain('status: verified');
+    expect(fileContents.get(verificationFile.handle)).toContain('artifactType: verification-note');
+    await waitFor(() => expect(result.current.activeState).toBe('verified'));
+
+    mountMetadata(result);
+    await waitFor(() => expect(capturedMetadataProps).not.toBeNull());
+    expect(capturedMetadataProps!.availableActions).toEqual([{ id: 'close', label: 'Close' }]);
+
+    await act(async () => {
+      const closed = await result.current.runWorkflowAction('close');
+      expect(closed).toBe(true);
+    });
+
+    const closureFile = latestCreatedFile();
+    expect(closureFile.name).toBe('deployment-validation.v1.closure.1.md');
+    expect(fileContents.get(implementedPlanHandle)).toContain('status: closed');
+    expect(fileContents.get(closureFile.handle)).toContain('artifactType: closure-note');
+    await waitFor(() => expect(result.current.activeState).toBe('closed'));
+  });
+
+  it('keeps dirty-action gating in front of workflow side effects until resolved', async () => {
+    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
+
+    await waitFor(() => expect(result.current.planUnits).toHaveLength(5));
+
+    act(() => {
+      result.current.selectPlan('schema-hardening');
+      result.current.setDocumentContent('# Schema Hardening\n\nUnsaved approval edits.');
+    });
+
+    await act(async () => {
+      const started = await result.current.runWorkflowAction('approve');
       expect(started).toBe(false);
     });
 
-    expect(result.current.pendingAction).toEqual({ actionId: 'approve-with-notes' });
+    expect(result.current.pendingAction).toEqual({ actionId: 'approve' });
+    expect(createdFiles).toHaveLength(0);
+    expect(fileContents.get(reviewPlanHandle)).not.toContain('status: approved');
 
     await act(async () => {
       const resolution = await result.current.resolvePendingAction('save');
       expect(resolution).toEqual({
-        actionId: 'approve-with-notes',
+        actionId: 'approve',
         shouldProceed: true,
         resolution: 'save',
       });
     });
 
     const created = latestCreatedFile();
-    expect(created.name).toBe('refactor-database-schema.v1.approval.1.md');
-    expect(fileContents.get(refactorPlanHandle)).toContain('status: approved');
-    expect(fileContents.get(refactorPlanHandle)).toContain('Ready for approval.');
-    expect(fileContents.get(created.handle)).toContain('artifactType: approval');
-    expect(fileContents.get(created.handle)).toContain('status: approved');
-    await waitFor(() => expect(result.current.selectedPlan?.status).toBe('approved'));
-    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe(created.path));
-  });
-
-  it('creates a new revision, supersedes the previous plan file, and selects the new revision', async () => {
-    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
-
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
-
-    act(() => {
-      result.current.selectPlan('refactor-database-schema');
-    });
-
-    await waitFor(() => expect(result.current.selectedArtifact?.artifactType).toBe('plan'));
-
-    await act(async () => {
-      await result.current.runWorkflowAction('create-revision');
-    });
-
-    const created = latestCreatedFile();
-    expect(created.name).toBe('refactor-database-schema.v2.md');
-    expect(fileContents.get(refactorPlanHandle)).toContain('status: superseded');
-    expect(fileContents.get(created.handle)).toContain('artifactType: plan');
-    expect(fileContents.get(created.handle)).toContain('status: draft');
-    expect(fileContents.get(created.handle)).toContain('version: 2');
-    await waitFor(() => expect(result.current.selectedPlan?.planId).toBe('refactor-database-schema'));
-    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe(created.path));
-    await waitFor(() => expect(result.current.selectedArtifact?.version).toBe(2));
-  });
-
-  it('creates an implementation note artifact and updates the plan status', async () => {
-    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
-
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
-
-    act(() => {
-      result.current.selectPlan('refactor-database-schema');
-    });
-
-    await waitFor(() => expect(result.current.selectedArtifact?.artifactType).toBe('plan'));
-
-    await act(async () => {
-      await result.current.runWorkflowAction('attach-implementation-note');
-    });
-
-    const created = latestCreatedFile();
-    expect(created.name).toBe('refactor-database-schema.v1.implementation.1.md');
-    expect(fileContents.get(refactorPlanHandle)).toContain('status: in-progress');
-    expect(fileContents.get(created.handle)).toContain('artifactType: implementation-note');
-    expect(fileContents.get(created.handle)).toContain('status: in-progress');
-    await waitFor(() => expect(result.current.selectedPlan?.status).toBe('in-progress'));
-    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe(created.path));
-  });
-
-  it('creates a verification artifact and updates the plan status', async () => {
-    const { result } = renderHook(() => usePlanTracker('plan-tracker-test'));
-
-    await waitFor(() => expect(result.current.planUnits).toHaveLength(2));
-
-    act(() => {
-      result.current.selectPlan('refactor-database-schema');
-    });
-
-    await waitFor(() => expect(result.current.selectedArtifact?.artifactType).toBe('plan'));
-
-    await act(async () => {
-      await result.current.runWorkflowAction('attach-verification');
-    });
-
-    const created = latestCreatedFile();
-    expect(created.name).toBe('refactor-database-schema.v1.verification.1.md');
-    expect(fileContents.get(refactorPlanHandle)).toContain('status: verified');
-    expect(fileContents.get(created.handle)).toContain('artifactType: verification-note');
-    expect(fileContents.get(created.handle)).toContain('status: verified');
-    await waitFor(() => expect(result.current.selectedPlan?.status).toBe('verified'));
-    await waitFor(() => expect(result.current.selectedArtifact?.path).toBe(created.path));
+    expect(created.name).toBe('schema-hardening.v1.approval.1.md');
+    expect(fileContents.get(reviewPlanHandle)).toContain('Unsaved approval edits.');
+    expect(fileContents.get(reviewPlanHandle)).toContain('status: approved');
   });
 });

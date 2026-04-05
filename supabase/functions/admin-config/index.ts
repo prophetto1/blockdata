@@ -141,7 +141,7 @@ export async function adminConfigHandler(req: Request): Promise<Response> {
 
       const runtimePolicy = await loadRuntimePolicy(supabaseAdmin);
       return json(200, {
-        superuser: {
+        blockdata_admin: {
           user_id: admin.userId,
           email: admin.email,
         },

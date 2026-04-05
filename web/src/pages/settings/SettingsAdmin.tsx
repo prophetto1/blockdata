@@ -22,7 +22,7 @@ type AuditRow = {
 };
 
 type AdminConfigResponse = {
-  superuser: { user_id: string; email: string };
+  blockdata_admin: { user_id: string; email: string };
   audit: AuditRow[];
 };
 

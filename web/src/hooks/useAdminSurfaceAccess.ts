@@ -24,7 +24,8 @@ type AccessResponse = {
 };
 
 type SharedAccessState = {
-  sessionKey: string | null;
+  userKey: string | null;
+  requestKey: string | null;
   access: AdminSurfaceAccess | null;
   status: AdminSurfaceAccessStatus;
   error: string | null;
@@ -40,20 +41,22 @@ const FULL_ACCESS: AdminSurfaceAccess = {
 
 let sharedState: SharedAccessState = AUTH_BYPASS_ENABLED
   ? {
-      sessionKey: '__auth_bypass__',
+      userKey: '__auth_bypass__',
+      requestKey: '__auth_bypass__',
       access: FULL_ACCESS,
       status: 'ready',
       error: null,
     }
   : {
-      sessionKey: null,
+      userKey: null,
+      requestKey: null,
       access: null,
       status: 'idle',
       error: null,
     };
 
 const listeners = new Set<() => void>();
-const inFlightBySession = new Map<string, Promise<void>>();
+const inFlightByRequest = new Map<string, Promise<void>>();
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
@@ -75,9 +78,13 @@ function setSharedState(next: SharedAccessState | ((current: SharedAccessState) 
   emit();
 }
 
-function buildSessionKey(userId: string | null, accessToken: string | null) {
-  if (!userId || !accessToken) return null;
-  return `${userId}:${accessToken}`;
+function buildUserKey(userId: string | null) {
+  return userId ?? null;
+}
+
+function buildRequestKey(userKey: string | null, accessToken: string | null) {
+  if (!userKey || !accessToken) return null;
+  return `${userKey}:${accessToken}`;
 }
 
 function normalizeAccess(body: AccessResponse): AdminSurfaceAccess {
@@ -98,40 +105,44 @@ function describeFailure(resp: Response, bodyText: string) {
 
 function resetSharedAccessState() {
   if (AUTH_BYPASS_ENABLED) return;
-  if (sharedState.sessionKey === null && sharedState.status === 'idle' && sharedState.access === null && sharedState.error === null) {
+  if (
+    sharedState.userKey === null &&
+    sharedState.requestKey === null &&
+    sharedState.status === 'idle' &&
+    sharedState.access === null &&
+    sharedState.error === null
+  ) {
     return;
   }
-  inFlightBySession.clear();
+  inFlightByRequest.clear();
   setSharedState({
-    sessionKey: null,
+    userKey: null,
+    requestKey: null,
     access: null,
     status: 'idle',
     error: null,
   });
 }
 
-async function resolveSharedAccess(sessionKey: string, force = false): Promise<void> {
+async function resolveSharedAccess(userKey: string, requestKey: string, force = false): Promise<void> {
   if (AUTH_BYPASS_ENABLED) return;
 
   if (!force) {
-    const inFlight = inFlightBySession.get(sessionKey);
+    const inFlight = inFlightByRequest.get(requestKey);
     if (inFlight) return inFlight;
-    if (sharedState.sessionKey === sessionKey && sharedState.status === 'ready') return;
+    if (sharedState.userKey === userKey && sharedState.requestKey === requestKey && sharedState.status === 'ready') {
+      return;
+    }
   }
 
   setSharedState((current) => {
-    if (
-      !force &&
-      current.sessionKey === sessionKey &&
-      (current.status === 'loading' || current.status === 'ready')
-    ) {
-      return current;
-    }
+    const hasResolvedAccess = current.userKey === userKey && current.access !== null;
 
     return {
-      sessionKey,
-      access: current.sessionKey === sessionKey ? current.access : null,
-      status: 'loading',
+      userKey,
+      requestKey,
+      access: hasResolvedAccess ? current.access : null,
+      status: hasResolvedAccess ? 'ready' : 'loading',
       error: null,
     };
   });
@@ -146,9 +157,10 @@ async function resolveSharedAccess(sessionKey: string, force = false): Promise<v
 
       const body = await resp.json() as AccessResponse;
       setSharedState((current) => {
-        if (current.sessionKey !== sessionKey) return current;
+        if (current.userKey !== userKey || current.requestKey !== requestKey) return current;
         return {
-          sessionKey,
+          userKey,
+          requestKey,
           access: normalizeAccess(body),
           status: 'ready',
           error: null,
@@ -157,20 +169,21 @@ async function resolveSharedAccess(sessionKey: string, force = false): Promise<v
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setSharedState((current) => {
-        if (current.sessionKey !== sessionKey) return current;
+        if (current.userKey !== userKey || current.requestKey !== requestKey) return current;
         return {
-          sessionKey,
+          userKey,
+          requestKey,
           access: current.access,
-          status: 'error',
+          status: current.access ? 'ready' : 'error',
           error: message,
         };
       });
     } finally {
-      inFlightBySession.delete(sessionKey);
+      inFlightByRequest.delete(requestKey);
     }
   })();
 
-  inFlightBySession.set(sessionKey, request);
+  inFlightByRequest.set(requestKey, request);
   return request;
 }
 
@@ -180,25 +193,26 @@ export function useAdminSurfaceAccessState(): AdminSurfaceAccessState {
 
   const userId = user?.id ?? null;
   const accessToken = session?.access_token ?? null;
-  const sessionKey = buildSessionKey(userId, accessToken);
+  const userKey = buildUserKey(userId);
+  const requestKey = buildRequestKey(userKey, accessToken);
 
   useEffect(() => {
     if (AUTH_BYPASS_ENABLED) return;
     if (loading) return;
 
-    if (!sessionKey) {
+    if (!requestKey || !userKey) {
       resetSharedAccessState();
       return;
     }
 
-    void resolveSharedAccess(sessionKey);
-  }, [loading, sessionKey]);
+    void resolveSharedAccess(userKey, requestKey);
+  }, [loading, requestKey, userKey]);
 
   const refresh = useCallback(async () => {
     if (AUTH_BYPASS_ENABLED) return;
-    if (!sessionKey) return;
-    await resolveSharedAccess(sessionKey, true);
-  }, [sessionKey]);
+    if (!requestKey || !userKey) return;
+    await resolveSharedAccess(userKey, requestKey, true);
+  }, [requestKey, userKey]);
 
   if (AUTH_BYPASS_ENABLED) {
     return {
@@ -218,7 +232,7 @@ export function useAdminSurfaceAccessState(): AdminSurfaceAccessState {
     };
   }
 
-  if (!sessionKey) {
+  if (!requestKey || !userKey) {
     return {
       access: null,
       status: 'idle',
@@ -227,7 +241,16 @@ export function useAdminSurfaceAccessState(): AdminSurfaceAccessState {
     };
   }
 
-  if (snapshot.sessionKey !== sessionKey) {
+  if (snapshot.userKey !== userKey) {
+    return {
+      access: null,
+      status: 'loading',
+      error: null,
+      refresh,
+    };
+  }
+
+  if (snapshot.requestKey !== requestKey && snapshot.access === null) {
     return {
       access: null,
       status: 'loading',

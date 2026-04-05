@@ -16,6 +16,10 @@ from app.auth.principals import AuthPrincipal
 from app.core.config import get_settings
 
 logger = logging.getLogger("platform-api.auth")
+REGISTRY_BACKED_ADMIN_ROLES = frozenset(
+    {"platform_admin", "blockdata_admin", "agchain_admin"}
+)
+ADMIN_ROLE_VERIFICATION_UNAVAILABLE_DETAIL = "Admin role verification unavailable"
 
 # ---------------------------------------------------------------------------
 #  OpenAPI security scheme declarations
@@ -155,6 +159,7 @@ async def require_auth(
 
         email = (user.email or "").strip().lower()
         roles: set[str] = {"authenticated"}
+        admin_role_verification_failed = False
 
         for role_name, checker, label in (
             ("platform_admin", _check_superuser, "superuser"),
@@ -166,7 +171,7 @@ async def require_auth(
                     roles.add(role_name)
             except Exception as e:
                 logger.warning(f"{label} check failed for {email}: {e}")
-                # Non-fatal: user still gets any successfully resolved roles
+                admin_role_verification_failed = True
 
         return AuthPrincipal(
             subject_type="user",
@@ -174,6 +179,7 @@ async def require_auth(
             roles=frozenset(roles),
             auth_source="supabase_jwt",
             email=email,
+            admin_role_verification_failed=admin_role_verification_failed,
         )
 
     # --- Path 3: Legacy header (deprecated) ---
@@ -195,6 +201,11 @@ def require_role(role: str) -> Callable:
     """Factory that returns a dependency requiring a specific role."""
 
     async def _check(auth: AuthPrincipal = Depends(require_auth)) -> AuthPrincipal:
+        if role in REGISTRY_BACKED_ADMIN_ROLES and auth.admin_role_verification_failed:
+            raise HTTPException(
+                status_code=503,
+                detail=ADMIN_ROLE_VERIFICATION_UNAVAILABLE_DETAIL,
+            )
         if not auth.has_role(role):
             raise HTTPException(status_code=403, detail=f"Role required: {role}")
         return auth
