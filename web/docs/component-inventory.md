@@ -1,10 +1,10 @@
 # Component Inventory
 
-Generated: 2026-04-06T13:16:17.851Z
+Generated: 2026-04-06T14:24:04.181Z
 Scope: auth
 
 Pages scanned: 55
-Unique component usages: 447
+Unique component usages: 448
 
 ## Category Totals
 
@@ -15,7 +15,7 @@ Unique component usages: 447
 | in-file component | 21 |
 | local-components | 165 |
 | local-pages | 2 |
-| relative-local | 24 |
+| relative-local | 25 |
 | tabler-icons | 74 |
 
 ## src/pages/AgentOnboarding.tsx
@@ -472,7 +472,7 @@ Component usages: 2
 
 ## src/pages/settings/DoclingConfigPanel.tsx
 
-Component usages: 38
+Component usages: 39
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
@@ -508,6 +508,7 @@ Component usages: 38
 | `Portal` | `@ark-ui/react/portal` | ark-ui | Portal comes from @ark-ui/react/portal (named import of Portal) |
 | `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
 | `Section` | `(in-file or unresolved)` | in-file component | Section is defined in the same page file |
+| `SettingsPageFrame` | `./SettingsPageHeader` | relative-local | SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame) |
 | `SwitchControl` | `@/components/ui/switch` | local-components | SwitchControl comes from @/components/ui/switch (named import of SwitchControl) |
 | `SwitchHiddenInput` | `@/components/ui/switch` | local-components | SwitchHiddenInput comes from @/components/ui/switch (named import of SwitchHiddenInput) |
 | `SwitchRoot` | `@/components/ui/switch` | local-components | SwitchRoot comes from @/components/ui/switch (named import of SwitchRoot) |

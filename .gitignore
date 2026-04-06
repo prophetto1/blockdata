@@ -114,6 +114,11 @@ _agchain/legal-10/pitch-deck/out/
 _agchain/legal-10/pitch-deck/package-lock.json
 _agchain/**/__pycache__/
 
+# Start-here documentation shortcuts (junctions)
+__start-here/blockdata
+__start-here/agchain
+__start-here/specification
+
 # pnpm home cache
 .pnpm-home/
 

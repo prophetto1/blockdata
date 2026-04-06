@@ -180,6 +180,7 @@ export default function AgchainAdminModelsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [providerSearch, setProviderSearch] = useState('');
+  const isReadOnly = false;
   const [providerDialog, setProviderDialog] = useState<ProviderDialogState>({ mode: 'closed' });
   const [modelDialog, setModelDialog] = useState<ModelDialogState>({ mode: 'closed' });
   const [providerDraft, setProviderDraft] = useState<ProviderFormDraft>(createEmptyProviderDraft);
@@ -310,225 +311,224 @@ export default function AgchainAdminModelsPage() {
   }
 
   return (
-    <main className="relative h-full">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="mx-auto mt-6 h-52 w-[86rem] rounded-full bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.24),_transparent_70%)] blur-[88px]" />
-      </div>
-
-      <section className="mx-auto flex h-full w-full max-w-7xl min-w-0 px-6 py-8">
-        <SettingsPageFrame
-          title="Models"
-          description="Curate the provider registry and the shared model-target catalog used across AGChain projects."
-          headerVariant="admin"
-          bodyClassName="p-0"
-        >
-          <div className="flex h-full min-h-0 flex-col gap-5 px-6 py-6">
-            {error ? (
-              <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            ) : null}
-
-            {message ? (
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
-                {message}
-              </div>
-            ) : null}
-
-            <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <section className="flex min-h-0 flex-col rounded-2xl border border-border/70 bg-card/85 px-5 py-5 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">Provider Registry</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Define the supported providers, form types, and auth capabilities available to AGChain.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={() => void refresh()}>
-                  Refresh
-                </Button>
-                <Button type="button" onClick={openCreateProviderDialog}>
-                  Add Provider
-                </Button>
-              </div>
+    <>
+      <SettingsPageFrame
+        title="Models"
+        description="Curate the provider registry and the shared model-target catalog used across AGChain projects."
+        headerVariant="admin"
+        bodyClassName="p-0"
+      >
+        <div className="flex h-full min-h-0 flex-col gap-5 p-4">
+          {error ? (
+            <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
             </div>
+          ) : null}
 
-            <label className="mt-3 block">
-              <span className="sr-only">Search providers</span>
-              <input
-                value={providerSearch}
-                onChange={(event) => setProviderSearch(event.currentTarget.value)}
-                placeholder="Search providers"
-                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </label>
+          {message ? (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+              {message}
+            </div>
+          ) : null}
 
-            <div className="mt-3 min-h-0 flex-1 overflow-hidden">
-              <div className="h-full overflow-auto rounded-xl border border-border">
-                <div className="divide-y divide-border/80">
-                  {loading ? (
-                    <p className="px-4 py-10 text-center text-sm text-muted-foreground">Loading provider registry...</p>
-                  ) : filteredProviders.length === 0 ? (
-                    <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-                      No provider matches this filter.
-                    </p>
-                  ) : (
-                    filteredProviders.map((provider) => {
-                      const isActive = provider.provider_slug === selectedProvider?.provider_slug;
-                      return (
-                        <button
-                          key={provider.provider_slug}
-                          type="button"
-                          onClick={() => setSelectedProviderSlug(provider.provider_slug)}
-                          className={`flex w-full items-start justify-between gap-3 px-3 py-3 text-left transition-colors ${
-                            isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/30'
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">{provider.display_name}</p>
-                            <p className="mt-0.5 text-xs text-muted-foreground">{provider.provider_slug}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">
-                              {providerCategoryLabel(provider.provider_category)} · {provider.credential_form_kind}
-                            </p>
-                          </div>
-
-                          <div className="flex flex-none items-center gap-2">
-                            <span
-                              className={
-                                provider.enabled
-                                  ? 'inline-flex rounded-full border border-emerald-400/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300'
-                                  : 'inline-flex rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground'
-                              }
-                            >
-                              {provider.enabled ? 'Enabled' : 'Disabled'}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openEditProviderDialog(provider);
-                              }}
-                              className="h-7 px-2 text-[11px]"
-                            >
-                              Edit
-                            </Button>
-                          </div>
-                        </button>
-                      );
-                    })
-                  )}
+          <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[3fr_7fr]">
+            <section className="flex min-h-0 flex-col rounded-2xl border border-border/70 bg-card/85 px-5 py-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Provider Registry</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Define the supported providers, form types, and auth capabilities available to AGChain.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={() => void refresh()}>
+                    Refresh
+                  </Button>
+                  <Button type="button" onClick={openCreateProviderDialog} disabled={isReadOnly}>
+                    Add Provider
+                  </Button>
                 </div>
               </div>
-            </div>
-          </section>
 
-          <section className="flex min-h-0 flex-col rounded-2xl border border-border/70 bg-card/85 px-5 py-5 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">
-                  {selectedProvider ? `${selectedProvider.display_name} Models` : 'Model Targets'}
-                </h2>
-                {selectedProvider ? (
-                  <p className="mt-1 max-w-[52ch] text-sm text-muted-foreground">
-                    Category: {providerCategoryLabel(selectedProvider.provider_category)} · Probe strategy: {strategyLabel(selectedProvider.default_probe_strategy)}
-                  </p>
-                ) : (
-                  <p className="mt-1 text-sm text-muted-foreground">Select a provider to scope model targets.</p>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="sr-only" htmlFor="admin-model-search">
-                  Search model targets
-                </label>
+              <label className="mt-3 block">
+                <span className="sr-only">Search providers</span>
                 <input
-                  id="admin-model-search"
-                  value={search}
-                  onChange={(event) => setSearch(event.currentTarget.value)}
-                  placeholder="Search models"
-                  disabled={!selectedProvider}
-                  className="h-9 min-w-[220px] rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+                  value={providerSearch}
+                  onChange={(event) => setProviderSearch(event.currentTarget.value)}
+                  placeholder="Search providers"
+                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
-                <Button type="button" onClick={openCreateModelDialog} disabled={!selectedProvider}>
-                  Add Model
-                </Button>
-              </div>
-            </div>
+              </label>
 
-            <div className="mt-3 min-h-0 flex-1 overflow-hidden rounded-xl border border-border">
-              <div className="h-full overflow-auto">
-                <table className="min-w-full text-left">
-                  <thead className="bg-muted/40 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2">Model</th>
-                      <th className="px-3 py-2">Auth</th>
-                      <th className="px-3 py-2">Compatibility</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2">Last Update</th>
-                      <th className="px-3 py-2 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {!selectedProvider ? (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                          Select a provider to see scoped model targets.
-                        </td>
-                      </tr>
-                    ) : loading ? (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                          Loading model targets...
-                        </td>
-                      </tr>
-                    ) : filteredModels.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                          {search.trim() ? 'No model targets match the current filter.' : 'No model targets for this provider yet.'}
-                        </td>
-                      </tr>
+              <div className="mt-3 min-h-0 flex-1 overflow-hidden">
+                <div className="h-full overflow-auto rounded-xl border border-border">
+                  <div className="divide-y divide-border/80">
+                    {loading ? (
+                      <p className="px-4 py-10 text-center text-sm text-muted-foreground">Loading provider registry...</p>
+                    ) : filteredProviders.length === 0 ? (
+                      <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+                        No provider matches this filter.
+                      </p>
                     ) : (
-                      filteredModels.map((model) => (
-                        <tr key={model.model_target_id} className="border-t border-border/60 align-top">
-                          <td className="px-3 py-3">
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{model.label}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">{model.qualified_model}</p>
+                      filteredProviders.map((provider) => {
+                        const isActive = provider.provider_slug === selectedProvider?.provider_slug;
+                        return (
+                          <button
+                            key={provider.provider_slug}
+                            type="button"
+                            onClick={() => setSelectedProviderSlug(provider.provider_slug)}
+                            className={`flex w-full items-start justify-between gap-3 px-3 py-3 text-left transition-colors ${
+                              isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/30'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">{provider.display_name}</p>
+                              <p className="mt-0.5 text-xs text-muted-foreground">{provider.provider_slug}</p>
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {providerCategoryLabel(provider.provider_category)} · {provider.credential_form_kind}
+                              </p>
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                Supported auth kinds: {provider.supported_auth_kinds.join(', ') || 'api_key'}
+                              </p>
                             </div>
-                          </td>
-                          <td className="px-3 py-3 text-sm text-muted-foreground">{model.auth_kind}</td>
-                          <td className="px-3 py-3 text-sm text-muted-foreground">{compatibilityLabel(model)}</td>
-                          <td className="px-3 py-3 text-sm">
-                            <span
-                              className={model.enabled ? 'font-medium text-emerald-700 dark:text-emerald-300' : 'font-medium text-muted-foreground'}
-                            >
-                              {model.enabled ? 'Enabled' : 'Disabled'}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-sm text-muted-foreground">{formatTimestamp(model.updated_at)}</td>
-                          <td className="px-3 py-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => openEditModelDialog(model)}
-                              className="text-xs text-primary hover:underline"
-                            >
-                              Edit
-                            </button>
+
+                            <div className="flex flex-none items-center gap-2">
+                              <span
+                                className={
+                                  provider.enabled
+                                    ? 'inline-flex rounded-full border border-emerald-400/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300'
+                                    : 'inline-flex rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] text-muted-foreground'
+                                }
+                              >
+                                {provider.enabled ? 'Enabled' : 'Disabled'}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openEditProviderDialog(provider);
+                                }}
+                                disabled={isReadOnly}
+                                className="h-7 px-2 text-[11px]"
+                              >
+                                Edit
+                              </Button>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="flex min-h-0 flex-col rounded-2xl border border-border/70 bg-card/85 px-5 py-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {selectedProvider ? `${selectedProvider.display_name} Models` : 'Model Targets'}
+                  </h2>
+                  {selectedProvider ? (
+                    <p className="mt-1 max-w-[52ch] text-sm text-muted-foreground">
+                      Category: {providerCategoryLabel(selectedProvider.provider_category)} · Probe strategy: {strategyLabel(selectedProvider.default_probe_strategy)}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">Select a provider to scope model targets.</p>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="sr-only" htmlFor="admin-model-search">
+                    Search model targets
+                  </label>
+                  <input
+                    id="admin-model-search"
+                    value={search}
+                    onChange={(event) => setSearch(event.currentTarget.value)}
+                    placeholder="Search models"
+                    disabled={!selectedProvider}
+                    className="h-9 min-w-[220px] rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                  <Button type="button" onClick={openCreateModelDialog} disabled={!selectedProvider || isReadOnly}>
+                    Add Model
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-3 min-h-0 flex-1 overflow-hidden rounded-xl border border-border">
+                <div className="h-full overflow-auto">
+                  <table className="min-w-full text-left">
+                    <thead className="bg-muted/40 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2">Model</th>
+                        <th className="px-3 py-2">Compatibility</th>
+                        <th className="px-3 py-2">Status</th>
+                        <th className="px-3 py-2">Last Update</th>
+                        <th className="px-3 py-2 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!selectedProvider ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                            Select a provider to see scoped model targets.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : loading ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                            Loading model targets...
+                          </td>
+                        </tr>
+                      ) : filteredModels.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                            {search.trim() ? 'No model targets match the current filter.' : 'No model targets for this provider yet.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredModels.map((model) => (
+                          <tr key={model.model_target_id} className="border-t border-border/60 align-top">
+                            <td className="px-3 py-3">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{model.label}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">{model.qualified_model}</p>
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 text-sm text-muted-foreground">{compatibilityLabel(model)}</td>
+                            <td className="px-3 py-3 text-sm">
+                              <span
+                                className={model.enabled ? 'font-medium text-emerald-700 dark:text-emerald-300' : 'font-medium text-muted-foreground'}
+                              >
+                                {model.enabled ? 'Enabled' : 'Disabled'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-sm text-muted-foreground">{formatTimestamp(model.updated_at)}</td>
+                            <td className="px-3 py-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!isReadOnly) openEditModelDialog(model);
+                                }}
+                                disabled={isReadOnly}
+                                className="text-xs text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          </section>
-            </div>
+            </section>
           </div>
-        </SettingsPageFrame>
-      </section>
+        </div>
+      </SettingsPageFrame>
 
       <ProviderDialog
         state={providerDialog}
@@ -548,7 +548,7 @@ export default function AgchainAdminModelsPage() {
         onOpenChange={(open) => setModelDialog(open ? modelDialog : { mode: 'closed' })}
         onSubmit={handleSaveModel}
       />
-    </main>
+    </>
   );
 }
 
@@ -807,6 +807,8 @@ function ModelDialog({
   const open = state.mode !== 'closed';
   const isEdit = state.mode === 'edit';
   const activeProvider = providers.find((provider) => provider.provider_slug === draft.provider_slug) ?? null;
+  const providerAuthKinds = activeProvider?.supported_auth_kinds ?? ['api_key'];
+  const providerAuthKindsLabel = providerAuthKinds.join(', ');
 
   return (
     <DialogRoot open={open} onOpenChange={(details) => onOpenChange(details.open)}>
@@ -886,18 +888,10 @@ function ModelDialog({
                   <label htmlFor="model-auth-kind" className="text-sm font-medium text-foreground">
                     Auth Kind
                   </label>
-                  <select
-                    id="model-auth-kind"
-                    value={draft.auth_kind}
-                    onChange={(event) => onDraftChange({ ...draft, auth_kind: event.currentTarget.value })}
-                    className={inputClass}
-                  >
-                    {(activeProvider?.supported_auth_kinds ?? ['api_key']).map((authKind) => (
-                      <option key={authKind} value={authKind}>
-                        {authKind}
-                      </option>
-                    ))}
-                  </select>
+                  <p id="model-auth-kind" className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-foreground">
+                    {providerAuthKindsLabel}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Auth is configured per provider in the left panel.</p>
                 </div>
                 <div className="grid gap-2">
                   <label htmlFor="model-probe-strategy" className="text-sm font-medium text-foreground">

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-06T13:16:17.843Z",
+  "generatedAt": "2026-04-06T14:24:04.173Z",
   "scope": "auth",
   "pages": [
     {
@@ -2418,12 +2418,13 @@
     },
     {
       "page": "src/pages/settings/DoclingConfigPanel.tsx",
-      "componentCount": 38,
+      "componentCount": 39,
       "categoryCounts": {
         "ark-ui": 12,
         "local-components": 14,
         "in-file component": 8,
-        "tabler-icons": 4
+        "tabler-icons": 4,
+        "relative-local": 1
       },
       "components": [
         {
@@ -2713,6 +2714,15 @@
           "importedAs": null,
           "category": "in-file component",
           "definition": "Section is defined in the same page file"
+        },
+        {
+          "component": "SettingsPageFrame",
+          "usedAs": "SettingsPageFrame",
+          "source": "./SettingsPageHeader",
+          "importKind": "named",
+          "importedAs": "SettingsPageFrame",
+          "category": "relative-local",
+          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
         },
         {
           "component": "SwitchControl",
@@ -4568,7 +4578,7 @@
       ]
     }
   ],
-  "totalComponentUsages": 447,
+  "totalComponentUsages": 448,
   "categoryTotals": {
     "local-pages": 2,
     "local-components": 165,
@@ -4576,6 +4586,6 @@
     "in-file component": 21,
     "ark-ui": 138,
     "external-package": 23,
-    "relative-local": 24
+    "relative-local": 25
   }
 }

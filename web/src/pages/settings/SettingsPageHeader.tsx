@@ -52,14 +52,14 @@ export function SettingsPageFrame({
       <header
         className={cn(
           'flex justify-between gap-3 border-b border-border bg-muted/30',
-          isAdminVariant ? 'min-h-[4.75rem] items-center px-5 py-3' : 'items-start px-4 py-2',
+          isAdminVariant ? 'min-h-[5.94rem] items-start px-5 py-4' : 'items-start px-4 py-2',
         )}
       >
         <div className="min-w-0">
           <h2
             className={cn(
               'truncate font-semibold text-foreground',
-              isAdminVariant ? 'text-base leading-6' : 'text-sm',
+              isAdminVariant ? 'text-[1.15rem] leading-7' : 'text-sm',
             )}
           >
             {title}
@@ -68,7 +68,7 @@ export function SettingsPageFrame({
             <p
               className={cn(
                 'text-muted-foreground',
-                isAdminVariant ? 'mt-1 text-sm leading-5' : 'mt-0.5 text-xs',
+                isAdminVariant ? 'mt-1 text-[1rem] leading-6' : 'mt-0.5 text-xs',
               )}
             >
               {description}
