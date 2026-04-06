@@ -1,23 +1,23 @@
 from __future__ import annotations
 
-import logging
-import time
 from datetime import datetime, timezone
 from typing import Any
 
-import httpx
 from fastapi import HTTPException
-from opentelemetry import trace
 
-from app.infra.crypto import decrypt_with_fallback, encrypt_with_context, get_envelope_key
 from app.infra.supabase_client import get_supabase_admin
-from app.observability.otel import safe_attributes
 
-from .model_provider_catalog import resolve_provider_definition
+from .provider_registry import resolve_provider_definition
 
-logger = logging.getLogger("agchain-model-registry")
-tracer = trace.get_tracer(__name__)
-USER_API_KEYS_CONTEXT = "user-api-keys-v1"
+
+PROBE_STRATEGIES = {
+    "provider_default",
+    "http_openai_models",
+    "http_anthropic_models",
+    "http_google_models",
+    "custom_http",
+    "none",
+}
 
 
 def _utc_now_iso() -> str:
@@ -25,7 +25,10 @@ def _utc_now_iso() -> str:
 
 
 def _display_api_base(api_base: str | None) -> str | None:
-    return api_base.rstrip("/") if isinstance(api_base, str) and api_base.strip() else None
+    if not isinstance(api_base, str):
+        return None
+    trimmed = api_base.strip()
+    return trimmed.rstrip("/") if trimmed else None
 
 
 def _row_query(sb):
@@ -36,116 +39,22 @@ def _health_query(sb):
     return sb.table("agchain_model_health_checks").select("*")
 
 
-def _load_user_api_keys_by_provider(sb, user_id: str) -> dict[str, list[dict[str, Any]]]:
-    result = sb.table("user_api_keys").select("provider, is_valid, key_suffix").eq("user_id", user_id).execute()
-    keys_by_provider: dict[str, list[dict[str, Any]]] = {}
-    for item in result.data or []:
-        provider = item.get("provider")
-        if isinstance(provider, str):
-            keys_by_provider.setdefault(provider, []).append(item)
-    return keys_by_provider
-
-
-def _resolve_api_key_statuses(
-    rows: list[dict[str, Any]],
-    keys_by_provider: dict[str, list[dict[str, Any]]],
-) -> tuple[dict[str, str], dict[str, str | None]]:
-    api_key_rows = [row for row in rows if row.get("auth_kind") == "api_key"]
-    if not api_key_rows:
-        return {}, {}
-
-    statuses: dict[str, str] = {}
-    key_suffixes: dict[str, str | None] = {}
-    for row in api_key_rows:
-        matches = keys_by_provider.get(row.get("provider_slug"), [])
-        key_suffixes[row["model_target_id"]] = next(
-            (
-                suffix
-                for suffix in (match.get("key_suffix") for match in matches)
-                if isinstance(suffix, str) and suffix
-            ),
-            None,
-        )
-        if not matches:
-            statuses[row["model_target_id"]] = "missing"
-        elif any(match.get("is_valid") is not False for match in matches):
-            statuses[row["model_target_id"]] = "ready"
-        else:
-            statuses[row["model_target_id"]] = "invalid"
-    return statuses, key_suffixes
-
-
-def _resolve_connection_statuses(sb, user_id: str, rows: list[dict[str, Any]]) -> dict[str, str]:
-    connection_rows = [row for row in rows if row.get("auth_kind") not in {"none", "api_key"}]
-    if not connection_rows:
-        return {}
-
-    result = (
-        sb.table("user_provider_connections")
-        .select("provider, status, connection_type")
-        .eq("user_id", user_id)
-        .execute()
+def _normalize_row(row: dict[str, Any], provider_definition: dict[str, Any] | None) -> dict[str, Any]:
+    display_name = (
+        provider_definition["display_name"]
+        if provider_definition is not None
+        else row.get("provider_slug")
     )
-    connections_by_provider: dict[str, list[dict[str, Any]]] = {}
-    for item in result.data or []:
-        provider = item.get("provider")
-        if isinstance(provider, str):
-            connections_by_provider.setdefault(provider, []).append(item)
-
-    statuses: dict[str, str] = {}
-    for row in connection_rows:
-        credential_source = row.get("credential_source_jsonb") or {}
-        matches = list(connections_by_provider.get(row.get("provider_slug"), []))
-        if credential_source.get("source") == "user_provider_connections" and credential_source.get("connection_type"):
-            matches = [
-                match for match in matches if match.get("connection_type") == credential_source["connection_type"]
-            ]
-
-        if not matches:
-            statuses[row["model_target_id"]] = "missing"
-        elif any(match.get("status") == "connected" for match in matches):
-            statuses[row["model_target_id"]] = "ready"
-        else:
-            statuses[row["model_target_id"]] = "disconnected"
-    return statuses
-
-
-def _resolve_credential_statuses(
-    sb,
-    user_id: str,
-    rows: list[dict[str, Any]],
-) -> tuple[dict[str, str], dict[str, str | None]]:
-    statuses = {
-        row["model_target_id"]: "not_required"
-        for row in rows
-        if row.get("auth_kind") == "none"
-    }
-    key_suffixes = {row["model_target_id"]: None for row in rows}
-    keys_by_provider = _load_user_api_keys_by_provider(sb, user_id)
-    api_key_statuses, api_key_suffixes = _resolve_api_key_statuses(rows, keys_by_provider)
-    statuses.update(api_key_statuses)
-    key_suffixes.update(api_key_suffixes)
-    statuses.update(_resolve_connection_statuses(sb, user_id, rows))
-    return statuses, key_suffixes
-
-
-def _normalize_row(row: dict[str, Any], credential_status: str, key_suffix: str | None = None) -> dict[str, Any]:
-    provider = resolve_provider_definition(row["provider_slug"]) or {
-        "display_name": row["provider_slug"],
-        "default_probe_strategy": row.get("probe_strategy") or "provider_default",
-    }
     return {
         "model_target_id": row["model_target_id"],
         "label": row["label"],
         "provider_slug": row["provider_slug"],
-        "provider_display_name": provider["display_name"],
+        "provider_display_name": display_name,
         "provider_qualifier": row.get("provider_qualifier"),
         "model_name": row["model_name"],
         "qualified_model": row["qualified_model"],
         "api_base_display": _display_api_base(row.get("api_base")),
         "auth_kind": row["auth_kind"],
-        "credential_status": credential_status,
-        "key_suffix": key_suffix,
         "enabled": row["enabled"],
         "supports_evaluated": row["supports_evaluated"],
         "supports_judge": row["supports_judge"],
@@ -193,64 +102,6 @@ def _apply_filters(
     return items
 
 
-def list_model_targets(
-    *,
-    user_id: str,
-    provider_slug: str | None = None,
-    compatibility: str | None = None,
-    health_status: str | None = None,
-    enabled: bool | None = None,
-    search: str | None = None,
-    limit: int = 50,
-    offset: int = 0,
-) -> dict[str, Any]:
-    sb = get_supabase_admin()
-    result = _row_query(sb).order("updated_at", desc=True).execute()
-    rows = result.data or []
-    credential_statuses, key_suffixes = _resolve_credential_statuses(sb, user_id, rows)
-    normalized = [
-        _normalize_row(
-            row,
-            credential_statuses.get(row["model_target_id"], "missing"),
-            key_suffixes.get(row["model_target_id"]),
-        )
-        for row in rows
-    ]
-    filtered = _apply_filters(
-        normalized,
-        provider_slug=provider_slug,
-        compatibility=compatibility,
-        health_status=health_status,
-        enabled=enabled,
-        search=search,
-    )
-    page = filtered[offset : offset + limit]
-    return {
-        "items": page,
-        "total": len(filtered),
-        "limit": limit,
-        "offset": offset,
-    }
-
-
-def load_model_detail(*, user_id: str, model_target_id: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
-    sb = get_supabase_admin()
-    result = _row_query(sb).eq("model_target_id", model_target_id).maybe_single().execute()
-    row = result.data
-    if not row:
-        return None, []
-    credential_statuses, key_suffixes = _resolve_credential_statuses(sb, user_id, [row])
-    credential_status = credential_statuses.get(row["model_target_id"], "missing")
-    checks = (
-        _health_query(sb)
-        .eq("model_target_id", model_target_id)
-        .order("checked_at", desc=True)
-        .limit(10)
-        .execute()
-    )
-    return _normalize_row(row, credential_status, key_suffixes.get(row["model_target_id"])), (checks.data or [])
-
-
 def _validate_provider_payload(payload: dict[str, Any]) -> dict[str, Any]:
     provider_slug = payload.get("provider_slug")
     if not provider_slug:
@@ -264,8 +115,60 @@ def _validate_provider_payload(payload: dict[str, Any]) -> dict[str, Any]:
             status_code=422,
             detail=f"auth_kind '{auth_kind}' is not supported for provider '{provider_slug}'",
         )
-    payload["probe_strategy"] = payload.get("probe_strategy") or "provider_default"
+    probe_strategy = payload.get("probe_strategy") or "provider_default"
+    if probe_strategy not in PROBE_STRATEGIES:
+        raise HTTPException(status_code=422, detail="probe_strategy is invalid")
     return definition
+
+
+def list_model_targets(
+    *,
+    provider_slug: str | None = None,
+    compatibility: str | None = None,
+    health_status: str | None = None,
+    enabled: bool | None = None,
+    search: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict[str, Any]:
+    sb = get_supabase_admin()
+    rows = _row_query(sb).order("updated_at", desc=True).execute().data or []
+    normalized = [
+        _normalize_row(row, resolve_provider_definition(row["provider_slug"]))
+        for row in rows
+    ]
+    filtered = _apply_filters(
+        normalized,
+        provider_slug=provider_slug,
+        compatibility=compatibility,
+        health_status=health_status,
+        enabled=enabled,
+        search=search,
+    )
+    return {
+        "items": filtered[offset : offset + limit],
+        "total": len(filtered),
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+def load_model_detail(*, model_target_id: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]], dict[str, Any] | None]:
+    sb = get_supabase_admin()
+    row = _row_query(sb).eq("model_target_id", model_target_id).maybe_single().execute().data
+    if not row:
+        return None, [], None
+    provider_definition = resolve_provider_definition(row["provider_slug"])
+    checks = (
+        _health_query(sb)
+        .eq("model_target_id", model_target_id)
+        .order("checked_at", desc=True)
+        .limit(10)
+        .execute()
+        .data
+        or []
+    )
+    return _normalize_row(row, provider_definition), checks, provider_definition
 
 
 def create_model_target(*, user_id: str, payload: dict[str, Any]) -> str:
@@ -292,16 +195,15 @@ def create_model_target(*, user_id: str, payload: dict[str, Any]) -> str:
     result = sb.table("agchain_model_targets").insert(insert_payload).execute()
     rows = result.data or []
     if not rows:
-        raise HTTPException(status_code=500, detail="Failed to create AG chain model target")
-    return rows[0]["model_target_id"]
+        raise HTTPException(status_code=500, detail="Failed to create AGChain model target")
+    return str(rows[0]["model_target_id"])
 
 
 def update_model_target(*, user_id: str, model_target_id: str, payload: dict[str, Any]) -> str:
     sb = get_supabase_admin()
-    current_result = _row_query(sb).eq("model_target_id", model_target_id).maybe_single().execute()
-    current = current_result.data
-    if not current:
-        raise HTTPException(status_code=404, detail="AG chain model target not found")
+    current = _row_query(sb).eq("model_target_id", model_target_id).maybe_single().execute().data
+    if current is None:
+        raise HTTPException(status_code=404, detail="AGChain model target not found")
 
     if "auth_kind" in payload:
         merged = {
@@ -338,238 +240,5 @@ def update_model_target(*, user_id: str, model_target_id: str, payload: dict[str
     )
     rows = result.data or []
     if not rows:
-        raise HTTPException(status_code=404, detail="AG chain model target not found")
-    return rows[0]["model_target_id"]
-
-
-def connect_model_key(*, user_id: str, model_target_id: str, api_key: str) -> dict[str, Any]:
-    sb = get_supabase_admin()
-    row = (
-        sb.table("agchain_model_targets")
-        .select("provider_slug, auth_kind")
-        .eq("model_target_id", model_target_id)
-        .maybe_single()
-        .execute()
-        .data
-    )
-    if not row:
-        raise HTTPException(status_code=404, detail="AG chain model target not found")
-    if row["auth_kind"] != "api_key":
-        raise HTTPException(status_code=422, detail=f"Model target auth_kind is '{row['auth_kind']}', not 'api_key'")
-
-    provider_slug = row["provider_slug"]
-    key_suffix = api_key[-4:]
-    encrypted = encrypt_with_context(api_key, get_envelope_key(), USER_API_KEYS_CONTEXT)
-
-    sb.table("user_api_keys").upsert(
-        {
-            "user_id": user_id,
-            "provider": provider_slug,
-            "api_key_encrypted": encrypted,
-            "key_suffix": key_suffix,
-            "is_valid": None,
-            "updated_at": _utc_now_iso(),
-        },
-        on_conflict="user_id,provider",
-    ).execute()
-
-    return {"provider_slug": provider_slug, "key_suffix": key_suffix, "credential_status": "ready"}
-
-
-def disconnect_model_key(*, user_id: str, model_target_id: str) -> dict[str, Any]:
-    sb = get_supabase_admin()
-    row = (
-        sb.table("agchain_model_targets")
-        .select("provider_slug")
-        .eq("model_target_id", model_target_id)
-        .maybe_single()
-        .execute()
-        .data
-    )
-    if not row:
-        raise HTTPException(status_code=404, detail="AG chain model target not found")
-
-    provider_slug = row["provider_slug"]
-    sb.table("user_api_keys").delete().eq("user_id", user_id).eq("provider", provider_slug).execute()
-    return {"provider_slug": provider_slug, "credential_status": "missing"}
-
-
-def _load_api_key(sb, user_id: str, provider_slug: str) -> str | None:
-    result = (
-        sb.table("user_api_keys")
-        .select("api_key_encrypted")
-        .eq("user_id", user_id)
-        .eq("provider", provider_slug)
-        .limit(1)
-        .execute()
-    )
-    row = (result.data or [None])[0]
-    if not row or not row.get("api_key_encrypted"):
-        return None
-    return decrypt_with_fallback(row["api_key_encrypted"], USER_API_KEYS_CONTEXT)
-
-
-async def _run_provider_probe(
-    *,
-    sb,
-    row: dict[str, Any],
-    provider_definition: dict[str, Any],
-    user_id: str,
-    credential_status: str,
-) -> dict[str, Any]:
-    effective_strategy = row.get("probe_strategy") or "provider_default"
-    if effective_strategy == "provider_default":
-        effective_strategy = provider_definition["default_probe_strategy"]
-
-    if row["auth_kind"] != "none" and credential_status != "ready":
-        return {
-            "health_status": "degraded",
-            "latency_ms": None,
-            "message": f"credential status is {credential_status}",
-            "probe_strategy": effective_strategy,
-            "error_code": "credential_not_ready",
-        }
-
-    if effective_strategy == "none":
-        return {
-            "health_status": "healthy",
-            "latency_ms": 0,
-            "message": "probe skipped by provider strategy",
-            "probe_strategy": effective_strategy,
-            "error_code": None,
-        }
-
-    api_base = _display_api_base(row.get("api_base"))
-    if not api_base:
-        return {
-            "health_status": "degraded",
-            "latency_ms": None,
-            "message": "missing api_base for probeable target",
-            "probe_strategy": effective_strategy,
-            "error_code": "missing_api_base",
-        }
-
-    url = f"{api_base}/models"
-    headers: dict[str, str] = {}
-    if row["auth_kind"] == "api_key":
-        api_key = _load_api_key(sb, user_id, row["provider_slug"])
-        if not api_key:
-            return {
-                "health_status": "degraded",
-                "latency_ms": None,
-                "message": "api key not available",
-                "probe_strategy": effective_strategy,
-                "error_code": "missing_api_key",
-            }
-        if row["provider_slug"] == "anthropic":
-            headers["x-api-key"] = api_key
-            headers["anthropic-version"] = "2023-06-01"
-        elif row["provider_slug"] == "google":
-            headers["x-goog-api-key"] = api_key
-        else:
-            headers["Authorization"] = f"Bearer {api_key}"
-
-    probe_attrs = safe_attributes(
-        {
-            "provider_slug": row["provider_slug"],
-            "probe_strategy": effective_strategy,
-            "auth_kind": row["auth_kind"],
-        }
-    )
-    start = time.perf_counter()
-    with tracer.start_as_current_span("agchain.models.provider_probe") as span:
-        for key, value in probe_attrs.items():
-            span.set_attribute(key, value)
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(url, headers=headers)
-            latency_ms = max(0, int((time.perf_counter() - start) * 1000))
-            span.set_attribute("http.status_code", response.status_code)
-            span.set_attribute("latency_ms", latency_ms)
-            if response.status_code < 400:
-                return {
-                    "health_status": "healthy",
-                    "latency_ms": latency_ms,
-                    "message": "probe ok",
-                    "probe_strategy": effective_strategy,
-                    "error_code": None,
-                }
-            return {
-                "health_status": "error",
-                "latency_ms": latency_ms,
-                "message": f"probe returned {response.status_code}",
-                "probe_strategy": effective_strategy,
-                "error_code": f"http_{response.status_code}",
-            }
-        except Exception as exc:
-            span.record_exception(exc)
-            span.set_attribute("error.type", type(exc).__name__)
-            logger.warning(
-                "agchain.models.provider_probe_failed",
-                extra={
-                    "provider_slug": row["provider_slug"],
-                    "probe_strategy": effective_strategy,
-                    "error_type": type(exc).__name__,
-                },
-            )
-            return {
-                "health_status": "error",
-                "latency_ms": None,
-                "message": f"{type(exc).__name__}: probe failed",
-                "probe_strategy": effective_strategy,
-                "error_code": type(exc).__name__,
-            }
-
-
-async def refresh_model_target_health(*, user_id: str, model_target_id: str) -> dict[str, Any]:
-    sb = get_supabase_admin()
-    result = _row_query(sb).eq("model_target_id", model_target_id).maybe_single().execute()
-    row = result.data
-    if not row:
-        raise HTTPException(status_code=404, detail="AG chain model target not found")
-
-    provider_definition = resolve_provider_definition(row["provider_slug"])
-    if provider_definition is None:
-        raise HTTPException(status_code=422, detail=f"Unsupported provider_slug: {row['provider_slug']}")
-
-    credential_statuses, _key_suffixes = _resolve_credential_statuses(sb, user_id, [row])
-    credential_status = credential_statuses.get(row["model_target_id"], "missing")
-    outcome = await _run_provider_probe(
-        sb=sb,
-        row=row,
-        provider_definition=provider_definition,
-        user_id=user_id,
-        credential_status=credential_status,
-    )
-    checked_at = _utc_now_iso()
-    sb.table("agchain_model_health_checks").insert(
-        {
-            "model_target_id": model_target_id,
-            "provider_slug": row["provider_slug"],
-            "probe_strategy": outcome["probe_strategy"],
-            "status": outcome["health_status"],
-            "latency_ms": outcome["latency_ms"],
-            "error_code": outcome["error_code"],
-            "error_message": outcome["message"],
-            "checked_at": checked_at,
-            "checked_by": user_id,
-            "metadata_jsonb": {"credential_status": credential_status},
-        }
-    ).execute()
-    sb.table("agchain_model_targets").update(
-        {
-            "health_status": outcome["health_status"],
-            "health_checked_at": checked_at,
-            "last_latency_ms": outcome["latency_ms"],
-            "last_error_code": outcome["error_code"],
-            "last_error_message": outcome["message"],
-            "updated_at": checked_at,
-        }
-    ).eq("model_target_id", model_target_id).execute()
-    return {
-        "health_status": outcome["health_status"],
-        "latency_ms": outcome["latency_ms"],
-        "checked_at": checked_at,
-        "message": outcome["message"],
-        "probe_strategy": outcome["probe_strategy"],
-    }
+        raise HTTPException(status_code=404, detail="AGChain model target not found")
+    return str(rows[0]["model_target_id"])

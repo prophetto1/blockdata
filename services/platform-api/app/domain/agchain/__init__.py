@@ -1,19 +1,10 @@
 """AG chain domain services."""
 
-from .model_provider_catalog import list_supported_providers, resolve_provider_definition
 from .model_registry import (
-    connect_model_key,
     create_model_target,
-    disconnect_model_key,
     load_model_detail,
     list_model_targets,
-    refresh_model_target_health,
     update_model_target,
-)
-from .project_access import (
-    load_accessible_projects,
-    require_project_access,
-    require_project_write_access,
 )
 from .operation_queue import (
     cancel_operation,
@@ -25,6 +16,27 @@ from .operation_queue import (
     load_operation_row,
     load_operation_status,
     retry_operation,
+)
+from .project_access import (
+    load_accessible_projects,
+    require_project_access,
+    require_project_write_access,
+)
+from .provider_credentials import (
+    delete_organization_model_provider_credential,
+    delete_project_model_provider_credential,
+    list_organization_model_providers,
+    list_project_model_providers,
+    test_organization_model_provider_credential,
+    test_project_model_provider_credential,
+    upsert_organization_model_provider_credential,
+    upsert_project_model_provider_credential,
+)
+from .provider_registry import (
+    create_provider_definition,
+    list_supported_providers,
+    resolve_provider_definition,
+    update_provider_definition,
 )
 from .types import (
     AgchainDatasetSourceConfig,
@@ -63,28 +75,35 @@ __all__ = [
     "AgchainToolDefinition",
     "cancel_operation",
     "complete_operation",
-    "connect_model_key",
+    "create_model_target",
     "create_operation",
     "create_project",
-    "create_model_target",
-    "disconnect_model_key",
+    "create_provider_definition",
+    "delete_organization_model_provider_credential",
+    "delete_project_model_provider_credential",
     "fail_operation",
     "get_project",
     "heartbeat_operation",
     "lease_operation",
-    "list_accessible_projects",
-    "list_organizations",
-    "list_projects",
     "list_model_targets",
+    "list_organization_model_providers",
+    "list_organizations",
+    "list_project_model_providers",
+    "list_projects",
     "list_supported_providers",
+    "load_accessible_projects",
     "load_model_detail",
     "load_operation_row",
     "load_operation_status",
     "require_project_access",
     "require_project_write_access",
-    "refresh_model_target_health",
     "resolve_provider_definition",
     "retry_operation",
-    "update_project",
+    "test_organization_model_provider_credential",
+    "test_project_model_provider_credential",
     "update_model_target",
+    "update_project",
+    "update_provider_definition",
+    "upsert_organization_model_provider_credential",
+    "upsert_project_model_provider_credential",
 ]

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ProjectAssetsPage from './ProjectAssetsPage';
 import { platformApiFetch } from '@/lib/platformApi';
@@ -36,7 +36,7 @@ vi.mock('@/lib/edge', () => ({
   manageDocument: vi.fn(),
 }));
 
-const useProjectDocumentsMock = vi.fn((_projectId: string | null) => ({
+const useProjectDocumentsMock = vi.fn(() => ({
   docs: [
     {
       source_uid: 'source-1',
@@ -67,7 +67,7 @@ const useProjectDocumentsMock = vi.fn((_projectId: string | null) => ({
 }));
 
 vi.mock('@/hooks/useProjectDocuments', () => ({
-  useProjectDocuments: (projectId: string | null) => useProjectDocumentsMock(projectId),
+  useProjectDocuments: () => useProjectDocumentsMock(),
 }));
 
 vi.mock('@/components/documents/UploadTabPanel', () => ({
@@ -134,12 +134,13 @@ describe('ProjectAssetsPage', () => {
     cleanup();
   });
 
-  it('renders used, reserved, total, and remaining quota on the assets page', async () => {
+  it('does not render the storage quota summary inside the assets work area', async () => {
     render(<ProjectAssetsPage />);
 
-    expect(await screen.findByText(/5 GB total/i)).toBeInTheDocument();
-    expect(screen.getByText(/1 GB used/i)).toBeInTheDocument();
-    expect(screen.getByText(/4 GB remaining/i)).toBeInTheDocument();
+    await waitFor(() => expect(platformApiFetchMock).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText(/5 GB total/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/1 GB used/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/4 GB remaining/i)).not.toBeInTheDocument();
   });
 
   it('renders the files pane with the parse compact file-list styling', () => {

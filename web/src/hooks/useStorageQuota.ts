@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { platformApiFetch } from '@/lib/platformApi';
 
@@ -14,16 +14,37 @@ type StorageQuotaState = {
   error: string | null;
 };
 
-export function useStorageQuota() {
-  const [state, setState] = useState<StorageQuotaState>({
+const listeners = new Set<(state: StorageQuotaState) => void>();
+
+let sharedState: StorageQuotaState = {
+  loading: true,
+  data: null,
+  error: null,
+};
+
+let hasRequestedQuota = false;
+let refreshInFlight: Promise<void> | null = null;
+
+function emitStorageQuota() {
+  for (const listener of listeners) {
+    listener(sharedState);
+  }
+}
+
+async function refreshStorageQuota() {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
+  hasRequestedQuota = true;
+  sharedState = {
+    ...sharedState,
     loading: true,
-    data: null,
     error: null,
-  });
+  };
+  emitStorageQuota();
 
-  const refresh = useCallback(async () => {
-    setState((current) => ({ ...current, loading: true, error: null }));
-
+  refreshInFlight = (async () => {
     try {
       const response = await platformApiFetch('/storage/quota');
       if (!response.ok) {
@@ -32,26 +53,41 @@ export function useStorageQuota() {
       }
 
       const data = await response.json() as StorageQuota;
-      setState({
+      sharedState = {
         loading: false,
         data,
         error: null,
-      });
+      };
     } catch (error) {
-      setState({
+      sharedState = {
         loading: false,
-        data: null,
+        data: sharedState.data,
         error: error instanceof Error ? error.message : 'Failed to load quota',
-      });
+      };
+    } finally {
+      refreshInFlight = null;
+      emitStorageQuota();
     }
-  }, []);
+  })();
+
+  return refreshInFlight;
+}
+
+export function useStorageQuota() {
+  const [state, setState] = useState<StorageQuotaState>(sharedState);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    listeners.add(setState);
+    if (!hasRequestedQuota) {
+      void refreshStorageQuota();
+    }
+    return () => {
+      listeners.delete(setState);
+    };
+  }, []);
 
   return {
     ...state,
-    refresh,
+    refresh: refreshStorageQuota,
   };
 }

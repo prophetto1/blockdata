@@ -149,15 +149,16 @@ function AgchainShellInner() {
           onSignOut={handleSignOut}
           navSections={AGCHAIN_NAV_SECTIONS}
           headerBrand={(
-            <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
+            <span className="inline-flex items-baseline text-xs font-semibold uppercase tracking-[0.2em]">
               <span className="text-sidebar-foreground">Block</span>
               <span className="text-primary">Data</span>
-              <span className="ml-1.5 text-sidebar-foreground">Bench</span>
+              <span className="ml-1 text-sidebar-foreground/60">Bench</span>
             </span>
           )}
           headerContent={(
-            <div className="flex w-full flex-col gap-2">
+            <div className="flex w-full flex-col rounded-lg border border-border bg-card/30 py-1">
               <AgchainOrganizationSwitcher />
+              <div className="mx-3 h-px bg-border/60" />
               <AgchainProjectSwitcher />
             </div>
           )}

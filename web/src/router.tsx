@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter, Navigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
 import { MarketingLayout } from '@/components/layout/MarketingLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { PublicFullBleedLayout } from '@/components/layout/PublicFullBleedLayout';
@@ -59,6 +60,13 @@ import NotFound from '@/pages/NotFound';
 import { AdminShellLayout } from '@/components/layout/AdminShellLayout';
 import { AgchainShellLayout } from '@/components/layout/AgchainShellLayout';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
+import {
+  AgchainProviderCredentialPopupMock,
+  grokBasicSchema,
+} from '../../docs/analysis/agchain-provider-credential-popup-mock';
+import { AgchainVertexAICredentialPopupPreview } from '../../docs/analysis/agchain-vertex-ai-credential-form-preview';
+import { AgchainProviderReferenceUiPreview } from '../../docs/analysis/agchain-provider-reference-ui-preview';
+import { AgchainProviderReferenceTableLookPreview } from '../../docs/analysis/agchain-provider-reference-table-look-preview';
 
 
 function LegacyToTransform() {
@@ -90,6 +98,42 @@ function LegacyPipelineServicesRedirect() {
 
 function UnsupportedPipelineServiceRedirect() {
   return <Navigate to="/app/pipeline-services" replace />;
+}
+
+function AnalysisCredentialPopupPreviewPage() {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return (
+    <div className="min-h-screen bg-background p-8">
+      <AgchainProviderCredentialPopupMock
+        open={isOpen}
+        mode="organization"
+        provider={grokBasicSchema}
+        onClose={() => setIsOpen(false)}
+        onTestKey={() => Promise.resolve('passed')}
+        onSaveCredential={() => Promise.resolve()}
+      />
+      <button
+        type="button"
+        onClick={() => setIsOpen((value) => !value)}
+        className="mt-6 rounded border px-3 py-2 text-sm"
+      >
+        Toggle popup
+      </button>
+    </div>
+  );
+}
+
+function AnalysisVertexAIPreviewPage() {
+  return <AgchainVertexAICredentialPopupPreview />;
+}
+
+function AnalysisProviderReferenceUiPreviewPage() {
+  return <AgchainProviderReferenceUiPreview />;
+}
+
+function AnalysisProviderReferenceTableLookPreviewPage() {
+  return <AgchainProviderReferenceTableLookPreview />;
 }
 
 function AgchainIndexRedirect() {
@@ -156,6 +200,10 @@ export const router = createBrowserRouter([
       { path: '/auth/callback', element: <AuthCallback /> },
       { path: '/auth/welcome', element: <AuthWelcome /> },
     ],
+  },
+  {
+    path: '/analysis/agchain-provider-reference-table-look-preview',
+    element: <AnalysisProviderReferenceTableLookPreviewPage />,
   },
 
   {
@@ -247,6 +295,18 @@ export const router = createBrowserRouter([
           {
             path: '/app/agents/preview',
             element: <ModelRegistrationPreview />,
+          },
+          {
+            path: '/analysis/agchain-credential-popup-preview',
+            element: <AnalysisCredentialPopupPreviewPage />,
+          },
+          {
+            path: '/analysis/agchain-vertex-ai-credential-popup-preview',
+            element: <AnalysisVertexAIPreviewPage />,
+          },
+          {
+            path: '/analysis/agchain-provider-reference-ui-preview',
+            element: <AnalysisProviderReferenceUiPreviewPage />,
           },
           {
             path: '/app/onboarding/agents',
@@ -447,6 +507,10 @@ export const router = createBrowserRouter([
                 lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainBenchmarkWorkbenchPage')).default }),
               },
               {
+                path: 'ai-providers',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainAiProvidersPage')).default }),
+              },
+              {
                 path: 'models',
                 lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainModelsPage')).default }),
               },
@@ -488,11 +552,8 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: 'organization/ai-providers',
-                    lazy: agchainSettingsPlaceholderRoute({
-                      scope: 'organization',
-                      title: 'Organization AI Providers',
-                      description: 'Shared provider defaults and organization-owned model access policies will live here.',
-                      note: 'This section remains visible so future organization-level provider controls do not require reshaping the AGChain settings shell.',
+                    lazy: async () => ({
+                      Component: (await import('@/pages/agchain/settings/AgchainOrganizationAiProvidersPage')).default,
                     }),
                   },
                   {

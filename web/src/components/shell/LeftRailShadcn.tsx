@@ -60,6 +60,7 @@ type LeftRailShadcnProps = {
   navSections?: AdminNavSection[];
   headerBrand?: ReactNode;
   headerContent?: ReactNode;
+  footerContent?: ReactNode;
   hideHeaderChrome?: boolean;
 };
 
@@ -205,6 +206,7 @@ export function LeftRailShadcn({
   navSections,
   headerBrand,
   headerContent,
+  footerContent,
   hideHeaderChrome = false,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
@@ -631,7 +633,7 @@ export function LeftRailShadcn({
               )}
             </div>
             {!desktopCompact && headerContent ? (
-              <div className="px-1 pb-2">
+              <div className="px-3 pb-3">
                 {headerContent}
               </div>
             ) : null}
@@ -675,6 +677,7 @@ export function LeftRailShadcn({
 
         {/* ---- Footer: Account card (Vercel-style) ---- */}
         <SidebarFooter className="border-0 px-0 pt-0">
+          {!desktopCompact && footerContent ? footerContent : null}
           <div className="mx-2.5 h-px bg-sidebar-border" />
           <MenuRoot positioning={{ placement: 'top-start', offset: { mainAxis: 8, crossAxis: 0 } }}>
             <div className={cn(desktopCompact ? 'flex justify-center px-0 py-2' : 'flex items-center gap-2 px-3 py-2')}>
@@ -715,5 +718,4 @@ export function LeftRailShadcn({
     </SidebarProvider>
   );
 }
-
 

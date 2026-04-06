@@ -32,12 +32,22 @@ export function StorageQuotaSummary({
   loading: boolean;
   error: string | null;
 }) {
+  const cardClassName = 'grid gap-1 rounded-md border border-border bg-muted/20 px-3 py-2';
+
   if (loading) {
-    return <div className="px-3 py-2 text-sm text-muted-foreground">Loading storage...</div>;
+    return (
+      <div className={cardClassName}>
+        <div className="text-sm text-muted-foreground">Loading storage...</div>
+      </div>
+    );
   }
 
   if (error || !quota) {
-    return <div className="px-3 py-2 text-sm text-destructive">{error ?? 'Storage unavailable'}</div>;
+    return (
+      <div className={cardClassName}>
+        <div className="text-sm text-destructive">{error ?? 'Storage unavailable'}</div>
+      </div>
+    );
   }
 
   const remaining = Math.max(quota.quota_bytes - quota.used_bytes - quota.reserved_bytes, 0);
@@ -52,7 +62,7 @@ export function StorageQuotaSummary({
     : naturalUnit;
 
   return (
-    <div className="grid gap-1 rounded-md border border-border bg-muted/20 px-3 py-2">
+    <div className={cardClassName}>
       <div className="text-sm font-medium text-foreground">{formatInUnit(quota.quota_bytes, unit)} total</div>
       <div className="text-xs text-muted-foreground">
         {formatInUnit(quota.used_bytes, pickUnit(quota.used_bytes))} used

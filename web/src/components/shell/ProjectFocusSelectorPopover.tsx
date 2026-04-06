@@ -34,6 +34,7 @@ type ProjectFocusSelectorPopoverProps = {
   footerActionIcon?: ReactNode;
   onFooterAction?: () => void;
   onSelectItem: (itemId: string) => void;
+  leadingBadgeClassName?: string;
 };
 
 export function ProjectFocusSelectorPopover({
@@ -56,6 +57,7 @@ export function ProjectFocusSelectorPopover({
   footerActionIcon,
   onFooterAction,
   onSelectItem,
+  leadingBadgeClassName,
 }: ProjectFocusSelectorPopoverProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -108,7 +110,7 @@ export function ProjectFocusSelectorPopover({
         data-testid={triggerTestId}
         className={cn(
           triggerVariant === 'sidebar-row'
-            ? 'project-switcher-trigger inline-flex min-h-11 w-full items-center gap-3 rounded-lg border border-border/70 bg-card/40 px-3 py-2 text-left text-foreground transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            ? 'project-switcher-trigger inline-flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-foreground transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
             : 'project-switcher-trigger inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           triggerClassName,
         )}
@@ -117,7 +119,10 @@ export function ProjectFocusSelectorPopover({
           <>
             <span
               aria-hidden="true"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary"
+              className={cn(
+                'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold',
+                leadingBadgeClassName ?? 'bg-primary/10 text-primary',
+              )}
             >
               {resolvedTriggerLeadingText}
             </span>

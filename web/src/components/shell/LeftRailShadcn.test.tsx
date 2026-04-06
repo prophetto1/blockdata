@@ -288,7 +288,6 @@ describe('LeftRailShadcn', () => {
     expect(brand.compareDocumentPosition(headerContent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(headerContent.compareDocumentPosition(navButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
-
   it('uses the compact header button to expand the side rail', async () => {
     const onToggleDesktopCompact = vi.fn();
 

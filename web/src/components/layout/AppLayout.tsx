@@ -8,6 +8,7 @@ import { LeftRailShadcn } from '@/components/shell/LeftRailShadcn';
 import { RightRailShell } from '@/components/shell/RightRailShell';
 import { HeaderCenterProvider, useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { RightRailProvider, useRightRailContext } from '@/components/shell/RightRailContext';
+import { AssetsRailQuotaCard } from '@/components/storage/AssetsRailQuotaCard';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
 import { AppPageShell } from '@/components/layout/AppPageShell';
 import { styleTokens } from '@/lib/styleTokens';
@@ -286,6 +287,7 @@ function AppShellInner() {
     restoreShell: () => {},
     enterWorkspaceMode: () => {},
   }), []);
+  const leftRailFooterContent = isAssetsRoute ? <AssetsRailQuotaCard /> : null;
 
   return (
     <>
@@ -347,6 +349,7 @@ function AppShellInner() {
               onSignOut={handleSignOut}
               desktopCompact={!desktopNavOpened}
               onToggleDesktopCompact={toggleDesktopNav}
+              footerContent={leftRailFooterContent}
             />
             {desktopNavOpened && (
               <div
@@ -400,6 +403,7 @@ function AppShellInner() {
                   userLabel={profile?.display_name || profile?.email || user?.email}
                   onSignOut={handleSignOut}
                   desktopCompact={false}
+                  footerContent={leftRailFooterContent}
                 />
               </Drawer.Content>
             </Drawer.Positioner>

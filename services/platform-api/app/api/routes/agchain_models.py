@@ -9,20 +9,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from opentelemetry import metrics, trace
 from pydantic import BaseModel, Field
 
-from app.auth.dependencies import require_agchain_admin, require_user_auth
+from app.auth.dependencies import require_agchain_admin
 from app.auth.principals import AuthPrincipal
 from app.domain.agchain import (
-    connect_model_key,
     create_model_target,
-    disconnect_model_key,
     list_model_targets,
     list_supported_providers,
     load_model_detail,
-    refresh_model_target_health,
-    resolve_provider_definition,
     update_model_target,
 )
+from app.domain.agchain.provider_registry import create_provider_definition, update_provider_definition
 from app.observability.contract import safe_attributes, set_span_attributes
+
 
 router = APIRouter(prefix="/agchain/models", tags=["agchain-models"])
 logger = logging.getLogger("agchain-models")
@@ -30,14 +28,45 @@ tracer = trace.get_tracer(__name__)
 meter = metrics.get_meter(__name__)
 
 providers_list_counter = meter.create_counter("platform.agchain.models.providers.list.count")
+providers_create_counter = meter.create_counter("platform.agchain.models.providers.create.count")
+providers_update_counter = meter.create_counter("platform.agchain.models.providers.update.count")
 models_list_counter = meter.create_counter("platform.agchain.models.list.count")
 models_create_counter = meter.create_counter("platform.agchain.models.create.count")
 models_update_counter = meter.create_counter("platform.agchain.models.update.count")
-models_refresh_counter = meter.create_counter("platform.agchain.models.refresh_health.count")
-models_connect_key_counter = meter.create_counter("platform.agchain.models.connect_key.count")
-models_disconnect_key_counter = meter.create_counter("platform.agchain.models.disconnect_key.count")
 models_list_duration_ms = meter.create_histogram("platform.agchain.models.list.duration_ms")
-models_refresh_duration_ms = meter.create_histogram("platform.agchain.models.refresh_health.duration_ms")
+
+
+class ProviderDefinitionCreateRequest(BaseModel):
+    provider_slug: str = Field(min_length=1)
+    display_name: str = Field(min_length=1)
+    provider_category: str = Field(min_length=1)
+    credential_form_kind: str = Field(min_length=1)
+    env_var_name: str | None = None
+    docs_url: str | None = None
+    supported_auth_kinds: list[str] = Field(min_length=1)
+    default_probe_strategy: str = "provider_default"
+    default_capabilities: dict[str, Any] = Field(default_factory=dict)
+    supports_custom_base_url: bool = False
+    supports_model_args: bool = True
+    enabled: bool = True
+    sort_order: int = 100
+    notes: str | None = None
+
+
+class ProviderDefinitionUpdateRequest(BaseModel):
+    display_name: str | None = None
+    provider_category: str | None = None
+    credential_form_kind: str | None = None
+    env_var_name: str | None = None
+    docs_url: str | None = None
+    supported_auth_kinds: list[str] | None = None
+    default_probe_strategy: str | None = None
+    default_capabilities: dict[str, Any] | None = None
+    supports_custom_base_url: bool | None = None
+    supports_model_args: bool | None = None
+    enabled: bool | None = None
+    sort_order: int | None = None
+    notes: str | None = None
 
 
 class ModelTargetCreateRequest(BaseModel):
@@ -72,21 +101,62 @@ class ModelTargetUpdateRequest(BaseModel):
     enabled: bool | None = None
 
 
-class ConnectKeyRequest(BaseModel):
-    api_key: str = Field(min_length=1)
-
-
-@router.get("/providers", summary="List supported AG chain model providers")
-async def list_supported_providers_route(auth: AuthPrincipal = Depends(require_user_auth)):
+@router.get("/providers", summary="List persisted AGChain provider registry rows")
+async def list_supported_providers_route(auth: AuthPrincipal = Depends(require_agchain_admin)):
     with tracer.start_as_current_span("agchain.models.providers.list") as span:
         providers = list_supported_providers()
-        attrs = {"row_count": len(providers)}
+        attrs = {"row_count": len(providers), "result": "success"}
         set_span_attributes(span, attrs)
         providers_list_counter.add(1, safe_attributes(attrs))
         return {"items": providers}
 
 
-@router.get("", summary="List AG chain model targets")
+@router.post("/providers", summary="Create a persisted AGChain provider definition")
+async def create_provider_definition_route(
+    body: ProviderDefinitionCreateRequest,
+    auth: AuthPrincipal = Depends(require_agchain_admin),
+):
+    with tracer.start_as_current_span("agchain.models.providers.create") as span:
+        provider_slug = create_provider_definition(user_id=auth.user_id, payload=body.model_dump())
+        attrs = {
+            "provider_slug": provider_slug,
+            "provider_category": body.provider_category,
+            "credential_form_kind": body.credential_form_kind,
+            "provider_enabled": body.enabled,
+            "supported_auth_kind_count": len(body.supported_auth_kinds),
+            "result": "success",
+        }
+        set_span_attributes(span, attrs)
+        providers_create_counter.add(1, safe_attributes(attrs))
+        logger.info("agchain.models.provider.created", extra=safe_attributes(attrs))
+        return {"ok": True, "provider_slug": provider_slug}
+
+
+@router.patch("/providers/{provider_slug}", summary="Update a persisted AGChain provider definition")
+async def update_provider_definition_route(
+    provider_slug: str,
+    body: ProviderDefinitionUpdateRequest,
+    auth: AuthPrincipal = Depends(require_agchain_admin),
+):
+    with tracer.start_as_current_span("agchain.models.providers.update") as span:
+        updated_provider_slug = update_provider_definition(
+            user_id=auth.user_id,
+            provider_slug=provider_slug,
+            payload=body.model_dump(exclude_none=True),
+        )
+        attrs = {
+            "provider_slug": updated_provider_slug,
+            "provider_enabled": body.enabled,
+            "credential_form_kind": body.credential_form_kind,
+            "result": "success",
+        }
+        set_span_attributes(span, attrs)
+        providers_update_counter.add(1, safe_attributes(attrs))
+        logger.info("agchain.models.provider.updated", extra=safe_attributes(attrs))
+        return {"ok": True, "provider_slug": updated_provider_slug}
+
+
+@router.get("", summary="List AGChain model targets")
 async def list_models(
     provider_slug: str | None = Query(default=None),
     compatibility: str | None = Query(default=None),
@@ -95,12 +165,11 @@ async def list_models(
     search: str | None = Query(default=None),
     limit: int = Query(default=50, ge=1),
     offset: int = Query(default=0, ge=0),
-    auth: AuthPrincipal = Depends(require_user_auth),
+    auth: AuthPrincipal = Depends(require_agchain_admin),
 ):
     start = time.perf_counter()
     with tracer.start_as_current_span("agchain.models.list") as span:
         payload = list_model_targets(
-            user_id=auth.user_id,
             provider_slug=provider_slug,
             compatibility=compatibility,
             health_status=health_status,
@@ -116,6 +185,7 @@ async def list_models(
             "filter.health_status": health_status,
             "row_count": len(payload["items"]),
             "latency_ms": duration_ms,
+            "result": "success",
         }
         metric_attrs = {key: value for key, value in safe_attributes(attrs).items() if value is not None}
         set_span_attributes(span, attrs)
@@ -124,26 +194,24 @@ async def list_models(
         return payload
 
 
-@router.get("/{model_target_id}", summary="Get one AG chain model target")
+@router.get("/{model_target_id}", summary="Get one AGChain model target")
 async def get_model(
     model_target_id: UUID,
-    auth: AuthPrincipal = Depends(require_user_auth),
+    auth: AuthPrincipal = Depends(require_agchain_admin),
 ):
     with tracer.start_as_current_span("agchain.models.get") as span:
-        model_target_id_str = str(model_target_id)
-        model_target, recent_health_checks = load_model_detail(
-            user_id=auth.user_id,
-            model_target_id=model_target_id_str,
+        model_target, recent_health_checks, provider_definition = load_model_detail(
+            model_target_id=str(model_target_id),
         )
         if model_target is None:
-            raise HTTPException(status_code=404, detail="AG chain model target not found")
-        provider_definition = resolve_provider_definition(model_target["provider_slug"])
+            raise HTTPException(status_code=404, detail="AGChain model target not found")
         set_span_attributes(
             span,
             {
                 "provider_slug": model_target["provider_slug"],
                 "auth_kind": model_target["auth_kind"],
                 "health_status": model_target["health_status"],
+                "result": "success",
             },
         )
         return {
@@ -153,7 +221,7 @@ async def get_model(
         }
 
 
-@router.post("", summary="Create an AG chain model target")
+@router.post("", summary="Create an AGChain model target")
 async def create_model(
     body: ModelTargetCreateRequest,
     auth: AuthPrincipal = Depends(require_agchain_admin),
@@ -166,113 +234,33 @@ async def create_model(
             "supports_evaluated": body.supports_evaluated,
             "supports_judge": body.supports_judge,
             "enabled": body.enabled,
+            "result": "success",
         }
         set_span_attributes(span, attrs)
         models_create_counter.add(1, safe_attributes(attrs))
-        logger.info(
-            "agchain.models.created",
-            extra={"model_target_id": model_target_id, "subject_id": auth.user_id, **safe_attributes(attrs)},
-        )
+        logger.info("agchain.models.created", extra=safe_attributes(attrs))
         return {"ok": True, "model_target_id": model_target_id}
 
 
-@router.patch("/{model_target_id}", summary="Update an AG chain model target")
+@router.patch("/{model_target_id}", summary="Update an AGChain model target")
 async def patch_model(
     model_target_id: UUID,
     body: ModelTargetUpdateRequest,
     auth: AuthPrincipal = Depends(require_agchain_admin),
 ):
     with tracer.start_as_current_span("agchain.models.update") as span:
-        model_target_id_str = str(model_target_id)
-        model_target_id = update_model_target(
+        updated_model_target_id = update_model_target(
             user_id=auth.user_id,
-            model_target_id=model_target_id_str,
+            model_target_id=str(model_target_id),
             payload=body.model_dump(exclude_none=True),
         )
         attrs = {
             "enabled": body.enabled,
             "auth_kind": body.auth_kind,
             "probe_strategy": body.probe_strategy,
+            "result": "success",
         }
         set_span_attributes(span, attrs)
         models_update_counter.add(1, safe_attributes(attrs))
-        logger.info(
-            "agchain.models.updated",
-            extra={"model_target_id": model_target_id, "subject_id": auth.user_id, **safe_attributes(attrs)},
-        )
-        return {"ok": True, "model_target_id": model_target_id}
-
-
-@router.post("/{model_target_id}/connect-key", summary="Connect an API key for a model target")
-async def connect_model_key_route(
-    model_target_id: UUID,
-    body: ConnectKeyRequest,
-    auth: AuthPrincipal = Depends(require_user_auth),
-):
-    with tracer.start_as_current_span("agchain.models.connect_key") as span:
-        model_target_id_str = str(model_target_id)
-        outcome = connect_model_key(user_id=auth.user_id, model_target_id=model_target_id_str, api_key=body.api_key)
-        attrs = {"provider_slug": outcome["provider_slug"], "result": "ok"}
-        set_span_attributes(span, attrs)
-        models_connect_key_counter.add(1, safe_attributes(attrs))
-        logger.info(
-            "agchain.models.key_connected",
-            extra={
-                "model_target_id": model_target_id_str,
-                "provider_slug": outcome["provider_slug"],
-                "key_suffix": outcome["key_suffix"],
-                "result": "ok",
-            },
-        )
-        return {"ok": True, "key_suffix": outcome["key_suffix"], "credential_status": outcome["credential_status"]}
-
-
-@router.delete("/{model_target_id}/disconnect-key", summary="Disconnect API key for a model target")
-async def disconnect_model_key_route(
-    model_target_id: UUID,
-    auth: AuthPrincipal = Depends(require_user_auth),
-):
-    with tracer.start_as_current_span("agchain.models.disconnect_key") as span:
-        model_target_id_str = str(model_target_id)
-        outcome = disconnect_model_key(user_id=auth.user_id, model_target_id=model_target_id_str)
-        attrs = {"provider_slug": outcome["provider_slug"], "result": "ok"}
-        set_span_attributes(span, attrs)
-        models_disconnect_key_counter.add(1, safe_attributes(attrs))
-        logger.info(
-            "agchain.models.key_disconnected",
-            extra={
-                "model_target_id": model_target_id_str,
-                "provider_slug": outcome["provider_slug"],
-                "result": "ok",
-            },
-        )
-        return {"ok": True, "credential_status": outcome["credential_status"]}
-
-
-@router.post("/{model_target_id}/refresh-health", summary="Refresh health for an AG chain model target")
-async def refresh_model_health(
-    model_target_id: UUID,
-    auth: AuthPrincipal = Depends(require_agchain_admin),
-):
-    start = time.perf_counter()
-    with tracer.start_as_current_span("agchain.models.refresh_health") as span:
-        model_target_id_str = str(model_target_id)
-        outcome = await refresh_model_target_health(
-            user_id=auth.user_id,
-            model_target_id=model_target_id_str,
-        )
-        duration_ms = max(0, int((time.perf_counter() - start) * 1000))
-        attrs = {
-            "health_status": outcome["health_status"],
-            "probe_strategy": outcome["probe_strategy"],
-            "result": outcome["health_status"],
-            "latency_ms": duration_ms,
-        }
-        set_span_attributes(span, attrs)
-        models_refresh_counter.add(1, safe_attributes(attrs))
-        models_refresh_duration_ms.record(duration_ms, safe_attributes(attrs))
-        logger.info(
-            "agchain.models.health_refreshed",
-            extra={"model_target_id": model_target_id_str, "subject_id": auth.user_id, **safe_attributes(attrs)},
-        )
-        return {"ok": True, **outcome}
+        logger.info("agchain.models.updated", extra=safe_attributes(attrs))
+        return {"ok": True, "model_target_id": updated_model_target_id}

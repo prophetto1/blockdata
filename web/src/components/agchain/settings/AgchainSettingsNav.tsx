@@ -37,7 +37,7 @@ const AGCHAIN_SETTINGS_NAV: AgchainSettingsNavGroup[] = [
       { id: 'organization-members', label: 'Members', path: '/app/agchain/settings/organization/members', icon: IconUsers },
       { id: 'organization-permission-groups', label: 'Permission Groups', path: '/app/agchain/settings/organization/permission-groups', icon: IconShield },
       { id: 'organization-api-keys', label: 'API Keys', path: '/app/agchain/settings/organization/api-keys', icon: IconApi, limited: true },
-      { id: 'organization-ai-providers', label: 'AI Providers', path: '/app/agchain/settings/organization/ai-providers', icon: IconKey, limited: true },
+      { id: 'organization-ai-providers', label: 'AI Providers', path: '/app/agchain/settings/organization/ai-providers', icon: IconKey },
     ],
   },
   {

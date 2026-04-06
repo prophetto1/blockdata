@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+
 import { AppLayout } from './AppLayout';
 
 vi.mock('@/auth/AuthContext', () => ({
@@ -16,7 +18,11 @@ vi.mock('@/components/shell/TopCommandBar', () => ({
 }));
 
 vi.mock('@/components/shell/LeftRailShadcn', () => ({
-  LeftRailShadcn: () => <div data-testid="left-rail" />,
+  LeftRailShadcn: ({ footerContent }: { footerContent?: ReactNode }) => (
+    <div data-testid="left-rail">
+      {footerContent ? <div data-testid="left-rail-footer-content">{footerContent}</div> : null}
+    </div>
+  ),
 }));
 
 vi.mock('@/components/shell/RightRailShell', () => ({
@@ -24,11 +30,12 @@ vi.mock('@/components/shell/RightRailShell', () => ({
 }));
 
 vi.mock('@/components/shell/HeaderCenterContext', () => ({
-  HeaderCenterProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  HeaderCenterProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+  useHeaderCenter: () => ({ pageHeader: null }),
 }));
 
 vi.mock('@/components/shell/RightRailContext', () => ({
-  RightRailProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  RightRailProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   useRightRailContext: () => ({
     content: null,
     activeTab: 'help',
@@ -45,17 +52,17 @@ vi.mock('@/components/shell/AssistantDockHost', () => ({
 }));
 
 vi.mock('@/components/layout/AppPageShell', () => ({
-  AppPageShell: ({ children }: { children: React.ReactNode }) => (
+  AppPageShell: ({ children }: { children: ReactNode }) => (
     <div data-testid="app-page-shell">{children}</div>
   ),
 }));
 
 vi.mock('@ark-ui/react/drawer', () => ({
   Drawer: {
-    Root: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    Root: ({ children }: { children: ReactNode }) => <>{children}</>,
     Backdrop: () => null,
-    Positioner: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    Content: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    Positioner: ({ children }: { children: ReactNode }) => <>{children}</>,
+    Content: ({ children }: { children: ReactNode }) => <>{children}</>,
   },
 }));
 
@@ -69,6 +76,23 @@ vi.mock('@/hooks/useDraggable', () => ({
     isDragging: false,
     handleRef: { current: null },
   }),
+}));
+
+vi.mock('@/hooks/useStorageQuota', () => ({
+  useStorageQuota: () => ({
+    loading: false,
+    data: {
+      quota_bytes: 5 * 1024 * 1024 * 1024,
+      used_bytes: 1 * 1024 * 1024 * 1024,
+      reserved_bytes: 0,
+    },
+    error: null,
+    refresh: vi.fn(),
+  }),
+}));
+
+vi.mock('@/components/storage/StorageQuotaSummary', () => ({
+  StorageQuotaSummary: () => <div>Storage quota card</div>,
 }));
 
 afterEach(() => {
@@ -87,39 +111,18 @@ function renderAt(pathname: string) {
   );
 }
 
-describe('AppLayout route shells', () => {
-  it('renders schema routes without AppPageShell so the workbench can fill the full height', () => {
-    renderAt('/app/schemas');
+describe('AppLayout assets rail quota', () => {
+  it('injects the storage quota card into the left rail on the assets route', () => {
+    renderAt('/app/assets');
 
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
+    expect(screen.getByTestId('left-rail-footer-content')).toBeInTheDocument();
+    expect(screen.getByText('Storage quota card')).toBeInTheDocument();
   });
 
-  it('renders the workspace route without AppPageShell so the workspace can fill the full height', () => {
-    renderAt('/app/workspace');
+  it('does not inject the storage quota card into the left rail on non-assets routes', () => {
+    renderAt('/app/settings');
 
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
-  });
-
-  it('renders the flows list route without AppPageShell so the table remains full-bleed', () => {
-    renderAt('/app/flows');
-
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
-  });
-
-  it('renders pipeline services routes without AppPageShell so the workbench can fill the full height', () => {
-    renderAt('/app/pipeline-services/index-builder');
-
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.queryByTestId('app-page-shell')).not.toBeInTheDocument();
-  });
-
-  it('keeps generic app routes inside AppPageShell', () => {
-    renderAt('/app');
-
-    expect(screen.getByTestId('route-content')).toBeInTheDocument();
-    expect(screen.getByTestId('app-page-shell')).toBeInTheDocument();
+    expect(screen.queryByTestId('left-rail-footer-content')).not.toBeInTheDocument();
+    expect(screen.queryByText('Storage quota card')).not.toBeInTheDocument();
   });
 });

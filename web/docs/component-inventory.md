@@ -1,10 +1,10 @@
 # Component Inventory
 
-Generated: 2026-04-06T05:29:56.767Z
+Generated: 2026-04-06T11:43:36.363Z
 Scope: auth
 
 Pages scanned: 55
-Unique component usages: 448
+Unique component usages: 447
 
 ## Category Totals
 
@@ -13,7 +13,7 @@ Unique component usages: 448
 | ark-ui | 138 |
 | external-package | 23 |
 | in-file component | 21 |
-| local-components | 166 |
+| local-components | 165 |
 | local-pages | 2 |
 | relative-local | 24 |
 | tabler-icons | 74 |
@@ -326,11 +326,10 @@ Component usages: 1
 
 ## src/pages/ProjectAssetsPage.tsx
 
-Component usages: 2
+Component usages: 1
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
-| `StorageQuotaSummary` | `@/components/storage/StorageQuotaSummary` | local-components | StorageQuotaSummary comes from @/components/storage/StorageQuotaSummary (named import of StorageQuotaSummary) |
 | `Workbench` | `@/components/workbench/Workbench` | local-components | Workbench comes from @/components/workbench/Workbench (named import of Workbench) |
 
 ## src/pages/Projects.tsx

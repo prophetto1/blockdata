@@ -48,6 +48,7 @@ export function AgchainOrganizationSwitcher() {
       triggerVariant="sidebar-row"
       triggerTestId="agchain-organization-context"
       triggerClassName="agchain-organization-switcher-trigger"
+      leadingBadgeClassName="bg-blue-500/15 text-blue-400"
       searchPlaceholder="Find organization..."
       emptyLabel="No organizations found"
       loadingLabel="Loading organizations..."

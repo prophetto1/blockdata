@@ -4,7 +4,7 @@
 **Status:** Ratified
 **Date:** 2026-04-05
 **Scope:** `writing-system/web` shared frontend foundation
-**Primary source of truth:** `web/src/tailwind.css` for CSS custom properties; `web/src/lib/*-contract.ts` for TypeScript-accessible design contracts.
+**Primary source of truth:** `web/src/tailwind.css` for CSS custom properties and token-to-utility mappings. TypeScript-accessible foundation contracts and runtime token accessors are owned in the appropriate files under `web/src/lib/`, including `*-contract.ts` files and explicitly designated runtime token layers such as `styleTokens.ts`.
 
 **Source inputs:**
 - Foundation Audit v2 (2026-04-05) — `foundation-audit-report/`
@@ -24,7 +24,7 @@ This document defines the canonical shared frontend foundation for `writing-syst
 
 This contract does not execute migrations. It defines the approved foundation baseline. Follow-on implementation plans must treat this contract as the reuse-first and enforcement baseline.
 
-**Normative boundary:** This contract intentionally excludes file counts, component counts, occurrence totals, and other audit snapshot metrics. Those belong in audit artifacts, not in the contract, because they are operational measurements that can change immediately as the repo evolves.
+**Normative boundary:** This contract intentionally excludes file counts, component counts, occurrence totals, and other audit snapshot metrics. Those belong in audit artifacts, not in the contract, because they are operational measurements that can change immediately as the repo evolves. Current file-level compliance inventories and drift measurements are maintained in the audit artifacts and are intentionally excluded from this contract.
 
 ---
 
@@ -166,9 +166,9 @@ These convergence targets are normative. Shared frontend code must not preserve 
 
 ### 4.8 Domain-Scoped Extension Registries — Canonical
 
-These groups are canonical but domain-scoped. They are not general shared-foundation tokens unless explicitly promoted by later contract amendment.
+These groups are canonical but domain-scoped. They are not general shared-foundation tokens unless explicitly promoted by later contract amendment. Where a concrete owner file is not listed here, the group is canonical only within its domain-scoped registry and is not promoted to shared-foundation reuse without later contract amendment.
 
-| Group | Owner Layer | Scope | Reusable Outside Domain |
+| Group | Owning registry / layer | Scope | Reusable Outside Domain |
 |---|---|---|---|
 | Grid colors | `web/src/lib/styleTokens.ts` | Data grids | No |
 | JSON tree view | JsonTreeView token layer | JSON tree rendering | No |
@@ -269,13 +269,13 @@ The existing shared foundation does not currently provide a complete shadow scal
 
 **Ownership:** These tokens must be declared in `web/src/tailwind.css`. If runtime access is needed outside CSS, they must also be surfaced through the appropriate TypeScript token layer.
 
-| Token | Dark | Light | Replaces |
+| Token | Dark | Light | Intended shared use |
 |---|---|---|---|
-| --shadow-sm | 0 2px 8px rgba(0,0,0,0.15) | 0 2px 8px rgba(28,25,23,0.08) | flow-canvas controls, minimap shadows |
-| --shadow-md | 0 3px 10px rgba(15,23,42,0.08) | 0 3px 10px rgba(28,25,23,0.06) | flow node card shadows |
-| --shadow-lg | 0 8px 24px rgba(0,0,0,0.12) | 0 8px 24px rgba(28,25,23,0.08) | Existing --app-card-hover-shadow |
-| --shadow-xl | 0 14px 40px rgba(0,0,0,0.22) | 0 14px 40px rgba(28,25,23,0.12) | Workspace selector dropdown |
-| --shadow-focus-ring | inset 0 0 0 2px color-mix(in oklab, var(--ring) 50%, transparent) | inset 0 0 0 2px color-mix(in oklab, var(--ring) 50%, transparent) | Drag-over pane highlight, focus states |
+| --shadow-sm | 0 2px 8px rgba(0,0,0,0.15) | 0 2px 8px rgba(28,25,23,0.08) | Small interactive controls |
+| --shadow-md | 0 3px 10px rgba(15,23,42,0.08) | 0 3px 10px rgba(28,25,23,0.06) | Node/card elevation |
+| --shadow-lg | 0 8px 24px rgba(0,0,0,0.12) | 0 8px 24px rgba(28,25,23,0.08) | Elevated cards and hover states |
+| --shadow-xl | 0 14px 40px rgba(0,0,0,0.22) | 0 14px 40px rgba(28,25,23,0.12) | Overlays and selectors |
+| --shadow-focus-ring | inset 0 0 0 2px color-mix(in oklab, var(--ring) 50%, transparent) | inset 0 0 0 2px color-mix(in oklab, var(--ring) 50%, transparent) | Focus/drag-over emphasis |
 
 ---
 
@@ -383,7 +383,7 @@ Source: `web/src/lib/icon-contract.ts`.
 
 ### 12.5 Library Direction — Ratified Addition
 
-The shared icon abstraction boundary is AppIcon. Once AppIcon is implemented, shared frontend code must not import icon libraries directly outside that abstraction.
+AppIcon is the ratified shared icon abstraction boundary for shared frontend code. Until AppIcon is implemented, existing direct imports may remain. After implementation, shared frontend code must not import icon libraries directly outside that abstraction.
 
 Library migration execution is deferred. The full migration from existing icon libraries to Hugeicons must occur through a separate implementation plan.
 
@@ -442,6 +442,8 @@ Source: `web/src/tailwind.css`, `web/src/lib/styleTokens.ts`.
 | Public shells | MarketingLayout, PublicFullBleedLayout, PublicLayout | Canonical |
 | Left rail (secondary) | Competing owner set; unresolved | Deferred |
 | Content area framing | Competing owner set; unresolved | Deferred |
+
+Deferred shell regions may not be standardized by implication from existing implementations; they require explicit later ownership decisions.
 
 ---
 
@@ -526,6 +528,8 @@ All future frontend-bearing plans that touch shared frontend substrate must:
 4. Avoid worsening known conflict bundles from the audit.
 5. Treat violations of this contract as blockers unless the contract itself is amended first.
 
+For this contract, "shared frontend substrate" includes shared UI primitives, shell-bearing components, shared common presentation components, and designated runtime token layers under `web/src/lib/`.
+
 ### Compliance checks
 
 | Rule | Scope |
@@ -538,8 +542,6 @@ All future frontend-bearing plans that touch shared frontend substrate must:
 | Foundation-affecting plans must reference audit + contract | Plan review gate |
 | New shared tokens require contract amendment before adoption | Token ownership layer |
 | Deferred domains may not be solved inside unrelated feature plans | All plans |
-
-Current file-level compliance inventories and drift measurements are maintained in the audit artifacts and are intentionally excluded from this contract.
 
 ---
 
@@ -559,7 +561,7 @@ The following appendices are informative and non-normative unless explicitly ref
 
 ---
 
-## Appendix A: Tailwind @theme Inline Mappings
+## Appendix A: Tailwind @theme inline Mappings
 
 | Tailwind Token | CSS Var |
 |---|---|

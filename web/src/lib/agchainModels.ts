@@ -1,13 +1,41 @@
 import { platformApiFetch } from '@/lib/platformApi';
 
+export type AgchainProviderCategory = 'model_provider' | 'cloud_provider';
+export type AgchainCredentialFormKind = 'basic_api_key' | 'vertex_ai';
+
 export type AgchainProviderDefinition = {
   provider_slug: string;
   display_name: string;
-  supports_custom_base_url: boolean;
+  provider_category: AgchainProviderCategory;
+  credential_form_kind: AgchainCredentialFormKind;
+  env_var_name: string | null;
+  docs_url: string | null;
   supported_auth_kinds: string[];
   default_probe_strategy: string;
   default_capabilities: Record<string, unknown>;
+  supports_custom_base_url: boolean;
   supports_model_args: boolean;
+  enabled: boolean;
+  sort_order: number;
+  notes: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type AgchainProviderDefinitionWrite = {
+  provider_slug: string;
+  display_name: string;
+  provider_category: AgchainProviderCategory;
+  credential_form_kind: AgchainCredentialFormKind;
+  env_var_name: string | null;
+  docs_url: string | null;
+  supported_auth_kinds: string[];
+  default_probe_strategy: string;
+  default_capabilities: Record<string, unknown>;
+  supports_custom_base_url: boolean;
+  supports_model_args: boolean;
+  enabled: boolean;
+  sort_order: number;
   notes: string | null;
 };
 
@@ -21,8 +49,6 @@ export type AgchainModelTarget = {
   qualified_model: string;
   api_base_display: string | null;
   auth_kind: string;
-  credential_status: string;
-  key_suffix: string | null;
   enabled: boolean;
   supports_evaluated: boolean;
   supports_judge: boolean;
@@ -74,6 +100,11 @@ type IdResponse = {
   model_target_id: string;
 };
 
+type ProviderMutationResponse = {
+  ok: boolean;
+  provider_slug: string;
+};
+
 type ProvidersResponse = {
   items: AgchainProviderDefinition[];
 };
@@ -103,6 +134,22 @@ async function parseJsonResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export function sanitizeProviderDefinitionWrite(
+  payload: AgchainProviderDefinitionWrite,
+): AgchainProviderDefinitionWrite {
+  return {
+    ...payload,
+    provider_slug: payload.provider_slug.trim(),
+    display_name: payload.display_name.trim(),
+    env_var_name: trimToNull(payload.env_var_name),
+    docs_url: trimToNull(payload.docs_url),
+    supported_auth_kinds: payload.supported_auth_kinds
+      .map((item) => item.trim())
+      .filter((item, index, items) => item.length > 0 && items.indexOf(item) === index),
+    notes: trimToNull(payload.notes),
+  };
+}
+
 export function sanitizeModelTargetWrite(payload: AgchainModelTargetWrite): AgchainModelTargetWrite {
   return {
     ...payload,
@@ -121,11 +168,50 @@ export async function fetchAgchainModelProviders(): Promise<AgchainProviderDefin
   return data.items ?? [];
 }
 
-export async function fetchAgchainModels(limit = 50, offset = 0): Promise<AgchainModelTarget[]> {
+export async function createAgchainProviderDefinition(
+  payload: AgchainProviderDefinitionWrite,
+): Promise<ProviderMutationResponse> {
+  const response = await platformApiFetch('/agchain/models/providers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(sanitizeProviderDefinitionWrite(payload)),
+  });
+  return parseJsonResponse<ProviderMutationResponse>(response);
+}
+
+export async function updateAgchainProviderDefinition(
+  providerSlug: string,
+  payload: Partial<AgchainProviderDefinitionWrite>,
+): Promise<ProviderMutationResponse> {
+  const normalizedPayload =
+    payload.provider_slug === undefined
+      ? {
+          ...payload,
+          display_name: payload.display_name?.trim(),
+          env_var_name: trimToNull(payload.env_var_name),
+          docs_url: trimToNull(payload.docs_url),
+          notes: trimToNull(payload.notes),
+          supported_auth_kinds: payload.supported_auth_kinds
+            ?.map((item) => item.trim())
+            .filter((item, index, items) => item.length > 0 && items.indexOf(item) === index),
+        }
+      : payload;
+  const response = await platformApiFetch(`/agchain/models/providers/${providerSlug}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(normalizedPayload),
+  });
+  return parseJsonResponse<ProviderMutationResponse>(response);
+}
+
+export async function fetchAgchainModels(limit = 50, offset = 0, search?: string): Promise<AgchainModelTarget[]> {
   const params = new URLSearchParams({
     limit: String(limit),
     offset: String(offset),
   });
+  if (search?.trim()) {
+    params.set('search', search.trim());
+  }
   const response = await platformApiFetch(`/agchain/models?${params.toString()}`);
   const data = await parseJsonResponse<ModelsResponse>(response);
   return data.items ?? [];
@@ -150,44 +236,20 @@ export async function updateAgchainModelTarget(
   modelTargetId: string,
   payload: Partial<AgchainModelTargetWrite>,
 ): Promise<IdResponse> {
+  const normalizedPayload = {
+    ...payload,
+    label: payload.label?.trim(),
+    model_name: payload.model_name?.trim(),
+    qualified_model: payload.qualified_model?.trim(),
+    provider_qualifier: trimToNull(payload.provider_qualifier),
+    api_base: trimToNull(payload.api_base),
+    notes: trimToNull(payload.notes),
+  };
   const response = await platformApiFetch(`/agchain/models/${modelTargetId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(normalizedPayload),
   });
 
   return parseJsonResponse<IdResponse>(response);
-}
-
-export async function refreshAgchainModelTargetHealth(modelTargetId: string) {
-  const response = await platformApiFetch(`/agchain/models/${modelTargetId}/refresh-health`, {
-    method: 'POST',
-  });
-
-  return parseJsonResponse<{
-    ok: boolean;
-    health_status: string;
-    latency_ms: number | null;
-    checked_at: string;
-    message: string;
-    probe_strategy: string;
-  }>(response);
-}
-
-export async function connectModelKey(modelTargetId: string, apiKey: string) {
-  const response = await platformApiFetch(`/agchain/models/${modelTargetId}/connect-key`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ api_key: apiKey }),
-  });
-
-  return parseJsonResponse<{ ok: boolean; key_suffix: string; credential_status: string }>(response);
-}
-
-export async function disconnectModelKey(modelTargetId: string) {
-  const response = await platformApiFetch(`/agchain/models/${modelTargetId}/disconnect-key`, {
-    method: 'DELETE',
-  });
-
-  return parseJsonResponse<{ ok: boolean; credential_status: string }>(response);
 }

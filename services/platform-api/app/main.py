@@ -201,6 +201,18 @@ def create_app() -> FastAPI:
     from app.api.routes.agchain_settings import router as agchain_settings_router
     app.include_router(agchain_settings_router)
 
+    # 5k3. AG chain organization model providers (user-scoped, before plugin catch-all)
+    from app.api.routes.agchain_organization_model_providers import (
+        router as agchain_organization_model_providers_router,
+    )
+    app.include_router(agchain_organization_model_providers_router)
+
+    # 5k4. AG chain project model providers (user-scoped, before plugin catch-all)
+    from app.api.routes.agchain_project_model_providers import (
+        router as agchain_project_model_providers_router,
+    )
+    app.include_router(agchain_project_model_providers_router)
+
     # 5l. AG chain dataset registry (user-scoped, before plugin catch-all)
     from app.api.routes.agchain_datasets import router as agchain_datasets_router
     app.include_router(agchain_datasets_router)
