@@ -8,6 +8,7 @@ import {
   IconWand,
 } from '@tabler/icons-react';
 import type { Icon } from '@tabler/icons-react';
+import { blockdataAiProvidersPath } from '@/lib/aiProviderRoutes';
 
 export type SettingsNavItem = {
   id: string;
@@ -35,7 +36,7 @@ export const SETTINGS_NAV: SettingsNavGroup[] = [
     id: 'admin',
     label: 'Operations',
       items: [
-        { id: 'ai-providers', label: 'AI Providers', icon: IconKey, path: '/app/settings/ai' },
+        { id: 'ai-providers', label: 'AI Providers', icon: IconKey, path: blockdataAiProvidersPath() },
         { id: 'model-roles', label: 'Model Roles', icon: IconWand, path: '/app/settings/model-roles' },
         { id: 'mcp-servers', label: 'MCP Servers', icon: IconPlugConnected, path: '/app/settings/mcp' },
         { id: 'connections', label: 'Connections', icon: IconDatabase, path: '/app/settings/connections' },

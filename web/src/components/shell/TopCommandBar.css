@@ -37,14 +37,14 @@
   padding-inline-start: 0.625rem;
 }
 
-.project-switcher-trigger {
+.top-command-bar .project-switcher-trigger {
   min-width: 132px;
   max-width: 148px;
   flex: 0 0 148px;
   justify-content: space-between;
 }
 
-.project-switcher-trigger > span:first-child {
+.top-command-bar .project-switcher-trigger > span:first-child {
   min-width: 0;
   max-width: 100%;
 }

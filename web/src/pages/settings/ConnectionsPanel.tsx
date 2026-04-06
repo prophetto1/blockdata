@@ -403,6 +403,7 @@ export default function ConnectionsPanel() {
     <SettingsPageFrame
       title="Connections"
       description="Manage credentials for external data sources and destinations used by Load operations."
+      headerVariant="admin"
     >
       {inlineStatus && (
         <div

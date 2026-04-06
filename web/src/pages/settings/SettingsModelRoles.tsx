@@ -84,6 +84,7 @@ export default function SettingsModelRoles() {
     <SettingsPageFrame
       title="Model Roles"
       description="Assign AI models to operational roles. Each role determines which model is used for that function."
+      headerVariant="admin"
     >
       {status && (
         <div

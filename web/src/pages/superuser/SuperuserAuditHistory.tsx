@@ -7,6 +7,7 @@ import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
+import { SettingsPageFrame } from '@/pages/settings/SettingsPageHeader';
 
 type AuditRow = {
   audit_id: number;
@@ -169,16 +170,22 @@ export function Component() {
   }, []);
 
   return (
-    <div className="h-full min-h-0 overflow-hidden">
-      <div className="min-w-0 h-full overflow-hidden">
-        {error && <ErrorAlert message={error} />}
-        {loading && !error && (
-          <p className="p-4 text-sm text-muted-foreground">Loading audit history...</p>
-        )}
+    <SettingsPageFrame
+      title="Audit History"
+      description="Review configuration change history, actors, reasons, and before-and-after values across Blockdata Admin."
+      headerVariant="admin"
+      bodyClassName="p-0"
+    >
+      <div className="h-full min-h-0 overflow-hidden">
+        <div className="min-w-0 h-full overflow-hidden">
+          {error && <ErrorAlert message={error} />}
+          {loading && !error && (
+            <p className="p-4 text-sm text-muted-foreground">Loading audit history...</p>
+          )}
 
-        {!loading && !error && (
-          <ScrollArea className="h-full" contentClass="p-3 md:p-4">
-            <div className="space-y-4">
+          {!loading && !error && (
+            <ScrollArea className="h-full" contentClass="p-3 md:p-4">
+              <div className="space-y-4">
               <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_220px_130px_auto]">
                 <Field.Root>
                   <Field.Input
@@ -343,10 +350,11 @@ export function Component() {
                   </div>
                 </article>
               )}
-            </div>
-          </ScrollArea>
-        )}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
       </div>
-    </div>
+    </SettingsPageFrame>
   );
 }

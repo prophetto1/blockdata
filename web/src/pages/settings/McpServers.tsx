@@ -55,6 +55,7 @@ export default function McpServers() {
     <SettingsPageFrame
       title="MCP Servers"
       description="Catalog and connection state for Model Context Protocol servers."
+      headerVariant="admin"
       toolbar={toolbar}
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -5,6 +5,7 @@ import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { platformApiFetch } from '@/lib/platformApi';
 import { cn } from '@/lib/utils';
+import { SettingsPageFrame } from '@/pages/settings/SettingsPageHeader';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -371,116 +372,123 @@ export function Component() {
   const pluginCount = endpointRows.filter((endpoint) => endpoint.source === 'plugin').length;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      {error && <ErrorAlert message={error} />}
-      {isLoading && !error && (
-        <p className="p-4 text-sm text-muted-foreground">Loading API endpoints...</p>
-      )}
+    <SettingsPageFrame
+      title="API Endpoints"
+      description="Browse route and plugin endpoint inventory, grouped authentication requirements, and source coverage."
+      headerVariant="admin"
+      bodyClassName="p-0"
+    >
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        {error && <ErrorAlert message={error} />}
+        {isLoading && !error && (
+          <p className="p-4 text-sm text-muted-foreground">Loading API endpoints...</p>
+        )}
 
-      {showCatalog && (
-        <>
-          <div className="space-y-3 px-3 pt-3 md:px-4 md:pt-4">
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span>{endpointRows.length} endpoints</span>
-              <span>{routeCount} routes</span>
-              <span>{pluginCount} plugins</span>
-            </div>
+        {showCatalog && (
+          <>
+            <div className="space-y-3 px-3 pt-3 md:px-4 md:pt-4">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span>{endpointRows.length} endpoints</span>
+                <span>{routeCount} routes</span>
+                <span>{pluginCount} plugins</span>
+              </div>
 
-            <div className="grid gap-2 md:grid-cols-[1fr_160px_180px]">
-              <input
-                className={inputClass}
-                value={search}
-                onChange={(event) => setSearch(event.currentTarget.value)}
-                placeholder="Search method, path, group, summary..."
-              />
-              <select
-                className={inputClass}
-                value={sourceFilter}
-                onChange={(event) => setSourceFilter(event.currentTarget.value as typeof sourceFilter)}
-              >
-                <option value="all">All sources</option>
-                <option value="route">Routes only</option>
-                <option value="plugin">Plugins only</option>
-              </select>
-              <select
-                className={inputClass}
-                value={groupFilter}
-                onChange={(event) => setGroupFilter(event.currentTarget.value)}
-              >
-                {groups.map((group) => (
-                  <option key={group} value={group}>
-                    {group === 'all' ? 'All groups' : group}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="min-h-0 flex-1 px-3 pb-3 pt-3 md:px-4 md:pb-4">
-            <ScrollArea className="h-full rounded-md border border-border">
-              <table className="min-w-full border-collapse text-left text-xs">
-                <thead className="sticky top-0 z-[1] bg-muted/50 text-muted-foreground">
-                  <tr>
-                    <th className="w-[70px] px-3 py-2 font-medium">Method</th>
-                    <th className="px-3 py-2 font-medium">Path</th>
-                    <th className="w-[100px] px-3 py-2 font-medium">Group</th>
-                    <th className="px-3 py-2 font-medium">Summary</th>
-                    <th className="w-[100px] px-3 py-2 font-medium">Auth</th>
-                    <th className="w-[70px] px-3 py-2 font-medium">Source</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((row, index) => (
-                    <tr
-                      key={`${row.method}-${row.path}`}
-                      className={cn(
-                        'border-t border-border align-top hover:bg-accent/40',
-                        index % 2 === 0 && 'bg-muted/20',
-                      )}
-                    >
-                      <td className={cn('whitespace-nowrap px-3 py-2 font-mono font-semibold', METHOD_COLORS[row.method])}>
-                        {row.method}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-foreground">{row.path}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{row.group}</td>
-                      <td className="max-w-[400px] truncate px-3 py-2 text-muted-foreground" title={row.summary}>
-                        {row.summary}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={cn(
-                            'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
-                            row.auth === 'none' && 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-                            row.auth === 'bearer' && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-                            row.auth === 'platform_admin' && 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
-                          )}
-                        >
-                          {row.auth}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={cn(
-                            'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
-                            row.source === 'route' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
-                            row.source === 'plugin' && 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300',
-                          )}
-                        >
-                          {row.source}
-                        </span>
-                      </td>
-                    </tr>
+              <div className="grid gap-2 md:grid-cols-[1fr_160px_180px]">
+                <input
+                  className={inputClass}
+                  value={search}
+                  onChange={(event) => setSearch(event.currentTarget.value)}
+                  placeholder="Search method, path, group, summary..."
+                />
+                <select
+                  className={inputClass}
+                  value={sourceFilter}
+                  onChange={(event) => setSourceFilter(event.currentTarget.value as typeof sourceFilter)}
+                >
+                  <option value="all">All sources</option>
+                  <option value="route">Routes only</option>
+                  <option value="plugin">Plugins only</option>
+                </select>
+                <select
+                  className={inputClass}
+                  value={groupFilter}
+                  onChange={(event) => setGroupFilter(event.currentTarget.value)}
+                >
+                  {groups.map((group) => (
+                    <option key={group} value={group}>
+                      {group === 'all' ? 'All groups' : group}
+                    </option>
                   ))}
-                </tbody>
-              </table>
+                </select>
+              </div>
+            </div>
 
-              {filtered.length === 0 && (
-                <p className="p-3 text-sm text-muted-foreground">No endpoints match current filters.</p>
-              )}
-            </ScrollArea>
-          </div>
-        </>
-      )}
-    </div>
+            <div className="min-h-0 flex-1 px-3 pb-3 pt-3 md:px-4 md:pb-4">
+              <ScrollArea className="h-full rounded-md border border-border">
+                <table className="min-w-full border-collapse text-left text-xs">
+                  <thead className="sticky top-0 z-[1] bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="w-[70px] px-3 py-2 font-medium">Method</th>
+                      <th className="px-3 py-2 font-medium">Path</th>
+                      <th className="w-[100px] px-3 py-2 font-medium">Group</th>
+                      <th className="px-3 py-2 font-medium">Summary</th>
+                      <th className="w-[100px] px-3 py-2 font-medium">Auth</th>
+                      <th className="w-[70px] px-3 py-2 font-medium">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((row, index) => (
+                      <tr
+                        key={`${row.method}-${row.path}`}
+                        className={cn(
+                          'border-t border-border align-top hover:bg-accent/40',
+                          index % 2 === 0 && 'bg-muted/20',
+                        )}
+                      >
+                        <td className={cn('whitespace-nowrap px-3 py-2 font-mono font-semibold', METHOD_COLORS[row.method])}>
+                          {row.method}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-foreground">{row.path}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{row.group}</td>
+                        <td className="max-w-[400px] truncate px-3 py-2 text-muted-foreground" title={row.summary}>
+                          {row.summary}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={cn(
+                              'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
+                              row.auth === 'none' && 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+                              row.auth === 'bearer' && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+                              row.auth === 'platform_admin' && 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+                            )}
+                          >
+                            {row.auth}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span
+                            className={cn(
+                              'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
+                              row.source === 'route' && 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+                              row.source === 'plugin' && 'bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300',
+                            )}
+                          >
+                            {row.source}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {filtered.length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">No endpoints match current filters.</p>
+                )}
+              </ScrollArea>
+            </div>
+          </>
+        )}
+      </div>
+    </SettingsPageFrame>
   );
 }

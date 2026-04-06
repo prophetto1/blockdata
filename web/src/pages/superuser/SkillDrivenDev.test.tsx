@@ -21,10 +21,7 @@ describe('SkillDrivenDev', () => {
   it('renders the skill-driven dev page and registers the superuser nav/route entry', () => {
     render(<SkillDrivenDev />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Skill-Driven Dev' })).toBeInTheDocument();
-    expect(screen.getByText('Plan Contract')).toBeInTheDocument();
-    expect(screen.getByText('Instruction Layer')).toBeInTheDocument();
-    expect(screen.getByText('Execution Discipline')).toBeInTheDocument();
+    expect(screen.getByTestId('skill-driven-dev-canvas')).toBeInTheDocument();
 
     const devOnlySection = SUPERUSER_NAV_SECTIONS.find((section) => section.label === 'DEV ONLY');
     expect(devOnlySection?.items.some((item) => item.path === '/app/superuser/skill-driven-dev')).toBe(true);

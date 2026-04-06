@@ -17,6 +17,7 @@ import { FieldRoot, FieldLabel, FieldHelperText } from '@/components/ui/field';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { platformApiFetch } from '@/lib/platformApi';
 import { normalizeDocumentViewMode, DEFAULT_DOCUMENT_VIEW_MODE, type DocumentViewMode } from '@/pages/superuser/documentViews';
+import { SettingsPageFrame } from './SettingsPageHeader';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -742,7 +743,13 @@ export function DoclingConfigPanel() {
 
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <SettingsPageFrame
+      title="Docling"
+      description="Configure parsing profiles, OCR, VLM, accelerator, and enrichment settings for Docling pipelines."
+      headerVariant="admin"
+      bodyClassName="p-0"
+    >
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
         {error && (
           <div className="border-b border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">
             {error}
@@ -894,7 +901,7 @@ export function DoclingConfigPanel() {
             No profiles. Click "Add Profile" to create one.
           </div>
         )}
-    </div>
+      </div>
+    </SettingsPageFrame>
   );
 }
-

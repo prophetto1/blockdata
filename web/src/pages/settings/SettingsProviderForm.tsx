@@ -34,6 +34,7 @@ import { edgeJson } from '@/lib/edge';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { UserApiKeyRow } from '@/lib/types';
+import { blockdataAiProvidersPath } from '@/lib/aiProviderRoutes';
 import { SettingsPageFrame } from './SettingsPageHeader';
 
 type ModelPurpose = 'chat' | 'extraction' | 'embedding' | 'parsing' | 'reasoning';
@@ -56,6 +57,7 @@ type ProviderDef = {
   defaultModel?: string;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const PROVIDERS: ProviderDef[] = [
   {
     id: 'anthropic',
@@ -250,7 +252,7 @@ export default function SettingsProviderForm() {
     setTemperature(0.3);
     setMaxTokens(DEFAULT_MAX_TOKENS);
     setBaseUrl('');
-  }, [provider.id, keyMap]);
+  }, [provider.defaultModel, provider.id, keyMap]);
 
   const existing = keyMap[provider.id] ?? null;
 
@@ -418,7 +420,7 @@ export default function SettingsProviderForm() {
           variant="ghost"
           size="sm"
           className="h-8 gap-1.5 px-2 text-xs"
-          onClick={() => navigate('/app/settings/ai')}
+          onClick={() => navigate(blockdataAiProvidersPath())}
         >
           <IconChevronLeft size={14} />
           Back

@@ -11,6 +11,7 @@ import { AppIcon } from '@/components/ui/app-icon';
 import { useNavigate } from 'react-router-dom';
 import { useAssistantChat, type ChatMessage } from '@/hooks/useAssistantChat';
 import { useRightRailContext } from '@/components/shell/RightRailContext';
+import { blockdataAiProvidersPath } from '@/lib/aiProviderRoutes';
 
 const iconBtn =
   'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground';
@@ -85,7 +86,7 @@ export function RightRailChatPanel() {
           </button>
         </div>
         <div className="flex items-center gap-1">
-          <button type="button" className={iconBtn} aria-label="AI Settings" title="AI Settings" onClick={() => navigate('/app/settings/ai')}>
+          <button type="button" className={iconBtn} aria-label="AI Settings" title="AI Settings" onClick={() => navigate(blockdataAiProvidersPath())}>
             <AppIcon icon={IconSettings} size="md" />
           </button>
           <button

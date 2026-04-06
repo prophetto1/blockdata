@@ -1,6 +1,6 @@
 # Component Inventory
 
-Generated: 2026-04-06T11:43:36.363Z
+Generated: 2026-04-06T13:16:17.851Z
 Scope: auth
 
 Pages scanned: 55

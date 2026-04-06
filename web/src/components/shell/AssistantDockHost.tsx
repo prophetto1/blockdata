@@ -11,6 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { AppIcon } from '@/components/ui/app-icon';
 import { useAssistantChat, type ChatMessage } from '@/hooks/useAssistantChat';
+import { blockdataAiProvidersPath } from '@/lib/aiProviderRoutes';
 
 type AssistantDockHostProps = {
   onClose: () => void;
@@ -113,7 +114,7 @@ export function AssistantDockHost({
           >
             <AppIcon icon={IconPlus} size="md" />
           </button>
-          <button type="button" className={iconBtn} aria-label="AI Settings" title="AI Settings" onClick={() => navigate('/app/settings/ai')}>
+          <button type="button" className={iconBtn} aria-label="AI Settings" title="AI Settings" onClick={() => navigate(blockdataAiProvidersPath())}>
             <AppIcon icon={IconSettings} size="md" />
           </button>
           <button type="button" className={iconBtn} aria-label="Close assistant" onClick={onClose}>

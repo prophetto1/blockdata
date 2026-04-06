@@ -32,6 +32,7 @@ import McpServers from '@/pages/settings/McpServers';
 import ConnectionsPanel from '@/pages/settings/ConnectionsPanel';
 import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPage';
 import Commands from '@/pages/Commands';
+import { LegacyAiProvidersRedirect } from '@/components/navigation/LegacyAiProvidersRedirect';
 
 import DatabasePlaceholder from '@/pages/DatabasePlaceholder';
 import ProjectAssetsPage from '@/pages/ProjectAssetsPage';
@@ -276,8 +277,8 @@ export const router = createBrowserRouter([
               { path: 'profile', element: <SettingsAccount /> },
               { path: 'themes', element: <SettingsThemes /> },
               { path: 'secrets', element: <SettingsSecrets /> },
-              { path: 'ai', element: <Navigate to="/app/blockdata-admin/ai-providers" replace /> },
-              { path: 'ai/:providerId', element: <Navigate to="/app/blockdata-admin/ai-providers" replace /> },
+              { path: 'ai', element: <LegacyAiProvidersRedirect /> },
+              { path: 'ai/:providerId', element: <LegacyAiProvidersRedirect /> },
               { path: 'model-roles', element: <Navigate to="/app/blockdata-admin/model-roles" replace /> },
               { path: 'mcp', element: <Navigate to="/app/blockdata-admin/mcp" replace /> },
               { path: 'connections', element: <Navigate to="/app/blockdata-admin/connections" replace /> },
@@ -370,11 +371,11 @@ export const router = createBrowserRouter([
       },
       {
         path: '/app/superuser/ai-providers',
-        element: <Navigate to="/app/blockdata-admin/ai-providers" replace />,
+        element: <LegacyAiProvidersRedirect />,
       },
       {
         path: '/app/superuser/ai-providers/:providerId',
-        element: <Navigate to="/app/blockdata-admin/ai-providers" replace />,
+        element: <LegacyAiProvidersRedirect />,
       },
       {
         path: '/app/superuser/model-roles',

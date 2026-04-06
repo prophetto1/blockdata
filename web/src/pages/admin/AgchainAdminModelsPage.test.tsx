@@ -2,11 +2,17 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import AgchainAdminModelsPage from './AgchainAdminModelsPage';
+import { resetAgchainAdminRegistryStateForTests } from '@/hooks/agchain/useAgchainAdminRegistry';
 
+const useAuthMock = vi.fn();
 const fetchAgchainModelProvidersMock = vi.fn();
 const fetchAgchainModelsMock = vi.fn();
 const createAgchainProviderDefinitionMock = vi.fn();
 const createAgchainModelTargetMock = vi.fn();
+
+vi.mock('@/auth/AuthContext', () => ({
+  useAuth: () => useAuthMock(),
+}));
 
 vi.mock('@/lib/agchainModels', () => ({
   fetchAgchainModelProviders: (...args: unknown[]) => fetchAgchainModelProvidersMock(...args),
@@ -27,14 +33,29 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
 
 afterEach(() => {
   cleanup();
+  resetAgchainAdminRegistryStateForTests();
 });
 
 describe('AgchainAdminModelsPage', () => {
   beforeEach(() => {
+    useAuthMock.mockReset();
     fetchAgchainModelProvidersMock.mockReset();
     fetchAgchainModelsMock.mockReset();
     createAgchainProviderDefinitionMock.mockReset();
     createAgchainModelTargetMock.mockReset();
+    resetAgchainAdminRegistryStateForTests();
+
+    useAuthMock.mockReturnValue({
+      loading: false,
+      user: { id: 'user-1' },
+      session: { access_token: 'token-1' },
+      profile: null,
+      signIn: vi.fn(),
+      signUp: vi.fn(),
+      resendSignupConfirmation: vi.fn(),
+      signOut: vi.fn(),
+      signInWithOAuth: vi.fn(),
+    });
 
     fetchAgchainModelProvidersMock.mockResolvedValue([
       {
@@ -113,7 +134,7 @@ describe('AgchainAdminModelsPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Models' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Models' })).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { level: 2, name: 'Provider Registry' })).toBeInTheDocument();
@@ -169,5 +190,33 @@ describe('AgchainAdminModelsPage', () => {
         }),
       );
     });
+  });
+
+  it('reuses the verified admin registry after a remount in the same session', async () => {
+    const firstRender = render(
+      <MemoryRouter>
+        <AgchainAdminModelsPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('GPT-4.1 Mini')).toBeInTheDocument();
+    expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
+    expect(fetchAgchainModelProvidersMock).toHaveBeenCalledTimes(1);
+    expect(fetchAgchainModelsMock).toHaveBeenCalledTimes(1);
+
+    firstRender.unmount();
+
+    render(
+      <MemoryRouter>
+        <AgchainAdminModelsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText('Loading provider registry...')).not.toBeInTheDocument();
+    expect(screen.queryByText('Loading model targets...')).not.toBeInTheDocument();
+    expect(screen.getByText('GPT-4.1 Mini')).toBeInTheDocument();
+    expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
+    expect(fetchAgchainModelProvidersMock).toHaveBeenCalledTimes(1);
+    expect(fetchAgchainModelsMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { TABLES } from '@/lib/tables';
 import type { UserApiKeyRow } from '@/lib/types';
+import { blockdataAiProviderPath } from '@/lib/aiProviderRoutes';
 import { PROVIDERS } from './SettingsProviderForm';
 import { SettingsPageFrame } from './SettingsPageHeader';
 
@@ -45,6 +46,7 @@ export default function SettingsAiOverview() {
     <SettingsPageFrame
       title="AI Providers"
       description="Configure API keys and model defaults for each provider."
+      headerVariant="admin"
     >
       <div className="grid gap-3 sm:grid-cols-2">
         {PROVIDERS.map((provider) => {
@@ -66,7 +68,7 @@ export default function SettingsAiOverview() {
                     : 'border-border',
                 'hover:shadow-md hover:border-primary/40',
               )}
-              onClick={() => navigate(`/app/settings/ai/${provider.id}`)}
+              onClick={() => navigate(blockdataAiProviderPath(provider.id))}
             >
               <div
                 className={cn(
