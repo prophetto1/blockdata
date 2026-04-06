@@ -1,5 +1,6 @@
 # Local Claude/Codex settings
 .claude/
+.cursor/
 .codex/settings.local.json
 .mcp.json
 skills/

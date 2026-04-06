@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useAuth } from '@/auth/AuthContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
@@ -16,6 +17,15 @@ type EndpointRow = {
   summary: string;
   auth: string;
   source: 'route' | 'plugin';
+};
+
+type EndpointCatalogStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+type EndpointCatalogState = {
+  endpoints: EndpointRow[] | null;
+  status: EndpointCatalogStatus;
+  error: string | null;
+  refresh: () => Promise<void>;
 };
 
 type OpenApiOperation = {
@@ -37,31 +47,105 @@ type PluginFunction = {
   parameter_schema?: { name: string; type: string; required?: boolean }[];
 };
 
+type SharedEndpointCatalogState = {
+  userKey: string | null;
+  requestKey: string | null;
+  endpoints: EndpointRow[] | null;
+  status: EndpointCatalogStatus;
+  error: string | null;
+};
+
+let sharedEndpointCatalogState: SharedEndpointCatalogState = {
+  userKey: null,
+  requestKey: null,
+  endpoints: null,
+  status: 'idle',
+  error: null,
+};
+
+const endpointCatalogListeners = new Set<() => void>();
+const endpointCatalogInflightByRequest = new Map<string, Promise<void>>();
+
+/* ------------------------------------------------------------------ */
+/*  Shared Session Cache                                               */
+/* ------------------------------------------------------------------ */
+
+function subscribeEndpointCatalog(listener: () => void) {
+  endpointCatalogListeners.add(listener);
+  return () => {
+    endpointCatalogListeners.delete(listener);
+  };
+}
+
+function emitEndpointCatalog() {
+  endpointCatalogListeners.forEach((listener) => listener());
+}
+
+function getEndpointCatalogSnapshot() {
+  return sharedEndpointCatalogState;
+}
+
+function setSharedEndpointCatalogState(
+  next:
+    | SharedEndpointCatalogState
+    | ((current: SharedEndpointCatalogState) => SharedEndpointCatalogState),
+) {
+  sharedEndpointCatalogState =
+    typeof next === 'function' ? next(sharedEndpointCatalogState) : next;
+  emitEndpointCatalog();
+}
+
+function buildUserKey(userId: string | null) {
+  return userId ?? null;
+}
+
+function buildRequestKey(userKey: string | null, accessToken: string | null) {
+  if (!userKey || !accessToken) return null;
+  return `${userKey}:${accessToken}`;
+}
+
+function resetSharedEndpointCatalogState() {
+  if (
+    sharedEndpointCatalogState.userKey === null &&
+    sharedEndpointCatalogState.requestKey === null &&
+    sharedEndpointCatalogState.endpoints === null &&
+    sharedEndpointCatalogState.status === 'idle' &&
+    sharedEndpointCatalogState.error === null
+  ) {
+    return;
+  }
+
+  endpointCatalogInflightByRequest.clear();
+  setSharedEndpointCatalogState({
+    userKey: null,
+    requestKey: null,
+    endpoints: null,
+    status: 'idle',
+    error: null,
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
 function resolveAuth(detail: OpenApiOperation): string {
-  // Custom role extension takes precedence
   if (detail['x-required-role']) return detail['x-required-role'];
-  // OpenAPI security field: empty array = public, present = auth required
   if (!detail.security || detail.security.length === 0) return 'none';
-  // Check what schemes are listed
-  const schemes = detail.security.flatMap((s) => Object.keys(s));
+  const schemes = detail.security.flatMap((security) => Object.keys(security));
   if (schemes.includes('HTTPBearer')) return 'bearer';
   if (schemes.includes('APIKeyHeader')) return 'api_key (deprecated)';
   return 'bearer';
 }
 
 function getCatchAllAuth(spec: OpenApiSpec): string {
-  const catchAll = spec.paths?.['/{function_name}']?.['post'];
+  const catchAll = spec.paths?.['/{function_name}']?.post;
   return catchAll ? resolveAuth(catchAll) : 'bearer';
 }
 
 function parseOpenApi(spec: OpenApiSpec): EndpointRow[] {
   const rows: EndpointRow[] = [];
   for (const [path, methods] of Object.entries(spec.paths ?? {})) {
-    // Skip the catch-all plugin route — plugins are listed separately
     if (path === '/{function_name}') continue;
     for (const [method, detail] of Object.entries(methods)) {
       if (method === 'parameters') continue;
@@ -83,10 +167,159 @@ function parsePlugins(functions: PluginFunction[], pluginAuth: string): Endpoint
     method: fn.method.toUpperCase(),
     path: fn.path.startsWith('/') ? fn.path : `/${fn.path}`,
     group: fn.task_type.split('.').slice(-2, -1)[0] || 'plugin',
-    summary: `${fn.task_type}`,
+    summary: fn.task_type,
     auth: pluginAuth,
-    source: 'plugin' as const,
+    source: 'plugin',
   }));
+}
+
+async function resolveSharedEndpointCatalog(
+  userKey: string,
+  requestKey: string,
+  force = false,
+): Promise<void> {
+  if (!force) {
+    const inFlight = endpointCatalogInflightByRequest.get(requestKey);
+    if (inFlight) return inFlight;
+    if (
+      sharedEndpointCatalogState.userKey === userKey &&
+      sharedEndpointCatalogState.requestKey === requestKey &&
+      sharedEndpointCatalogState.status === 'ready'
+    ) {
+      return;
+    }
+  }
+
+  setSharedEndpointCatalogState((current) => {
+    const hasResolvedCatalog =
+      current.userKey === userKey && current.endpoints !== null;
+
+    return {
+      userKey,
+      requestKey,
+      endpoints: hasResolvedCatalog ? current.endpoints : null,
+      status: hasResolvedCatalog ? 'ready' : 'loading',
+      error: null,
+    };
+  });
+
+  const request = (async () => {
+    try {
+      const [specResp, functionResp] = await Promise.all([
+        platformApiFetch('/openapi.json'),
+        platformApiFetch('/functions'),
+      ]);
+
+      if (!specResp.ok) throw new Error(`OpenAPI fetch failed: ${specResp.status}`);
+      if (!functionResp.ok) throw new Error(`Functions fetch failed: ${functionResp.status}`);
+
+      const spec = (await specResp.json()) as OpenApiSpec;
+      const functions = (await functionResp.json()) as PluginFunction[];
+      const nextEndpoints = [
+        ...parseOpenApi(spec),
+        ...parsePlugins(functions, getCatchAllAuth(spec)),
+      ];
+
+      setSharedEndpointCatalogState((current) => {
+        if (current.userKey !== userKey || current.requestKey !== requestKey) return current;
+        return {
+          userKey,
+          requestKey,
+          endpoints: nextEndpoints,
+          status: 'ready',
+          error: null,
+        };
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setSharedEndpointCatalogState((current) => {
+        if (current.userKey !== userKey || current.requestKey !== requestKey) return current;
+        return {
+          userKey,
+          requestKey,
+          endpoints: current.endpoints,
+          status: current.endpoints ? 'ready' : 'error',
+          error: message,
+        };
+      });
+    } finally {
+      endpointCatalogInflightByRequest.delete(requestKey);
+    }
+  })();
+
+  endpointCatalogInflightByRequest.set(requestKey, request);
+  return request;
+}
+
+function useApiEndpointCatalogState(): EndpointCatalogState {
+  const { loading, session, user } = useAuth();
+  const snapshot = useSyncExternalStore(
+    subscribeEndpointCatalog,
+    getEndpointCatalogSnapshot,
+    getEndpointCatalogSnapshot,
+  );
+
+  const userKey = buildUserKey(user?.id ?? null);
+  const requestKey = buildRequestKey(userKey, session?.access_token ?? null);
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (!requestKey || !userKey) {
+      resetSharedEndpointCatalogState();
+      return;
+    }
+
+    void resolveSharedEndpointCatalog(userKey, requestKey);
+  }, [loading, requestKey, userKey]);
+
+  const refresh = useCallback(async () => {
+    if (!requestKey || !userKey) return;
+    await resolveSharedEndpointCatalog(userKey, requestKey, true);
+  }, [requestKey, userKey]);
+
+  if (loading) {
+    return {
+      endpoints: null,
+      status: 'loading',
+      error: null,
+      refresh,
+    };
+  }
+
+  if (!requestKey || !userKey) {
+    return {
+      endpoints: null,
+      status: 'idle',
+      error: null,
+      refresh,
+    };
+  }
+
+  if (snapshot.userKey !== userKey) {
+    return {
+      endpoints: null,
+      status: 'loading',
+      error: null,
+      refresh,
+    };
+  }
+
+  if (snapshot.requestKey !== requestKey && snapshot.endpoints === null) {
+    return {
+      endpoints: null,
+      status: 'loading',
+      error: null,
+      refresh,
+    };
+  }
+
+  return {
+    endpoints: snapshot.endpoints,
+    status: snapshot.status,
+    error: snapshot.error,
+    refresh,
+  };
 }
 
 const METHOD_COLORS: Record<string, string> = {
@@ -107,76 +340,48 @@ const inputClass =
 export function Component() {
   useShellHeaderTitle({ title: 'API Endpoints', breadcrumbs: ['Blockdata Admin', 'API Endpoints'] });
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [endpoints, setEndpoints] = useState<EndpointRow[]>([]);
+  const { endpoints, status, error } = useApiEndpointCatalogState();
+  const endpointRows = useMemo(() => endpoints ?? [], [endpoints]);
+  const isLoading = status === 'loading' && endpoints === null;
+  const showCatalog = endpointRows.length > 0 || status === 'ready';
+
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'route' | 'plugin'>('all');
   const [groupFilter, setGroupFilter] = useState('all');
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [specResp, fnResp] = await Promise.all([
-          platformApiFetch('/openapi.json'),
-          platformApiFetch('/functions'),
-        ]);
-
-        if (!specResp.ok) throw new Error(`OpenAPI fetch failed: ${specResp.status}`);
-        if (!fnResp.ok) throw new Error(`Functions fetch failed: ${fnResp.status}`);
-
-        const spec = (await specResp.json()) as OpenApiSpec;
-        const functions = (await fnResp.json()) as PluginFunction[];
-
-        const routeRows = parseOpenApi(spec);
-        const pluginAuth = getCatchAllAuth(spec);
-        const pluginRows = parsePlugins(functions, pluginAuth);
-        setEndpoints([...routeRows, ...pluginRows]);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
-  }, []);
-
   const groups = useMemo(() => {
-    const set = new Set(endpoints.map((e) => e.group));
+    const set = new Set(endpointRows.map((endpoint) => endpoint.group));
     return ['all', ...Array.from(set).sort()];
-  }, [endpoints]);
+  }, [endpointRows]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return endpoints.filter((row) => {
+    const query = search.trim().toLowerCase();
+    return endpointRows.filter((row) => {
       if (sourceFilter !== 'all' && row.source !== sourceFilter) return false;
       if (groupFilter !== 'all' && row.group !== groupFilter) return false;
-      if (!q) return true;
+      if (!query) return true;
       return [row.method, row.path, row.group, row.summary, row.auth, row.source]
         .join(' ')
         .toLowerCase()
-        .includes(q);
+        .includes(query);
     });
-  }, [endpoints, search, sourceFilter, groupFilter]);
+  }, [endpointRows, groupFilter, search, sourceFilter]);
 
-  const routeCount = endpoints.filter((e) => e.source === 'route').length;
-  const pluginCount = endpoints.filter((e) => e.source === 'plugin').length;
+  const routeCount = endpointRows.filter((endpoint) => endpoint.source === 'route').length;
+  const pluginCount = endpointRows.filter((endpoint) => endpoint.source === 'plugin').length;
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {error && <ErrorAlert message={error} />}
-      {loading && !error && (
+      {isLoading && !error && (
         <p className="p-4 text-sm text-muted-foreground">Loading API endpoints...</p>
       )}
 
-      {!loading && !error && (
+      {showCatalog && (
         <>
-          {/* Summary + Filters — pinned */}
           <div className="space-y-3 px-3 pt-3 md:px-4 md:pt-4">
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span>{endpoints.length} endpoints</span>
+              <span>{endpointRows.length} endpoints</span>
               <span>{routeCount} routes</span>
               <span>{pluginCount} plugins</span>
             </div>
@@ -185,13 +390,13 @@ export function Component() {
               <input
                 className={inputClass}
                 value={search}
-                onChange={(e) => setSearch(e.currentTarget.value)}
+                onChange={(event) => setSearch(event.currentTarget.value)}
                 placeholder="Search method, path, group, summary..."
               />
               <select
                 className={inputClass}
                 value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.currentTarget.value as typeof sourceFilter)}
+                onChange={(event) => setSourceFilter(event.currentTarget.value as typeof sourceFilter)}
               >
                 <option value="all">All sources</option>
                 <option value="route">Routes only</option>
@@ -200,18 +405,17 @@ export function Component() {
               <select
                 className={inputClass}
                 value={groupFilter}
-                onChange={(e) => setGroupFilter(e.currentTarget.value)}
+                onChange={(event) => setGroupFilter(event.currentTarget.value)}
               >
-                {groups.map((g) => (
-                  <option key={g} value={g}>
-                    {g === 'all' ? 'All groups' : g}
+                {groups.map((group) => (
+                  <option key={group} value={group}>
+                    {group === 'all' ? 'All groups' : group}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Table — scrolls within container */}
           <div className="min-h-0 flex-1 px-3 pb-3 pt-3 md:px-4 md:pb-4">
             <ScrollArea className="h-full rounded-md border border-border">
               <table className="min-w-full border-collapse text-left text-xs">
@@ -226,12 +430,12 @@ export function Component() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((row, i) => (
+                  {filtered.map((row, index) => (
                     <tr
                       key={`${row.method}-${row.path}`}
                       className={cn(
                         'border-t border-border align-top hover:bg-accent/40',
-                        i % 2 === 0 && 'bg-muted/20',
+                        index % 2 === 0 && 'bg-muted/20',
                       )}
                     >
                       <td className={cn('whitespace-nowrap px-3 py-2 font-mono font-semibold', METHOD_COLORS[row.method])}>

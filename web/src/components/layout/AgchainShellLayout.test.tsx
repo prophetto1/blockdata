@@ -43,7 +43,9 @@ vi.mock('@/components/shell/ShellWorkspaceSelector', () => ({
 
 vi.mock('@/auth/AuthContext', () => ({
   useAuth: () => ({
-    user: { email: 'test@example.com' },
+    loading: false,
+    user: { id: 'user-1', email: 'test@example.com' },
+    session: { access_token: 'token-1' },
     profile: { display_name: 'Test User', email: 'test@example.com' },
     signOut: vi.fn(),
   }),

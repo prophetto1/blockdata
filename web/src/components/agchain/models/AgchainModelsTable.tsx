@@ -41,7 +41,7 @@ export function AgchainModelsTable({
   headerControls,
 }: AgchainModelsTableProps) {
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/70 shadow-sm">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/75 shadow-sm">
       <div className="border-b border-border/70 px-6 py-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
@@ -55,7 +55,7 @@ export function AgchainModelsTable({
       </div>
       <ScrollArea className="min-h-0 flex-1">
         <table className="w-full text-left">
-          <thead className="sticky top-0 z-10 bg-card text-xs uppercase tracking-[0.16em] text-muted-foreground">
+          <thead className="sticky top-0 z-10 bg-card/95 text-xs uppercase tracking-[0.16em] text-muted-foreground">
             <tr className="border-b border-border">
               <th className="px-6 py-3 font-medium">Provider</th>
               <th className="px-6 py-3 font-medium">Status</th>
@@ -82,8 +82,8 @@ export function AgchainModelsTable({
                 <tr
                   key={provider.provider_slug}
                   className={cn(
-                    'border-b border-border/60 align-top hover:bg-accent/20',
-                    selectedProviderSlug === provider.provider_slug && 'bg-accent/30',
+                    'border-b border-border/60 align-top transition-colors duration-150 hover:bg-accent/30',
+                    selectedProviderSlug === provider.provider_slug && 'bg-accent/30 ring-1 ring-accent/50',
                   )}
                 >
                   <td className="max-w-[16rem] px-6 py-4">

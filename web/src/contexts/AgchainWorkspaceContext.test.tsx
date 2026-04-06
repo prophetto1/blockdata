@@ -1,6 +1,6 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAgchainWorkspace, AgchainWorkspaceProvider } from './AgchainWorkspaceContext';
+import { useAgchainWorkspace, AgchainWorkspaceProvider, resetAgchainWorkspaceStateForTests } from './AgchainWorkspaceContext';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -17,6 +17,14 @@ vi.mock('@/lib/agchainWorkspaces', async () => {
     fetchAgchainProjects: (options?: unknown) => fetchAgchainProjectsMock(options),
   };
 });
+
+vi.mock('@/auth/AuthContext', () => ({
+  useAuth: () => ({
+    loading: false,
+    user: { id: 'user-1' },
+    session: { access_token: 'token-1' },
+  }),
+}));
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -109,6 +117,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   window.localStorage.clear();
+  resetAgchainWorkspaceStateForTests();
 });
 
 // ---------------------------------------------------------------------------
@@ -119,6 +128,7 @@ describe('AgchainWorkspaceProvider', () => {
   beforeEach(() => {
     fetchAgchainOrganizationsMock.mockReset();
     fetchAgchainProjectsMock.mockReset();
+    resetAgchainWorkspaceStateForTests();
   });
 
   it('bootstraps to ready with valid org + project', async () => {
@@ -286,5 +296,30 @@ describe('AgchainWorkspaceProvider', () => {
 
     expect(screen.getByTestId('org')).toHaveTextContent('Acme');
     expect(screen.getByTestId('project')).toHaveTextContent('Finance Evals');
+  });
+
+  it('reuses the resolved workspace scope after a remount in the same session', async () => {
+    setupHappyPath();
+
+    const firstRender = renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('ready');
+    });
+
+    expect(screen.getByTestId('org')).toHaveTextContent('Personal');
+    expect(screen.getByTestId('project')).toHaveTextContent('Legal Evals');
+    expect(fetchAgchainOrganizationsMock).toHaveBeenCalledTimes(1);
+    expect(fetchAgchainProjectsMock).toHaveBeenCalledTimes(1);
+
+    firstRender.unmount();
+
+    renderWithProvider();
+
+    expect(screen.getByTestId('status')).toHaveTextContent('ready');
+    expect(screen.getByTestId('org')).toHaveTextContent('Personal');
+    expect(screen.getByTestId('project')).toHaveTextContent('Legal Evals');
+    expect(fetchAgchainOrganizationsMock).toHaveBeenCalledTimes(1);
+    expect(fetchAgchainProjectsMock).toHaveBeenCalledTimes(1);
   });
 });

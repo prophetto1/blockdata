@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
+import { AgchainWorkspaceProvider, resetAgchainWorkspaceStateForTests } from '@/contexts/AgchainWorkspaceContext';
 import { useAgchainProjectFocus } from './useAgchainProjectFocus';
 
 const fetchAgchainOrganizationsMock = vi.fn();
@@ -12,6 +12,14 @@ vi.mock('@/lib/agchainWorkspaces', () => ({
   fetchAgchainProjects: (...args: unknown[]) => fetchAgchainProjectsMock(...args),
 }));
 
+vi.mock('@/auth/AuthContext', () => ({
+  useAuth: () => ({
+    loading: false,
+    user: { id: 'user-1' },
+    session: { access_token: 'token-1' },
+  }),
+}));
+
 function wrapper({ children }: { children: ReactNode }) {
   return <AgchainWorkspaceProvider>{children}</AgchainWorkspaceProvider>;
 }
@@ -20,6 +28,7 @@ describe('useAgchainProjectFocus', () => {
   beforeEach(() => {
     fetchAgchainOrganizationsMock.mockReset();
     fetchAgchainProjectsMock.mockReset();
+    resetAgchainWorkspaceStateForTests();
     window.localStorage.clear();
     fetchAgchainOrganizationsMock.mockResolvedValue({
       items: [
@@ -63,6 +72,7 @@ describe('useAgchainProjectFocus', () => {
 
   afterEach(() => {
     window.localStorage.clear();
+    resetAgchainWorkspaceStateForTests();
   });
 
   it('resolves persisted AGChain project focus from the stored project id', async () => {

@@ -105,7 +105,7 @@ function AdminShellLayoutFrame() {
     <div className="relative h-dvh overflow-hidden bg-background text-foreground">
       <AdminShellTopBand
         navOpen={navOpen}
-        leftChromeWidth={leftChromeWidth}
+        primaryRailWidth={sidebarWidth}
         height={topBandHeight}
         onToggleNav={handleToggleNav}
       />
@@ -119,7 +119,7 @@ function AdminShellLayoutFrame() {
             insetBlockStart: `${topBandHeight}px`,
             insetBlockEnd: 0,
             width: `${sidebarWidth}px`,
-            borderInlineEnd: '1px solid var(--border)',
+            borderInlineEnd: '1px solid var(--chrome, var(--background))',
             backgroundColor: 'var(--chrome, var(--background))',
             zIndex: 20,
           }}

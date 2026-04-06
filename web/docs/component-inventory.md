@@ -1,10 +1,10 @@
 # Component Inventory
 
-Generated: 2026-04-04T08:14:21.818Z
+Generated: 2026-04-06T05:29:56.767Z
 Scope: auth
 
 Pages scanned: 55
-Unique component usages: 447
+Unique component usages: 448
 
 ## Category Totals
 
@@ -12,7 +12,7 @@ Unique component usages: 447
 | --- | ---: |
 | ark-ui | 138 |
 | external-package | 23 |
-| in-file component | 20 |
+| in-file component | 21 |
 | local-components | 166 |
 | local-pages | 2 |
 | relative-local | 24 |
@@ -827,10 +827,11 @@ Component usages: 2
 
 ## src/pages/superuser/SuperuserGuard.tsx
 
-Component usages: 2
+Component usages: 3
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
+| `AdminSurfaceGuard` | `(in-file or unresolved)` | in-file component | AdminSurfaceGuard is defined in the same page file |
 | `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
 | `Outlet` | `react-router-dom` | external-package | Outlet comes from react-router-dom (named import of Outlet) |
 

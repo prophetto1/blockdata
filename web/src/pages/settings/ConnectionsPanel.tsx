@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { useAuth } from '@/auth/AuthContext';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { platformApiFetch } from '@/lib/platformApi';
 import { SettingsPageFrame, SettingsSection } from './SettingsPageHeader';
@@ -16,6 +17,23 @@ type Connection = {
 type InlineStatus = {
   kind: 'success' | 'error';
   message: string;
+};
+
+type ConnectionsCatalogStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+type ConnectionsCatalogState = {
+  connections: Connection[] | null;
+  status: ConnectionsCatalogStatus;
+  error: string | null;
+  refresh: () => Promise<void>;
+};
+
+type SharedConnectionsCatalogState = {
+  userKey: string | null;
+  requestKey: string | null;
+  connections: Connection[] | null;
+  status: ConnectionsCatalogStatus;
+  error: string | null;
 };
 
 const inputClass =
@@ -53,37 +71,243 @@ const CONNECTION_TYPES = [
 
 type ConnectionTypeConfig = (typeof CONNECTION_TYPES)[number];
 
+let sharedConnectionsCatalogState: SharedConnectionsCatalogState = {
+  userKey: null,
+  requestKey: null,
+  connections: null,
+  status: 'idle',
+  error: null,
+};
+
+const connectionsCatalogListeners = new Set<() => void>();
+const connectionsCatalogInflightByRequest = new Map<string, Promise<void>>();
+
+function subscribeConnectionsCatalog(listener: () => void) {
+  connectionsCatalogListeners.add(listener);
+  return () => {
+    connectionsCatalogListeners.delete(listener);
+  };
+}
+
+function emitConnectionsCatalog() {
+  connectionsCatalogListeners.forEach((listener) => listener());
+}
+
+function getConnectionsCatalogSnapshot() {
+  return sharedConnectionsCatalogState;
+}
+
+function setSharedConnectionsCatalogState(
+  next:
+    | SharedConnectionsCatalogState
+    | ((current: SharedConnectionsCatalogState) => SharedConnectionsCatalogState),
+) {
+  sharedConnectionsCatalogState =
+    typeof next === 'function' ? next(sharedConnectionsCatalogState) : next;
+  emitConnectionsCatalog();
+}
+
+function buildUserKey(userId: string | null) {
+  return userId ?? null;
+}
+
+function buildRequestKey(userKey: string | null, accessToken: string | null) {
+  if (!userKey || !accessToken) return null;
+  return `${userKey}:${accessToken}`;
+}
+
+function resetSharedConnectionsCatalogState() {
+  if (
+    sharedConnectionsCatalogState.userKey === null &&
+    sharedConnectionsCatalogState.requestKey === null &&
+    sharedConnectionsCatalogState.connections === null &&
+    sharedConnectionsCatalogState.status === 'idle' &&
+    sharedConnectionsCatalogState.error === null
+  ) {
+    return;
+  }
+
+  connectionsCatalogInflightByRequest.clear();
+  setSharedConnectionsCatalogState({
+    userKey: null,
+    requestKey: null,
+    connections: null,
+    status: 'idle',
+    error: null,
+  });
+}
+
+function describeFailure(status: number, body: { detail?: string; error?: string } | null) {
+  return body?.detail ?? body?.error ?? `HTTP ${status}`;
+}
+
+async function resolveSharedConnectionsCatalog(
+  userKey: string,
+  requestKey: string,
+  force = false,
+): Promise<void> {
+  if (!force) {
+    const inFlight = connectionsCatalogInflightByRequest.get(requestKey);
+    if (inFlight) return inFlight;
+    if (
+      sharedConnectionsCatalogState.userKey === userKey &&
+      sharedConnectionsCatalogState.requestKey === requestKey &&
+      sharedConnectionsCatalogState.status === 'ready'
+    ) {
+      return;
+    }
+  }
+
+  setSharedConnectionsCatalogState((current) => {
+    const hasResolvedConnections =
+      current.userKey === userKey && current.connections !== null;
+
+    return {
+      userKey,
+      requestKey,
+      connections: hasResolvedConnections ? current.connections : null,
+      status: hasResolvedConnections ? 'ready' : 'loading',
+      error: null,
+    };
+  });
+
+  const request = (async () => {
+    try {
+      const resp = await platformApiFetch('/connections');
+      const body = (await resp.json().catch(() => null)) as
+        | { connections?: Connection[]; detail?: string; error?: string }
+        | null;
+
+      if (!resp.ok) {
+        throw new Error(describeFailure(resp.status, body));
+      }
+
+      const nextConnections = body?.connections ?? [];
+      setSharedConnectionsCatalogState((current) => {
+        if (current.userKey !== userKey || current.requestKey !== requestKey) return current;
+        return {
+          userKey,
+          requestKey,
+          connections: nextConnections,
+          status: 'ready',
+          error: null,
+        };
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setSharedConnectionsCatalogState((current) => {
+        if (current.userKey !== userKey || current.requestKey !== requestKey) return current;
+        return {
+          userKey,
+          requestKey,
+          connections: current.connections,
+          status: current.connections ? 'ready' : 'error',
+          error: message,
+        };
+      });
+    } finally {
+      connectionsCatalogInflightByRequest.delete(requestKey);
+    }
+  })();
+
+  connectionsCatalogInflightByRequest.set(requestKey, request);
+  return request;
+}
+
+function useConnectionsCatalogState(): ConnectionsCatalogState {
+  const { loading, session, user } = useAuth();
+  const snapshot = useSyncExternalStore(
+    subscribeConnectionsCatalog,
+    getConnectionsCatalogSnapshot,
+    getConnectionsCatalogSnapshot,
+  );
+
+  const userKey = buildUserKey(user?.id ?? null);
+  const requestKey = buildRequestKey(userKey, session?.access_token ?? null);
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (!requestKey || !userKey) {
+      resetSharedConnectionsCatalogState();
+      return;
+    }
+
+    void resolveSharedConnectionsCatalog(userKey, requestKey);
+  }, [loading, requestKey, userKey]);
+
+  const refresh = useCallback(async () => {
+    if (!requestKey || !userKey) return;
+    await resolveSharedConnectionsCatalog(userKey, requestKey, true);
+  }, [requestKey, userKey]);
+
+  if (loading) {
+    return {
+      connections: null,
+      status: 'loading',
+      error: null,
+      refresh,
+    };
+  }
+
+  if (!requestKey || !userKey) {
+    return {
+      connections: null,
+      status: 'idle',
+      error: null,
+      refresh,
+    };
+  }
+
+  if (snapshot.userKey !== userKey) {
+    return {
+      connections: null,
+      status: 'loading',
+      error: null,
+      refresh,
+    };
+  }
+
+  if (snapshot.requestKey !== requestKey && snapshot.connections === null) {
+    return {
+      connections: null,
+      status: 'loading',
+      error: null,
+      refresh,
+    };
+  }
+
+  return {
+    connections: snapshot.connections,
+    status: snapshot.status,
+    error: snapshot.error,
+    refresh,
+  };
+}
+
+export function resetConnectionsCatalogStateForTests() {
+  resetSharedConnectionsCatalogState();
+}
+
 export default function ConnectionsPanel() {
   useShellHeaderTitle({ title: 'Connections', breadcrumbs: ['Settings', 'Connections'] });
 
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<InlineStatus | null>(null);
+  const {
+    connections,
+    status: connectionsStatus,
+    error: connectionsError,
+    refresh: loadConnections,
+  } = useConnectionsCatalogState();
+  const [inlineStatus, setInlineStatus] = useState<InlineStatus | null>(null);
   const [addingType, setAddingType] = useState<ConnectionTypeConfig | null>(null);
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
-
-  const loadConnections = useCallback(async () => {
-    try {
-      const resp = await platformApiFetch('/connections');
-      if (resp.ok) {
-        const data = await resp.json();
-        setConnections(data.connections ?? []);
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadConnections();
-  }, [loadConnections]);
+  const connectionRows = connections ?? [];
+  const isLoading = connectionsStatus === 'loading' && connections === null;
 
   const handleConnect = async (ct: ConnectionTypeConfig) => {
-    setStatus(null);
+    setInlineStatus(null);
     setSaving(true);
     try {
       const credentials: Record<string, string> = {};
@@ -116,19 +340,19 @@ export default function ConnectionsPanel() {
         throw new Error(err.error ?? err.detail ?? `HTTP ${resp.status}`);
       }
 
-      setStatus({ kind: 'success', message: `${ct.label} connected successfully.` });
+      setInlineStatus({ kind: 'success', message: `${ct.label} connected successfully.` });
       setAddingType(null);
       setFormData({});
       await loadConnections();
     } catch (e) {
-      setStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+      setInlineStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDisconnect = async (conn: Connection) => {
-    setStatus(null);
+    setInlineStatus(null);
     try {
       await platformApiFetch('/connections/disconnect', {
         method: 'POST',
@@ -138,15 +362,15 @@ export default function ConnectionsPanel() {
           connection_type: conn.connection_type,
         }),
       });
-      setStatus({ kind: 'success', message: `${conn.provider} disconnected.` });
+      setInlineStatus({ kind: 'success', message: `${conn.provider} disconnected.` });
       await loadConnections();
     } catch (e) {
-      setStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+      setInlineStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
     }
   };
 
   const handleTest = async (conn: Connection, testFunction: string) => {
-    setStatus(null);
+    setInlineStatus(null);
     setTesting(conn.id);
     try {
       const resp = await platformApiFetch('/connections/test', {
@@ -159,12 +383,12 @@ export default function ConnectionsPanel() {
       });
       const data = await resp.json();
       if (data.valid) {
-        setStatus({ kind: 'success', message: `${conn.provider} connection test passed.` });
+        setInlineStatus({ kind: 'success', message: `${conn.provider} connection test passed.` });
       } else {
-        setStatus({ kind: 'error', message: `Test failed: ${data.logs?.join(', ') ?? 'unknown error'}` });
+        setInlineStatus({ kind: 'error', message: `Test failed: ${data.logs?.join(', ') ?? 'unknown error'}` });
       }
     } catch (e) {
-      setStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+      setInlineStatus({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
     } finally {
       setTesting(null);
     }
@@ -180,29 +404,31 @@ export default function ConnectionsPanel() {
       title="Connections"
       description="Manage credentials for external data sources and destinations used by Load operations."
     >
-      {status && (
+      {inlineStatus && (
         <div
           className={cn(
             'mb-4 rounded-md border px-3 py-2 text-sm',
-            status.kind === 'success'
+            inlineStatus.kind === 'success'
               ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
               : 'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200',
           )}
           role="status"
         >
-          {status.message}
+          {inlineStatus.message}
         </div>
       )}
 
       {/* Existing connections */}
       <SettingsSection title="Saved Connections">
-        {loading ? (
+        {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
-        ) : connections.length === 0 ? (
+        ) : connectionsError && connectionRows.length === 0 ? (
+          <p className="text-sm text-red-600 dark:text-red-400">Unable to load connections.</p>
+        ) : connectionRows.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">No connections configured yet.</p>
         ) : (
           <div className="space-y-3">
-            {connections.map((conn) => {
+            {connectionRows.map((conn) => {
               const testFn = getTestFunction(conn);
               return (
                 <div
@@ -254,13 +480,13 @@ export default function ConnectionsPanel() {
                   key={ct.id}
                   type="button"
                   className="rounded-md border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
-                  onClick={() => {
-                    setAddingType(ct);
-                    setFormData({});
-                    setStatus(null);
-                  }}
-                >
-                  {ct.label}
+                    onClick={() => {
+                      setAddingType(ct);
+                      setFormData({});
+                      setInlineStatus(null);
+                    }}
+                  >
+                    {ct.label}
                 </button>
               ))}
             </div>
@@ -274,6 +500,7 @@ export default function ConnectionsPanel() {
                   onClick={() => {
                     setAddingType(null);
                     setFormData({});
+                    setInlineStatus(null);
                   }}
                 >
                   Cancel

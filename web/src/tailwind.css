@@ -59,8 +59,8 @@
   --border: #2a2a2a;
   --input: #2a2a2a;
   --ring: #EB5E41;
-  --chrome: #0e0e0e;
-  --sidebar: #0e0e0e;
+  --chrome: #171717;
+  --sidebar: #171717;
   --sidebar-foreground: #eeeeee;
   --sidebar-primary: #EB5E41;
   --sidebar-primary-foreground: #ffffff;
@@ -210,10 +210,10 @@
   --ring: #EB5E41;
 
   /* ── Chrome (shared header + sidebar surface) ── */
-  --chrome: #ffffff;
+  --chrome: #f0eeed;
 
   /* ── Sidebar (warm, visible hover states) ── */
-  --sidebar: #ffffff;
+  --sidebar: #f0eeed;
   --sidebar-foreground: #1c1917;
   --sidebar-primary: #EB5E41;
   --sidebar-primary-foreground: #ffffff;

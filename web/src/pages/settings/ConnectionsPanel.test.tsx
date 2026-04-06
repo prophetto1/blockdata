@@ -3,11 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
+import { useAuth } from '@/auth/AuthContext';
 import { platformApiFetch } from '@/lib/platformApi';
-import ConnectionsPanel from './ConnectionsPanel';
+import ConnectionsPanel, { resetConnectionsCatalogStateForTests } from './ConnectionsPanel';
 
 vi.mock('@/lib/platformApi', () => ({
   platformApiFetch: vi.fn(),
+}));
+
+vi.mock('@/auth/AuthContext', () => ({
+  useAuth: vi.fn(),
 }));
 
 type MockResponse = {
@@ -61,11 +66,24 @@ function renderPanel() {
 
 beforeEach(() => {
   vi.mocked(platformApiFetch).mockReset();
+  resetConnectionsCatalogStateForTests();
+  vi.mocked(useAuth).mockReturnValue({
+    loading: false,
+    user: { id: 'user-1' },
+    session: { access_token: 'token-1' },
+    profile: null,
+    signIn: vi.fn(),
+    signUp: vi.fn(),
+    resendSignupConfirmation: vi.fn(),
+    signOut: vi.fn(),
+    signInWithOAuth: vi.fn(),
+  } as unknown as ReturnType<typeof useAuth>);
 });
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  resetConnectionsCatalogStateForTests();
 });
 
 describe('ConnectionsPanel', () => {
@@ -125,5 +143,38 @@ describe('ConnectionsPanel', () => {
     });
 
     expect(await screen.findByText('arangodb connection test passed.')).toBeInTheDocument();
+  });
+
+  it('reuses the verified connections list after a remount in the same session', async () => {
+    vi.mocked(platformApiFetch).mockResolvedValueOnce(
+      jsonResponse({ connections: [GCS_CONNECTION, ARANGO_CONNECTION] }) as never,
+    );
+
+    const firstRender = render(
+      <MemoryRouter initialEntries={['/app/settings/connections']}>
+        <HeaderCenterProvider>
+          <ConnectionsPanel />
+        </HeaderCenterProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('gcs')).toBeInTheDocument();
+    expect(screen.getByText('arangodb')).toBeInTheDocument();
+    expect(platformApiFetch).toHaveBeenCalledTimes(1);
+
+    firstRender.unmount();
+
+    render(
+      <MemoryRouter initialEntries={['/app/settings/connections']}>
+        <HeaderCenterProvider>
+          <ConnectionsPanel />
+        </HeaderCenterProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    expect(screen.getByText('gcs')).toBeInTheDocument();
+    expect(screen.getByText('arangodb')).toBeInTheDocument();
+    expect(platformApiFetch).toHaveBeenCalledTimes(1);
   });
 });

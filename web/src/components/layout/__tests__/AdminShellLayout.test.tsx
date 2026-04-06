@@ -49,6 +49,37 @@ describe('AdminShellLayout', () => {
     expect(screen.getByTestId('admin-platform-rail')).toBeInTheDocument();
   });
 
+  it('keeps the open-state rail toggle in the top band while the title stays to the right of the primary rail', () => {
+    renderWithRouter('/app/superuser');
+
+    const toggle = screen.getByRole('button', { name: 'Hide admin navigation' });
+    expect(screen.getByTestId('admin-shell-top-band')).toContainElement(toggle);
+    expect(screen.getByTestId('admin-platform-rail')).not.toContainElement(toggle);
+    expect(toggle).toHaveStyle({
+      insetInlineStart: '204px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+    });
+    expect(screen.getByTestId('admin-shell-top-band-content')).toHaveStyle({
+      marginInlineStart: '248px',
+    });
+  });
+
+  it('renders the exact Superuser breadcrumb from the primary rail label', () => {
+    renderWithRouter('/app/superuser/plan-tracker');
+    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('Superuser / Plan Tracker');
+  });
+
+  it('renders the exact Blockdata Admin breadcrumb from the primary rail label', () => {
+    renderWithRouter('/app/blockdata-admin/connections');
+    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('Blockdata Admin / Connections');
+  });
+
+  it('renders the exact AGChain Admin breadcrumb from the primary rail label', () => {
+    renderWithRouter('/app/agchain-admin/models');
+    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('AGChain Admin / Models');
+  });
+
   it('does not render the secondary rail on routes without secondary nav', () => {
     renderWithRouter('/app/superuser/operational-readiness');
     expect(screen.queryByTestId('admin-secondary-rail')).not.toBeInTheDocument();
@@ -65,6 +96,11 @@ describe('AdminShellLayout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Hide admin navigation' }));
 
     expect(screen.getByTestId('admin-shell-top-band')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show admin navigation' })).toHaveStyle({
+      insetInlineStart: '8px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+    });
     expect(screen.queryByTestId('admin-platform-rail')).not.toBeInTheDocument();
     expect(screen.queryByTestId('admin-secondary-rail')).not.toBeInTheDocument();
     expect(screen.getByTestId('admin-shell-frame')).toBeInTheDocument();

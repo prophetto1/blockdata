@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
+import { AgchainWorkspaceProvider, resetAgchainWorkspaceStateForTests } from '@/contexts/AgchainWorkspaceContext';
 import { AgchainOrganizationSwitcher } from './AgchainOrganizationSwitcher';
 import { AgchainProjectSwitcher } from './AgchainProjectSwitcher';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
@@ -34,6 +34,14 @@ vi.mock('@/lib/agchainWorkspaces', async () => {
   };
 });
 
+vi.mock('@/auth/AuthContext', () => ({
+  useAuth: () => ({
+    loading: false,
+    user: { id: 'user-1' },
+    session: { access_token: 'token-1' },
+  }),
+}));
+
 function FocusProbe() {
   const { focusedProject } = useAgchainProjectFocus();
   return <div data-testid="agchain-focus-probe">{focusedProject?.project_name ?? 'No focused project'}</div>;
@@ -43,12 +51,14 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   window.localStorage.clear();
+  resetAgchainWorkspaceStateForTests();
 });
 
 describe('AGChain workspace synchronization', () => {
   beforeEach(() => {
     fetchAgchainOrganizationsMock.mockReset();
     fetchAgchainProjectsMock.mockReset();
+    resetAgchainWorkspaceStateForTests();
 
     fetchAgchainOrganizationsMock.mockResolvedValue({
       items: [

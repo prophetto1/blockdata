@@ -82,6 +82,32 @@ export function getAdminNavSections(pathname: string): AdminNavSection[] {
   return SUPERUSER_NAV_SECTIONS;
 }
 
+export function resolveAdminSurfaceLabel(pathname: string): string {
+  if (pathname.startsWith('/app/blockdata-admin')) return 'Blockdata Admin';
+  if (pathname.startsWith('/app/agchain-admin')) return 'AGChain Admin';
+  if (pathname.startsWith('/app/superuser')) return 'Superuser';
+  return 'Admin';
+}
+
+function matchesAdminNavPath(pathname: string, itemPath: string): boolean {
+  return pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+}
+
+export function resolveAdminPrimaryNavLabel(pathname: string): string | null {
+  const items = getAdminNavSections(pathname).flatMap((section) => section.items);
+  const match = items
+    .filter((item) => matchesAdminNavPath(pathname, item.path))
+    .sort((left, right) => right.path.length - left.path.length)[0];
+
+  return match?.label ?? null;
+}
+
+export function resolveAdminShellBreadcrumbSegments(pathname: string): string[] {
+  const surfaceLabel = resolveAdminSurfaceLabel(pathname);
+  const primaryLabel = resolveAdminPrimaryNavLabel(pathname);
+  return primaryLabel ? [surfaceLabel, primaryLabel] : [surfaceLabel];
+}
+
 /* ------------------------------------------------------------------ */
 /*  Per-page secondary rail menus (former third rails)                 */
 /* ------------------------------------------------------------------ */
