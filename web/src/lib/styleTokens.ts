@@ -74,6 +74,7 @@ export const styleTokens = {
   },
   admin: {
     navWidth: 200,
+    shellTopBandHeight: 40,
   },
 } as const;
 

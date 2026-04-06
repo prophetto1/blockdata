@@ -36,11 +36,12 @@ type Props = {
   viewMode: MdxViewMode;
   onChange: (value: string) => void;
   onSave?: () => void;
+  readOnly?: boolean;
   /** Optional image upload handler */
   onImageUpload?: (image: File) => Promise<string>;
 };
 
-export function MdxEditorSurface({ content, diffMarkdown, fileKey, viewMode, onChange, onSave, onImageUpload }: Props) {
+export function MdxEditorSurface({ content, diffMarkdown, fileKey, viewMode, onChange, onSave, readOnly = false, onImageUpload }: Props) {
   const [mod, setMod] = useState<MDXEditorModule | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('idle');
   const isDark = useIsDark();
@@ -94,6 +95,7 @@ export function MdxEditorSurface({ content, diffMarkdown, fileKey, viewMode, onC
       viewMode={viewMode}
       onChange={onChange}
       onSave={onSave}
+      readOnly={readOnly}
       onImageUpload={onImageUpload}
     />
   );
@@ -109,6 +111,7 @@ function MdxEditorInner({
   viewMode,
   onChange,
   onSave,
+  readOnly,
   onImageUpload,
 }: {
   mod: MDXEditorModule;
@@ -118,6 +121,7 @@ function MdxEditorInner({
   viewMode: MdxViewMode;
   onChange: (value: string) => void;
   onSave?: () => void;
+  readOnly: boolean;
   onImageUpload?: (image: File) => Promise<string>;
 }) {
   const {
@@ -272,6 +276,7 @@ function MdxEditorInner({
     // Directives & admonitions
     directivesPlugin({
       directiveDescriptors: [AdmonitionDirectiveDescriptor],
+      escapeUnknownTextDirectives: true,
     }),
 
     // Diff/source mode — all 3 views
@@ -330,7 +335,7 @@ function MdxEditorInner({
   return (
     <div
       className={`h-full w-full overflow-hidden ${isDark ? 'dark-theme' : 'light-theme'}`}
-      onKeyDownCapture={handleSaveKeyDown}
+      onKeyDownCapture={readOnly ? undefined : handleSaveKeyDown}
       tabIndex={0}
       role="presentation"
     >
@@ -339,6 +344,7 @@ function MdxEditorInner({
           ref={editorRef}
           markdown={content}
           onChange={onChange}
+          readOnly={readOnly}
           className="h-full"
           contentEditableClassName="prose prose-sm max-w-none dark:prose-invert py-4 px-8"
           plugins={plugins}

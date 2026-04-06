@@ -60,6 +60,7 @@ type LeftRailShadcnProps = {
   navSections?: AdminNavSection[];
   headerBrand?: ReactNode;
   headerContent?: ReactNode;
+  hideHeaderChrome?: boolean;
 };
 
 /* ------------------------------------------------------------------ */
@@ -204,6 +205,7 @@ export function LeftRailShadcn({
   navSections,
   headerBrand,
   headerContent,
+  hideHeaderChrome = false,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -544,101 +546,102 @@ export function LeftRailShadcn({
         collapsible="none"
         className="h-full min-h-0 bg-sidebar font-sans text-sidebar-foreground"
       >
-        {/* ---- Header: Brand logo + collapse toggle ---- */}
-        <SidebarHeader
-          className={cn(
-            desktopCompact
-              ? 'h-[60px] gap-0 px-0 py-0'
-              : 'gap-0 px-0 py-0',
-          )}
-        >
-          <div
+        {!hideHeaderChrome && (
+          <SidebarHeader
             className={cn(
-              'flex items-center',
               desktopCompact
-                ? 'h-full justify-center'
-                : 'h-[60px] justify-between px-3',
+                ? 'h-[60px] gap-0 px-0 py-0'
+                : 'gap-0 px-0 py-0',
             )}
           >
-            {navSections ? (
-              headerBrand ? (
-                <div
+            <div
+              className={cn(
+                'flex items-center',
+                desktopCompact
+                  ? 'h-full justify-center'
+                  : 'h-[60px] justify-between px-3',
+              )}
+            >
+              {navSections ? (
+                headerBrand ? (
+                  <div
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-md',
+                      desktopCompact
+                        ? 'size-10 justify-center p-0'
+                        : 'px-1.5 py-1',
+                    )}
+                  >
+                    {headerBrand}
+                  </div>
+                ) : (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  onClick={() => {
+                    navigate('/app');
+                    onNavigate?.();
+                  }}
+                  aria-label="Go to app"
+                >
+                  <IconChevronLeft size={14} stroke={2} className="shrink-0" />
+                  <span className="font-medium">Go to App</span>
+                </button>
+                )
+              ) : (
+                <button
+                  type="button"
                   className={cn(
-                    'inline-flex items-center gap-2 rounded-md',
+                    'inline-flex items-center gap-2.5 rounded-md text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                     desktopCompact
                       ? 'size-10 justify-center p-0'
                       : 'px-1.5 py-1',
                   )}
+                  onClick={() => {
+                    if (desktopCompact) {
+                      onToggleDesktopCompact?.();
+                      return;
+                    }
+                    navigate('/app');
+                    onNavigate?.();
+                  }}
+                  aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
+                  title={desktopCompact ? 'Expand side navigation' : undefined}
                 >
-                  {headerBrand}
-                </div>
-              ) : (
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                onClick={() => {
-                  navigate('/app');
-                  onNavigate?.();
-                }}
-                aria-label="Go to app"
-              >
-                <IconChevronLeft size={14} stroke={2} className="shrink-0" />
-                <span className="font-medium">Go to App</span>
-              </button>
-              )
-            ) : (
-              <button
-                type="button"
-                className={cn(
-                  'inline-flex items-center gap-2.5 rounded-md text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                  desktopCompact
-                    ? 'size-10 justify-center p-0'
-                    : 'px-1.5 py-1',
-                )}
-                onClick={() => {
-                  if (desktopCompact) {
-                    onToggleDesktopCompact?.();
-                    return;
-                  }
-                  navigate('/app');
-                  onNavigate?.();
-                }}
-                aria-label={desktopCompact ? 'Expand side navigation' : 'Go to home'}
-                title={desktopCompact ? 'Expand side navigation' : undefined}
-              >
-                {desktopCompact ? (
+                  {desktopCompact ? (
+                    <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
+                  ) : (
+                    <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
+                      <span className="text-sidebar-foreground">Block</span>
+                      <span className="text-primary">Data</span>
+                    </span>
+                  )}
+                </button>
+              )}
+              {!desktopCompact && onToggleDesktopCompact && (
+                <button
+                  type="button"
+                  onClick={onToggleDesktopCompact}
+                  aria-label="Collapse side navigation"
+                  title="Collapse side navigation"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
                   <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
-                ) : (
-                  <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
-                    <span className="text-sidebar-foreground">Block</span>
-                    <span className="text-primary">Data</span>
-                  </span>
-                )}
-              </button>
-            )}
-            {!desktopCompact && onToggleDesktopCompact && (
-              <button
-                type="button"
-                onClick={onToggleDesktopCompact}
-                aria-label="Collapse side navigation"
-                title="Collapse side navigation"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              >
-                <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
-              </button>
-            )}
-          </div>
-          {!desktopCompact && headerContent ? (
-            <div className="px-1 pb-2">
-              {headerContent}
+                </button>
+              )}
             </div>
-          ) : null}
-          {!desktopCompact && <div className="h-px w-full bg-sidebar-border" />}
-        </SidebarHeader>
+            {!desktopCompact && headerContent ? (
+              <div className="px-1 pb-2">
+                {headerContent}
+              </div>
+            ) : null}
+            {!desktopCompact && <div className="h-px w-full bg-sidebar-border" />}
+          </SidebarHeader>
+        )}
 
         {/* ---- Content: Nav items or drill view ---- */}
         {navSections ? (
-          <SidebarContent className="px-1">
+          <SidebarContent className={cn('px-1', hideHeaderChrome && 'pt-2')}>
             <SidebarGroup className="p-1">
               <SidebarGroupContent>
                 {activeDrillConfig
@@ -648,7 +651,7 @@ export function LeftRailShadcn({
             </SidebarGroup>
           </SidebarContent>
         ) : !hideNav ? (
-          <SidebarContent className={desktopCompact ? 'px-0' : 'px-1'}>
+          <SidebarContent className={cn(desktopCompact ? 'px-0' : 'px-1', hideHeaderChrome && 'pt-2')}>
             <SidebarGroup className={desktopCompact ? 'p-0' : 'p-1'}>
               <SidebarGroupContent>
                 {desktopCompact
@@ -712,6 +715,5 @@ export function LeftRailShadcn({
     </SidebarProvider>
   );
 }
-
 
 
