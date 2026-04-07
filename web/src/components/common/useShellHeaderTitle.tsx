@@ -132,6 +132,15 @@ export function useShellHeaderTitle({ title, breadcrumbs }: ShellHeaderTitleInpu
   );
 
   const segments: string[] = useMemo(() => {
+    if (
+      structuredSegments?.source === 'child'
+      && breadcrumbs
+      && breadcrumbs.length === 1
+      && breadcrumbs[0] === structuredSegments.segments[0]
+    ) {
+      return breadcrumbs.slice();
+    }
+
     if (structuredSegments?.source === 'child') return structuredSegments.segments;
 
     if (breadcrumbs && breadcrumbs.length > 0) return breadcrumbs.slice();

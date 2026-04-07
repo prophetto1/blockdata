@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { useIndexBuilderList } from '@/hooks/useIndexBuilderList';
 import { useIndexBuilderJob } from '@/hooks/useIndexBuilderJob';
 import { IndexBuilderHeader } from '@/components/pipelines/IndexBuilderHeader';
@@ -17,6 +18,8 @@ function parseSelectedJobId(rawValue: string | null) {
 }
 
 export default function IndexBuilderPage() {
+  useShellHeaderTitle({ title: 'Index Builder', breadcrumbs: ['Pipeline Services', 'Index Builder'] });
+
   const list = useIndexBuilderList();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobId = parseSelectedJobId(searchParams.get('job'));

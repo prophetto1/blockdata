@@ -83,12 +83,16 @@ describe('AdminLeftNav', () => {
     expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/operational-readiness');
   });
 
-  it('boots AGChain Admin with a single Models menu item', () => {
+  it('boots AGChain Admin with Models and Tools menu items', () => {
     expect(AGCHAIN_ADMIN_NAV_SECTIONS).toHaveLength(1);
     expect(AGCHAIN_ADMIN_NAV_SECTIONS[0]?.items).toEqual([
       expect.objectContaining({
         label: 'Models',
         path: '/app/agchain-admin/models',
+      }),
+      expect.objectContaining({
+        label: 'Tools',
+        path: '/app/agchain-admin/tools',
       }),
     ]);
   });

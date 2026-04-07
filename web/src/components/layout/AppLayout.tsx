@@ -5,6 +5,7 @@ import { IconLayoutSidebarRightExpand, IconLayoutSidebarRightCollapse } from '@t
 import { useAuth } from '@/auth/AuthContext';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { LeftRailShadcn } from '@/components/shell/LeftRailShadcn';
+import { ProjectSwitcher } from '@/components/shell/ProjectSwitcher';
 import { RightRailShell } from '@/components/shell/RightRailShell';
 import { HeaderCenterProvider, useHeaderCenter } from '@/components/shell/HeaderCenterContext';
 import { RightRailProvider, useRightRailContext } from '@/components/shell/RightRailContext';
@@ -288,6 +289,15 @@ function AppShellInner() {
     enterWorkspaceMode: () => {},
   }), []);
   const leftRailFooterContent = isAssetsRoute ? <AssetsRailQuotaCard /> : null;
+  const leftRailHeaderContent = !isSuperuserRoute ? (
+    <div className="flex w-full flex-col rounded-lg border border-border bg-card/30 p-2">
+      <ProjectSwitcher
+        variant="sidebar-row"
+        triggerClassName="blockdata-project-switcher-trigger"
+        triggerTestId="blockdata-project-context"
+      />
+    </div>
+  ) : null;
 
   return (
     <>
@@ -310,7 +320,7 @@ function AppShellInner() {
           <TopCommandBar
             onToggleNav={toggleNav}
             shellGuides={isEditorLayoutRoute}
-            hideProjectSwitcher={isSuperuserRoute}
+            hideProjectSwitcher
             hideSearch={isSuperuserRoute}
             primaryContext={pageHeader}
           />
@@ -349,6 +359,7 @@ function AppShellInner() {
               onSignOut={handleSignOut}
               desktopCompact={!desktopNavOpened}
               onToggleDesktopCompact={toggleDesktopNav}
+              headerContent={leftRailHeaderContent}
               footerContent={leftRailFooterContent}
             />
             {desktopNavOpened && (
@@ -403,6 +414,7 @@ function AppShellInner() {
                   userLabel={profile?.display_name || profile?.email || user?.email}
                   onSignOut={handleSignOut}
                   desktopCompact={false}
+                  headerContent={leftRailHeaderContent}
                   footerContent={leftRailFooterContent}
                 />
               </Drawer.Content>

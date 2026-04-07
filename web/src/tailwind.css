@@ -54,6 +54,16 @@
   --muted-foreground: #a0a0a0;
   --accent: #1a1a1a;
   --accent-foreground: #eeeeee;
+  --app-table-row-hover-bg: rgba(235, 94, 65, 0.14);
+  --app-table-row-selected-bg: rgba(235, 94, 65, 0.30);
+  --app-table-row-selected-fg: #ffffff;
+  --app-table-row-selected-ring: rgba(235, 94, 65, 0.60);
+  --app-shell-sidebar-item-font: 10px;
+  --app-shell-sidebar-section-font: 10px;
+  --app-shell-sidebar-micro-font: 9px;
+  --app-table-header-font: 10px;
+  --app-table-body-font: 11px;
+  --app-table-meta-font: 10px;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --border: #2a2a2a;
@@ -201,6 +211,16 @@
   --muted-foreground: #44403c;
   --accent: #f5ebe6;
   --accent-foreground: #1c1917;
+  --app-table-row-hover-bg: rgba(235, 94, 65, 0.12);
+  --app-table-row-selected-bg: rgba(235, 94, 65, 0.20);
+  --app-table-row-selected-fg: #4e1b0e;
+  --app-table-row-selected-ring: rgba(235, 94, 65, 0.55);
+  --app-shell-sidebar-item-font: 10px;
+  --app-shell-sidebar-section-font: 9px;
+  --app-shell-sidebar-micro-font: 8px;
+  --app-table-header-font: 9px;
+  --app-table-body-font: 10px;
+  --app-table-meta-font: 9px;
   /* Inline code bg — light theme override, from web-docs/src/styles/global.css:156 */
   --sl-color-bg-inline-code: color-mix(in oklab, var(--accent) 72%, var(--background) 28%);
   --destructive: #dc2626;

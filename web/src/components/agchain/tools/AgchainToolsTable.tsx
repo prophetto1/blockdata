@@ -36,21 +36,21 @@ export function AgchainToolsTable({
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-foreground">Tool registry</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            <p className="mt-1 text-[var(--app-table-body-font)] leading-6 text-muted-foreground">
               Merge the read-only built-in catalog with project-authored tool definitions in one registry view.
             </p>
           </div>
           {headerControls ? <div className="xl:shrink-0">{headerControls}</div> : null}
         </div>
         {error ? (
-          <p className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p className="mt-3 rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-[var(--app-table-body-font)] text-destructive">
             {error}
           </p>
         ) : null}
       </div>
       <ScrollArea className="min-h-0 flex-1">
         <table className="w-full text-left">
-          <thead className="sticky top-0 z-10 bg-card text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            <thead className="sticky top-0 z-10 bg-card text-[var(--app-table-header-font)] uppercase tracking-[0.16em] text-muted-foreground">
             <tr className="border-b border-border">
               <th className="px-6 py-3 font-medium">Tool</th>
               <th className="px-6 py-3 font-medium">Source</th>
@@ -62,13 +62,13 @@ export function AgchainToolsTable({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-sm text-muted-foreground">
+                <td colSpan={5} className="px-6 py-10 text-center text-[var(--app-table-body-font)] text-muted-foreground">
                   Loading tools...
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-sm text-muted-foreground">
+                <td colSpan={5} className="px-6 py-10 text-center text-[var(--app-table-body-font)] text-muted-foreground">
                   No tools match the current filters.
                 </td>
               </tr>
@@ -80,26 +80,30 @@ export function AgchainToolsTable({
                   <tr
                     key={rowKey}
                     className={cn(
-                      'border-b border-border/60 align-top hover:bg-[#222221]',
-                      isSelected && 'bg-[#55221e]',
+                      'border-b border-border/60 align-top transition-colors hover:bg-[var(--app-table-row-hover-bg)]',
+                      isSelected && [
+                        'bg-[var(--app-table-row-selected-bg)]',
+                        'text-[var(--app-table-row-selected-fg)]',
+                        'ring-1 ring-inset ring-[var(--app-table-row-selected-ring)]',
+                      ],
                     )}
                   >
                     <td className="max-w-[18rem] px-6 py-4">
                       <div>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <p className="truncate text-sm font-medium text-foreground">{row.display_name}</p>
+                          <p className="truncate text-[var(--app-table-body-font)] font-medium text-foreground">{row.display_name}</p>
                           </TooltipTrigger>
                           <TooltipContent>{row.display_name}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <p className="mt-1 truncate text-xs text-muted-foreground">{row.description || row.tool_name}</p>
+                            <p className="mt-1 truncate text-[var(--app-table-meta-font)] text-muted-foreground">{row.description || row.tool_name}</p>
                           </TooltipTrigger>
                           <TooltipContent>{row.description || row.tool_name}</TooltipContent>
                         </Tooltip>
                         {row.read_only ? (
-                          <p className="mt-2 text-xs font-medium text-muted-foreground">Read-only built-in</p>
+                          <p className="mt-2 text-[var(--app-table-meta-font)] font-medium text-muted-foreground">Read-only built-in</p>
                         ) : null}
                       </div>
                     </td>
@@ -108,8 +112,8 @@ export function AgchainToolsTable({
                         {row.source_kind}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-sm text-foreground">{row.scope_kind}</td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
+                    <td className="px-6 py-4 text-[var(--app-table-body-font)] text-foreground">{row.scope_kind}</td>
+                    <td className="px-6 py-4 text-[var(--app-table-body-font)] text-muted-foreground">
                       {row.latest_version?.version_label ?? 'Catalog'}
                     </td>
                     <td className="px-6 py-4 text-right">

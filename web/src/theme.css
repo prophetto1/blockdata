@@ -515,6 +515,57 @@ body {
   opacity: 0.45;
 }
 
+.platform-table-rdg {
+  --rdg-color-scheme: dark;
+  --rdg-border-color: rgba(148, 163, 184, 0.15);
+  font-family: var(--app-font-sans);
+  font-size: 12px;
+  border: 0;
+  border-radius: 0;
+  background: var(--card);
+}
+
+[data-theme="light"] .platform-table-rdg {
+  --rdg-color-scheme: light;
+  --rdg-border-color: rgba(120, 113, 108, 0.2);
+}
+
+.platform-table-rdg .rdg-header-cell,
+.platform-table-rdg .rdg-cell,
+.platform-table-rdg .rdg-summary-row .rdg-cell {
+  font-family: inherit;
+}
+
+.platform-table-rdg .rdg-header-cell,
+.platform-table-rdg .rdg-cell {
+  padding-inline: 20px;
+  border-block-end: 1px solid var(--rdg-border-color);
+  background: var(--card);
+}
+
+.platform-table-rdg .rdg-header-cell {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.platform-table-rdg .rdg-cell {
+  color: var(--foreground);
+}
+
+.platform-table-rdg .rdg-row:hover .rdg-cell {
+  background: var(--app-table-row-hover-bg);
+}
+
+.platform-table-rdg .rdg-row.platform-table-rdg-row-selected .rdg-cell {
+  background: var(--app-table-row-selected-bg);
+  box-shadow: inset 0 0 0 1px var(--app-table-row-selected-ring);
+  color: var(--app-table-row-selected-fg);
+}
+
+
 /* ---- Detail panel rows ---- */
 
 .catalog-detail-row {

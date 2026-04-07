@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { IconCirclePlus, IconClock, IconEdit, IconRefresh } from '@tabler/icons-react';
+import { IconCirclePlus, IconClock, IconEdit, IconRefresh, IconSearch } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,11 +11,8 @@ import {
   DialogRoot,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { SwitchControl, SwitchHiddenInput, SwitchRoot, SwitchThumb } from '@/components/ui/switch';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { useAgchainAdminRegistry } from '@/hooks/agchain/useAgchainAdminRegistry';
-import { SettingsPageFrame } from '@/pages/settings/SettingsPageHeader';
-import { ICON_CONTEXT_SIZE, ICON_SIZES, ICON_STANDARD, ICON_STROKES } from '@/lib/icon-contract';
 import { cn } from '@/lib/utils';
 import {
   createAgchainModelTarget,
@@ -77,32 +72,10 @@ const surfaceSearchInputClass =
 const surfaceInlineActionButtonClass =
   'inline-flex items-center gap-1 rounded border border-border bg-background px-2 py-1 text-xs text-foreground transition hover:bg-accent disabled:pointer-events-none disabled:opacity-50';
 
-const surfaceUtilityIconButtonClass = cn(
-  ICON_STANDARD.utilityTopRight.buttonClass,
-  'h-8 w-8 shrink-0 rounded-md border border-border bg-background',
-);
-
 const selectedSurfaceRowStyle = {
   backgroundColor: 'var(--app-table-row-selected-bg)',
   boxShadow: 'inset 0 0 0 1px var(--app-table-row-selected-ring)',
 };
-
-function StatusSwitchIndicator({
-  checked,
-  label,
-}: {
-  checked: boolean;
-  label: string;
-}) {
-  return (
-    <SwitchRoot checked={checked} disabled aria-label={label} className="pointer-events-none justify-center">
-      <SwitchControl className="h-5 w-9 border-border bg-muted/80 data-[state=checked]:border-primary data-[state=checked]:bg-primary">
-        <SwitchThumb className="h-4 w-4 bg-background data-[state=checked]:translate-x-4" />
-      </SwitchControl>
-      <SwitchHiddenInput />
-    </SwitchRoot>
-  );
-}
 
 function createEmptyProviderDraft(): ProviderFormDraft {
   return {
@@ -251,6 +224,14 @@ function persistAdminModelsUiState(nextState: {
   window.sessionStorage.setItem(ADMIN_MODELS_UI_STATE_KEY, JSON.stringify(nextState));
 }
 
+function ProviderEnabledBadge({ enabled }: { enabled: boolean }) {
+  return (
+    <Badge variant={enabled ? 'green' : 'gray'} size="sm">
+      {enabled ? 'Enabled' : 'Disabled'}
+    </Badge>
+  );
+}
+
 function ModelCompatibilityBadges({ model }: { model: AgchainModelTarget }) {
   const hasCompatibility = model.supports_evaluated || model.supports_judge;
 
@@ -301,8 +282,6 @@ export default function AgchainAdminModelsPage() {
   const [selectedProviderSlug, setSelectedProviderSlug] = useState(
     () => readAdminModelsUiState().selectedProviderSlug,
   );
-  const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
-  const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
   const providers = cachedProviders ?? [];
   const models = cachedModels ?? [];
   const loading = status === 'loading' && cachedProviders === null && cachedModels === null;
@@ -354,6 +333,7 @@ export default function AgchainAdminModelsPage() {
         .includes(normalized),
     );
   }, [models, search, selectedProvider]);
+
 
   const providerEmptyMessage = loading
     ? 'Loading provider registry...'
@@ -451,12 +431,7 @@ export default function AgchainAdminModelsPage() {
 
   return (
     <>
-      <SettingsPageFrame
-        title="Models"
-        description="Curate the provider registry and the shared model-target catalog used across AGChain projects."
-        headerVariant="admin"
-        bodyClassName="min-h-0 overflow-hidden p-0 md:p-0"
-      >
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex h-full min-h-0 flex-col gap-3 p-2">
           {error ? (
             <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -471,93 +446,69 @@ export default function AgchainAdminModelsPage() {
           ) : null}
 
           <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
-            <div className="grid border-b border-border lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[430px_minmax(0,1fr)]">
-              <div
-                role="group"
-                aria-label="Provider registry controls"
-                className="flex flex-wrap items-center gap-2 px-3 py-2 lg:border-r lg:border-border"
-              >
-                <label className="relative min-w-0 max-w-sm flex-1">
-                  <span className="sr-only">Search providers</span>
-                  <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    <HugeiconsIcon
-                      icon={Search01Icon}
-                      size={utilityIconSize}
-                      strokeWidth={utilityIconStroke}
-                      className="text-muted-foreground"
-                    />
-                  </span>
-                  <input
-                    value={providerSearch}
-                    onChange={(event) => setProviderSearch(event.currentTarget.value)}
-                    placeholder="Search providers"
-                    className={surfaceSearchInputClass}
-                  />
-                </label>
+            <div className="flex flex-wrap items-center gap-3 border-b border-border px-3 py-2">
+              <label className="relative min-w-0 flex-1 lg:max-w-[360px]">
+                <span className="sr-only">Search providers</span>
+                <IconSearch
+                  size={14}
+                  stroke={1.8}
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <input
+                  value={providerSearch}
+                  onChange={(event) => setProviderSearch(event.currentTarget.value)}
+                  placeholder="Search providers"
+                  className={surfaceSearchInputClass}
+                />
+              </label>
 
-                <div className="ml-auto flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void refresh()}
-                    aria-label="Refresh"
-                    title="Refresh"
-                    className={surfaceUtilityIconButtonClass}
-                  >
-                    <IconRefresh size={utilityIconSize} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openCreateProviderDialog}
-                    disabled={isReadOnly}
-                    aria-label="Add Provider"
-                    title="Add Provider"
-                    className={surfaceUtilityIconButtonClass}
-                  >
-                    <IconCirclePlus size={utilityIconSize} />
-                  </button>
-                </div>
-              </div>
+              <label className="relative min-w-0 flex-[1.2]">
+                <span className="sr-only">Search models</span>
+                <IconSearch
+                  size={14}
+                  stroke={1.8}
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <input
+                  id="admin-model-search"
+                  value={search}
+                  onChange={(event) => setSearch(event.currentTarget.value)}
+                  placeholder="Search models"
+                  disabled={!selectedProvider}
+                  className={`${surfaceSearchInputClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                />
+              </label>
 
-              <div
-                role="group"
-                aria-label="Model targets controls"
-                className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 lg:border-t-0"
-              >
-                <label className="relative min-w-0 max-w-sm flex-1">
-                  <span className="sr-only">Search models</span>
-                  <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    <HugeiconsIcon
-                      icon={Search01Icon}
-                      size={utilityIconSize}
-                      strokeWidth={utilityIconStroke}
-                      className="text-muted-foreground"
-                    />
-                  </span>
-                  <input
-                    id="admin-model-search"
-                    value={search}
-                    onChange={(event) => setSearch(event.currentTarget.value)}
-                    placeholder="Search models"
-                    disabled={!selectedProvider}
-                    className={`${surfaceSearchInputClass} disabled:cursor-not-allowed disabled:opacity-60`}
-                  />
-                </label>
-
-                <div className="ml-auto flex items-center gap-2">
-                  <span className="hidden text-xs text-muted-foreground xl:inline">
-                    {selectedProvider ? selectedProvider.display_name : 'Select a provider'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={openCreateModelDialog}
-                    disabled={!selectedProvider || isReadOnly}
-                    aria-label="Add Model"
-                    title="Add Model"
-                    className={surfaceUtilityIconButtonClass}
-                  >
-                    <IconCirclePlus size={utilityIconSize} />
-                  </button>
-                </div>
+              <div className="ml-auto flex items-center gap-2">
+                <span className="hidden text-xs text-muted-foreground xl:inline">
+                  {selectedProvider ? selectedProvider.display_name : 'Select a provider'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className={surfaceInlineActionButtonClass}
+                >
+                  <IconRefresh size={12} />
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  onClick={openCreateProviderDialog}
+                  disabled={isReadOnly}
+                  className={surfaceInlineActionButtonClass}
+                >
+                  <IconCirclePlus size={12} />
+                  Add Provider
+                </button>
+                <button
+                  type="button"
+                  onClick={openCreateModelDialog}
+                  disabled={!selectedProvider || isReadOnly}
+                  className={surfaceInlineActionButtonClass}
+                >
+                  <IconCirclePlus size={12} />
+                  Add Model
+                </button>
               </div>
             </div>
 
@@ -584,43 +535,32 @@ export default function AgchainAdminModelsPage() {
                         return (
                           <tr
                             key={provider.provider_slug}
-                            tabIndex={0}
-                            onClick={() => setSelectedProviderSlug(provider.provider_slug)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter' || event.key === ' ') {
-                                event.preventDefault();
-                                setSelectedProviderSlug(provider.provider_slug);
-                              }
-                            }}
-                            className={cn(
-                              'cursor-pointer border-b border-border/60 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-                              isSelected && 'hover:bg-transparent',
-                            )}
+                            className={cn('border-b border-border/60 hover:bg-accent/50', isSelected && 'hover:bg-transparent')}
                             style={isSelected ? selectedSurfaceRowStyle : undefined}
                           >
                             <td className="py-2 pl-5 pr-3 align-middle">
                               <div className="min-w-0">
-                                <div className="truncate text-sm font-medium text-foreground">
-                                  {provider.display_name}
-                                </div>
-                                <div className="truncate text-xs text-muted-foreground" title={provider.provider_slug}>
-                                  {provider.provider_slug}
-                                </div>
+                                <button
+                                  type="button"
+                                  className="min-w-0 text-left"
+                                  onClick={() => setSelectedProviderSlug(provider.provider_slug)}
+                                >
+                                  <div className={cn('truncate text-sm font-medium', isSelected ? 'text-foreground' : 'text-foreground')}>
+                                    {provider.display_name}
+                                  </div>
+                                  <div className={cn('truncate text-xs', isSelected ? 'text-foreground/80' : 'text-muted-foreground')}>
+                                    {provider.provider_slug} | {provider.credential_form_kind}
+                                  </div>
+                                </button>
                               </div>
                             </td>
                             <td className="px-3 py-2 align-middle">
-                              <StatusSwitchIndicator
-                                checked={provider.enabled}
-                                label={`${provider.display_name} ${provider.enabled ? 'enabled' : 'disabled'}`}
-                              />
+                              <ProviderEnabledBadge enabled={provider.enabled} />
                             </td>
                             <td className="py-2 pl-3 pr-5 align-middle text-right">
                               <button
                                 type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  openEditProviderDialog(provider);
-                                }}
+                                onClick={() => openEditProviderDialog(provider)}
                                 disabled={isReadOnly}
                                 aria-label={`Edit ${provider.display_name}`}
                                 className={surfaceInlineActionButtonClass}
@@ -661,19 +601,14 @@ export default function AgchainAdminModelsPage() {
                           <td className="py-2 pl-5 pr-3 align-middle">
                             <div className="min-w-0">
                               <div className="truncate text-sm font-medium text-foreground">{model.label}</div>
-                              <div className="truncate text-xs text-muted-foreground" title={model.qualified_model}>
-                                {model.qualified_model}
-                              </div>
+                              <div className="truncate text-xs text-muted-foreground">{model.qualified_model}</div>
                             </div>
                           </td>
                           <td className="px-3 py-2 align-middle">
                             <ModelCompatibilityBadges model={model} />
                           </td>
                           <td className="px-3 py-2 align-middle">
-                            <StatusSwitchIndicator
-                              checked={model.enabled}
-                              label={`${model.label} ${model.enabled ? 'enabled' : 'disabled'}`}
-                            />
+                            <ProviderEnabledBadge enabled={model.enabled} />
                           </td>
                           <td className="px-3 py-2 align-middle">
                             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -704,7 +639,7 @@ export default function AgchainAdminModelsPage() {
             </div>
           </section>
         </div>
-      </SettingsPageFrame>
+      </div>
 
       <ProviderDialog
         state={providerDialog}

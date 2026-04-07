@@ -135,12 +135,16 @@ export function TopCommandBar({
       : searchCombobox
     : null;
 
-  const className = `top-command-bar${shellGuides ? ' top-command-bar--shell-guides' : ' top-command-bar--minimal'}${primaryContext ? ' top-command-bar--has-context' : ''}`;
   const leftNode = shellTopSlots?.left ?? null;
-  const resolvedMiddleNode = shellGuides ? (shellTopSlots?.middle ?? null) : center;
+  const promoteCenterToPrimary = !shellGuides && hideProjectSwitcher && !primaryContext && Boolean(center);
+  const primaryContextNode = primaryContext
+    ?? (promoteCenterToPrimary ? center : (!hideProjectSwitcher ? <ProjectSwitcher /> : null));
+  const className = `top-command-bar${shellGuides ? ' top-command-bar--shell-guides' : ' top-command-bar--minimal'}${primaryContextNode ? ' top-command-bar--has-context' : ''}${promoteCenterToPrimary ? ' top-command-bar--promoted-center' : ''}`;
+  const resolvedMiddleNode = shellGuides
+    ? (shellTopSlots?.middle ?? null)
+    : (promoteCenterToPrimary ? null : center);
   const rightNode = shellTopSlots?.right ?? null;
   const showRightSlot = shellGuides || Boolean(shellTopSlots?.showRightInMinimal);
-  const primaryContextNode = primaryContext ?? (!hideProjectSwitcher ? <ProjectSwitcher /> : null);
 
   return (
     <div

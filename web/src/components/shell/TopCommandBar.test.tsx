@@ -1,13 +1,12 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { TopCommandBar } from './TopCommandBar';
 
+const useHeaderCenterMock = vi.fn();
+
 vi.mock('@/components/shell/HeaderCenterContext', () => ({
-  useHeaderCenter: () => ({
-    center: null,
-    shellTopSlots: null,
-  }),
+  useHeaderCenter: () => useHeaderCenterMock(),
 }));
 
 vi.mock('@/hooks/useTheme', () => ({
@@ -31,9 +30,17 @@ vi.mock('./ShellWorkspaceSelector', () => ({
 
 afterEach(() => {
   cleanup();
+  useHeaderCenterMock.mockReset();
 });
 
 describe('TopCommandBar', () => {
+  beforeEach(() => {
+    useHeaderCenterMock.mockReturnValue({
+      center: null,
+      shellTopSlots: null,
+    });
+  });
+
   it('keeps the project switcher on the left and places the workspace selector with the right-side controls', () => {
     render(
       <MemoryRouter>
@@ -83,5 +90,27 @@ describe('TopCommandBar', () => {
     expect(within(left).getByTestId('agchain-project-context')).toHaveTextContent('Focused AGChain Project');
     expect(within(left).queryByTestId('project-switcher')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /workspace selector/i })).toBeInTheDocument();
+  });
+
+  it('pulls the breadcrumb context into the leading slot when the project switcher is intentionally hidden', () => {
+    useHeaderCenterMock.mockReturnValue({
+      center: <div data-testid="header-center-context">Home</div>,
+      shellTopSlots: null,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/app']}>
+        <TopCommandBar onToggleNav={vi.fn()} hideProjectSwitcher />
+      </MemoryRouter>,
+    );
+
+    const left = screen.getByTestId('top-command-bar-left');
+    const center = document.querySelector('.top-command-bar-center');
+    const bar = left.closest('.top-command-bar');
+
+    expect(within(left).getByTestId('header-center-context')).toHaveTextContent('Home');
+    expect(center).toBeEmptyDOMElement();
+    expect(within(left).queryByTestId('project-switcher')).not.toBeInTheDocument();
+    expect(bar?.className).toContain('top-command-bar--promoted-center');
   });
 });

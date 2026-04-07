@@ -145,7 +145,7 @@ function AccountMenuContent({
       {/* Account header -- username + email, theme controls right */}
       <div className="flex items-start justify-between px-3 pb-2 pt-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">
+          <p className="truncate text-[var(--app-shell-sidebar-item-font)] font-medium text-foreground">
             {userLabel?.split('@')[0] ?? 'User'}
           </p>
           <p className="truncate text-xs text-muted-foreground">
@@ -289,8 +289,8 @@ export function LeftRailShadcn({
   const userInitial = userLabel?.match(/[A-Za-z0-9]/)?.[0]?.toUpperCase() ?? '?';
   const railStackClass = 'space-y-px';
   const railDividerClass = 'my-1 mx-2 h-px bg-sidebar-border';
-  const railItemClass = 'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] transition-colors';
-  const drillBackClass = 'flex w-full items-center gap-2 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
+  const railItemClass = 'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[var(--app-shell-sidebar-item-font)] font-medium leading-[1.5] transition-colors';
+  const drillBackClass = 'flex w-full items-center gap-2 rounded-md px-2 h-7 text-[var(--app-shell-sidebar-item-font)] font-medium leading-[1.5] text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground';
 
   /* ------ Render helpers ------ */
 
@@ -390,7 +390,7 @@ export function LeftRailShadcn({
                     <ItemIcon size={14} stroke={1.75} className="shrink-0" />
                     <span className="truncate">{item.label}</span>
                     {item.badge && (
-                      <span className="ml-auto shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                      <span className="ml-auto shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[var(--app-shell-sidebar-micro-font)] font-medium text-primary">
                         {item.badge}
                       </span>
                     )}
@@ -496,7 +496,7 @@ export function LeftRailShadcn({
     <div className="space-y-4">
       {sections.map((section) => (
         <div key={section.label}>
-          <div className="mb-1.5 px-2.5 text-[12px] font-normal tracking-normal text-sidebar-foreground/50">
+          <div className="mb-1.5 px-2.5 text-[var(--app-shell-sidebar-section-font)] font-normal tracking-normal text-sidebar-foreground/50">
             {section.label}
           </div>
           <div className="space-y-0.5">
@@ -513,7 +513,7 @@ export function LeftRailShadcn({
                     navigateTo(item.path);
                   }}
                   className={cn(
-                    'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[13px] font-medium leading-[1.5] transition-colors',
+                    'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[var(--app-shell-sidebar-item-font)] font-medium leading-[1.5] transition-colors',
                     isActive
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                       : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
@@ -579,7 +579,7 @@ export function LeftRailShadcn({
                 ) : (
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-[var(--app-shell-sidebar-item-font)] text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   onClick={() => {
                     navigate('/app');
                     onNavigate?.();
@@ -613,7 +613,7 @@ export function LeftRailShadcn({
                   {desktopCompact ? (
                     <HugeiconsIcon icon={Layout03Icon} size={18} strokeWidth={2.1} />
                   ) : (
-                    <span className="inline-flex items-baseline text-sm font-semibold uppercase tracking-[0.2em]">
+                    <span className="inline-flex items-baseline text-[var(--app-shell-sidebar-item-font)] font-semibold uppercase tracking-[0.2em]">
                       <span className="text-sidebar-foreground">Block</span>
                       <span className="text-primary">Data</span>
                     </span>
@@ -690,13 +690,13 @@ export function LeftRailShadcn({
                 aria-label="Account menu"
               >
                 <Avatar.Root className={cn(desktopCompact ? 'h-7 w-7' : 'h-6 w-6', 'shrink-0')}>
-                  <Avatar.Fallback className="flex h-full w-full items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
+                  <Avatar.Fallback className="flex h-full w-full items-center justify-center rounded-full bg-primary/15 text-[var(--app-shell-sidebar-micro-font)] font-bold text-primary">
                     {userInitial}
                   </Avatar.Fallback>
                 </Avatar.Root>
                 {!desktopCompact && (
                   <>
-                    <span className="min-w-0 flex-1 truncate text-left text-sm text-sidebar-foreground">
+                    <span className="min-w-0 flex-1 truncate text-left text-[var(--app-shell-sidebar-item-font)] text-sidebar-foreground">
                       {userLabel ?? userInitial}
                     </span>
                     <IconDots size={16} stroke={1.75} className="shrink-0 text-sidebar-foreground/50" />

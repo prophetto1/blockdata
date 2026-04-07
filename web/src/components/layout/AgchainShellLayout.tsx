@@ -187,7 +187,7 @@ function AgchainShellInner() {
           data-testid="agchain-secondary-rail"
           style={{
             position: 'fixed',
-            top: `${headerHeight}px`,
+            top: 0,
             bottom: 0,
             insetInlineStart: `${rail1Width}px`,
             width: `${AGCHAIN_RAIL_2_WIDTH}px`,

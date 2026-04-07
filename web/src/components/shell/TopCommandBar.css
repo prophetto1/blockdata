@@ -27,6 +27,10 @@
   grid-template-columns: minmax(auto, 200px) minmax(0, 1fr) auto auto;
 }
 
+.top-command-bar--minimal.top-command-bar--promoted-center {
+  grid-template-columns: minmax(0, 1fr) 0 auto auto;
+}
+
 .top-command-bar-search {
   min-width: 0;
   display: flex;
@@ -63,6 +67,10 @@
   padding-inline-start: 1.25rem;
 }
 
+.top-command-bar--minimal.top-command-bar--promoted-center .top-command-bar-left {
+  min-width: 0;
+}
+
 .top-command-bar--minimal .project-switcher-trigger {
   flex: 1 1 auto;
   justify-content: space-between;
@@ -79,6 +87,17 @@
   margin: 8px 8px 0;
   border-radius: 10px;
   flex: 1 1 auto;
+}
+
+.agchain-organization-switcher-trigger {
+  width: calc(100% - 16px);
+  max-width: none;
+  margin: 8px 8px 0;
+  border-radius: 10px;
+  flex: 1 1 auto;
+}
+
+.blockdata-project-switcher-trigger {
 }
 
 @media (max-width: 767px) {

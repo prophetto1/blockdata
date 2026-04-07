@@ -110,7 +110,7 @@ export function ProjectFocusSelectorPopover({
         data-testid={triggerTestId}
         className={cn(
           triggerVariant === 'sidebar-row'
-            ? 'project-switcher-trigger inline-flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-foreground transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            ? 'project-switcher-trigger inline-flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
             : 'project-switcher-trigger inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           triggerClassName,
         )}
@@ -120,7 +120,7 @@ export function ProjectFocusSelectorPopover({
             <span
               aria-hidden="true"
               className={cn(
-                'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold',
+                'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold',
                 leadingBadgeClassName ?? 'bg-primary/10 text-primary',
               )}
             >
@@ -158,7 +158,7 @@ export function ProjectFocusSelectorPopover({
                 onKeyDown={(event) => { event.stopPropagation(); }}
                 autoFocus
               />
-              <kbd className="text-[10px] text-muted-foreground">Esc</kbd>
+              <kbd className="text-xs text-muted-foreground">Esc</kbd>
             </div>
 
             {error ? (
@@ -193,7 +193,7 @@ export function ProjectFocusSelectorPopover({
                           key={item.id}
                           type="button"
                           className={cn(
-                            'flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-accent',
+                            'flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-accent text-sm',
                             isActive && 'bg-accent',
                           )}
                           onClick={() => {
@@ -201,7 +201,7 @@ export function ProjectFocusSelectorPopover({
                             setOpen(false);
                           }}
                         >
-                          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/10 text-[10px] font-bold text-primary">
+                          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
                             {leadingText}
                           </span>
                           <span className="min-w-0 flex-1">

@@ -72,6 +72,7 @@ export const AGCHAIN_ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     label: '',
     items: [
       { label: 'Models', icon: IconWand, path: '/app/agchain-admin/models' },
+      { label: 'Tools', icon: IconCode, path: '/app/agchain-admin/tools' },
     ],
   },
 ];
@@ -167,7 +168,7 @@ export function AdminLeftNav() {
         <div className="flex flex-1 flex-col gap-4 px-1 pb-2">
           {sections.map((section) => (
             <div key={section.label}>
-              <p className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
+              <p className="mb-1.5 px-2.5 text-[var(--app-shell-sidebar-section-font)] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
                 {section.label}
               </p>
               {section.items.map((item, idx) => {
@@ -184,7 +185,7 @@ export function AdminLeftNav() {
                     aria-label={item.label}
                     aria-current={isActive ? 'page' : undefined}
                     className={[
-                      'flex items-center rounded-md px-2.5 py-2 text-[13px] transition-colors',
+                    'flex items-center rounded-md px-2.5 py-2 text-[var(--app-shell-sidebar-item-font)] transition-colors',
                       isActive
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-sidebar-foreground/72 hover:bg-background/60 hover:text-foreground',

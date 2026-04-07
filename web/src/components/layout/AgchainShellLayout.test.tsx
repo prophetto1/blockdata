@@ -205,7 +205,7 @@ describe('AgchainShellLayout', () => {
     expect(screen.getByTestId('agchain-platform-rail')).toBeInTheDocument();
     const rail2 = screen.getByTestId('agchain-secondary-rail');
     expect(rail2).toBeInTheDocument();
-    expect(rail2).toHaveStyle({ top: '60px', bottom: '0px' });
+    expect(rail2).toHaveStyle({ top: '0px', bottom: '0px' });
     expect(screen.getByTestId('agchain-settings-nav')).toBeInTheDocument();
     expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
   });

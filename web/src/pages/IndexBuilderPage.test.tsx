@@ -11,6 +11,11 @@ vi.mock('@/hooks/useIndexBuilderList', () => ({
   useIndexBuilderList: () => mockUseIndexBuilderList(),
 }));
 
+const useShellHeaderTitleMock = vi.fn();
+vi.mock('@/components/common/useShellHeaderTitle', () => ({
+  useShellHeaderTitle: (...args: unknown[]) => useShellHeaderTitleMock(...args),
+}));
+
 const mockUseIndexBuilderJob = vi.fn();
 vi.mock('@/hooks/useIndexBuilderJob', () => ({
   useIndexBuilderJob: (...args: unknown[]) => mockUseIndexBuilderJob(...args),
@@ -140,6 +145,16 @@ describe('IndexBuilderPage — list view', () => {
     vi.clearAllMocks();
     mockUseIndexBuilderList.mockReturnValue(defaultListHook());
     mockUseIndexBuilderJob.mockReturnValue(defaultJobHook());
+    useShellHeaderTitleMock.mockReset();
+  });
+
+  it('registers the shell breadcrumb for the index builder route', () => {
+    renderPage();
+
+    expect(useShellHeaderTitleMock).toHaveBeenCalledWith({
+      title: 'Index Builder',
+      breadcrumbs: ['Pipeline Services', 'Index Builder'],
+    });
   });
 
   it('renders empty state when no jobs exist', () => {

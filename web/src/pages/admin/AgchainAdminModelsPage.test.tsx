@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import AgchainAdminModelsPage from './AgchainAdminModelsPage';
@@ -33,6 +33,7 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
 
 afterEach(() => {
   cleanup();
+  window.sessionStorage.clear();
   resetAgchainAdminRegistryStateForTests();
 });
 
@@ -43,6 +44,7 @@ describe('AgchainAdminModelsPage', () => {
     fetchAgchainModelsMock.mockReset();
     createAgchainProviderDefinitionMock.mockReset();
     createAgchainModelTargetMock.mockReset();
+    window.sessionStorage.clear();
     resetAgchainAdminRegistryStateForTests();
 
     useAuthMock.mockReturnValue({
@@ -115,6 +117,28 @@ describe('AgchainAdminModelsPage', () => {
         created_at: '2026-04-06T04:00:00Z',
         updated_at: '2026-04-06T05:00:00Z',
       },
+      {
+        model_target_id: 'model-2',
+        label: 'Gemini 1.5 Pro',
+        provider_slug: 'vertex-ai',
+        provider_display_name: 'Vertex AI',
+        provider_qualifier: null,
+        model_name: 'gemini-1.5-pro',
+        qualified_model: 'vertex-ai/gemini-1.5-pro',
+        api_base_display: 'https://generativelanguage.googleapis.com',
+        auth_kind: 'access_token',
+        enabled: true,
+        supports_evaluated: true,
+        supports_judge: true,
+        capabilities: { text: true, multimodal: true },
+        health_status: 'healthy',
+        health_checked_at: '2026-04-06T06:10:00Z',
+        last_latency_ms: 240,
+        probe_strategy: 'provider_default',
+        notes: 'Vertex AI model',
+        created_at: '2026-04-06T04:10:00Z',
+        updated_at: '2026-04-06T05:10:00Z',
+      },
     ]);
 
     createAgchainProviderDefinitionMock.mockResolvedValue({
@@ -123,11 +147,11 @@ describe('AgchainAdminModelsPage', () => {
     });
     createAgchainModelTargetMock.mockResolvedValue({
       ok: true,
-      model_target_id: 'model-2',
+      model_target_id: 'model-3',
     });
   });
 
-  it('renders the working admin registry surface and supports provider/model creation dialogs', async () => {
+  it('renders the platform table surface and supports provider/model creation dialogs', async () => {
     render(
       <MemoryRouter>
         <AgchainAdminModelsPage />
@@ -137,13 +161,30 @@ describe('AgchainAdminModelsPage', () => {
     expect(screen.getByRole('heading', { name: 'Models' })).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 2, name: 'Provider Registry' })).toBeInTheDocument();
+      expect(screen.getByRole('table', { name: 'Provider registry' })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Model Targets' })).toBeInTheDocument();
-    expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Vertex AI').length).toBeGreaterThan(0);
+    const providerTable = screen.getByRole('table', { name: 'Provider registry' });
+    expect(screen.getByRole('table', { name: 'Model targets' })).toBeInTheDocument();
+    expect(within(providerTable).getByText('OpenAI')).toBeInTheDocument();
     expect(screen.getByText('GPT-4.1 Mini')).toBeInTheDocument();
+    expect(screen.queryByText('Gemini 1.5 Pro')).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search providers')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search models')).toBeInTheDocument();
+    const providerControls = screen.getByRole('group', { name: 'Provider registry controls' });
+    expect(within(providerControls).getByPlaceholderText('Search providers')).toBeInTheDocument();
+    expect(within(providerControls).getByRole('button', { name: 'Refresh' })).toBeInTheDocument();
+    expect(within(providerControls).getByRole('button', { name: 'Add Provider' })).toBeInTheDocument();
+
+    const modelControls = screen.getByRole('group', { name: 'Model targets controls' });
+    expect(within(modelControls).getByPlaceholderText('Search models')).toBeInTheDocument();
+    expect(within(modelControls).getByRole('button', { name: 'Add Model' })).toBeInTheDocument();
+
+    fireEvent.click(within(providerTable).getByText('vertex-ai'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Gemini 1.5 Pro')).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Add Provider' }));
 
@@ -200,7 +241,7 @@ describe('AgchainAdminModelsPage', () => {
     );
 
     expect(await screen.findByText('GPT-4.1 Mini')).toBeInTheDocument();
-    expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
+    expect(within(screen.getByRole('table', { name: 'Provider registry' })).getByText('OpenAI')).toBeInTheDocument();
     expect(fetchAgchainModelProvidersMock).toHaveBeenCalledTimes(1);
     expect(fetchAgchainModelsMock).toHaveBeenCalledTimes(1);
 
@@ -215,8 +256,40 @@ describe('AgchainAdminModelsPage', () => {
     expect(screen.queryByText('Loading provider registry...')).not.toBeInTheDocument();
     expect(screen.queryByText('Loading model targets...')).not.toBeInTheDocument();
     expect(screen.getByText('GPT-4.1 Mini')).toBeInTheDocument();
-    expect(screen.getAllByText('OpenAI').length).toBeGreaterThan(0);
+    expect(within(screen.getByRole('table', { name: 'Provider registry' })).getByText('OpenAI')).toBeInTheDocument();
     expect(fetchAgchainModelProvidersMock).toHaveBeenCalledTimes(1);
     expect(fetchAgchainModelsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores selected provider and filters after a remount in the same browser session', async () => {
+    const firstRender = render(
+      <MemoryRouter>
+        <AgchainAdminModelsPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('GPT-4.1 Mini')).toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByRole('table', { name: 'Provider registry' })).getByText('Vertex AI'));
+    fireEvent.change(screen.getByPlaceholderText('Search providers'), { target: { value: 'vertex' } });
+    fireEvent.change(screen.getByPlaceholderText('Search models'), { target: { value: 'gemini' } });
+
+    expect(screen.getByPlaceholderText('Search providers')).toHaveValue('vertex');
+    expect(screen.getByPlaceholderText('Search models')).toHaveValue('gemini');
+    expect(screen.getByText('Gemini 1.5 Pro')).toBeInTheDocument();
+    expect(within(screen.getByRole('table', { name: 'Provider registry' })).getByText('Vertex AI')).toBeInTheDocument();
+
+    firstRender.unmount();
+
+    render(
+      <MemoryRouter>
+        <AgchainAdminModelsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByPlaceholderText('Search providers')).toHaveValue('vertex');
+    expect(screen.getByPlaceholderText('Search models')).toHaveValue('gemini');
+    expect(screen.getByText('Gemini 1.5 Pro')).toBeInTheDocument();
+    expect(within(screen.getByRole('table', { name: 'Provider registry' })).getByText('Vertex AI')).toBeInTheDocument();
   });
 });

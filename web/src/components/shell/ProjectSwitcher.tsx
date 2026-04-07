@@ -4,7 +4,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useProjectFocus } from '@/hooks/useProjectFocus';
 import { ProjectFocusSelectorPopover } from '@/components/shell/ProjectFocusSelectorPopover';
 
-export function ProjectSwitcher() {
+type ProjectSwitcherProps = {
+  variant?: 'default' | 'sidebar-row';
+  triggerTestId?: string;
+  triggerClassName?: string;
+};
+
+export function ProjectSwitcher({
+  variant = 'default',
+  triggerTestId,
+  triggerClassName,
+}: ProjectSwitcherProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { projectOptions, resolvedProjectId, resolvedProjectName, setFocusedProjectId } = useProjectFocus();
@@ -26,6 +36,9 @@ export function ProjectSwitcher() {
       items={items}
       selectedItemId={resolvedProjectId}
       triggerLabel={displayLabel}
+      triggerVariant={variant}
+      triggerTestId={triggerTestId}
+      triggerClassName={triggerClassName}
       searchPlaceholder="Find Project..."
       emptyLabel="No projects found"
       footerActionLabel="Create Project"

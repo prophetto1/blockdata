@@ -424,6 +424,14 @@ export const router = createBrowserRouter([
                 path: 'models',
                 lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminModelsPage')).default }),
               },
+              {
+                path: 'models-copy',
+                lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminModelsPageCopy')).default }),
+              },
+              {
+                path: 'tools',
+                lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminToolsPage')).default }),
+              },
             ],
           },
         ],
