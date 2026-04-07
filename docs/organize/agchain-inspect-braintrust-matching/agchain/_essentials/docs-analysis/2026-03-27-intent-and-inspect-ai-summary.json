@@ -1,0 +1,398 @@
+{
+  "planRoot": "E:/writing-system/docs/plans",
+  "plans": [
+    {
+      "path": "E:\\writing-system\\docs\\plans\\2026-03-16-plugin-runtime-substrate.md",
+      "hits": [
+        "environment",
+        "runtime",
+        "requirements"
+      ],
+      "preview": "# Plugin Runtime Substrate Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Close the 6 runtime gaps in ExecutionContext so that translated plugins can run end-to-end without reimplementing file I/O, serialization, temp files, and batching in every plugin. This is the foundation that all plugin translation — integration connectors, core primitives, and block-processing functions — composes on top of.\n\n**Architecture:** Extend ExecutionContext with download_file (with safe streaming), temp file management via stdlib TemporaryDirectory, shared JSONL utilities using msgspec, file list/delete, and Jinja2 template rendering. Extract a chunked_write utility using more-itertools. All changes are in `services/platform-api/` — no migrations, no frontend, no edge functions.\n\n**Tech Stack:** Python 3.11+, msgspec (fast JSON), more-itertools (chunking), Jinja2 (templates), existing httpx + Supabase Storage REST helpers.\n\n**Depends on:** Load Activation (completed). The `user_id` fix in `plugin_execution.py` is already applied.\n\n**New dependencies to add to `requirements.txt`:**\n```\nmsgspec>=0.18\nmore-itertools>=10.0\nJinja2>=3.1\n```\n\n**Why this must come before plugin translation:** Without these, every translated plugin reimplements the same plumbing. The current GCS plugin has inline `httpx.get()` for downloads, inline `json.dumps` for serialization, and holds everything in memory. The ArangoDB plugin has its own batch loop. That pattern cannot scale to 55 GCP functions, 12 MongoDB tasks, 21 JDBC variants, or the hundreds of block-processing functions that are coming."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\2026-03-19-admin-shell-cleanup.md",
+      "hits": [
+        "profile"
+      ],
+      "preview": "# Admin Shell Cleanup Implementation Plan\n\n\n**Goal:** Keep the existing two admin rail containers and the first rail's resize behavior, move admin page menus left by one rail, and remove all page-level third-rail navigation from superuser screens.\n\n**Architecture:** `AdminShellLayout` keeps two fixed left asides. Rail 1 stops rendering platform nav and instead renders top-level superuser destinations. Rail 2 stops rendering top-level admin pages and instead renders page-local secondary navigation. Page components that currently render their own internal left navs are unwired so those menus live in rail 2 instead of inside page content.\n\n**Tech Stack:** React, TypeScript, react-router-dom v6, Vitest, Testing Library\n\n---\n\n### Task 1: Create shared admin rail config and lock the new contract with tests\n\n**Files:**\n- Create: `web/src/components/admin/admin-shell-nav.ts`\n- Create: `web/src/components/admin/__tests__/admin-shell-nav.test.ts`\n\n**Step 1: Write the failing tests**\n\nCreate `web/src/components/admin/__tests__/admin-shell-nav.test.ts`:"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\2026-03-19-user-secrets-page.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# User Secrets Page\n\n## Context\n\nUsers need a place to store API tokens for third-party services (Slack, GitHub, Stripe, etc.) that functions and workflows can reference by name at runtime. This is a simple name/value vault in the user Settings area, similar to Gumloop's Secrets page.\n\n## Data Model\n\nNew table `user_secrets`. Plain text storage, RLS-protected (no server-side encryption). Client reads/writes directly through Supabase.\n\n```sql\nCREATE TABLE public.user_secrets (\n  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\n  name        TEXT NOT NULL,\n  value       TEXT NOT NULL,\n  description TEXT,\n  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),\n  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),\n  UNIQUE(user_id, name)"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\done\\2026-03-14-extraction-schema-queue-foundation.md",
+      "hits": [
+        "runtime",
+        "profile"
+      ],
+      "preview": "# Extraction Schema & Queue Foundation Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Create the database tables, TypeScript types, Docling page-text helper, and schema CRUD hook that form the backend foundation for async structured extraction.\n\n**Architecture:** One migration creates four tables (`extraction_schemas`, `extraction_jobs`, `extraction_job_items`, `extraction_results`) plus a `claim_extraction_items(p_job_id, p_worker_id)` RPC that uses `FOR UPDATE SKIP LOCKED` for atomic work item acquisition. The RPC does not verify ownership — calling edge functions must check job ownership before invoking it. A Deno helper ports the page-text assembly logic from the existing frontend `doclingNativeItems.ts` to the edge function layer, including picture-child traversal. A React hook provides schema CRUD with Realtime subscription and FK-enforced delete safety.\n\n**Tech Stack:** Supabase Postgres migrations, Deno Edge Functions (TypeScript), React hooks, Vitest.\n\n**Upstream context:**\n- Merged plan: `docs/priority/2026-03-14-extraction-and-parse-verification-merged.md` (Phase 3)\n- Quick wins (shipped): `docs/plans/2026-03-14-parse-runtime-quick-wins.md`\n- Latest migration: `20260314170000_090_add_overlay_uid.sql`\n- Docling traversal reference: `web/src/lib/doclingNativeItems.ts`\n- Vertex Claude transport: `supabase/functions/_shared/vertex_claude.ts` — returns raw Anthropic Messages API response shape\n\n---\n\n## Prerequisites"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\done\\2026-03-14-parser-routing-capability-workflow.md",
+      "hits": [
+        "runtime",
+        "profile"
+      ],
+      "preview": "# Parser Routing Capability Workflow Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Separate parser selection by uploaded format from parser profile configuration, so Docling and Pandoc can coexist and routing decisions come from runtime policy instead of profile logic.\n\n**Architecture:** Keep `admin_runtime_policy` as the source of truth for parser capability and format routing. Keep `parsing_profiles` as parser-specific execution config only. The ingest and parse trigger flow should normalize the uploaded file type, resolve the parser track from runtime policy, validate that the track claims the format, then load the selected parser profile for that track.\n\n**Tech Stack:** Supabase Postgres, Supabase Edge Functions, TypeScript, React, Docling, Pandoc\n\n---\n\n### Task 1: Formalize runtime policy keys for parser capability and routing\n\n**Files:**\n- Modify: `supabase/migrations/20260212114500_018_admin_runtime_policy_controls.sql`\n- Modify: `supabase/migrations/20260313220000_081_docling_only_parsing.sql`\n- Reference: `supabase/functions/_shared/admin_policy.ts`\n\n**Step 1: Write the failing policy-shape test**"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\done\\2026-03-14-universal-upload-support-design.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Universal Upload Support Design\n\n## Goal\n\nAccept any authenticated file upload without format-based rejection, while keeping parsing, preview, extraction, and downstream processing explicitly format-dependent.\n\nThe core rule is simple:\n\n- upload admission is type-agnostic\n- downstream processing is capability-gated\n\nThat split is not fully formalized in the current repo yet.\n\n## Why This Needs a Design Pass\n\nThe current codebase is partway toward this model, but still mixes concerns:\n\n- the UI already presents upload as “Any file format” in the Assets and Parse upload surfaces\n- `ingest` already falls back to `upload_only` when no parse route exists\n- `google-drive-import` explicitly comments that uploads should be accepted regardless of parse support"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\done\\2026-03-15-load-activation.md",
+      "hits": [
+        "runtime",
+        "requirements"
+      ],
+      "preview": "# Load Activation Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Fix the service registry naming drift, add pipeline-stage categorization, bind user credentials for GCS and ArangoDB, build GCS source and ArangoDB destination plugins, and ship a working Load page — proving the registry-as-execution-plane architecture end-to-end with GCS CSV → ArangoDB as the first real load path.\n\n**Architecture:** The platform has a two-layer model: `integration_catalog_items` (945 imported Kestra plugin definitions) and `service_registry` + `service_functions` (live runtime). Code drifted to `registry_*` names but the schema `service_*` names are canonical. This plan fixes the code, adds dual-level stage classification (`primary_stage` on services, `bd_stage` on functions), extends `user_provider_connections` for GCS and Arango credentials, builds Python plugins for GCS read and Arango write in the existing BasePlugin system, adds `service_run_items` as subordinate tracking under `service_runs`, and wires a minimal Load page. Source-to-destination handoff uses storage artifact references (JSONL files in platform storage), not raw payloads.\n\n**Tech Stack:** Supabase Postgres migrations, Python FastAPI (`services/platform-api/`) for all Load operations, `httpx` for GCS JSON API and Arango HTTP API, React, Supabase Realtime, AES-GCM encryption (Python port of `api_key_crypto.ts`). Edge Functions are NOT used for Load credential binding or connection testing — FastAPI owns the full Load lifecycle.\n\n**Context document:** `docs/plans/2026-03-15-kestra-absorption-context-update.md`\n\n**Verified operational state (Batch 1 results):**\n- Platform-API boots with 21 plugin functions discovered, zero errors\n- Auth verified: M2M tokens work for plugin execution + admin routes; JWT requires Supabase env vars (expected)\n- `AuthPrincipal.user_id` is a property alias for `subject_id` — confirmed at `app/auth/principals.py:18`\n- `require_auth` returns `AuthPrincipal` with `user_id`, `email`, `roles` — confirmed at `app/auth/dependencies.py:83-152`\n- Plugin execution route at `POST /{function_name}` operational — confirmed via test with `{\"state\":\"SUCCESS\"}`\n- SuperuserApiEndpoints page at `/app/superuser/api-endpoints` shows all registered functions — use this to verify GCS/Arango functions appear after implementation\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\done\\2026-03-15-parse-dispatch-resilience.md",
+      "hits": [
+        "runtime",
+        "profile"
+      ],
+      "preview": "# Parse Dispatch Resilience — Interim Fix\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Immediately fix three user-facing bugs — document status not auto-updating, batch parse overwhelming the conversion service, and no retry for failed parses — with minimal changes to existing code while the full server-side queue architecture (see `2026-03-15-parse-batch-runtime-hardening.md`) is developed.\n\n**Architecture:** Add conditional polling fallback to `useProjectDocuments` so status updates appear without manual refresh. Harden `useBatchParse` with inter-wave delay and automatic retry with backoff on overload errors. Add a \"Retry Failed\" button to `ParseConfigColumn`. Three existing files modified, no new files, no new tables, no backend changes.\n\n**Tech Stack:** React hooks, Supabase JS client, existing component patterns.\n\n**Relationship to server-side queue plan:** This is Phase 0 — immediate user relief. The durable server-side parse queue (`parse_batches` + `parse_batch_items` + `parse-worker`) in `2026-03-15-parse-batch-runtime-hardening.md` is the proper long-term fix. When that ships, it replaces `useBatchParse` entirely and the polling fallback becomes a secondary safety net rather than the primary mechanism.\n\n---\n\n## Root Cause\n\n1. **Conversion service overload:** `useBatchParse` dispatches waves of 3 `trigger-parse` calls. The conversion service processes ~3 concurrent jobs. When the first wave is still running, subsequent waves hit the busy service and get 502s or ACK timeouts that resolve as failures.\n\n2. **No auto-refresh:** `useProjectDocuments` subscribes to Realtime on `source_documents`, which should deliver status updates. But Realtime can silently fail to connect (auth timing, network issues), and there is no fallback. The user sees stale state until they manually reload.\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\previous-versions\\2026-03-15-first-load-activation-through-registry.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# First Load Activation Through The Registry Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Activate the first real load-oriented execution path through the unified registry by binding credentials, tracking execution in `service_runs`, and making `GCS source -> Arango destination` runnable end to end.\n\n**Architecture:** Reuse the canonical registry/runtime instead of introducing `connector_jobs` as a parallel top-level subsystem. Extend `user_provider_connections` for GCS and Arango credentials. Use `service_runs`, `service_run_events`, and a new subordinate `service_run_items` table for progress. Execute provider-specific logic through FastAPI plugin handlers and an authenticated load-run route.\n\n**Tech Stack:** Supabase Postgres + Edge Functions, FastAPI platform API, existing plugin execution model, React, Supabase Realtime, GCS JSON API, ArangoDB HTTP API, AES-GCM encryption via `api_key_crypto.ts`.\n\n---\n\n## Scope Guardrails\n\n- This plan assumes the registry identity/categorization plan has already landed.\n- This plan activates one load path only: `GCS source -> Arango destination`.\n- This plan does **not** attempt full Kestra plugin parity.\n- This plan does **not** implement Arango -> Platform import yet.\n- This plan may use BlockData-native plugin handlers for Arango even though Arango is not a native Kestra plugin.\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\previous-versions\\2026-03-15-load-activation-plan-set.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Load Activation Plan Set\n\n> **Context document:** `docs/pipeline/2026-03-15-kestra-absorption-context-update.md`\n> **Assessment:** The three plans below form a coherent execution sequence. Execute in order.\n\n---\n\n## Plan 1: Registry Identity + Load Categorization (Foundation)\n\n**File:** `docs/plans/2026-03-15-service-registry-identity-and-load-categorization.md`\n\n**Purpose:** Make the unified service registry stable and categorized. No features ship — this is pure infrastructure cleanup.\n\n**What it does:**\n- Phase 1: Fix the `registry_*` → `service_*` naming drift across 16 files (tests first, then refactor)\n- Phase 2: Add `primary_stage` on services and `bd_stage` on functions for dual-level pipeline categorization; backfill from existing data\n- Phase 3: Surface the new categories in the marketplace and settings UI\n\n**Prerequisite for:** Plans 2 and 3.\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\previous-versions\\2026-03-15-service-registry-identity-and-load-activation.md",
+      "hits": [
+        "environment",
+        "runtime"
+      ],
+      "preview": "# Service Registry Identity Cleanup + Load Activation Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Fix the service registry naming drift, categorize imported integrations by pipeline stage at both service and function level, bind user connections to services, and make the GCS → ArangoDB load path fully executable end-to-end through the registry — proving the architecture works for both Kestra-imported sources and BD-native destinations.\n\n**Architecture:** The platform already has a two-layer model: `integration_catalog_items` (945 imported Kestra plugin definitions) and `service_registry` + `service_functions` (the live runtime). Code references `registry_services` / `registry_service_functions` / `registry_service_types` but the canonical schema names are `service_registry` / `service_functions` / `service_type_catalog`. This plan fixes the code to match the schema (not the other way around), then adds dual-level pipeline-stage categorization (service-level for discovery, function-level for execution), extends `user_provider_connections` for GCS and ArangoDB credentials, translates the GCS source handler to Python and builds an ArangoDB destination plugin, defines an explicit source-to-destination handoff contract, and wires the Load UI.\n\n**Tech Stack:** Supabase Postgres migrations, Python (FastAPI, `httpx` for GCS JSON API and Arango HTTP API), Deno Edge Functions, React, existing plugin architecture in `services/platform-api/app/plugins/`.\n\n**Context document:** `docs/pipeline/2026-03-15-kestra-absorption-context-update.md`\n\n**Existing patterns reused:**\n- Plugin system: `services/platform-api/app/shared/base.py` (BasePlugin, PluginOutput, ExecutionContext)\n- Plugin execution: `services/platform-api/app/main.py` → `POST /{function_name}`\n- Plugin registry: `services/platform-api/app/registry.py` (auto-discovers plugins by task_type)\n- Credential encryption: `supabase/functions/_shared/api_key_crypto.ts`\n- Provider connections: `supabase/functions/provider-connections/index.ts`\n- Existing plugins: `http.py` (HttpRequestPlugin), `core.py` (LogPlugin), `scripts.py`, `eyecite.py`\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_done\\previous-versions\\2026-03-15-service-registry-identity-and-load-categorization.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Service Registry Identity + Load Categorization Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Make the unified service registry real and trustworthy by removing the `registry_*` naming drift, adding BlockData-facing load categorization, and updating the admin and marketplace surfaces to use the canonical runtime model.\n\n**Architecture:** Treat `service_registry`, `service_functions`, and `service_type_catalog` as the canonical schema. Refactor code that still points at `registry_services`, `registry_service_functions`, and `registry_service_types`. Add explicit BD-facing stage metadata so imported integrations can be filtered as Source, Destination, Load, Transform, Parse, Orchestration, Utility, or Conversion without relying only on weak string heuristics.\n\n**Tech Stack:** Supabase Postgres migrations, Supabase Edge Functions (Deno), FastAPI platform API, React + Supabase JS, existing marketplace/settings UI.\n\n---\n\n## Scope Guardrails\n\n- This plan does **not** make GCS or Arango executable yet.\n- This plan does **not** add connector-specific job tables.\n- This plan does **not** attempt to activate all imported services.\n- This plan exists to make the registry stable enough that the next load-activation plan can build on it cleanly.\n\n---"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_implemted-awating-qc\\2026-03-17-oauth-login.md",
+      "hits": [
+        "profile"
+      ],
+      "preview": "# OAuth Login (Google + GitHub) Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Add \"Continue with Google\" and \"Continue with GitHub\" OAuth login to reduce signup friction — this becomes the first real self-service signup path (email registration is currently gated behind a \"coming soon\" page).\n\n**Architecture:** Supabase Auth handles OAuth flows natively via PKCE. We add `signInWithOAuth()` to AuthContext, create a shared `OAuthButtons` component for the login page, and add a post-OAuth welcome page that collects display name. The existing profile trigger intentionally does NOT extract OAuth metadata (`full_name`, `name`) — it only reads `display_name`, which OAuth providers don't set. This means `profiles.display_name` stays null for new OAuth users, which is how `AuthCallback` detects first-time users and redirects to the welcome page.\n\n**Tech Stack:** Supabase Auth (OAuth PKCE), React 19, React Router 7, Ark UI, Tailwind 4\n\n---\n\n## Prerequisites (Manual — Supabase Dashboard + Cloud Console)\n\nBefore any code runs, configure the OAuth providers:\n\n1. **Google Cloud Console** (project `862494623920`, same as existing Drive Picker):\n   - APIs & Services > Credentials > Create OAuth Client ID (Web application)\n   - Authorized redirect URI: `https://dbdzzhshmigewyprahej.supabase.co/auth/v1/callback`\n   - Copy Client ID and Client Secret"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_implemted-awating-qc\\2026-03-19-design-layout-captures-page.md",
+      "hits": [
+        "environment"
+      ],
+      "preview": "# Design Layout Captures — Admin Page + Capture Server\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Build a superuser admin page that lists captured design layouts in a table, lets users trigger new captures via a popup, and runs measurement scripts through a local capture server with automatic Playwright auth via per-domain `storageState` files.\n\n**Architecture:** React page at `/app/superuser/design-layout-captures` with a FlowsList-style table. \"Add New\" opens a modal that POSTs to a local Node.js capture server. The server manages Playwright browser lifecycle, per-domain `storageState` auth, and runs `measure-layout.mjs` (plus future parallel scripts) programmatically. Captures save to `docs/design-layouts/<slug>/<viewport>/<theme>/`.\n\n**Scope:** This is a **local dev tool only**. The capture server runs on `localhost:4488` alongside the dev server. The admin page is only functional when the capture server is running locally. This page is not designed for deployed/hosted environments — Playwright needs local filesystem access and a headed browser for initial auth.\n\n**Tech Stack:** React 19, React Router 7 (lazy `Component` export), Ark UI (Checkbox, Select, Pagination, Portal, Dialog), Tailwind CSS tokens, Node.js capture server (ESM), Playwright, existing `measure-layout.mjs` script.\n\n---\n\n## Reference Files\n\nThese files are the source of truth for patterns used throughout this plan:\n\n| File | Purpose |\n|---|---|"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\_implemted-awating-qc\\2026-03-20-frt-storage-upload-migration.md",
+      "hits": [
+        "runtime",
+        "requirements"
+      ],
+      "preview": "﻿Frontend Storage Upload Migration (Supabase Uppy/ingest â†’ Platform API + GCS Signed Upload Flow) Implementation Plan\nFor Claude: REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\nGoal: Migrate all browser upload submission paths to the new FastAPI storage control plane (reserve -> signed URL PUT -> complete) while keeping Uppy fully removed from upload submission, and make deletion + quota flows reflect backend storage objects.\n\nArchitecture: Introduce one shared frontend storage client/service as the only upload control-plane path. Uploaders become lightweight UI/state wrappers that call that service. Backend calls remain in source-of-truth format for storage quota accounting, reservation lifecycle, and object metadata.\n\nTech Stack: React, TypeScript, React Router, existing auth/session layer in app, Fetch client wrapper to platform API, optional E2E runner, unit test tooling already used in repo.\n\nTeam Feedback Incorporated (Delta from prior draft)\nParsePage.tsx is a shell, not the migration owner.\nuseParseWorkbench.tsx is a real behavior owner for parse workbench upload + delete flows.\nDocumentsPage.tsx imports upload components and must be in migration scope.\nDeletion migration must include handler layers:\nuseAssetsWorkbench.tsx\nuseParseWorkbench.tsx\nnot just presentational components.\nFlowWorkbench.tsx still posts to edgeFetch('ingest', ...) and must be migrated or intentionally deferred.\nRemote-import flows in UploadTabPanel.tsx (google-drive/dropbox import) are separate concerns; explicit out-of-scope note.\nScope"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\admin-layout-capture\\2026-03-20-overlay-capture-and-admin-cleanup-v2.md",
+      "hits": [
+        "profile"
+      ],
+      "preview": "# Overlay Capture & Admin Cleanup — Version 2 Final Plan\n\n> I'm using the writing-plans skill to create this implementation plan.\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to execute this plan task-by-task.\n\n**Goal:** complete phase-2 overlay capture with durable state, re-capture preservation, and admin action menu UX while eliminating v2 regressions.\n\n**Architecture:**  \nThe existing frontend/server architecture is preserved. The UI sends typed capture requests to the filesystem-backed capture server. The server orchestrates optional overlay capture as a second deterministic capture step and persists only the true artifact state.\n\n**Tech Stack:** React + TypeScript, Ark UI, Tabler icons, Node.js HTTP server, Playwright.\n\n**Version:** 2.2\n\n---\n\n## Task 0: Confirm legacy cleanup status\n\nThe v1 plan file is already removed in this repo (`legacy missing`). If it exists in another branch, remove it before continuing."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\admin-layout-capture\\2026-03-20-overlay-v2-review-fixes.md",
+      "hits": [
+        "profile"
+      ],
+      "preview": "# Overlay Capture v2 Plan — Consolidated Review & Required Fixes\n\n**Plan under review:** `docs/plans/2026-03-20-overlay-capture-and-admin-cleanup-v2.md`\n\n**Reviewers:** Two independent passes plus cross-verification against codebase.\n\n**Verdict:** v2 is materially better than v1. All seven v1 issues are resolved. Six new issues found in v2 — two HIGH (build failures / behavioral regression), two MEDIUM (logic bugs), two LOW (clarity). All are fixable within the existing task structure.\n\n---\n\n## Quick Reference\n\n| # | Severity | Issue | Plan Tasks Affected |\n|---|----------|-------|---------------------|\n| 1 | HIGH | Incomplete import block — won't compile | Task 2.1 |\n| 2 | HIGH | Re-capture gated behind `complete` status — lost for failed rows | Task 2.7 |\n| 3 | MEDIUM | Auth-complete route loses overlay intent | Task 4.4, 4.6 |\n| 4 | MEDIUM | Re-capture reads success flag (`hasOverlay`), not request intent | Task 1, Task 2.4, Task 4.3 |\n| 5 | LOW | `updateCaptureEntryById` / `updateCaptureStatus` coexistence unclear | Task 4.5 |\n| 6 | LOW | Task 5 final commit re-adds already-committed files | Task 5 |"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\admin-layout-capture\\2026-03-21-consolidated-captures-backend-and-ux.md",
+      "hits": [
+        "environment",
+        "runtime"
+      ],
+      "preview": "# Design Layout Captures — Backend Migration & Admin UX\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Migrate design layout captures from filesystem JSON to a Supabase PostgreSQL table with FastAPI CRUD endpoints, replace individual action buttons with a dropdown menu, add async capture polling, and remove dead fields (`pageType`, `both` theme). Overlay capture support is deferred to a future phase.\n\n**Architecture:**\nData persistence moves from `captures.json` to a `design_layout_captures` Supabase table accessed through FastAPI admin routes using the existing `require_superuser` auth pattern. The local capture server (`scripts/capture-server.mjs`) becomes a thin Playwright runner — it executes headless browser captures locally but reads/writes capture metadata through the platform-api instead of the filesystem. The frontend switches from `localhost:4488` to `platformApiFetch` for data, and only hits the local server to trigger captures and serve files. Captures run asynchronously: the server returns immediately after starting and updates the API when done, eliminating the \"capturing forever\" blocking behavior.\n\n**Tech Stack:** FastAPI, Supabase PostgreSQL, Pydantic, React + TypeScript, Ark UI Menu, Node.js (Playwright runner)\n\n**Supersedes:**\n- `2026-03-20-overlay-capture-and-admin-cleanup-v2.md`\n- `2026-03-20-overlay-v2-review-fixes.md`\n- `2026-03-21-capture-backend-table-and-cleanup.md`\n\n---\n\n## Task 0: Remove `pageType` and `both` theme from all layers\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\auth\\2026-03-21-social-auth-login-repair.md",
+      "hits": [
+        "environment",
+        "runtime",
+        "profile"
+      ],
+      "preview": "# Social Auth Login Repair Implementation Plan\n\n**Goal:** Make the existing Google and GitHub social-login flow operational for the hosted Supabase project `dbdzzhshmigewyprahej`, add an owned `platform-api` observability seam around the OAuth roundtrip, and unblock end-to-end signup verification for the storage workstream.\n\n**Architecture:** Keep hosted Supabase Auth as the actual OAuth and session authority, but add `services/platform-api` as the app-owned OAuth observability control plane. The browser creates a tracked OAuth attempt before `signInWithOAuth()`, stores short-lived attempt credentials in `sessionStorage`, returns through Supabase's `/auth/v1/callback`, and posts callback/session/profile/result events back to `platform-api`. Persist those attempt lifecycles in a new `auth_oauth_attempts` table, centralize auth redirect origin selection instead of relying on arbitrary `window.location.origin`, preserve the existing `/login` -> `/auth/callback` -> `/auth/welcome` -> `/app` routing contract, and surface callback failures in the UI so misconfiguration is diagnosable instead of silent.\n\n**Tech Stack:** Supabase Auth, Supabase Postgres migrations, FastAPI, OpenTelemetry, React 19, React Router 7, Vite, Vitest, pytest.\n\n**Status:** In Progress\n**Author:** Codex\n**Date:** 2026-03-21\n\n## Manifest\n\n### Platform API\n\n| Verb | Path | Action | Status |\n|------|------|--------|--------|\n| POST | `/auth/oauth/attempts` | Create a tracked Google or GitHub OAuth attempt before redirecting to Supabase Auth | New |\n| POST | `/auth/oauth/attempts/{attempt_id}/events` | Record callback, session, profile-branch, and final-result events for an OAuth attempt | New |"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\connectors-integrations\\2026-03-17-test-integrations-workbench.md",
+      "hits": [
+        "runtime",
+        "profile"
+      ],
+      "preview": "# Test-Integrations Workbench\n\n## What This Is\n\nA browser-based workbench for developing, testing, and tracking the status of kt/blockdata connector functions. It connects to the kt FastAPI service, understands the plugin structure through a curated manifest, and lets you run named test cases against configurable backends — seeing immediately what works, what fails, and what needs refactoring.\n\n## Why It Exists\n\nThe kt/ directory translates Kestra's Java plugin engine into Python. It has:\n- **Core/runtime files** — shared infrastructure every connector uses (RunContext, Task, Storage, FileSerde, etc.)\n- **Plugin folders** — one per connector family (mongodb/, and eventually postgresql/, gcs/, aws/, etc.), each containing multiple function files (find.py, aggregate.py, load.py, etc.)\n\nToday, testing these functions requires running pytest from the terminal and reading console output. There's no central view of: which plugins exist, which functions are implemented, which ones pass, which ones need work. This workbench fixes that.\n\n## What It Does\n\n**1. Shows what exists** — Catalog view driven by a server-side manifest that knows which plugins are registered, which functions each plugin exposes, and which source files are relevant (core, runtime, and connector-specific). You can browse the source for any file the manifest includes.\n\n**2. Tests each function** — Each registered function has named test cases (e.g., \"find with filter\", \"find with store=true\"). You pick a test case, choose a backend profile (mock, dev-db, real), and run it. The server executes against that profile and returns full execution metadata.\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\connectors-integrations\\2026-03-18-evidence-connector-migration.md",
+      "hits": [
+        "environment"
+      ],
+      "preview": "# Connector Service Migration\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Stand up a Node.js connector service at `services/connector-service/` covering the full data integration surface — databases, object storage, data lakes, and flat files. Migrate Evidence's MIT-licensed connectors where available; build the rest using DuckDB extensions and cloud SDKs.\n\n**Architecture:** Each connector exports three things: `options` (declarative config schema), `testConnection()`, and `getRunner()`. We wrap them in an Express HTTP server exposing: list types, test connection, execute query. Platform-api calls this service via HTTP.\n\n**Tech Stack:** Node.js, Express, Evidence datasource packages (MIT), `@evidence-dev/db-commons`, DuckDB (httpfs, iceberg, delta extensions), AWS/GCP/Azure SDKs\n\n**Not in scope:** Application connectors (Linear, Stripe, HubSpot, etc.) — these will use Kestra integration stubs, not this service.\n\n---\n\n## What We're Building\n\n### Category 1: Databases — 16 connectors\n\n| # | Connector | Source | npm client | Notes |\n|---|-----------|--------|-----------|-------|"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\connectors-integrations\\kestra-plugins\\2026-03-19-botpress-kestra-architecture-audit.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Botpress and Kestra Architecture Audit Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Verify the factual accuracy and completeness of `docs/botpress-architecture-report.md` and `docs/botpress-vs-kestra-architecture.md` against the actual Botpress and Kestra source repos, then revise the documents to match the code.\n\n**Architecture:** Work in three passes. First, decompose both documents into concrete claims that can be checked. Second, verify those claims against the source repos by tracing discovery, composition, runtime execution, transport, and component inventories. Third, revise the docs with source-backed corrections, note any remaining inference, and add explicit evidence paths for future re-checks.\n\n**Tech Stack:** Markdown, ripgrep, git, TypeScript/Node monorepo inspection, Java/Gradle monorepo inspection\n\n**Primary sources:**\n- `/home/jon/BD2/external/botpress`\n- `/home/jon/kestra-repos/kestra`\n- `/home/jon/kestra-repos/kestra.io`\n- `/home/jon/BD2/docs/botpress-architecture-report.md`\n- `/home/jon/BD2/docs/botpress-vs-kestra-architecture.md`\n\n---\n\n### Task 1: Freeze the Current Claims"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\connectors-integrations\\kestra-plugins\\2026-03-19-java-to-python-translation-acceleration-plan.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Java-to-Python Translation Acceleration Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Reduce BD2's remaining Java-to-Python translation work by attacking generator defects first, repeated family patterns second, and runtime-kernel blockers last.\n\n**Architecture:** This plan treats the remaining work as a leverage problem, not a file-count problem. Phase 1 improves the Java-to-Python scaffold pipeline so regenerated files stop carrying Java syntax into Python. Phase 2 ports repeated families as recipes. Phase 3 hand-ports the runtime kernel that all families depend on.\n\n**Tech Stack:** Python 3.11, `pytest`, `javalang`, `ripgrep`, `dataclasses`, existing `integrations/javalang/pipeline/*`, existing `engine/*` and `integrations/*`\n\n## Current Baseline\n\n- `engine/`: 1,459 Python files\n- `integrations/`: 2,068 Python files\n- Current repo-wide `raise NotImplementedError` count: `6,837`\n- Files with `# WARNING: Unresolved types:`: `1,673`\n- Files with raw Java boolean/null literals: `259`\n- Files with `Property.ofValue(true|false)`: `220`\n- Files with Java-style static-call leakage: `664`\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\opentelemetry, signoz\\2026-03-19-opentelemetry-platform-api-mvpv2.md",
+      "hits": [
+        "environment",
+        "runtime",
+        "requirements"
+      ],
+      "preview": "# OpenTelemetry Platform API MVP Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Add a production-shaped but low-risk OpenTelemetry MVP to `services/platform-api` with a local Collector development stack, OTLP trace export, FastAPI and `httpx` instrumentation, log correlation, and a minimal superuser-facing telemetry status page.\n\n**Architecture:** The rollout is `platform-api` first, not whole-platform. Telemetry bootstrap is environment-driven at process start and does not depend on Supabase or `admin-config` reads. The implementation must be safe under this repo's current app lifecycle: `app = create_app()` at module import time, repeated `create_app()` calls in tests, and direct module-level app imports in other tests. Local development uses an OpenTelemetry Collector plus Jaeger for verification, and the frontend reads runtime status from a small authenticated `platform-api` endpoint.\n\n**Tech Stack:** FastAPI, OpenTelemetry Python SDK, OTLP/HTTP exporter, OpenTelemetry Collector, Jaeger, React, existing `platformApiFetch`\n\n---\n\n## Scope and Constraints\n\n### In scope\n\n- `services/platform-api` only\n- Local Collector config and local trace verification path\n- Trace export over OTLP/HTTP\n- FastAPI server instrumentation"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\opentelemetry, signoz\\2026-03-20-appshell2-opentelemetry-first-migration.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# AppShell2 OpenTelemetry MVP Implementation Plan\n\n> **For Codex:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Deliver a focused observability shell (`AppShell2`) with production-ready traces and logs experiences first, built on your existing React shell patterns, and backed by a backend-agnostic telemetry adapter so SignalR can be plugged in without UI rewrites.\n\n**Architecture:** Keep the current `/app` shell structure and add a dedicated observability branch under it (`/app/observability/*`). Introduce a strict data adapter (`ObservabilityProvider` + domain adapters) that converts backend payloads into frontend telemetry models. Build pages directly against the models, not backend APIs.\n\n**Tech Stack:** React Router, React 19, TypeScript, Vitest, existing shared shell components (`AppLayout`, `LeftRailShadcn`, `TopCommandBar`), OpenTelemetry payload adapters, optional `@microsoft/signalr` transport.\n\n---\n\n## Migration Scope Decision (v1)\n\n- In scope:\n  - `AppShell2` route and nav shell for observability\n  - Core traces page (`/app/observability/traces`) with list + detail view\n  - Core logs page (`/app/observability/logs`) with query + streaming/live updates path via adapter\n  - Telemetry landing status (`/app/observability/telemetry`) with backend availability checks\n  - Small shared types + adapter layer and tests"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\opentelemetry, signoz\\2026-03-20-docker-consolidation-and-signoz.md",
+      "hits": [
+        "environment",
+        "runtime"
+      ],
+      "preview": "# Docker Consolidation & SigNoz Observability Migration Plan\n\n> **For Codex:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Consolidate Docker artifacts under `docker/` and migrate platform-api telemetry metadata/UI references from Jaeger to SigNoz.\n\n**Architecture:**  \nPlatform-api still emits traces with OTLP HTTP to `http://localhost:4318` as before, but local observability infrastructure changes from OTel Collector + Jaeger to SigNoz + ClickHouse.\n\n**Tech Stack:** Docker Compose, SigNoz `v0.116.1`, ClickHouse `25.5.6`, SigNoz OTel Collector `v0.144.2`, zookeeper `3.7.1`, FastAPI tests in platform-api.\n\n---\n\n## Execution constraints\n\n1. All local validation and compose runs must be done in WSL2 or a Linux host. Native Windows execution for SigNoz standalone is not assumed.\n2. Do not edit this plan while executing it. Complete code + validation first, then update plan if needed in a follow-up pass.\n\n## Task 1: Vendor SigNoz ClickHouse config under versioned repo state\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\opentelemetry, signoz\\2026-03-21-current-state-of-implement.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "Question: Has the preivously planned first phase of development delivered on the planned observability pages at a signals-level surface?\n\nNo. With your clarification that there is no backend setup yet, the relevant question is whether the repo has already delivered the planned observability pages at a “signals-level” surface. It has not.\n\nThe plans set a higher bar than what is currently shipped. The AppShell2 plan explicitly targets a real observability shell with traces list/detail, logs query/live view, and a telemetry landing page under /app/observability/* (2026-03-20-appshell2-opentelemetry-first-migration.md (line 5), 2026-03-20-appshell2-opentelemetry-first-migration.md (line 17)). The older MVP plan also says the telemetry page should show runtime config from platform-api and the traces page should link out to Jaeger (2026-03-19-opentelemetry-platform-api-mvpv2.md (line 620), 2026-03-19-opentelemetry-platform-api-mvpv2.md (line 758)). In the actual app, the router only ships /app/observability, /telemetry, and /traces (router.tsx (line 171)), there is no /app/observability/logs, and the two pages are still static placeholder copy (ObservabilityTelemetry.tsx (line 4), ObservabilityTraces.tsx (line 4)). Even the observability drill points “Logs” to the generic /app/logs, not to an observability logs page (nav-config.ts (line 265)).\n\nWhat has landed is mostly backend-side scaffolding and infra prep: OpenTelemetry settings and SigNoz/Jaeger URL fields (config.py (line 35)), telemetry status payload support (otel.py (line 125)), the /observability/telemetry-status route (telemetry.py (line 10)), manual spans in key flows like plugin.execute, parse.request, load_runs.submit, and storage_cleanup.run (plugin_execution.py (line 40), parse.py (line 61), load_runs.py (line 121), storage_cleanup.py (line 49)), plus the SigNoz compose stack (docker-compose.signoz.yml). That is partial telemetry plumbing, not the finished “signals-level” page experience.\n\nIf by “signals” you mean the standard observability signals, the official OpenTelemetry definition is traces, metrics, and logs, and SigNoz’s own docs show a benchmark surface with traces, correlated logs, and metrics tabs plus detail views: OpenTelemetry Signals: https://opentelemetry.io/docs/concepts/signals/ ; SigNoz docs: https://signoz.io/docs/google-adk-observability/ . Against that benchmark, your repo is not there yet. It has partial infra and placeholder UI, not completed observability pages.\n\nOne verification note: the frontend nav test passed, but the backend pytest run could not be fully validated in this sandbox because app startup tries to create the conversion process pool and hit a Windows access error. That did not affect the page-level conclusion above."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\parsers\\2026-03-14-extraction-and-parse-verification-merged.md",
+      "hits": [
+        "runtime",
+        "profile",
+        "requirements"
+      ],
+      "preview": "# Parse Runtime Verification + Structured Extraction — Merged Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Verify that parse profiles are actually applied by the conversion runtime, then ship structured extraction as an async, queued job flow with a LlamaCloud-style workbench UX.\n\n**Merges:**\n- `2026-03-14-async-extraction-and-parse-runtime-verification.md` (async plan — architecture, queue model, readiness gates)\n- `2026-03-14-extract-structured-extraction.md` (extract plan — UX, schema model, Docling helpers, workbench)\n\n**Architecture:** Parse verification extends the trigger-plus-callback pipeline with requested-vs-applied audit fields. Extraction uses the async worker pattern: `run-extract` validates and enqueues durable work items, `extract-worker` claims items via `FOR UPDATE SKIP LOCKED`, writes results incrementally, and the UI watches progress through Realtime plus a client-driven worker loop.\n\n**Tech Stack:** Supabase Postgres + Edge Functions + Realtime, Docling artifacts in Storage, React + Ark UI + Monaco Editor + Vitest, Deno tests for Edge Functions, platform-managed Vertex Claude via `callVertexClaude()`.\n\n---\n\n## Scope Guardrails\n\n- **MVP extraction provider is platform-managed Vertex only.** Multi-provider extraction (user API keys, Anthropic direct, OpenAI, Google) is deferred to Phase 6. Do not implement provider resolution, API key decryption, or multi-transport LLM dispatch in this plan.\n- `run-extract` must return `202 Accepted` with a `job_id`. It must not do LLM work inline."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\parsers\\2026-03-14-pandoc-parsing-service.md",
+      "hits": [
+        "runtime",
+        "profile",
+        "requirements"
+      ],
+      "preview": "# Plan: Pandoc Parsing Service (Counterpart to Docling)\n\n## Context\n\nThe writing-system has a Docling-based conversion pipeline on Cloud Run (`blockdata-platform-api`). Pandoc handles markup formats Docling can't (RST, Org, EPUB, ODT, Typst, MediaWiki, etc.). The config schema, seed profiles, and architecture docs already exist — but nothing is deployed. This plan stands up a pandoc conversion service mirroring the Docling pattern, deployed via `gcloud` CLI.\n\n---\n\n## Architecture Decision: Thin FastAPI wrapper (not raw pandoc-server)\n\n**Why not use pandoc-server directly?** The Docling service uses a specific request contract: `ConvertRequest` with `source_uid`, signed URLs, `callback_url`, `pipeline_config`. The pandoc-server API doesn't understand any of that — it just takes `text` + options and returns converted output.\n\n**Approach:** A thin Python (FastAPI) service that:\n1. Accepts the same `ConvertRequest` contract as the Docling service\n2. Downloads the source file from the signed URL\n3. Calls the pandoc CLI (or pandoc-server locally) with translated config\n4. Uploads outputs to signed URLs\n5. POSTs the callback to `conversion-complete`\n\nThis mirrors the Docling platform-api exactly — same auth, same models, same callback flow."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\parsers\\2026-03-15-parse-batch-runtime-hardening.md",
+      "hits": [
+        "runtime",
+        "profile"
+      ],
+      "preview": "# Parse Batch Runtime Hardening Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Replace the fragile browser-driven Parse All flow with a durable server-side batch queue that reliably submits, tracks, retries, and displays parse work for many files.\n\n**Architecture:** Keep Docling conversion as the external execution runtime, but move multi-file parse submission to a server-owned queue. Refactor the heavy parts of `trigger-parse` into a shared dispatch module, add `parse_batches` plus `parse_batch_items`, process items through a claim RPC + worker pattern modeled on the existing overlay worker, and make the UI observe durable batch/item state with realtime plus polling fallback.\n\n**Tech Stack:** Supabase Postgres, Supabase Edge Functions, Realtime, existing `admin_runtime_policy`, React, TypeScript, Docling conversion service.\n\n---\n\n## Problem Summary\n\nUsers hit the parse feature immediately, and the current behavior is not operationally strong enough for batch use:\n\n- `Parse All` and `Parse Selected` are driven by `useBatchParse.ts`, which only keeps an in-memory browser queue and gives each file one dispatch attempt.\n- `trigger-parse` is doing too much work to serve as the per-file browser submission boundary: cleanup, storage URL generation, status mutation, callback preparation, and live conversion-service dispatch.\n- `Parse Selected` currently includes selected rows regardless of whether they are parseable, so mixed selections can create avoidable failures.\n- The page relies on `source_documents` realtime updates, but there is no durable batch progress model and no polling/reconciliation fallback if updates are missed."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\parsers\\2026-03-15-parse-runtime-hardening.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Parse Runtime Hardening — Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Fix the non-atomic failure modes in `conversion-complete` that leave orphaned rows across `blocks`, `conversion_parsing`, and `conversion_representations`, make the callback idempotent for retries, fix block cleanup in `trigger-parse` for re-parse, and correct the frontend's empty-blocks error rendering.\n\n**Architecture:** Backend fixes only touch `conversion-complete/index.ts` and `trigger-parse/index.ts`. One frontend fix in `parseArtifacts.ts` + `useParseWorkbench.tsx`. One optional cache hygiene fix. No schema changes needed — the `UNIQUE(source_uid)` constraint on `conversion_parsing` and `PRIMARY KEY(block_uid)` on `blocks` already provide the conflict targets for upsert.\n\n**Tech Stack:** Deno edge functions (Supabase), PostgreSQL, React\n\n---\n\n## Problem Summary\n\nThe parse pipeline has four verified issues:\n\n1. **Non-idempotent block insertion** — `conversion-complete` uses `.insert()` for blocks (line 413). If the conversion service retries the callback, duplicate blocks are created. `block_uid` is deterministic (`${conv_uid}:${idx}`), so `.upsert()` on `block_uid` is the fix.\n\n2. **Incomplete failure cleanup** — The inner catch block (line 511) marks `source_documents.status = \"parse_failed\"` but does not clean up the three tables already written:\n   - `conversion_parsing` — upserted at line 371 with `conv_status: \"success\"`"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\parsers\\2026-03-17-parse-system-audit-fixes.md",
+      "hits": [
+        "runtime",
+        "profile"
+      ],
+      "preview": "# Parse System Audit Fixes\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Fix the 8 remaining bugs from the parse system audit (issues #8–#15) in one coherent pass.\n\n**Architecture:** Three layers need fixes: edge functions (Deno/TypeScript in `supabase/functions/`), platform-api (Python in `services/platform-api/`), and frontend (React/TypeScript in `web/src/`). One new Supabase migration covers DB-level changes. Fixes are ordered so earlier tasks don't depend on later ones.\n\n**Tech Stack:** Deno + Supabase edge functions, Python FastAPI, React + TypeScript, PostgreSQL migrations.\n\n---\n\n## Context\n\nA 4-layer audit found 15 issues. Items 1–7 are fixed and deployed. This plan covers items 8–15:\n\n| # | Severity | Issue | Location |\n|---|----------|-------|----------|\n| 8 | HIGH | google-drive-import imports nonexistent `process-md.ts` | `google-drive-import/index.ts:11` |\n| 9 | HIGH | trigger-parse pre-insert `conv_uid: \"pending:...\"` violates CHECK `^[0-9a-f]{64}$` | `trigger-parse/index.ts:210` |"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\parsers\\2026-03-17-parse-track-tabs.md",
+      "hits": [
+        "profile"
+      ],
+      "preview": "# Parse Track Tabs Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Split the parse page file list into two tabs (Documents / Code) so the active track drives the config column and preview pane — eliminating cross-track confusion.\n\n**Architecture:** Add an `activeTrack` state to `useParseWorkbench` driven by a segmented control inside the file list pane (not a Workbench tab). The file list filters by track. Config and preview columns read `activeTrack` from the hook and render track-appropriate content. This avoids fighting with the Workbench's static tab/pane system and localStorage persistence.\n\n**Tech Stack:** React, TypeScript, existing Workbench component, `parseProfileSupport.ts` utilities\n\n---\n\n## Current State (What Exists)\n\nCodex already created `parseProfileSupport.ts` with:\n- `getDocumentParseTrack(doc)` — determines track from `source_type` or `conv_parsing_tool`\n- `getCompatibleProfiles(profiles, doc)` — filters profiles by doc's track\n- `getAppliedProfileName(doc)` / `findAppliedProfile(profiles, doc)` — profile lookup for parsed files\n- `CODE_SOURCE_TYPES` set — `java, py, js, jsx, ts, tsx, go, rs, cs`\n- `ParseTrack` type — `'docling' | 'tree_sitter'`"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\parsers\\2026-03-17-tree-sitter-parse-track.md",
+      "hits": [
+        "runtime",
+        "profile",
+        "requirements"
+      ],
+      "preview": "# Tree-Sitter Parse Track Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Add `tree_sitter` as a second Parse track in platform-api so uploaded code files (`.java`, `.py`, `.ts`, `.js`, `.go`, `.rs`, `.cs`) are parsed into AST + symbol-outline artifacts from the existing Parse menu.\n\n**Architecture:** Add a new `POST /parse` route in platform-api that accepts the same simple payload the frontend already sends (`source_uid`, `profile_id`, `pipeline_config`). Platform-api looks up the document, resolves the parser track from the profile, and handles everything server-side. For tree-sitter: download source from storage → parse → upload artifacts → write DB rows → return 200. The existing `/convert` route and Docling flow are untouched. The `/parse` route uses service_role credentials (already available via `get_supabase_admin()`) to read documents, upload artifacts, and write DB rows directly — no edge function callbacks needed.\n\n**Tech Stack:** FastAPI (platform-api), `tree-sitter` + language grammar packages, existing `app/infra/storage.py` + `app/infra/supabase_client.py`, Supabase DB (parsing_profiles, conversion_representations), React Parse workbench (Vitest).\n\n---\n\n## Data flow comparison\n\n```\nDocling (unchanged):\n  web → edgeFetch('trigger-parse') → platform-api /convert → conversion-complete (edge fn) → DB\n\nTree-sitter (new):\n  web → platformApiFetch('/parse', { source_uid, profile_id }) → platform-api looks up doc,"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\platform-api\\2026-03-15-fastapi-execution-plane-systematic-buildout.md",
+      "hits": [
+        "environment",
+        "runtime",
+        "profile"
+      ],
+      "preview": "# FastAPI Execution Plane Systematic Buildout Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Make `services/platform-api` the default execution-plane home for new backend capability, keep Supabase Edge Functions focused on control-plane work, and establish workers as the standard for long-running or batch-oriented execution.\n\n**Architecture:** The codebase already has the right shape in pieces: Edge Functions handle Supabase-authenticated CRUD and settings surfaces, `services/platform-api` already hosts the merged Python plugin/runtime layer, and worker-style isolation already exists for conversion. This plan formalizes those boundaries, stops new execution features from defaulting to Edge Functions, and builds the next reusable primitives in FastAPI and worker-backed run orchestration.\n\n**Tech Stack:** Supabase Edge Functions (Deno/TypeScript), Supabase Postgres + Storage, FastAPI, Python plugin registry, ProcessPoolExecutor, future queue/claim worker model\n\n---\n\n# Current Source-Verified State\n\nThis plan is grounded in the current repo, not a hypothetical future state.\n\n## FastAPI already exists as the merged Python surface\n\n- `services/platform-api/app/main.py`\n  - Discovers plugins on startup."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\platform-api\\2026-03-17-javalang-platform-api-implementation.md",
+      "hits": [
+        "runtime",
+        "requirements"
+      ],
+      "preview": "# Javalang Platform API Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Add `javalang` to `platform-api` as a FastAPI-backed external service family, exposing the native upstream parse/tokenize functions through the existing plugin execution system and registering them in `service_registry` / `service_functions`.\n\n**Architecture:** Keep `platform-api` as the execution plane. Use the existing flat `app/plugins/*.py` discovery model, with one Python file per exposed `javalang` function and one optional shared `javalang_base.py`. Do not add BlockData-specific analysis wrappers in v1; expose only native upstream `javalang` functions.\n\n**Tech Stack:** FastAPI, existing `platform-api` plugin registry, `BasePlugin`, Supabase migrations, `javalang`, pytest.\n\n---\n\n## Scope Lock\n\nThis plan must not deviate from these decisions:\n\n- target repo: `E:\\writing-system\\services\\platform-api`\n- execution plane: `platform-api` FastAPI plugin system\n- discovery model: flat files under `app/plugins/`\n- one Python file per exposed function"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\platform-api\\implementation-guide.md",
+      "hits": [
+        "runtime",
+        "requirements"
+      ],
+      "preview": "# Pipeline Worker Integration — Full Implementation Guide\n\n## What We're Building\n\nA Python FastAPI service (`pipeline-worker`) that replaces Kestra's JVM plugin runtime. Kestra remains the design spec and plugin catalog source — we use its 821 plugin type definitions as our schema, but execution is 100% Python. The service is managed from the blockdata admin UI and backed by Supabase.\n\n**Three layers, every step touches all three:**\n\n| Layer | Where | What changes |\n|-------|-------|-------------|\n| **Frontend** | `web/src/pages/settings/` | Admin panels for managing services, plugins, instance config |\n| **Backend** | `services/pipeline-worker/` + `supabase/functions/` | FastAPI plugin execution + Deno edge function orchestration |\n| **Database** | Supabase `admin_runtime_policy`, `service_registry`, `service_functions`, `integration_catalog_items` | Config persistence, plugin registry, execution history |\n\n---\n\n## Reference Assets\n\n| Asset | Location | Purpose |\n|-------|----------|---------|"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\platforms\\botpress-architecture-report.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Botpress Architecture Report\n\n> Analysis of the open-source Botpress monorepo component relationships and interoperation mechanics.\n>\n> Date: 2026-03-19\n\n---\n\n## Table of Contents\n\n1. [Executive Summary](#executive-summary)\n2. [Component Types](#component-types)\n3. [The Core Relationship Model](#the-core-relationship-model)\n4. [Packages — Foundation Layer](#packages--foundation-layer)\n5. [Interfaces — Capability Contracts](#interfaces--capability-contracts)\n6. [Integrations — External Connectors](#integrations--external-connectors)\n7. [Plugins — Bot Middleware](#plugins--bot-middleware)\n8. [Bots — The Composition Layer](#bots--the-composition-layer)\n9. [Scripts — Operational Utilities](#scripts--operational-utilities)\n10. [Package Dependency Tiers](#package-dependency-tiers)"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\platforms\\botpress-vs-kestra-architecture.md",
+      "hits": [
+        "environment",
+        "runtime"
+      ],
+      "preview": "# Botpress vs Kestra: Architecture Comparison\n\n> How two plugin-driven platforms solve composition differently.\n>\n> Date: 2026-03-19\n\n---\n\n## Table of Contents\n\n1. [The Core Question](#the-core-question)\n2. [Component Types Side by Side](#component-types-side-by-side)\n3. [Botpress Component Types](#botpress-component-types)\n4. [Kestra Component Types](#kestra-component-types)\n5. [How They Align](#how-they-align)\n6. [How They Differ](#how-they-differ)\n7. [The Composition Layer](#the-composition-layer)\n8. [The Plugin System](#the-plugin-system)\n9. [External Connectors](#external-connectors)\n10. [What Each Has That the Other Doesn't](#what-each-has-that-the-other-doesnt)"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\platforms\\metabase.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Metabase: What We Learned and What We're Taking\n\n## The Product\n\nMetabase is a 46k-star open-source BI tool (AGPL). Clojure backend, React 18 + TypeScript frontend, Mantine v8 UI. The entire codebase is public, including enterprise features gated by license token at runtime. 1.6GB repo.\n\n## What They Built Well\n\n**Visual Query Builder (Notebook Mode).** Located in `frontend/src/metabase/querying/notebook/`. Users pick tables, add filters, joins, aggregations, sorts, and limits through a step-by-step UI without writing SQL. No other open-source project has matched this. The core state machine lives in a single ~1,000-line React hook. The full QB is ~50 components.\n\n**Three-Area Platform Separation.** Not just admin layers — Metabase separates the product into three distinct surfaces:\n\n1. **Admin** — database connections, user management, permissions, embedding config, table metadata (column types, semantic meaning, relationships). Each layer constrains the next. This keeps AI grounded.\n2. **Main Platform** — questions, dashboards, collections, browsing. The end-user workspace.\n3. **Data Studio** — the power-user surface. Contains: library, data structure, clustering, dependency graph, dependency diagnostics, transforms (visual query builder), SQL query (code editor), Python scripts (code editor).\n\nThe Data Studio separation is the key architectural insight. It groups all data operations — visual QB, SQL, Python, transforms, diagnostics — into one dedicated surface away from the main browsing experience.\n\n**SQL Editor.** CodeMirror 6 with autocomplete from database schema, template variables, snippet insertion, multi-dialect support. Located in `frontend/src/metabase/query_builder/components/NativeQueryEditor/CodeMirrorEditor/`.\n"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\platforms\\openclaw-dossier.md",
+      "hits": [
+        "runtime",
+        "profile"
+      ],
+      "preview": "# OpenClaw Dossier\n\n## Scope\n\nThis dossier covers one repository only:\n`/home/jon/BD2/external/openclaw`\n\nThe goal is not to restate the README.\nThe goal is to answer a more useful question:\n\nIf `Block Data` wants to add agent features at the level of model integration, MCP, skills, memory optimization, session orchestration, and operational safety, what exactly does `OpenClaw` contain, how is it structured, and what parts are worth copying, adapting, or ignoring?\n\nThis is a filetree-first report.\nIt starts with the concrete shape of the repo, then works upward into architecture, then ends with a judgment about fit.\n\nThis report distinguishes between:\n\n- upstream repo structure\n- product claims in docs\n- code that actually exists in the tree"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\refactor\\2026-03-17-scaffold-pipeline-v3-fixes.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# Scaffold Pipeline v3 — Name Mangling, Initializer Cleanup, Preprocessor Fixes, Lombok Pass\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Fix the four remaining scaffold pipeline bugs (_to_snake mangling, Java initializer passthrough, nested generics, context-blind var), add the Lombok interpretation pass, and prune redundant getter stubs — then re-run the pipeline to regenerate all 1,474 engine scaffolds.\n\n**Architecture:** All fixes are in `integrations/javalang/pipeline/`. The v2 bugfix plan (already executed) fixed extraction-level bugs. This plan targets the *builder* and *preprocessor* layers: name conversion, default-value sanitization, preprocessing robustness, and a new Lombok-to-dataclass pass. After all fixes, we re-run `scripts/generate_scaffolds.py` once to regenerate everything.\n\n**Tech Stack:** Python, tree-sitter-java, pytest. Pipeline lives in `integrations/javalang/pipeline/`. Generator script is `scripts/generate_scaffolds.py`.\n\n**Baseline metrics** (before this plan):\n- 1,474 engine scaffolds\n- 144 files with mangled names (`a__b` pattern)\n- 73 files with residual Java syntax (`.class.`, `new `, `@Override`)\n- 834 files with unresolved type warnings\n- Lombok in Java source: 193 @Getter, 130 @NoArgsConstructor, 114 @Builder, 59 @Slf4j, 46 @Value, 18 @Data\n\n---\n\n## File Layout"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\refactor\\2026-03-18-tree-sitter-conv-uid-fix.md",
+      "hits": [
+        "runtime",
+        "profile"
+      ],
+      "preview": "# Tree-Sitter conv_uid NOT NULL Fix\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Document and verify the fix for the 500 error when parsing code files via tree-sitter, caused by a missing `conv_uid` in the `conversion_parsing` upsert.\n\n**Architecture:** The fix is already committed locally in `d156c826`. This plan documents the root cause, verifies the fix, and covers deployment to make it live.\n\n**Tech Stack:** Python FastAPI (platform-api), PostgreSQL (Supabase), Cloud Run (GCP)\n\n---\n\n## Context\n\nTree-sitter code parsing (added in `3f42d5b1`) hit a 500 error on every parse because `upsert_conversion_parsing()` wrote a row to `conversion_parsing` without a `conv_uid` value, violating the `NOT NULL` constraint introduced in migration 019.\n\n**Root cause timeline:**\n1. Migration 019 (`20260213153000_019_ingest_tracks_policy_pandoc_representation.sql`) created `conversion_representations_v2` with `conv_uid TEXT NOT NULL UNIQUE CHECK (conv_uid ~ '^[0-9a-f]{64}$')` — this schema was later adopted by `conversion_parsing` as well.\n2. Commit `3f42d5b1` introduced `repository.py:upsert_conversion_parsing()` which built the upsert row without a `conv_uid` field at all. The Supabase client sent the insert, Postgres rejected it.\n3. The `parse.py` route caught the exception and returned 500 + marked the source as `conversion_failed`."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\user secrets\\2026-03-19-user-secrets-page-v2.md",
+      "hits": [
+        "environment",
+        "runtime",
+        "requirements"
+      ],
+      "preview": "# User Secrets Page Implementation Plan (v2)\n\n> **Version update:** This document does not modify the original plan file.\n>\n> - Original file: `docs/plans/2026-03-19-user-secrets-page.md`\n> - Updated file: `docs/plans/2026-03-19-user-secrets-page-v2.md`\n\n**Goal:** Create a user-facing Secrets page at `/app/settings/secrets` that follows the platform's existing security patterns for sensitive data: encrypted storage, metadata-only browser reads, backend-owned writes, and runtime-only secret resolution.\n\n**Architecture:** Reuse the repo's current secret-handling direction rather than introducing plaintext browser-readable storage. Secret values are stored encrypted at rest. The browser sees only metadata such as name, description, suffix or fingerprint, and timestamps. Secret CRUD goes through trusted backend APIs. Runtime secret resolution is implemented in backend execution contexts, not by direct browser access to secret rows.\n\n**Tech Stack:** Supabase Postgres migration, trusted backend API layer, existing AES-GCM crypto helpers, React/TypeScript settings UI, existing settings shell navigation and routing.\n\n---\n\n## Architectural Alignment\n\nThis version updates the original plan to align with code patterns already present in the repo:\n\n- `user_api_keys` stores encrypted values and exposes only non-secret fields to the browser."
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\user secrets\\2026-03-21-user-variables-settings-page-v3.md",
+      "hits": [
+        "environment",
+        "runtime"
+      ],
+      "preview": "# Variables Settings Page Implementation Plan\n\n> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Add a user-facing Variables page at `/app/settings/variables` that stores user-scoped named values securely and makes them available to trusted runtime execution via `get_secret()`.\n\n**Architecture:** Keep the UI under the existing settings surface rather than extending the current top-level `Secrets` placeholder page. Use a new FastAPI `variables` route set plus an encrypted `user_variables` table. The browser reads metadata only; plaintext values are accepted on create and rotation, encrypted server-side, and never returned afterward.\n\n**Tech Stack:** React, React Router, FastAPI, Supabase Postgres, existing AES-GCM helpers in `services/platform-api/app/infra/crypto.py`, existing auth dependency `require_user_auth`.\n\n## Manifest\n\n### Platform API\n\n| Verb | Path | Action | Status |\n|------|------|--------|--------|\n| GET | `/variables` | List current user variable metadata | **New** |\n| POST | `/variables` | Create variable from plaintext value, return metadata only | **New** |\n| PATCH | `/variables/{id}` | Update metadata and optionally rotate plaintext value | **New** |\n| DELETE | `/variables/{id}` | Delete variable | **New** |"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\user-storage\\2026-03-19-user-storage-quota-design.md",
+      "hits": [
+        "environment",
+        "runtime",
+        "profile"
+      ],
+      "preview": "# User Storage Quota Design\n\n**Date:** 2026-03-19\n\n**Status:** Approved preliminary design\n\n## Goal\n\nGive every newly registered user a default `50 GB` storage entitlement backed by Google Cloud Storage, with FastAPI acting as the storage control plane and Supabase/Postgres storing quota, reservation, and object metadata.\n\n## Scope\n\nThis design covers the backend architecture for:\n\n- provisioning a default quota on signup\n- reserving quota before upload\n- issuing signed GCS upload targets\n- finalizing or cancelling uploads\n- rejecting oversize uploads and over-quota users\n- storing stable object keys and metadata for later retrieval"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\user-storage\\2026-03-21-user-storage-signup-verification-implementation.md",
+      "hits": [
+        "runtime"
+      ],
+      "preview": "# User Storage Signup Verification Implementation Plan\n\n> **For Codex:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.\n\n**Goal:** Build the full signup-verification storage feature: policy-backed default quota for new users, quota-aware uploads and quota display in the authenticated product, and a superuser storage policy plus provisioning monitor so a new signup can be verified end-to-end.\n\n**Architecture:** Keep `services/platform-api` as the runtime storage control plane and extend it with superuser-only storage administration endpoints. Move new-user quota assignment from the hard-coded `50 GB` literal in SQL to `admin_runtime_policy`, preserve the current `Default Project` provisioning flow, migrate browser uploads away from the legacy Supabase `ingest` edge path to `/storage/uploads`, and have storage completion write through to `source_documents` so the current assets/parsing UI continues to function.\n\n**Tech Stack:** Supabase Postgres migrations and RPCs, FastAPI, React + TypeScript, OpenTelemetry, pytest, Vitest.\n\n---\n\n## Manifest\n\n### Platform API\n\n| Verb | Path | Action | Status |\n|------|------|--------|--------|\n| GET | `/storage/quota` | Read the authenticated user's quota summary | Existing - no contract changes |\n| POST | `/storage/uploads` | Reserve upload slot and issue signed upload URL | Existing - add `source_type` and `doc_title`; require precomputed `source_uid` for `storage_kind='source'` |"
+    },
+    {
+      "path": "E:\\writing-system\\docs\\plans\\user-storage\\storage_migration_cleanup_report.md",
+      "hits": [
+        "profile"
+      ],
+      "preview": "# Storage Quota Migration & History Resolution Report\n\nDate: 2026-03-20\n\n## Scope\n- Confirm and repair Supabase migration history integrity for user-storage migrations.\n- Remove legacy duplicate timestamp migration files.\n- Ensure future duplicate-timestamp drift is blocked in CI.\n- Verify route/DB storage contract remains present.\n\n## Changes Applied\n1. **Resolved legacy duplicate migration timestamp pairs**\n   - Deleted: `supabase/migrations/20260314130000_087_upload_support_all_remove_upload_gates.sql`\n   - Merged duplicate logic into: `supabase/migrations/20260317210000_099_default_project_on_signup.sql`\n     - Added `parsing_profiles` owner/RLS migration blocks from the removed sibling.\n   - Deleted: `supabase/migrations/20260317210000_099_parsing_profiles_rls.sql`\n\n2. **Kept canonical storage migrations**\n   - `supabase/migrations/20260319190000_102_user_storage_quota.sql`\n   - `supabase/migrations/20260320100000_storage_history_drift_fixups.sql`"
+    }
+  ],
+  "inspectCandidates": [
+    {
+      "path": "E:/inspect_ai",
+      "exists": false
+    },
+    {
+      "path": "B:/inspect_ai",
+      "exists": false
+    },
+    {
+      "path": "C:/Users/jwchu/source/repos/inspect_ai",
+      "exists": false
+    },
+    {
+      "path": "C:/Users/jwchu/projects/inspect_ai",
+      "exists": false
+    },
+    {
+      "path": "E:/writing-system/inspect_ai",
+      "exists": false
+    }
+  ]
+}

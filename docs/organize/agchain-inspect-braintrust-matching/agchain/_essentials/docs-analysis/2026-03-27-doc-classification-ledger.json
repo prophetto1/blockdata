@@ -1,0 +1,1285 @@
+{
+  "counts": {
+    "fresh_out_of_scope": 46,
+    "fresh_supporting": 25,
+    "fresh_core": 22,
+    "stale_superseded": 19
+  },
+  "ledger": [
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\atomic.md",
+      "rel": "docs\\benchmarks\\atomic.md",
+      "heading": "",
+      "mtime": "2026-02-11T02:29:59.141Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\index.md",
+      "rel": "docs\\benchmarks\\index.md",
+      "heading": "Active benchmarks",
+      "mtime": "2026-02-11T02:46:00.894Z",
+      "terms": [
+        "runtime"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\l7.md",
+      "rel": "docs\\benchmarks\\l7.md",
+      "heading": "",
+      "mtime": "2026-02-11T02:30:00.256Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\data-model\\data-sources.md",
+      "rel": "docs\\benchmarks\\legal-10\\data-model\\data-sources.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:26.792Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\data-model\\duckdb-schema.md",
+      "rel": "docs\\benchmarks\\legal-10\\data-model\\duckdb-schema.md",
+      "heading": "Scale",
+      "mtime": "2026-02-11T08:16:49.461Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\data-model\\index.md",
+      "rel": "docs\\benchmarks\\legal-10\\data-model\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T04:19:09.284Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\evaluation-steps.md",
+      "rel": "docs\\benchmarks\\legal-10\\evaluation-steps.md",
+      "heading": "What runs today (3-step MVP)",
+      "mtime": "2026-02-11T08:13:24.212Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\index.md",
+      "rel": "docs\\benchmarks\\legal-10\\index.md",
+      "heading": "What ships today (3-step MVP)",
+      "mtime": "2026-02-11T08:12:06.490Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\packages.md",
+      "rel": "docs\\benchmarks\\legal-10\\packages.md",
+      "heading": "Evaluation Unit (EU)",
+      "mtime": "2026-02-11T02:30:52.364Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\scoring.md",
+      "rel": "docs\\benchmarks\\legal-10\\scoring.md",
+      "heading": "d1 — Deterministic scoring",
+      "mtime": "2026-02-11T02:30:44.779Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\quantization.md",
+      "rel": "docs\\benchmarks\\quantization.md",
+      "heading": "",
+      "mtime": "2026-02-11T02:30:01.695Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\index.mdx",
+      "rel": "docs\\index.mdx",
+      "heading": "Platform",
+      "mtime": "2026-02-11T03:35:05.008Z",
+      "terms": [
+        "runtime"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\builders\\benchmark-builder.md",
+      "rel": "docs\\pipeline\\builders\\benchmark-builder.md",
+      "heading": "Outputs",
+      "mtime": "2026-02-11T02:32:12.189Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\builders\\eu-builder.md",
+      "rel": "docs\\pipeline\\builders\\eu-builder.md",
+      "heading": "Outputs",
+      "mtime": "2026-02-11T02:32:06.894Z",
+      "terms": [
+        "runtime"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\builders\\index.md",
+      "rel": "docs\\pipeline\\builders\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:02.106Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\builders\\rp-builder.md",
+      "rel": "docs\\pipeline\\builders\\rp-builder.md",
+      "heading": "Outputs",
+      "mtime": "2026-02-11T02:32:02.214Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\index.md",
+      "rel": "docs\\pipeline\\index.md",
+      "heading": "Build stages",
+      "mtime": "2026-02-11T04:19:03.771Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\release-integrity\\index.md",
+      "rel": "docs\\pipeline\\release-integrity\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T08:16:49.462Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\audit-repro\\audit.md",
+      "rel": "docs\\platform\\audit-repro\\audit.md",
+      "heading": "Audit log",
+      "mtime": "2026-02-11T03:33:26.791Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\audit-repro\\index.md",
+      "rel": "docs\\platform\\audit-repro\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:02.101Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\index.md",
+      "rel": "docs\\platform\\index.md",
+      "heading": "Core platform concerns",
+      "mtime": "2026-02-11T02:45:58.966Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\isolation-security\\index.md",
+      "rel": "docs\\platform\\isolation-security\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:02.097Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\isolation-security\\staging-isolation.md",
+      "rel": "docs\\platform\\isolation-security\\staging-isolation.md",
+      "heading": "Staging protocol",
+      "mtime": "2026-02-11T03:33:26.785Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\runtime\\index.md",
+      "rel": "docs\\platform\\runtime\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:02.096Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\runtime\\runner-engine.md",
+      "rel": "docs\\platform\\runtime\\runner-engine.md",
+      "heading": "Execution contract",
+      "mtime": "2026-02-11T02:29:12.667Z",
+      "terms": [
+        "model",
+        "provider"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\state-messages\\index.md",
+      "rel": "docs\\platform\\state-messages\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:02.099Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\state-messages\\message-assembly.md",
+      "rel": "docs\\platform\\state-messages\\message-assembly.md",
+      "heading": "Fenced window protocol",
+      "mtime": "2026-02-11T03:33:26.789Z",
+      "terms": [
+        "environment"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\state-messages\\state-management.md",
+      "rel": "docs\\platform\\state-messages\\state-management.md",
+      "heading": "Candidate state",
+      "mtime": "2026-02-11T03:33:26.787Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\project\\frontend\\index.md",
+      "rel": "docs\\project\\frontend\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:26.795Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\project\\index.md",
+      "rel": "docs\\project\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:02.110Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "canonical docs-site synthesis of current platform / benchmark / pipeline state",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\project\\infrastructure\\index.md",
+      "rel": "docs\\project\\infrastructure\\index.md",
+      "heading": "",
+      "mtime": "2026-02-11T03:33:26.795Z",
+      "terms": [
+        "environment"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current docs-site content, but not material to environment/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\project\\roadmap\\index.md",
+      "rel": "docs\\project\\roadmap\\index.md",
+      "heading": "Current focus: Legal-10 3-Step MVP",
+      "mtime": "2026-02-11T03:33:26.798Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "top-level authority hierarchy for current corpus",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_INDEX.md",
+      "rel": "_INDEX.md",
+      "heading": "Legal-10 Documentation Index",
+      "mtime": "2026-02-09T10:08:43.298Z",
+      "terms": [
+        "runtime",
+        "requirement"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "explicit _stale folder",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_stale\\langfuse-integration.md",
+      "rel": "_stale\\langfuse-integration.md",
+      "heading": "Langfuse Integration Final Checklist",
+      "mtime": "2026-01-26T01:02:56.403Z",
+      "terms": [
+        "environment",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "summary/index material, not source-of-truth",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_summaries\\10-step-chain.md",
+      "rel": "_summaries\\10-step-chain.md",
+      "heading": "10-step-chain",
+      "mtime": "2026-03-27T06:21:01.651Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model",
+        "provider"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "summary/index material, not source-of-truth",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_summaries\\ongoing-work.md",
+      "rel": "_summaries\\ongoing-work.md",
+      "heading": "-ongoing-work",
+      "mtime": "2026-03-27T04:26:39.638Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "summary/index material, not source-of-truth",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_summaries\\prompts.md",
+      "rel": "_summaries\\prompts.md",
+      "heading": "-prompts",
+      "mtime": "2026-03-27T04:28:39.356Z",
+      "terms": [
+        "runtime",
+        "requirement"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "summary/index material, not source-of-truth",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_summaries\\specifications.md",
+      "rel": "_summaries\\specifications.md",
+      "heading": "specifications",
+      "mtime": "2026-03-27T04:35:53.877Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "active work log, not normative spec",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\-ongoing-work\\0112_citation-depth-labeling-spec.md",
+      "rel": "-ongoing-work\\0112_citation-depth-labeling-spec.md",
+      "heading": "Citation Depth Labeling Specification",
+      "mtime": "2026-01-12T15:36:43.715Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "active work log, not normative spec",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\-ongoing-work\\0123_fake_cases_collision_fix.md",
+      "rel": "-ongoing-work\\0123_fake_cases_collision_fix.md",
+      "heading": "Fake Cases Collision Fix",
+      "mtime": "2026-01-23T11:07:12.176Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "active work log, not normative spec",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\-ongoing-work\\ongoing-work-changelog.md",
+      "rel": "-ongoing-work\\ongoing-work-changelog.md",
+      "heading": "Changelog",
+      "mtime": "2026-01-31T12:23:56.614Z",
+      "terms": [
+        "requirement"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "prompt note, not governing runtime spec",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\-prompts\\documented-specification.md",
+      "rel": "-prompts\\documented-specification.md",
+      "heading": "",
+      "mtime": "2026-02-09T09:54:06.797Z",
+      "terms": [
+        "requirement"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\10-step-chain\\_INDEX.md",
+      "rel": "10-step-chain\\_INDEX.md",
+      "heading": "10-Step Chain — Future Full Evaluation",
+      "mtime": "2026-02-09T10:08:23.236Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\10-step-chain\\benchmark-package-structures-v4.md",
+      "rel": "10-step-chain\\benchmark-package-structures-v4.md",
+      "heading": "Benchmark and Evaluation Unit Packaging Structures v4",
+      "mtime": "2026-01-27T17:44:54.471Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model",
+        "provider"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\10-step-chain\\chain-overview-v1.1.md",
+      "rel": "10-step-chain\\chain-overview-v1.1.md",
+      "heading": "Legal-10 Overview",
+      "mtime": "2026-01-26T03:55:35.923Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "build pipeline reading order",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\_INDEX.md",
+      "rel": "build-pipeline\\_INDEX.md",
+      "heading": "Build Pipeline — RP, EU, and Benchmark Builders",
+      "mtime": "2026-02-09T10:08:01.029Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "current build-time pipeline / security / dataset requirements",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\data-pipeline-reference.md",
+      "rel": "build-pipeline\\data-pipeline-reference.md",
+      "heading": "Legal-10 Build Pipeline Documentation",
+      "mtime": "2026-01-27T17:56:32.715Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "data-quality note, not runtime requirement source",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\datasets-implications.md",
+      "rel": "build-pipeline\\datasets-implications.md",
+      "heading": "Legal-10 Dataset AS-IS Assessment",
+      "mtime": "2026-01-27T17:57:00.099Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "current build-time pipeline / security / dataset requirements",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\eu-builder-notes.md",
+      "rel": "build-pipeline\\eu-builder-notes.md",
+      "heading": "EU Builder refactor notes (3-STEP-RUN → reusable for AG10)",
+      "mtime": "2026-01-23T23:20:10.188Z",
+      "terms": [
+        "runtime"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "current build-time pipeline / security / dataset requirements",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\eu-builder-reference.py.md",
+      "rel": "build-pipeline\\eu-builder-reference.py.md",
+      "heading": "!/usr/bin/env python3",
+      "mtime": "2026-01-24T19:16:19.772Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "current build-time pipeline / security / dataset requirements",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\rp-builder-reference.py.md",
+      "rel": "build-pipeline\\rp-builder-reference.py.md",
+      "heading": "#!/usr/bin/env python3",
+      "mtime": "2026-01-26T00:28:56.323Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "current build-time pipeline / security / dataset requirements",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\sc-dataset-db-schema.md",
+      "rel": "build-pipeline\\sc-dataset-db-schema.md",
+      "heading": "Legal-10 DuckDB Database Schema Documentation",
+      "mtime": "2026-01-26T01:20:34.351Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "current build-time pipeline / security / dataset requirements",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\sealed-evaluation-units-security.md",
+      "rel": "build-pipeline\\sealed-evaluation-units-security.md",
+      "heading": "# tamper-detection to benchmark bundle format without changing the benchmark execution semantics.",
+      "mtime": "2026-01-25T19:00:48.517Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "canonical FDQ scope and MVP mapping",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\_INDEX.md",
+      "rel": "fdq\\_INDEX.md",
+      "heading": "FDQ — Formal Delivery Query Specifications",
+      "mtime": "2026-02-09T10:07:36.054Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\00-TEMPLATE-v2.md",
+      "rel": "fdq\\00-TEMPLATE-v2.md",
+      "heading": "FDQ: {QUESTION_ID} — {Short Descriptive Title}",
+      "mtime": "2026-01-27T19:13:36.950Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "canonical shipped MVP step specs",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\01-ka-sc.md",
+      "rel": "fdq\\01-ka-sc.md",
+      "heading": "FDQ: KA-SC — Known Authority (SCOTUS)",
+      "mtime": "2026-01-23T11:29:13.952Z",
+      "terms": [
+        "requirement"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\02-c-nonexist-groundtruth-precheck.md",
+      "rel": "fdq\\02-c-nonexist-groundtruth-precheck.md",
+      "heading": "C-NONEXIST1 Ground Truth — Deterministic Extraction + Precheck",
+      "mtime": "2026-01-27T19:50:51.486Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\02-c-nonexist.md",
+      "rel": "fdq\\02-c-nonexist.md",
+      "heading": "FDQ: C-NONEXIST1 — Fake Citation Holding Probe",
+      "mtime": "2026-01-27T19:02:13.082Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\03-canary.md",
+      "rel": "fdq\\03-canary.md",
+      "heading": "FDQ: CANARY — PASSING Citation Info Discipline",
+      "mtime": "2026-01-27T17:19:45.612Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\04-fact-extract-new.md",
+      "rel": "fdq\\04-fact-extract-new.md",
+      "heading": "FDQ: FACT-EXTRACT — SCDB Code Interpretation",
+      "mtime": "2026-01-27T17:48:58.205Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\04-fact-extract.md",
+      "rel": "fdq\\04-fact-extract.md",
+      "heading": "FDQ: FACT-EXTRACT — Fact Extraction from SCDB",
+      "mtime": "2026-01-23T12:24:57.280Z",
+      "terms": [
+        "requirement"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\05-distinguish-new.md",
+      "rel": "fdq\\05-distinguish-new.md",
+      "heading": "FDQ: DISTINGUISH — Citation Treatment Recognition",
+      "mtime": "2026-01-27T18:08:44.448Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\05-distinguish.md",
+      "rel": "fdq\\05-distinguish.md",
+      "heading": "FDQ: DISTINGUISH — Treatment Recognition",
+      "mtime": "2026-01-23T12:25:04.257Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\06-validate-auth.md",
+      "rel": "fdq\\06-validate-auth.md",
+      "heading": "FDQ: VALIDATE-AUTH — Cross-Reference Consistency",
+      "mtime": "2026-01-27T17:16:58.472Z",
+      "terms": [
+        "requirement"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\07-unknown-auth.md",
+      "rel": "fdq\\07-unknown-auth.md",
+      "heading": "FDQ: UNKNOWN-AUTH — Reverse Citation Lookup",
+      "mtime": "2026-01-23T12:25:09.268Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\08-transitive-new.md",
+      "rel": "fdq\\08-transitive-new.md",
+      "heading": "FDQ: TRANSITIVE — Triangle Citation Prediction",
+      "mtime": "2026-01-27T18:17:56.820Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "canonical FDQ content, but not part of shipped MVP runtime requirement surface",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\08-transitive.md",
+      "rel": "fdq\\08-transitive.md",
+      "heading": "FDQ: TRANSITIVE — Triangle Citation Prediction",
+      "mtime": "2026-01-23T12:25:56.070Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "canonical shipped MVP step specs",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\09-irac-without-rp.md",
+      "rel": "fdq\\09-irac-without-rp.md",
+      "heading": "FDQ: d9 — IRAC without Research Pack",
+      "mtime": "2026-01-26T11:12:51.289Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "canonical shipped MVP step specs",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\10-irac-with-rp.md",
+      "rel": "fdq\\10-irac-with-rp.md",
+      "heading": "FDQ: j10 — IRAC with Research Pack",
+      "mtime": "2026-01-26T11:12:59.083Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "canonical post-chain scoring/integrity",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\post\\citation_integrity.py.md",
+      "rel": "fdq\\post\\citation_integrity.py.md",
+      "heading": "# Canonical comparison key: strip punctuation, collapse whitespace, lowercase.",
+      "mtime": "2026-01-24T11:51:03.077Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "canonical post-chain scoring/integrity",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\post\\irac-pair-scoring.md",
+      "rel": "fdq\\post\\irac-pair-scoring.md",
+      "heading": "IRAC Pair Scoring Guide (General: Step N + Step N+1)",
+      "mtime": "2026-01-24T21:02:26.585Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "fdq index marks as superseded by post/irac-pair-scoring.md",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\post\\judge-evaluation-both-iracs.md",
+      "rel": "fdq\\post\\judge-evaluation-both-iracs.md",
+      "heading": "",
+      "mtime": "2026-01-24T20:28:23.281Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "mvp authority map",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\_INDEX.md",
+      "rel": "mvp\\_INDEX.md",
+      "heading": "MVP — 3-Step Run Specifications",
+      "mtime": "2026-02-09T10:08:15.779Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current MVP support doc, not primary environment/runtime source",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\3-step-run-benchmark-structure.md",
+      "rel": "mvp\\3-step-run-benchmark-structure.md",
+      "heading": "Developer Prompt: Legal-10 3-STEP-RUN (HAL-compatible vertical slice)",
+      "mtime": "2026-02-03T09:53:59.981Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model",
+        "sandbox"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "current supporting benchmark spec but explicitly not yet canonical",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\benchmark-technical-specification-v1.1.md",
+      "rel": "mvp\\benchmark-technical-specification-v1.1.md",
+      "heading": "Legal-10 Benchmark — Product & Technical Specification (v1.0)",
+      "mtime": "2026-01-26T06:09:57.857Z",
+      "terms": [
+        "environment",
+        "runtime",
+        "requirement",
+        "model",
+        "provider",
+        "inspect ai"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current MVP support doc, not primary environment/runtime source",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\build-mvp-task.md",
+      "rel": "mvp\\build-mvp-task.md",
+      "heading": "",
+      "mtime": "2026-01-31T04:27:33.882Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current MVP support doc, not primary environment/runtime source",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\d1-known-authority-scorer.py.md",
+      "rel": "mvp\\d1-known-authority-scorer.py.md",
+      "heading": "# Allow both flat and nested ground-truth shapes.",
+      "mtime": "2026-01-17T09:10:15.766Z",
+      "terms": []
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "mvp index says these are 3-step extracts/subsets of canonical fdq docs",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\fdq-01-ka-sc.md",
+      "rel": "mvp\\fdq-01-ka-sc.md",
+      "heading": "FDQ: KA-SC — Known Authority (SCOTUS)",
+      "mtime": "2026-01-23T11:29:13.952Z",
+      "terms": [
+        "requirement"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "mvp index says these are 3-step extracts/subsets of canonical fdq docs",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\fdq-02-irac-without-rp.md",
+      "rel": "mvp\\fdq-02-irac-without-rp.md",
+      "heading": "FDQ: d2 — IRAC Synthesis (Closed-Book)",
+      "mtime": "2026-01-29T13:10:55.049Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "mvp index says these are 3-step extracts/subsets of canonical fdq docs",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\fdq-03-irac-with-rp.md",
+      "rel": "mvp\\fdq-03-irac-with-rp.md",
+      "heading": "FDQ: j3 — IRAC Synthesis (Open-Book)",
+      "mtime": "2026-01-26T11:21:38.067Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "highest authority for bundle layout schemas and sealing",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\M1-buildtime-packaging-sealing-dev-brief.md",
+      "rel": "mvp\\M1-buildtime-packaging-sealing-dev-brief.md",
+      "heading": "Milestone 1: Build-time packaging + sealing (Legal-10 3-step MVP)",
+      "mtime": "2026-01-24T21:53:57.452Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current MVP support doc, not primary environment/runtime source",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\post-citation-integrity.py.md",
+      "rel": "mvp\\post-citation-integrity.py.md",
+      "heading": "# Canonical comparison key: strip punctuation, collapse whitespace, lowercase.",
+      "mtime": "2026-01-24T11:51:03.077Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "concrete runtime outputs and build/runtime split",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\run-outputs.md",
+      "rel": "mvp\\run-outputs.md",
+      "heading": "3-STEP-RUN outputs (what exists, where, and when)",
+      "mtime": "2026-01-16T07:33:35.207Z",
+      "terms": [
+        "runtime",
+        "model",
+        "provider"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "runtime reading order and precedence",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\_INDEX.md",
+      "rel": "platform\\_INDEX.md",
+      "heading": "Platform — Runtime Engine & Runner Specifications",
+      "mtime": "2026-02-09T10:07:49.329Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model",
+        "provider",
+        "inspect ai"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "authoritative runtime semantics / state / inspect_ai integration / message protocol",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\inter-step-requirements.md",
+      "rel": "platform\\inter-step-requirements.md",
+      "heading": "AGChain Inter-Step Functionality Requirements",
+      "mtime": "2026-01-25T10:33:00.320Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model",
+        "provider"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "authoritative runtime semantics / state / inspect_ai integration / message protocol",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\pdrunner-inspect-ai.md",
+      "rel": "platform\\pdrunner-inspect-ai.md",
+      "heading": "AGChain PDRunner Specification (Inspect-AI Integration)",
+      "mtime": "2026-01-27T16:36:14.287Z",
+      "terms": [
+        "environment",
+        "runtime",
+        "requirement",
+        "model",
+        "sandbox",
+        "provider",
+        "inspect_ai"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "authoritative runtime semantics / state / inspect_ai integration / message protocol",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\prompt-messages.md",
+      "rel": "platform\\prompt-messages.md",
+      "heading": "",
+      "mtime": "2026-01-27T18:15:20.509Z",
+      "terms": [
+        "requirement"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "current prompt template source for runtime assembly",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\prompts-v1.0.md",
+      "rel": "platform\\prompts-v1.0.md",
+      "heading": "Prompts v1.0 - Prompt as State Protocol",
+      "mtime": "2026-01-31T10:47:12.474Z",
+      "terms": [
+        "environment",
+        "requirement",
+        "model",
+        "sandbox",
+        "inspect_ai",
+        "inspect ai"
+      ]
+    },
+    {
+      "classification": "fresh_core",
+      "reason": "authoritative runtime semantics / state / inspect_ai integration / message protocol",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\statefulness-context-persistence.md",
+      "rel": "platform\\statefulness-context-persistence.md",
+      "heading": "Context Persistence Requirement",
+      "mtime": "2026-01-27T17:47:09.007Z",
+      "terms": [
+        "environment",
+        "requirement",
+        "model",
+        "provider"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\[blockers] [legal-10] [mvp] end-to-end blockers.md",
+      "rel": "secondary-reference\\[blockers] [legal-10] [mvp] end-to-end blockers.md",
+      "heading": "",
+      "mtime": "2026-02-03T09:54:14.464Z",
+      "terms": [
+        "runtime"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\[C] [legal-10] safety-design-decisions.md",
+      "rel": "secondary-reference\\[C] [legal-10] safety-design-decisions.md",
+      "heading": "Legal-10: Safety-Focused Design Decisions",
+      "mtime": "2026-01-27T17:52:18.984Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\[legal-10] [10-s] [platform] eval-design-features.md",
+      "rel": "secondary-reference\\[legal-10] [10-s] [platform] eval-design-features.md",
+      "heading": "Legal-10: Safety-Focused Design Decisions",
+      "mtime": "2026-01-26T06:02:46.895Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0113_canary.md",
+      "rel": "secondary-reference\\0113_canary.md",
+      "heading": "Canary (Information Discipline Test)",
+      "mtime": "2026-01-23T11:00:14.129Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0113_transitive_authority_v2.md",
+      "rel": "secondary-reference\\0113_transitive_authority_v2.md",
+      "heading": "# Transitive Authority (v2 rewrite)",
+      "mtime": "2026-01-14T06:54:27.020Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0114-data-inventory.md",
+      "rel": "secondary-reference\\0114-data-inventory.md",
+      "heading": "Legal-10 Data Inventory",
+      "mtime": "2026-01-27T17:54:56.469Z",
+      "terms": []
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0116_citation_integrity.md",
+      "rel": "secondary-reference\\0116_citation_integrity.md",
+      "heading": "Citation Integrity",
+      "mtime": "2026-01-16T08:26:50.312Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0116_irac_with_rp.md",
+      "rel": "secondary-reference\\0116_irac_with_rp.md",
+      "heading": "Irac with RP",
+      "mtime": "2026-01-16T08:19:49.372Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0116_irac_without_rp.md",
+      "rel": "secondary-reference\\0116_irac_without_rp.md",
+      "heading": "IRAC Without RP",
+      "mtime": "2026-01-16T08:15:58.227Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0116_known_authority-SC.md",
+      "rel": "secondary-reference\\0116_known_authority-SC.md",
+      "heading": "Known Authority",
+      "mtime": "2026-01-16T08:21:16.735Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0121_IRAC_Scoring_Spec_v2.0.md",
+      "rel": "secondary-reference\\0121_IRAC_Scoring_Spec_v2.0.md",
+      "heading": "IRAC Scoring Specification v2.0",
+      "mtime": "2026-01-22T04:40:10.324Z",
+      "terms": [
+        "runtime",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0122_canary v c-nonexist1.md",
+      "rel": "secondary-reference\\0122_canary v c-nonexist1.md",
+      "heading": "Canary vs C-NONEXIST1: Relationship Analysis",
+      "mtime": "2026-01-23T11:14:14.873Z",
+      "terms": [
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0122_fdq-top-3.md",
+      "rel": "secondary-reference\\0122_fdq-top-3.md",
+      "heading": "Fully Developed Question Specifications — Top 3",
+      "mtime": "2026-01-23T11:11:55.009Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "stale_superseded",
+      "reason": "top-level index marks secondary-reference as historical / superseded / early drafts",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\1_0117_01QB_ALL_v1.3.md",
+      "rel": "secondary-reference\\1_0117_01QB_ALL_v1.3.md",
+      "heading": "Purpose",
+      "mtime": "2026-01-24T04:54:41.708Z",
+      "terms": [
+        "requirement",
+        "model"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\specifications\\02092026.md",
+      "rel": "specifications\\02092026.md",
+      "heading": "Legal-10 3-Step MVP (“3-STEP-RUN”) — Updated Specification (Runspec + MVP)",
+      "mtime": "2026-02-09T10:36:07.283Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model",
+        "provider"
+      ]
+    },
+    {
+      "classification": "fresh_supporting",
+      "reason": "consolidated but supplementary spec",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\specifications\\3-step-mvp-consolidated-spec.md",
+      "rel": "specifications\\3-step-mvp-consolidated-spec.md",
+      "heading": "Legal-10 3-Step MVP: Consolidated Specification and Assessment",
+      "mtime": "2026-02-09T12:30:30.328Z",
+      "terms": [
+        "runtime",
+        "requirement",
+        "model",
+        "provider"
+      ]
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\[legal-10] [fdq] [new] implementation-guide-citation-polarity.md",
+      "rel": "steps-reference\\[legal-10] [fdq] [new] implementation-guide-citation-polarity.md",
+      "heading": "Citation Polarity Methods: Implementation Guide",
+      "mtime": "2026-01-25T05:32:46.676Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_distinguish.md",
+      "rel": "steps-reference\\0113_distinguish.md",
+      "heading": "Distinguish",
+      "mtime": "2026-01-23T10:20:57.963Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_fact_extraction.md",
+      "rel": "steps-reference\\0113_fact_extraction.md",
+      "heading": "Fact Extraction",
+      "mtime": "2026-01-23T10:21:28.426Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_oyez_oral_argument.md",
+      "rel": "steps-reference\\0113_oyez_oral_argument.md",
+      "heading": "OYEZ Oral Argument",
+      "mtime": "2026-01-23T10:23:16.576Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_unknown_authority.md",
+      "rel": "steps-reference\\0113_unknown_authority.md",
+      "heading": "Unknown Authority",
+      "mtime": "2026-01-23T10:21:52.915Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_validate_authority.md",
+      "rel": "steps-reference\\0113_validate_authority.md",
+      "heading": "Validate Authority",
+      "mtime": "2026-01-23T10:21:15.155Z",
+      "terms": []
+    },
+    {
+      "classification": "fresh_out_of_scope",
+      "reason": "current or forward-looking, but not governing current env/runtime extraction",
+      "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\1_0116_new-question-mapping.md",
+      "rel": "steps-reference\\1_0116_new-question-mapping.md",
+      "heading": "Capability Spectra Across the 9-Family Structure",
+      "mtime": "2026-01-17T04:20:17.153Z",
+      "terms": [
+        "model"
+      ]
+    }
+  ]
+}

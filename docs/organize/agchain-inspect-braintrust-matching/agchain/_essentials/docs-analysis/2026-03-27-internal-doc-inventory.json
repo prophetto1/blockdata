@@ -1,0 +1,1503 @@
+[
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\-ongoing-work\\0112_citation-depth-labeling-spec.md",
+    "rel": "-ongoing-work\\0112_citation-depth-labeling-spec.md",
+    "mtime": "2026-01-12T15:36:43.715Z",
+    "size": 21371,
+    "heading": "Citation Depth Labeling Specification",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "# Citation Depth Labeling Specification\n\n<!-- TODO223: Minor terminology updates needed for benchmark-structure-v2.md -->\n<!-- TODO223: Changes required:\n     1. Replace \"Harness\" with \"Runner\" terminology\n     2. Reference ground truth storage location: private/ground_truth.json\n     3. Algorithm itself is still valid - no changes to labeling logic\n-->\n\n**Status:** NEEDS UPDATE (minor terminology - see benchmark-structure-v2.md)\n**Created:** 2026-01-08\n**Purpose:** Define the build-time algorithm for labeling citations as DETAILED vs PASSING for Canary evaluation\n\n---\n\n## Executive Summary\n\nThis spec defines how to label each citation in an anchor opinion as either:\n\n- **DETAILED** - Anchor substantively discusses this citation (model CAN provide details)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\-ongoing-work\\0123_fake_cases_collision_fix.md",
+    "rel": "-ongoing-work\\0123_fake_cases_collision_fix.md",
+    "mtime": "2026-01-23T11:07:12.176Z",
+    "size": 1390,
+    "heading": "Fake Cases Collision Fix",
+    "meta": {},
+    "terms": [],
+    "preview": "# Fake Cases Collision Fix\n\n**Priority:** Low\n**Effort:** 5 min\n**Affects:** C-NONEXIST1 (3.4) hallucination probe\n\n---\n\n## Issue\n\n`datasets/fake_cases.csv` has 2 citations that collide with real SCDB cases:\n\n| Fake Citation | Collides With |\n|---------------|---------------|\n| 340 U.S. 857 | GARA v. UNITED STATES |\n| 484 U.S. 3 | COMMISSIONER v. MCCOY |\n\n---\n\n## Current State"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\-ongoing-work\\ongoing-work-changelog.md",
+    "rel": "-ongoing-work\\ongoing-work-changelog.md",
+    "mtime": "2026-01-31T12:23:56.614Z",
+    "size": 706,
+    "heading": "Changelog",
+    "meta": {},
+    "terms": [
+      "requirement"
+    ],
+    "preview": "# Changelog\n\n---\n\n## 2026-01-31\n\n### Changed\n- **Repo restructure**: legal-10 absorbed into agchain as component (no longer standalone repo)\n- Moved `.gitignore`, `.gitattributes`, `.editorconfig`, `.vscode/` to agchain root\n- Removed `legal-10/.git/` — agchain is now the git repo\n- Component files stay in legal-10/: `package.json`, `pyproject.toml`, `README.md`, `requirements.txt`\n\n---\n\n## 2026-01-30\n\n### Added\n- `docs/-ongoing-work/docx-2stage-enrichment-pipeline.md` — Operational runbook for Stage 1 deterministic extraction + Stage 2 LLM enrichment.\n- `.codex/proposal/Build Specification - DOCX 2-Stage Enrichment Pipeline.md` — Build spec with schema, invariants, and acceptance criteria.\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\-prompts\\documented-specification.md",
+    "rel": "-prompts\\documented-specification.md",
+    "mtime": "2026-02-09T09:54:06.797Z",
+    "size": 3565,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "requirement"
+    ],
+    "preview": "We have been working on the 3-run mvp and I need an objective assessment by a 3rd party who will willing to do a full sweep of all of the documents listed below, create an updated specification document that describes anything and everything necessary to develop the 3-run mvp, and by extension, the legal-10 runspec. \n\nThe updated specification document should be written to show what the desired output or end-result product would look like, what its functionalities/features are, and what each of the rp, eu, and benchmark packages include- how they are assessebled - \n\nE:\\agchain\\legal-10\\docs\\[C] [datasets] sc-dataset_db-schema.md\nE:\\agchain\\legal-10\\docs\\[C] [legal-10] [fdq] [10-s] legal10-steps-chain-overview-v1.1.md\nE:\\agchain\\legal-10\\docs\\[C] [legal-10] benchmark technical specification v1.1.md\nE:\\agchain\\legal-10\\docs\\[C] [platform] [integration] langfuse fork and integration.md\nE:\\agchain\\legal-10\\docs\\[C] [platform] [integration] pdrunner based on inspect-ai.md\nE:\\agchain\\legal-10\\docs\\[C] [platform] [legal-10] [10-s] benchmark package structures-bench-eu-rp.v4.md\nE:\\agchain\\legal-10\\docs\\[C] [platform] [legal-10] inter-step requirements.md\nE:\\agchain\\legal-10\\docs\\[C] [platform] [prompts] prompt-messages.md\nE:\\agchain\\legal-10\\docs\\[C] [platform] statefulness-context-persistence.md\nE:\\agchain\\legal-10\\docs\\[C] data-pipeline-reference.md\nE:\\agchain\\legal-10\\docs\\[C] datasets-implications.md\nE:\\agchain\\legal-10\\docs\\[legal-10] [fdq] [post] [solver] judge-evaluation-both-iracs.md\nE:\\agchain\\legal-10\\docs\\[legal-10] [fdq] [post] citation_integrity.py.md\nE:\\agchain\\legal-10\\docs\\[legal-10] [fdq] [post] irac pair scoring.md\nE:\\agchain\\legal-10\\docs\\[legal-10] [fdq] 00-TEMPLATE-v2.md\nE:\\agchain\\legal-10\\docs\\[legal-10] [fdq] 01-ka-sc.md"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\10-step-chain\\_INDEX.md",
+    "rel": "10-step-chain\\_INDEX.md",
+    "mtime": "2026-02-09T10:08:23.236Z",
+    "size": 753,
+    "heading": "10-Step Chain — Future Full Evaluation",
+    "meta": {},
+    "terms": [],
+    "preview": "# 10-Step Chain — Future Full Evaluation\n\nSpecifications for the complete 10-step Legal-10 evaluation chain. **Not needed for 3-step MVP.**\n\n## Files\n\n1. `chain-overview-v1.1.md` — Full 10-step chain overview: step ordering, dependencies, scoring modes\n2. `benchmark-package-structures-v4.md` — EU/RP/Benchmark package structures for the full chain (v4, more complex than MVP)\n\n## Relationship to MVP\n\nThe 3-step MVP (d1 → d2 → j3) is a subset of the 10-step chain. Steps 02-08 are defined in `../fdq/` but not exercised in the MVP. The 10-step chain adds:\n- Steps d2-d8 (non-IRAC evaluation questions)\n- j10 (open-book IRAC, extends j3 with more carry-forward state)\n- More complex scoring aggregation\n- Extended benchmark package structures\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\10-step-chain\\benchmark-package-structures-v4.md",
+    "rel": "10-step-chain\\benchmark-package-structures-v4.md",
+    "mtime": "2026-01-27T17:44:54.471Z",
+    "size": 32406,
+    "heading": "Benchmark and Evaluation Unit Packaging Structures v4",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model",
+      "provider"
+    ],
+    "preview": "# Benchmark and Evaluation Unit Packaging Structures v4\n\n**IMPORTANT** This document is meant to develop into the canonical home describing everything pertaining to benchmark builder and EU builder components, every\n\n** IF THE ANCHOR TEXT P1 PAYLOAD IS INCLUDED IN THE EU - THEN how is the step related information only shown in the benchmark packet and not in the EU? **\n\nstep information has ground truth that is dependent on the anchor text - shouldn't this be in the EU as step information?\n\nstep information includes prompts that might be the same across all unique EUs, also the exact traceable actions executed by the runner is the same across al EUs of a benchmark - these might be shown in the benchmark packet because it is one specification used globally across all benchmark EUs. \n\nBut citations extracted are different - where are those shown? ground truths will be different - where are those shown? the p2 research packs are anchor text dependent and those are going into the EU - \n\n\nIn other words, if anchor-dependent data of each question step is inserted into the benchmark packet in the below structures - then they were obviously incorrect for not considering anchor-dependent data.\n\nAll benchmark-level spec, global unchanging spec/data goes into benchmark packet.\n\nAll anchor-dependent data goes into the individual EUs. \n\n---"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\10-step-chain\\chain-overview-v1.1.md",
+    "rel": "10-step-chain\\chain-overview-v1.1.md",
+    "mtime": "2026-01-26T03:55:35.923Z",
+    "size": 5742,
+    "heading": "Legal-10 Overview",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# Legal-10 Overview \n\n**Version:** 1.1  \n**Date:** 2026-01-25  \n**Status:** All FDQs Implementation-Ready\n\n---\n\n## Chain Overview\n\n```\n[p1 injection]\n     ↓\n(1) KA-SC          — \"What's in this opinion?\"\n     ↓\n(2) C-NONEXIST1    — \"Will you lie about fake cases?\"\n(3) CANARY         — \"Will you use pretraining on real cases we didn't give you?\"\n     ↓\n(4) FACT-EXTRACT   — Simple reading (closed enums)\n(5) DISTINGUISH    — Single-edge treatment"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_INDEX.md",
+    "rel": "_INDEX.md",
+    "mtime": "2026-02-09T10:08:43.298Z",
+    "size": 2289,
+    "heading": "Legal-10 Documentation Index",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement"
+    ],
+    "preview": "# Legal-10 Documentation Index\n\n## Concern-Based Folders\n\nEach folder contains a `_INDEX.md` with reading order, source code mapping, and cross-references.\n\n| Folder | Concern | Key Question It Answers |\n|--------|---------|------------------------|\n| [fdq/](fdq/_INDEX.md) | Formal Delivery Queries | What does each evaluation step ask, expect, and score? |\n| [platform/](platform/_INDEX.md) | Runtime Engine | How does the runner execute chains (staging, state, messages, audit)? |\n| [build-pipeline/](build-pipeline/_INDEX.md) | Build-Time Pipeline | How are RPs, EUs, and benchmarks constructed from raw data? |\n| [mvp/](mvp/_INDEX.md) | 3-Step MVP | What are the M1 deliverables and the 3-step-specific specs? |\n| [10-step-chain/](10-step-chain/_INDEX.md) | Full 10-Step Chain | How does the complete evaluation chain extend the MVP? |\n\n## Working Context Scoping\n\nTo work on a specific concern, an AI agent only needs:\n\n- **\"Fix d1 scoring\"** → read `fdq/01-ka-sc.md` + `mvp/d1-known-authority-scorer.py.md`\n- **\"Fix state sanitization\"** → read `platform/inter-step-requirements.md` (IS-1.x) + `platform/statefulness-context-persistence.md`"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_stale\\langfuse-integration.md",
+    "rel": "_stale\\langfuse-integration.md",
+    "mtime": "2026-01-26T01:02:56.403Z",
+    "size": 4663,
+    "heading": "Langfuse Integration Final Checklist",
+    "meta": {},
+    "terms": [
+      "environment",
+      "requirement",
+      "model"
+    ],
+    "preview": "# Langfuse Integration Final Checklist\n**Date:** 2025-01-25\n**Status:** DECIDED\n\n---\n\n## Problems\n\n**P1: No UI from eval frameworks**\n- Eval frameworks (METR, HELM) have no UI/platform\n- Impact: Must build dashboard, auth, tracing from scratch\n\n**P2: Runner coupling**\n- Runner platforms (Agenta, Latitude) have tightly coupled runners\n- Impact: Must rip out and replace their runner = invasive surgery\n\n**P3: Inter-step orchestration**\n- AGChain plans to first build with inter-step orchestration to create a chained/stateful eval environment. \n- This is the ground-level structure from which we will first complete, and add RAG, retrieval, tool, on top of this base. \n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_summaries\\10-step-chain.md",
+    "rel": "_summaries\\10-step-chain.md",
+    "mtime": "2026-03-27T06:21:01.651Z",
+    "size": 11675,
+    "heading": "10-step-chain",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model",
+      "provider"
+    ],
+    "preview": "# 10-step-chain\n\nThis document is a thorough reference summary of every file in the `10-step-chain` subdirectory. This subdirectory covers the full 10-step Legal-10 evaluation chain — the complete version that the 3-step MVP is a subset of. **Not needed for 3-step MVP.**\n\n---\n\n## _INDEX.md\n\n### Purpose and Goal\n\nBrief index file establishing what this subdirectory contains and its relationship to the MVP.\n\n### Key Content\n\n- Two files: `chain-overview-v1.1.md` (step ordering, dependencies, scoring modes) and `benchmark-package-structures-v4.md` (EU/RP/Benchmark package structures for full chain).\n- The 3-step MVP (d1 → d2 → j3) is a subset. Steps 02–08 are defined in `../fdq/` but not exercised in MVP.\n- The full 10-step chain adds: steps d2–d8 (non-IRAC evaluation), j10 (open-book IRAC with more carry-forward state), more complex scoring aggregation, and extended package structures.\n\n### Key Takeaways\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_summaries\\ongoing-work.md",
+    "rel": "_summaries\\ongoing-work.md",
+    "mtime": "2026-03-27T04:26:39.638Z",
+    "size": 10002,
+    "heading": "-ongoing-work",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# -ongoing-work\n\nThis document is a thorough reference summary of every file in the `-ongoing-work` subdirectory of the `legal-10` project. It is intended to reorient a returning developer to everything that was in-flight at the time these documents were written, including all specs, algorithms, data contracts, open questions, and design decisions.\n\n---\n\n## 0112_citation-depth-labeling-spec.md\n\n**Status:** NEEDS UPDATE (minor terminology — see `benchmark-structure-v2.md`)\n**Created:** 2026-01-08\n**Purpose:** Define the build-time algorithm for labeling every citation in an anchor SCOTUS opinion as either DETAILED or PASSING, enabling the Canary hallucination-detection mechanism at evaluation run-time.\n\n### Context and Problem Statement\n\nThe evaluation chain presents an LLM with an anchor opinion as evidence, then asks about cases cited within it. To score fairly, the system must know — before the model responds — whether the anchor text actually discusses each cited case in substance. Without this, a model providing details about a cited case could be legitimately extracting from the anchor or hallucinating from pretraining. The citation depth label is build-time ground truth that the runner (scorer) consults at evaluation time.\n\n### Core Label Definitions\n\n- **DETAILED** — The anchor substantively discusses the cited case; the model CAN legitimately provide details.\n- **PASSING** — The anchor only mentions the case in passing; the model CANNOT provide details without hallucinating."
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_summaries\\prompts.md",
+    "rel": "_summaries\\prompts.md",
+    "mtime": "2026-03-27T04:28:39.356Z",
+    "size": 6922,
+    "heading": "-prompts",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement"
+    ],
+    "preview": "# -prompts\n\nThis subdirectory contains prompt engineering documents — specifically, instruction briefs authored for AI agents to consume and act upon. These are not prose documentation; they are operational prompts that drive generation of other artifacts (specifications, assessments, sweeps). As of the current documentation state, the subdirectory contains one file.\n\n---\n\n## documented-specification.md\n\n### Purpose and Goal\n\nThis file is a **task brief and prompt**, not a specification document itself. Its purpose is to commission an AI agent (referred to as a \"3rd party\") to perform a comprehensive sweep of the entire `legal-10` documentation corpus and produce a consolidated, objective specification document for the **3-Run MVP** (also referred to as the \"3-Step MVP\") of the Legal-10 benchmark system.\n\nThe document instructs the agent to:\n1. Read every document listed in the brief\n2. Synthesize those documents into a single updated specification\n3. Describe what the desired end-result product looks like, what its features and functionalities are, and how each of the three core artifact packages (RP, EU, and Benchmark) are structured and assembled\n\nThis file is, in effect, the **originating prompt** for the consolidated specification documents found in `specifications/3-step-mvp-consolidated-spec.md` and `specifications/02092026.md`.\n\n### Document Corpus Referenced"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\_summaries\\specifications.md",
+    "rel": "_summaries\\specifications.md",
+    "mtime": "2026-03-27T04:35:53.877Z",
+    "size": 18598,
+    "heading": "specifications",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# specifications\n\nThis document is a thorough reference summary of every file in the `specifications` subdirectory of the `legal-10` project. These two documents represent the highest-level consolidated specifications for the 3-Step MVP, synthesized from the full documentation corpus.\n\n---\n\n## 02092026.md\n\n**Document date:** 2026-02-09\n**Full title:** Legal-10 3-Step MVP (\"3-STEP-RUN\") — Updated Specification (Runspec + MVP)\n**Status:** Normative specification — highest combined authority for the 3-step MVP end-to-end.\n\n### Purpose and Goal\n\nThis is the **definitive end-to-end specification** for the 3-Step MVP, covering build-time artifact production, runtime execution, scoring, sealing, and an objective \"implemented vs. needs work\" assessment. It serves as the single-source-of-truth reference for what \"done\" looks like for the MVP. The document explicitly states what is in scope (3-step: d1, d2, j3) and what is out of scope (10-step chain steps 02–08).\n\n### Authority and Conflict Resolution\n\nThe document defines a canonical authority hierarchy:\n1. **M1** (`mvp/M1-buildtime-packaging-sealing-dev-brief.md`) — highest authority for bundle layout, schemas, sealing"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\_INDEX.md",
+    "rel": "build-pipeline\\_INDEX.md",
+    "mtime": "2026-02-09T10:08:01.029Z",
+    "size": 1901,
+    "heading": "Build Pipeline — RP, EU, and Benchmark Builders",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "# Build Pipeline — RP, EU, and Benchmark Builders\n\nSpecifications and reference implementations for the build-time phase:\n**RP Builder → EU Builder → Benchmark Builder**\n\n## Reading Order\n\n1. `rp-builder-reference.py.md` — Research Pack builder reference code (~800 LOC). Queries DuckDB, assembles per-anchor research packs with citations, headmatter, syllabi.\n2. `eu-builder-reference.py.md` — Evaluation Unit builder reference code. Takes RP outputs, adds ground truth, produces sealed EU packages.\n3. `eu-builder-notes.md` — Design notes and decisions for EU builder.\n4. `sealed-evaluation-units-security.md` — Security model for sealed EUs (integrity guarantees, tamper detection).\n5. `sc-dataset-db-schema.md` — DuckDB schema documentation for the source dataset.\n6. `data-pipeline-reference.md` — Overview of the data pipeline from raw sources to DuckDB.\n7. `datasets-implications.md` — Data quality notes and implications for evaluation.\n\n## Build-Time Flow\n\n```\nDuckDB (legal10-updates.duckdb)\n    │"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\data-pipeline-reference.md",
+    "rel": "build-pipeline\\data-pipeline-reference.md",
+    "mtime": "2026-01-27T17:56:32.715Z",
+    "size": 18683,
+    "heading": "Legal-10 Build Pipeline Documentation",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "** THIS FILE IS OLDER BUT CRITICAL TO UNDERSTAND CERTAIN BUILD PIPELINES - MUST BE UPDATED **\n\n\n# Legal-10 Build Pipeline Documentation\n\n**Status:** Reference documentation for build pipeline stages\n**Scope:** How datasets, ResearchPacks, and EU artifacts are produced at build-time\n\n---\n\nThis document is the single source of truth for what happens when, with explicit separation between:\n\n- **Selection** = which authorities make Top-K for the ResearchPack (RP)\n- **Assembly** = composing pre-extracted text into RPs (no truncation or slicing)\n- **Build-time vs Runtime** (sealed)\n\n---\n\n## 0) Definitions (to prevent confusion)\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\datasets-implications.md",
+    "rel": "build-pipeline\\datasets-implications.md",
+    "mtime": "2026-01-27T17:57:00.099Z",
+    "size": 9440,
+    "heading": "Legal-10 Dataset AS-IS Assessment",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "** THIS FILE IS OLDER BUT CRITICAL TO UNDERSTAND CERTAIN BUILD PIPELINES - MUST BE UPDATED **\n\n# Legal-10 Dataset AS-IS Assessment\n\n**Date:** 2026-01-17 | **Verified:** DuckDB queries + file system\n\n---\n\n## Core Pipeline Datasets (What They Are and Why They Matter)\n\n### 1. scdb_full_with_text.jsonl — The Anchor Corpus\n\n**What it is:** 27,733 SCOTUS opinions (1791-2021) with full majority opinion text. This is the primary corpus from which all evaluation questions are derived.\n\n**Schema:** 63 columns including:\n- Case identifiers: `caseId`, `docketId`, `usCite`, `sctCite`, `ledCite`, `lexisCite`\n- Metadata: `term`, `caseName`, `dateDecision`, `chief`, `naturalCourt`\n- Opinion text: `majority_opinion` (full text)\n- Sealing: `opinion_file_sha256`, `opinion_text_sha256` (for reproducibility)\n- Fowler scores: `fowler_auth_score`, `fowler_pauth_score` (pre-joined)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\eu-builder-notes.md",
+    "rel": "build-pipeline\\eu-builder-notes.md",
+    "mtime": "2026-01-23T23:20:10.188Z",
+    "size": 3307,
+    "heading": "EU Builder refactor notes (3-STEP-RUN → reusable for AG10)",
+    "meta": {},
+    "terms": [
+      "runtime"
+    ],
+    "preview": "# EU Builder refactor notes (3-STEP-RUN → reusable for AG10)\n\nNote: the benchmark packet (`benchmark.json`, `plan.json`, step prompts, judge prompt) is a **runtime input** but should be **exported deterministically ahead of time** from the runner's internal templates/config (not manually drafted).\n\nFor flat v2 layout (current 3-STEP-RUN docs):\n\n- `eus/{eu_id}/p1.json` (anchor; for 3-step we *select* short anchors ~10k chars)\n- `eus/{eu_id}/p2.json` (RP/authorities payload)\n- `eus/{eu_id}/ground_truth.json` (runner-only; NEVER staged)\n\n## What we can reuse almost exactly\n\n`internal/specs/must_update/build_research_packs.py` (Stage 4A) already does the hard, real-data work:\n\n- selects eligible anchors from `datasets/scdb_full_with_text.jsonl` (min/max char filters)\n- selects top-K authorities using:\n  - `datasets/scotus_citations_ranked.jsonl` (Fowler)\n  - `datasets/cap_citations_ranked.jsonl` (PageRank)\n- joins to shippable text sources:\n  - SCOTUS syllabi: `datasets/casesumm_syllabi.parquet`"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\eu-builder-reference.py.md",
+    "rel": "build-pipeline\\eu-builder-reference.py.md",
+    "mtime": "2026-01-24T19:16:19.772Z",
+    "size": 29195,
+    "heading": "!/usr/bin/env python3",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "#!/usr/bin/env python3\n\"\"\"Stage 4B: Build sealed Evaluation Units (EUv1) from Stage 4A ResearchPacks (RPv1). \n\nThis document is a legacy version but should provide refeence understanding. We are about to rebuilt the following components today.\n\nThis script is build-time. It assembles on-disk EU folders that a future runner can execute with *no runtime retrieval*.\n\nKey upgrades for scale + flexibility:\n- RunSpec is a first-class input (--runspec): plan/prompt/rubric/steps live in a JSON file.\n- Benchmark roster is supported (--roster): instances.jsonl is the benchmark contract.\n- Payloads are plan-driven: copy/link only plan.deliveries[].payload_ref files (skip null, dedupe).\n- Optional byte reuse at scale: hardlink-in-lab (copy fallback) via --payload-mode.\n- Robustness: validation modes + atomic EU writes (temp dir -> rename).\n\nInputs (per RP):\n  <rp_root>/rpv1__<anchor_caseId>/\n    payloads/d1.json\n    payloads/d2.json\n    doc3.json\n    (optional) manifest.json"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\rp-builder-reference.py.md",
+    "rel": "build-pipeline\\rp-builder-reference.py.md",
+    "mtime": "2026-01-26T00:28:56.323Z",
+    "size": 26709,
+    "heading": "#!/usr/bin/env python3",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "﻿#!/usr/bin/env python3\n\"\"\"\nStage 4A: Build sealed ResearchPacks (RPv1). Pre-factoring version.\n\n# TODO : Requires refactoring. refer to blockers\n\nUpdates required for benchmark-structure-v2.md alignment\n\n\nGoal:\n- Prebuild everything at build-time so runtime Runner does zero retrieval.\n- Runner later only verifies manifest + injects payloads at delivery boundaries.\n\nFor each eligible SCOTUS anchor opinion, we select:\n- Top-K SCOTUS authorities by Fowler score (default K=10)\n- Top-K CAP authorities by PageRank percentile (default K=5)\n\nWe materialize a sealed RP directory:\n\n<out_dir>/rpv1__<anchor_caseId>/"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\sc-dataset-db-schema.md",
+    "rel": "build-pipeline\\sc-dataset-db-schema.md",
+    "mtime": "2026-01-26T01:20:34.351Z",
+    "size": 17824,
+    "heading": "Legal-10 DuckDB Database Schema Documentation",
+    "meta": {},
+    "terms": [],
+    "preview": "# Legal-10 DuckDB Database Schema Documentation\n\n**Database**: `legal10-updates`  \n**Schema**: `main`  \n**Generated**: 01/24/2026\n\n---\n\n## Overview\n\nThis database supports the Legal-10 benchmark evaluation system, containing legal case data from multiple authoritative sources spanning 1791-2025. It integrates case metadata, citation networks, ideological scores, and oral argument transcripts to enable complex legal reasoning evaluations.\n\n**Total Objects**: 13 base tables, 7 analytical views, 6 indexes\n\n---\n\n## Data Sources Summary\n\n| Source | Description | Coverage |\n|--------|-------------|----------|"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\build-pipeline\\sealed-evaluation-units-security.md",
+    "rel": "build-pipeline\\sealed-evaluation-units-security.md",
+    "mtime": "2026-01-25T19:00:48.517Z",
+    "size": 4179,
+    "heading": "# tamper-detection to benchmark bundle format without changing the benchmark execution semantics.",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "﻿# tamper-detection to benchmark bundle format without changing the benchmark execution semantics.\n- while this is a necessary feature, we need to update this document. \n\n## Problem\nWe need a way to detect any unauthorized modifications to a released benchmark bundle (shared steps/plan/judge prompts) and its included EUs (payloads + ground truth). The Runner/CE must refuse to run if anything has been changed.\n\n## Goals\n- Runner refuses to start if any benchmark or EU file differs from what was released.\n- No separate signature files (signature must be embedded in a manifest JSON).\n- Works with the current benchmark structure v2 model:\n  - shared step prompts + plan live at benchmark root\n  - each EU contains only payloads + ground truth\n- Keep the evaluated-model leakage guarantee unchanged (staging directory pattern still required).\n\n## Non-Goals\n- Not defining new step prompts, scoring rubrics, or chain logic.\n- Not changing what files the evaluated model sees (still: current step + admitted payloads only).\n\n## Proposed Design\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\00-TEMPLATE-v2.md",
+    "rel": "fdq\\00-TEMPLATE-v2.md",
+    "mtime": "2026-01-27T19:13:36.950Z",
+    "size": 8220,
+    "heading": "FDQ: {QUESTION_ID} — {Short Descriptive Title}",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: {QUESTION_ID} — {Short Descriptive Title}\n\n**Version:** 2.0\n**Date:** {YYYY-MM-DD}\n**Status:** {Draft | Implementation-Ready}\n**Chain Position:** {1-10}\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `{QUESTION_ID}` |\n| **Family** | {Known Authority | Canary | Citation Discovery | Citation Validation | Fact Extraction | Reasoning | IRAC} |\n| **Scoring** | {Deterministic | Judge-Scored} |\n| **Sub-questions** | {N/A or count} |\n| **Reasoning Depth** | Level {1-3} ({brief description}) |\n\n> **Description:** Unique identifier table. Family groups related question types. Scoring indicates whether GT comparison is automatic or requires judge model."
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\01-ka-sc.md",
+    "rel": "fdq\\01-ka-sc.md",
+    "mtime": "2026-01-23T11:29:13.952Z",
+    "size": 7370,
+    "heading": "FDQ: KA-SC — Known Authority (SCOTUS)",
+    "meta": {},
+    "terms": [
+      "requirement"
+    ],
+    "preview": "# FDQ: KA-SC — Known Authority (SCOTUS)\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready  \n**Chain Position:** 1 (Fixed — Always First)\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `KA-SC` |\n| **Family** | Known Authority |\n| **Scoring** | Deterministic |\n| **Sub-questions** | 4 |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\02-c-nonexist-groundtruth-precheck.md",
+    "rel": "fdq\\02-c-nonexist-groundtruth-precheck.md",
+    "mtime": "2026-01-27T19:50:51.486Z",
+    "size": 5277,
+    "heading": "C-NONEXIST1 Ground Truth — Deterministic Extraction + Precheck",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "# C-NONEXIST1 Ground Truth — Deterministic Extraction + Precheck\n\n**Related FDQ:** `docs/[legal-10] [fdq] 02-c-nonexist.md`  \n**Question ID:** `C-NONEXIST1`  \n**Version:** 1.0  \n**Date:** 2026-01-27  \n**Status:** Implementation-Ready (GT method frozen)\n\n---\n\n## 0) What This File Is\n\nThis file specifies the **runner-only, deterministic** procedure for:\n\n1) generating the **synthetic (fake) U.S. Reports citation**,  \n2) proving it **does not exist** in the Legal-10 dataset database, and  \n3) writing the **ground truth record** used for deterministic scoring.\n\nThis is a “precheck” because **the FDQ is only well-formed if the synthetic cite is truly nonexistent**. Any collision must be detected and deterministically corrected at build time / instantiation time.\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\02-c-nonexist.md",
+    "rel": "fdq\\02-c-nonexist.md",
+    "mtime": "2026-01-27T19:02:13.082Z",
+    "size": 12443,
+    "heading": "FDQ: C-NONEXIST1 — Fake Citation Holding Probe",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: C-NONEXIST1 — Fake Citation Holding Probe\n\n**Version:** 2.0\n**Date:** 2026-01-27\n**Status:** Implementation-Ready\n**Chain Position:** 2\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `C-NONEXIST1` |\n| **Family** | Canary (Truthfulness) |\n| **Scoring** | Deterministic |\n| **Sub-questions** | 1 |\n| **Reasoning Depth** | Level 1 (epistemic discipline) |\n\n---"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\03-canary.md",
+    "rel": "fdq\\03-canary.md",
+    "mtime": "2026-01-27T17:19:45.612Z",
+    "size": 6931,
+    "heading": "FDQ: CANARY — PASSING Citation Info Discipline",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: CANARY — PASSING Citation Info Discipline\n\nERRORS IN THIS FILE.\n** Determine exact ground truth method and add to this file. **\n** This file describes research pack that does not exist in this question. **\n\n\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready  \n**Chain Position:** 3\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `CANARY` |"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\04-fact-extract-new.md",
+    "rel": "fdq\\04-fact-extract-new.md",
+    "mtime": "2026-01-27T17:48:58.205Z",
+    "size": 9500,
+    "heading": "FDQ: FACT-EXTRACT — SCDB Code Interpretation",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: FACT-EXTRACT — SCDB Code Interpretation\n\n**Version:** 2.0\n**Date:** 2026-01-27\n**Status:** Implementation-Ready\n**Chain Position:** 4\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `FACT-EXTRACT` |\n| **Family** | Fact Extraction |\n| **Scoring** | Deterministic |\n| **Sub-questions** | 2 |\n| **Reasoning Depth** | Level 1 (code interpretation) |\n\n---"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\04-fact-extract.md",
+    "rel": "fdq\\04-fact-extract.md",
+    "mtime": "2026-01-23T12:24:57.280Z",
+    "size": 6834,
+    "heading": "FDQ: FACT-EXTRACT — Fact Extraction from SCDB",
+    "meta": {},
+    "terms": [
+      "requirement"
+    ],
+    "preview": "# FDQ: FACT-EXTRACT — Fact Extraction from SCDB\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready  \n**Chain Position:** 4\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `FACT-EXTRACT` |\n| **Family** | Fact Extraction |\n| **Scoring** | Deterministic |\n| **Sub-questions** | 2 |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\05-distinguish-new.md",
+    "rel": "fdq\\05-distinguish-new.md",
+    "mtime": "2026-01-27T18:08:44.448Z",
+    "size": 13077,
+    "heading": "FDQ: DISTINGUISH — Citation Treatment Recognition",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: DISTINGUISH — Citation Treatment Recognition\n\n**Version:** 2.0\n**Date:** 2026-01-27\n**Status:** Implementation-Ready\n**Chain Position:** 5\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `DISTINGUISH` |\n| **Family** | Citation Treatment |\n| **Scoring** | Deterministic |\n| **Sub-questions** | 2 (treatment + agree) |\n| **Reasoning Depth** | Level 2 (close reading + classification) |\n\n---"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\05-distinguish.md",
+    "rel": "fdq\\05-distinguish.md",
+    "mtime": "2026-01-23T12:25:04.257Z",
+    "size": 7120,
+    "heading": "FDQ: DISTINGUISH — Treatment Recognition",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: DISTINGUISH — Treatment Recognition\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready  \n**Chain Position:** 5\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `DISTINGUISH` |\n| **Family** | Citation Treatment |\n| **Scoring** | Deterministic |\n| **Sub-questions** | 2 (treatment + agree) |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\06-validate-auth.md",
+    "rel": "fdq\\06-validate-auth.md",
+    "mtime": "2026-01-27T17:16:58.472Z",
+    "size": 8567,
+    "heading": "FDQ: VALIDATE-AUTH — Cross-Reference Consistency",
+    "meta": {},
+    "terms": [
+      "requirement"
+    ],
+    "preview": "# FDQ: VALIDATE-AUTH — Cross-Reference Consistency\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready  \n**Chain Position:** 6\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `VALIDATE-AUTH` |\n| **Family** | Citation Validation |\n| **Scoring** | Deterministic |\n| **Reasoning Depth** | Level 2 (source integration) |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\07-unknown-auth.md",
+    "rel": "fdq\\07-unknown-auth.md",
+    "mtime": "2026-01-23T12:25:09.268Z",
+    "size": 7320,
+    "heading": "FDQ: UNKNOWN-AUTH — Reverse Citation Lookup",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: UNKNOWN-AUTH — Reverse Citation Lookup\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready  \n**Chain Position:** 7\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `UNKNOWN-AUTH` |\n| **Family** | Citation Discovery |\n| **Scoring** | Deterministic (MRR) |\n| **Reasoning Depth** | Level 2 (reverse lookup) |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\08-transitive-new.md",
+    "rel": "fdq\\08-transitive-new.md",
+    "mtime": "2026-01-27T18:17:56.820Z",
+    "size": 15949,
+    "heading": "FDQ: TRANSITIVE — Triangle Citation Prediction",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: TRANSITIVE — Triangle Citation Prediction\n\n**Version:** 2.0\n**Date:** 2026-01-27\n**Status:** Implementation-Ready\n**Chain Position:** 8\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `TRANSITIVE` |\n| **Family** | Citation Reasoning |\n| **Scoring** | Deterministic |\n| **Reasoning Depth** | Level 3 (multi-edge inference) |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\08-transitive.md",
+    "rel": "fdq\\08-transitive.md",
+    "mtime": "2026-01-23T12:25:56.070Z",
+    "size": 9519,
+    "heading": "FDQ: TRANSITIVE — Triangle Citation Prediction",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: TRANSITIVE — Triangle Citation Prediction\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready  \n**Chain Position:** 8\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `TRANSITIVE` |\n| **Family** | Citation Reasoning |\n| **Scoring** | Deterministic |\n| **Reasoning Depth** | Level 3 (multi-edge inference) |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\09-irac-without-rp.md",
+    "rel": "fdq\\09-irac-without-rp.md",
+    "mtime": "2026-01-26T11:12:51.289Z",
+    "size": 4316,
+    "heading": "FDQ: d9 — IRAC without Research Pack",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: d9 — IRAC without Research Pack  \n\n**Version:** 1.0\n**Date:** 2026-01-24\n**Status:** Implementation-Ready\n**Chain Position:** 9\n\n---\n\n## 1. Question ID\n\n| Field               | Value                                    |\n| ------------------- | ---------------------------------------- |\n| **Question ID**     | `d9`                                     |\n| **Family**          | Legal Writing                            |\n| **Scoring**         | Judge (MEE rubric; graded alongside j10) |\n| **Reasoning Depth** | Level 4 (full synthesis)                 |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\10-irac-with-rp.md",
+    "rel": "fdq\\10-irac-with-rp.md",
+    "mtime": "2026-01-26T11:12:59.083Z",
+    "size": 6046,
+    "heading": "FDQ: j10 — IRAC with Research Pack",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: j10 — IRAC with Research Pack\n\n**Version:** 1.0\n**Date:** 2026-01-24\n**Status:** Implementation-Ready\n**Chain Position:** 10\n\n---\n\n## 1. Question ID\n\n| Field               | Value                                           |\n| ------------------- | ----------------------------------------------- |\n| **Question ID**     | `j10`                                           |\n| **Family**          | Legal Writing                                   |\n| **Scoring**         | Judge (MEE rubric; grades both d9 + j10)        |\n| **Reasoning Depth** | Level 4 (full synthesis + evidence integration) |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\_INDEX.md",
+    "rel": "fdq\\_INDEX.md",
+    "mtime": "2026-02-09T10:07:36.054Z",
+    "size": 1743,
+    "heading": "FDQ — Formal Delivery Query Specifications",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "# FDQ — Formal Delivery Query Specifications\n\nSelf-contained specs for each evaluation step. Each FDQ includes:\n- Prompt template (system + user messages)\n- Output contract (JSON schema the model must return)\n- Ground truth extraction (SQL or deterministic logic)\n- Scoring algorithm\n- Citation normalization rules\n\n## Reading Order\n\n1. `00-TEMPLATE-v2.md` — FDQ template; defines the standard structure all FDQs follow\n2. `01-ka-sc.md` — **d1: Known Authority / Supreme Court** (deterministic scoring, MVP step)\n3. `09-irac-without-rp.md` — **d2/d9: IRAC closed-book** (judge-scored, MVP step)\n4. `10-irac-with-rp.md` — **j3/j10: IRAC open-book** (judge-scored, MVP step)\n5. Steps 02-08 — future 10-step chain steps (not needed for 3-step MVP)\n\n## Post-Chain Scorers (`post/`)\n\nThese run after all model steps complete:"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\post\\citation_integrity.py.md",
+    "rel": "fdq\\post\\citation_integrity.py.md",
+    "mtime": "2026-01-24T11:51:03.077Z",
+    "size": 8067,
+    "heading": "# Canonical comparison key: strip punctuation, collapse whitespace, lowercase.",
+    "meta": {},
+    "terms": [],
+    "preview": "from __future__ import annotations\n\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, Iterable\n\n\n_RE_US = re.compile(\n    r\"\\b(?P<vol>\\d{1,3})\\s+U\\.?\\s*S\\.?\\s+(?P<page>\\d{1,4})\\b\",\n    re.IGNORECASE,\n)\n\n_NOMINATIVE_REPORTERS = r\"(?:Pet|Wheat|Cranch|Cr|How|Wall|Black|Dall)\"\n_RE_US_NOMINATIVE = re.compile(\n    r\"\\b(?P<vol>\\d{1,3})\\s+U\\.?\\s*S\\.?\\s+\"\n    r\"(?P<nom_vol>\\d{1,2})\\s*\" + _NOMINATIVE_REPORTERS + r\"\\.?\\s*\"\n    r\"(?P<page>\\d{1,4})\\b\",\n    re.IGNORECASE,\n)\n_RE_F_SERIES = re.compile("
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\post\\irac-pair-scoring.md",
+    "rel": "fdq\\post\\irac-pair-scoring.md",
+    "mtime": "2026-01-24T21:02:26.585Z",
+    "size": 7354,
+    "heading": "IRAC Pair Scoring Guide (General: Step N + Step N+1)",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# IRAC Pair Scoring Guide (General: Step N + Step N+1)\n\n**Purpose:** A reusable scoring spec for *any* run length where we produce **two IRACs** in sequence:\n\n* **Step N** = IRAC **without** Research Pack (closed-book; anchor-only)\n* **Step N+1** = IRAC **with** Research Pack (open-book; anchor + RP)\n\nThis document is **step-ID agnostic**. In a given run, you will bind:\n\n* `STEP_IRAC_CLOSED_ID` (the actual step_id used by your plan for Step N)\n* `STEP_IRAC_OPEN_ID` (the actual step_id used by your plan for Step N+1)\n\n---\n\n## 1) Normative requirements\n\n### 1.1 Two-IRAC design\n\nEach Evaluation Unit (EU) MUST produce exactly two IRAC outputs:\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\fdq\\post\\judge-evaluation-both-iracs.md",
+    "rel": "fdq\\post\\judge-evaluation-both-iracs.md",
+    "mtime": "2026-01-24T20:28:23.281Z",
+    "size": 3317,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "You are the Legal-10 **judge model**. Your job is to grade TWO IRAC answers (a closed-book IRAC and an open-book IRAC) using an **MEE-style rubric**.\n\nYou will be given:\n- IRAC_A = the “closed-book” IRAC (anchor-only; no research pack)\n- IRAC_B = the “open-book” IRAC (anchor + research pack admitted)\n\nEach IRAC will be provided as JSON (with keys like \"issue\", \"rule\", \"application\", \"conclusion\", \"citations\"). Grade the writing/analysis quality of what you see. Do NOT assume you have access to any other materials besides the IRAC text provided here.\n\n========================\nMODE-SPECIFIC EXPECTATIONS\n========================\nCLOSED-BOOK (IRAC_A):\n- Closed-book mode. Do NOT penalize for limited authority citations.\n\nOPEN-BOOK (IRAC_B):\n- Open-book mode. Expect appropriate use of provided authorities (as reflected in the IRAC’s content/citations).\n- Do NOT attempt to verify citation validity against outside sources; citation integrity is checked elsewhere.\n\n========================\nMEE RUBRIC (0–6 PER COMPONENT)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\3-step-run-benchmark-structure.md",
+    "rel": "mvp\\3-step-run-benchmark-structure.md",
+    "mtime": "2026-02-03T09:53:59.981Z",
+    "size": 5632,
+    "heading": "Developer Prompt: Legal-10 3-STEP-RUN (HAL-compatible vertical slice)",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model",
+      "sandbox"
+    ],
+    "preview": "# Developer Prompt: Legal-10 3-STEP-RUN (HAL-compatible vertical slice)\n\n## Goal\nBuild a minimal end-to-end Legal-10 run-spec through a 3-step mvp. \n\n- `d1` = Known Authority (deterministic scoring)\n- `d2` = IRAC without RP (candidate output; later judged + citation-checked)\n- `j3` = IRAC with RP (candidate output; later judged + citation-checked)\n- After `j3`:\n  - **Judge call** grades BOTH IRACs (MEE-style rubric) and returns JSON\n  - **Deterministic citation_integrity** compares model-used citations vs the build-time “full list” citation inventories\n\n- requires build-time benchmark + EU packets (plan/steps + p1/p2/ground_truth) before runtime\n\n\n\nAll run-spec docs/scripts live under:\n`E:\\agchain\\legal-10\\runspecs\\3-STEP-RUN\\`\n\nGenerated build artifacts (ResearchPacks, EUs, and run outputs) should be written to a configurable output root (defaulting to `datasets/` where appropriate), not committed to the repo."
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\M1-buildtime-packaging-sealing-dev-brief.md",
+    "rel": "mvp\\M1-buildtime-packaging-sealing-dev-brief.md",
+    "mtime": "2026-01-24T21:53:57.452Z",
+    "size": 15311,
+    "heading": "Milestone 1: Build-time packaging + sealing (Legal-10 3-step MVP)",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# Milestone 1: Build-time packaging + sealing (Legal-10 3-step MVP)\n\nThis document is intended to be **self-contained**: a new dev should be able to implement Milestone 1 from this doc alone (given the local datasets in `datasets/`). The “Source-of-truth docs” are **background**; if they conflict, follow **this document** and raise the conflict immediately.\n\n## Goal\nProduce a sealed, open-source releasable benchmark bundle containing:\n\n- a 3-step benchmark package (shared plan/steps/judge prompts/rubrics/etc), and\n- 200 EUs (Evaluation Units), each with p1, p2, ground_truth, and an associated unique RP (Research Pack) for the \"IRAC w/ RP\" step.\n\n**Sealed requirement:** The Runner/CE must be able to refuse to run if any file in the released bundle is modified. This is enforced by `manifest.json` + `signature.json` (details below). This must be part of the final bundle format.\n\n**No model calls / no network calls in milestone 1.** This is purely build-time artifact generation.\n\n---\n\n## Frozen decisions (M1; do not change)\nThese remove ambiguity. If any of these need to change, stop and get explicit sign-off first.\n\n### Bundle layout (required)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\_INDEX.md",
+    "rel": "mvp\\_INDEX.md",
+    "mtime": "2026-02-09T10:08:15.779Z",
+    "size": 2167,
+    "heading": "MVP — 3-Step Run Specifications",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# MVP — 3-Step Run Specifications\n\nMilestone 1 (M1) deliverables for the 3-step MVP: d1 (KA-SC) → d2 (IRAC closed-book) → j3 (IRAC open-book) + judge + citation_integrity.\n\n## Reading Order\n\n### Architecture & Deliverables\n1. `M1-buildtime-packaging-sealing-dev-brief.md` — **MOST AUTHORITATIVE**. Frozen decisions on bundle structure, EU schema, benchmark schema, sealing (manifest.json + signature.json). Overrides other docs.\n2. `3-step-run-benchmark-structure.md` — 3-step file layout, runner flow, HAL compatibility notes.\n3. `run-outputs.md` — Deliverables checklist (checked-in + generated files), data flow diagram, dependency order.\n4. `benchmark-technical-specification-v1.1.md` — Overall benchmark technical spec.\n5. `build-mvp-task.md` — Task description for building the MVP.\n\n### MVP FDQ Variants\nThese are 3-step-specific extracts of the canonical FDQs in `../fdq/`:\n6. `fdq-01-ka-sc.md` — d1 KA-SC spec (identical to canonical `fdq/01-ka-sc.md`)\n7. `fdq-02-irac-without-rp.md` — d2 IRAC closed-book\n8. `fdq-03-irac-with-rp.md` — j3 IRAC open-book\n\n### Scorer Reference Code"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\benchmark-technical-specification-v1.1.md",
+    "rel": "mvp\\benchmark-technical-specification-v1.1.md",
+    "mtime": "2026-01-26T06:09:57.857Z",
+    "size": 45774,
+    "heading": "Legal-10 Benchmark — Product & Technical Specification (v1.0)",
+    "meta": {},
+    "terms": [
+      "environment",
+      "runtime",
+      "requirement",
+      "model",
+      "provider",
+      "inspect ai"
+    ],
+    "preview": "**IMPORTANT:** This document to be updated into the one canonical product and technical specification for the Legal-10 Evaluation Benchmark, including describing how the benchmark integrates into the AGChain platform. Currently, the scope of such integration includes compatibility, integration and inter-operability between the PDRunner and Legal-10.\n\nTODO:  \nRequires precise, line-by-line, low level review for update.\n\n\n\n\n\n\n# Legal-10 Benchmark — Product & Technical Specification (v1.0)\n\n---\n\n## A) One-Page Overview\n\n### Purpose\n\nLegal-10 is a runner-orchestrated benchmark that evaluates an LLM's ability to perform **stateful, multi-step legal reasoning** over a **sealed, staged evidence set**—specifically: \n(1) closed-book reasoning from an anchor SCOTUS opinion; and "
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\build-mvp-task.md",
+    "rel": "mvp\\build-mvp-task.md",
+    "mtime": "2026-01-31T04:27:33.882Z",
+    "size": 5478,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "Task: build 3-step mvp now.\n\nTo build the 3-step mvp the following must happen:\ndevelop \n1. eu-builder.py --> \n2. rp-packager.py --> \n3. benchmark-builder.py\n\nThe scope of current task: \nExamine all necessary files, database, and existing pre-factoring versions of related code- so that you understand exact mechanism to write the rp-packager script and the eu-builder scripts. \n\nyour memory graphs will help, but review the following files thoroughly.\n\nstart here: \n-    [C] [legal-10] benchmark technical specification v1.1.md\n-    [C] [datasets] sc-dataset_db-schema.md\n\nrp + eu + benchmark builder specs and notes + pre-factoring scripts\n-    [C] [platform] [legal-10] [10-s] benchmark package structures-bench-eu-rp.v4.md\n-    [C] [platform] [pp] package_research_packs.py.md"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\d1-known-authority-scorer.py.md",
+    "rel": "mvp\\d1-known-authority-scorer.py.md",
+    "mtime": "2026-01-17T09:10:15.766Z",
+    "size": 8434,
+    "heading": "# Allow both flat and nested ground-truth shapes.",
+    "meta": {},
+    "terms": [],
+    "preview": "from __future__ import annotations\n\nimport re\nfrom typing import Any, Iterable\n\n_NOMINATIVE_REPORTERS = r\"(?:Pet|Wheat|Cranch|Cr|How|Wall|Black|Dall)\"\n_RE_US_NOMINATIVE = re.compile(\n    r\"\\b(?P<vol>\\d{1,3})\\s+U\\.?\\s*S\\.?\\s+\"\n    r\"(?P<nom_vol>\\d{1,2})\\s*\" + _NOMINATIVE_REPORTERS + r\"\\.?\\s*\"\n    r\"(?P<page>\\d{1,4})\\b\",\n    re.IGNORECASE,\n)\n_RE_US = re.compile(\n    r\"\\b(?P<vol>\\d{1,3})\\s+U\\.?\\s*S\\.?\\s+(?P<page>\\d{1,4})\\b\",\n    re.IGNORECASE,\n)\n_RE_F_SERIES = re.compile(\n    r\"\\b(?P<vol>\\d{1,4})\\s+F\\.?\\s*(?P<series>2d|3d)\\s+(?P<page>\\d{1,4})\\b\",\n    re.IGNORECASE,\n)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\fdq-01-ka-sc.md",
+    "rel": "mvp\\fdq-01-ka-sc.md",
+    "mtime": "2026-01-23T11:29:13.952Z",
+    "size": 7370,
+    "heading": "FDQ: KA-SC — Known Authority (SCOTUS)",
+    "meta": {},
+    "terms": [
+      "requirement"
+    ],
+    "preview": "# FDQ: KA-SC — Known Authority (SCOTUS)\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready  \n**Chain Position:** 1 (Fixed — Always First)\n\n---\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `KA-SC` |\n| **Family** | Known Authority |\n| **Scoring** | Deterministic |\n| **Sub-questions** | 4 |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\fdq-02-irac-without-rp.md",
+    "rel": "mvp\\fdq-02-irac-without-rp.md",
+    "mtime": "2026-01-29T13:10:55.049Z",
+    "size": 4280,
+    "heading": "FDQ: d2 — IRAC Synthesis (Closed-Book)",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: d2 — IRAC Synthesis (Closed-Book)\n\n**Version:** 1.0\n**Date:** 2026-01-24\n**Status:** Implementation-Ready\n**Chain Position:** 2\n\n---\n\n## 1. Question ID\n\n| Field               | Value                                    |\n| ------------------- | ---------------------------------------- |\n| **Question ID**     | `d2`                                     |\n| **Family**          | Legal Writing                            |\n| **Scoring**         | Judge (MEE rubric; graded alongside j3) |\n| **Reasoning Depth** | Level 4 (full synthesis)                 |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\fdq-03-irac-with-rp.md",
+    "rel": "mvp\\fdq-03-irac-with-rp.md",
+    "mtime": "2026-01-26T11:21:38.067Z",
+    "size": 5251,
+    "heading": "FDQ: j3 — IRAC Synthesis (Open-Book)",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# FDQ: j3 — IRAC Synthesis (Open-Book)\n\n**Version:** 1.0\n**Date:** 2026-01-24\n**Status:** Implementation-Ready\n**Chain Position:** 3\n\n---\n\n## 1. Question ID\n\n| Field               | Value                                           |\n| ------------------- | ----------------------------------------------- |\n| **Question ID**     | `j3`                                           |\n| **Family**          | Legal Writing                                   |\n| **Scoring**         | Judge (MEE rubric; grades both d2 + j3)        |\n| **Reasoning Depth** | Level 4 (full synthesis + evidence integration) |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\post-citation-integrity.py.md",
+    "rel": "mvp\\post-citation-integrity.py.md",
+    "mtime": "2026-01-24T11:51:03.077Z",
+    "size": 8067,
+    "heading": "# Canonical comparison key: strip punctuation, collapse whitespace, lowercase.",
+    "meta": {},
+    "terms": [],
+    "preview": "from __future__ import annotations\n\nimport re\nfrom dataclasses import dataclass\nfrom typing import Any, Iterable\n\n\n_RE_US = re.compile(\n    r\"\\b(?P<vol>\\d{1,3})\\s+U\\.?\\s*S\\.?\\s+(?P<page>\\d{1,4})\\b\",\n    re.IGNORECASE,\n)\n\n_NOMINATIVE_REPORTERS = r\"(?:Pet|Wheat|Cranch|Cr|How|Wall|Black|Dall)\"\n_RE_US_NOMINATIVE = re.compile(\n    r\"\\b(?P<vol>\\d{1,3})\\s+U\\.?\\s*S\\.?\\s+\"\n    r\"(?P<nom_vol>\\d{1,2})\\s*\" + _NOMINATIVE_REPORTERS + r\"\\.?\\s*\"\n    r\"(?P<page>\\d{1,4})\\b\",\n    re.IGNORECASE,\n)\n_RE_F_SERIES = re.compile("
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\mvp\\run-outputs.md",
+    "rel": "mvp\\run-outputs.md",
+    "mtime": "2026-01-16T07:33:35.207Z",
+    "size": 9030,
+    "heading": "3-STEP-RUN outputs (what exists, where, and when)",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model",
+      "provider"
+    ],
+    "preview": "# 3-STEP-RUN outputs (what exists, where, and when)\n\nThis document is a quick alignment checklist for the `3-STEP-RUN` vertical slice.\n\n## Definitions\n\n- **Build-time**: scripts that generate sealed inputs (ResearchPacks, EUs, ground-truth lists, manifests) from large datasets/DBs.\n- **Run-time**: the runner executes a benchmark plan against an already-built EU, calls models, enforces staging/no-leak, and writes run artifacts.\n\n## Mental model diagram (one page)\n\n```text\nBUILD-TIME (offline; produces sealed inputs; no evaluated/judge model calls)\n  datasets/* + duckdb/parquet\n        |\n        v\n  RP builder (Stage 4A)  --->  <rp_root>/rpv1__<anchor_caseId>/\n                                 payloads/d1.json   (anchor + citation roster)\n                                 payloads/d2.json   (authority texts)\n                                 doc3.json          (runner-only metadata)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\_INDEX.md",
+    "rel": "platform\\_INDEX.md",
+    "mtime": "2026-02-09T10:07:49.329Z",
+    "size": 2512,
+    "heading": "Platform — Runtime Engine & Runner Specifications",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model",
+      "provider",
+      "inspect ai"
+    ],
+    "preview": "# Platform — Runtime Engine & Runner Specifications\n\nSpecifications for the runtime infrastructure that executes evaluation chains.\nCovers: state management, staging/isolation, message assembly, audit, orchestration.\n\n## Reading Order\n\nFor the 3-step MVP runner, read in this order:\n\n1. `inter-step-requirements.md` — **95 numbered requirements** (IS-1.1.1 through IS-7.3.7). Densest requirements document. Covers state management, payload admission, staging/isolation, message assembly, audit, orchestration, post-chain operations.\n2. `pdrunner-inspect-ai.md` — **40 requirements** (R1.1 through R8.4). Runner architecture spec based on Inspect AI integration pattern.\n3. `statefulness-context-persistence.md` — State providers (Type 0-III), isolation invariant, session strategies (Replay_Full vs Replay_Minimal).\n4. `prompt-messages.md` — Fenced window format (`<<<BEGIN_{NAME}>>>...<<<END_{NAME}>>>`), window ordering (ENV → ANCHOR_PACK → EVIDENCE_PACK → CARRY_FORWARD → TASK → OUTPUT_GUARD), system message spec.\n5. `prompts-v1.0.md` — Concrete prompt templates version 1.0.\n\n## Concern Overlap Warning\n\nThese documents were written at different stages and **overlap significantly**:\n\n| Concern | inter-step-requirements | pdrunner | statefulness | prompt-messages |"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\inter-step-requirements.md",
+    "rel": "platform\\inter-step-requirements.md",
+    "mtime": "2026-01-25T10:33:00.320Z",
+    "size": 17239,
+    "heading": "AGChain Inter-Step Functionality Requirements",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model",
+      "provider"
+    ],
+    "preview": "# AGChain Inter-Step Functionality Requirements\n\n**Version**: 1.0\n**Date**: 2026-01-25\n**Status**: Derived from spec documents\n**Scope**: Requirements for the ChainExecutor / inter-task orchestration layer\n\n---\n\n## Overview\n\nThis document specifies the **inter-step functionality requirements** - the operations that occur BETWEEN Inspect-AI task executions. These are the responsibilities of the ChainExecutor layer.\n\n**Key Principle:** Inspect-AI handles intra-step execution. This document covers everything that happens at step boundaries.\n\n---\n\n## 1. State Transition Management\n\n### 1.1 Carry-Forward State"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\pdrunner-inspect-ai.md",
+    "rel": "platform\\pdrunner-inspect-ai.md",
+    "mtime": "2026-01-27T16:36:14.287Z",
+    "size": 23112,
+    "heading": "AGChain PDRunner Specification (Inspect-AI Integration)",
+    "meta": {},
+    "terms": [
+      "environment",
+      "runtime",
+      "requirement",
+      "model",
+      "sandbox",
+      "provider",
+      "inspect_ai"
+    ],
+    "preview": "# AGChain PDRunner Specification (Inspect-AI Integration)\n\n**Version**: 1.0\n**Date**: 2026-01-25\n**Status**: Validated against spec docs and inspect-ai source\n\n---\n\n## Executive Summary\n\nThis document specifies how AGChain's PDRunner integrates with Inspect-AI. The key architectural insight:\n\n> **Inspect is a step engine. We're building a chain engine.**\n\nInspect-AI handles intra-step execution excellently (model calls, scoring, logging). AGChain's PDRunner wraps Inspect with an inter-task orchestration layer that enforces staging isolation, payload admission, carry-forward state, and audit boundaries.\n\n---\n\n## A. AGChain Runner Requirements (System Requirements List)\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\prompt-messages.md",
+    "rel": "platform\\prompt-messages.md",
+    "mtime": "2026-01-27T18:15:20.509Z",
+    "size": 5962,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "requirement"
+    ],
+    "preview": "┌─────────────────────────────────────────────────────────────┐\n│ <<<BEGIN_ENV>>>                                             │\n│   [System-level framing / role setup]                       │\n│ <<<END_ENV>>>                                               │\n├─────────────────────────────────────────────────────────────┤\n│ <<<BEGIN_ANCHOR_PACK>>>                                     │\n│   [p1 content - anchor opinion text]                        │\n│ <<<END_ANCHOR_PACK>>>                                       │\n├─────────────────────────────────────────────────────────────┤\n│ <<<BEGIN_EVIDENCE_PACK>>>                                   │\n│   [p2 content - Research Pack, only after j10 admission]    │\n│ <<<END_EVIDENCE_PACK>>>                                     │\n├─────────────────────────────────────────────────────────────┤\n│ <<<BEGIN_CARRY_FORWARD>>>                                   │\n│   [candidate_state from prior steps]                        │\n│ <<<END_CARRY_FORWARD>>>                                     │\n├─────────────────────────────────────────────────────────────┤\n│ <<<BEGIN_TASK>>>                                            │\n│   [The actual FDQ question for this step]                   │\n│ <<<END_TASK>>>                                              │"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\prompts-v1.0.md",
+    "rel": "platform\\prompts-v1.0.md",
+    "mtime": "2026-01-31T10:47:12.474Z",
+    "size": 11756,
+    "heading": "Prompts v1.0 - Prompt as State Protocol",
+    "meta": {},
+    "terms": [
+      "environment",
+      "requirement",
+      "model",
+      "sandbox",
+      "inspect_ai",
+      "inspect ai"
+    ],
+    "preview": "# Prompts v1.0 - Prompt as State Protocol\n\nThis document refers to areas defined by the following document(s):\n[[[C] 0122_benchmark-structure-v3.5]]\n\n## Part 1: The Prompt as State Protocol\n\nIn this architecture, \"Prompts\" are not unstructured strings. They are structured message stacks (Inspect AI style) that physically enforce the statefulness pillars.\n\n**The Windowed Stack (Standard Protocol):** every step's prompt is constructed from distinct, fenced windows.\n\n---\n\n## Part 2: Inspect AI Prompt / Message Pattern (Recommended Standard)\n\nThis is the pattern to standardize across question types (whether later generated with LangChain or simple string formatting).\n\n### 2.1 System message (constant across all samples)\n\nUse one global system message (set in the solver via `system_message(...)`, not repeated inside `Sample.input`):"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\platform\\statefulness-context-persistence.md",
+    "rel": "platform\\statefulness-context-persistence.md",
+    "mtime": "2026-01-27T17:47:09.007Z",
+    "size": 8794,
+    "heading": "Context Persistence Requirement",
+    "meta": {},
+    "terms": [
+      "environment",
+      "requirement",
+      "model",
+      "provider"
+    ],
+    "preview": "# Context Persistence Requirement \n\nMaintain Statefulness Architecture\n\n**Status:** Draft  \n**Last updated:** 2026-01-23\n\n---\n\n## 1. Definition of Statefulness\n\nIn this architecture, **Statefulness** is not an intrinsic capability of the evaluated model. It is a **runner-enforced protocol property**.\n\nStatefulness is composed of four non-negotiable pillars that make evaluation deterministic and auditable.\n\n---\n\n## 2. Turning Context into a Discrete, Audit-Controlled Variable\n\n1. **Evaluation Unit (EU) Scoping**"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0113_canary.md",
+    "rel": "secondary-reference\\0113_canary.md",
+    "mtime": "2026-01-23T11:00:14.129Z",
+    "size": 5058,
+    "heading": "Canary (Information Discipline Test)",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "# Canary (Information Discipline Test)\n\n**Type:** Deterministic\n**Chain Position:** Standalone\n**Questions per EU:** TBD\n\n---\n\n## The Canary Mechanism\n\n### What are PASSING Citations?\n\nEvery EU has two types of citations:\n\n- **DETAILED citations:** Full text provided in the Research Pack\n- **PASSING citations:** Only mentioned by name - no text given\n\n### The Test\n\nWe ask the model specific questions about PASSING citations - details it could NOT possibly know from the materials we provided."
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0113_transitive_authority_v2.md",
+    "rel": "secondary-reference\\0113_transitive_authority_v2.md",
+    "mtime": "2026-01-14T06:54:27.020Z",
+    "size": 3574,
+    "heading": "# Transitive Authority (v2 rewrite)",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "﻿# Transitive Authority (v2 rewrite)\n\n**Name:** Transitive Authority  \n**Type:** Candidate question with deterministic grading  \n\n---\n\n## Description\n\nThis question type uses a 3-case citation triangle and asks the evaluated model to predict the relationship between two cases.\n\nFor each question instance, the dataset provides three Supreme Court cases:\n\n- Case A (anchor)\n- Case B (middle)\n- Case C (newest)\n\nThe evaluated model is given:\n\n- Case A metadata (citation, name, year)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0114-data-inventory.md",
+    "rel": "secondary-reference\\0114-data-inventory.md",
+    "mtime": "2026-01-27T17:54:56.469Z",
+    "size": 9436,
+    "heading": "Legal-10 Data Inventory",
+    "meta": {},
+    "terms": [],
+    "preview": "# Legal-10 Data Inventory\n\n**Status:** Canonical reference for all data files\n**Last Updated:** 2026-01-14\n\n---\n\n## All Dataset Files\n\n| File                            | Size   | Format  | Stage   | Description                                                    |\n| ------------------------------- | ------ | ------- | ------- | -------------------------------------------------------------- |\n| `cap_appellate_text.jsonl`      | 1.1 GB | JSONL   | 3.5     | Circuit Court opinions (F., F.2d, F.3d) - 36,552 cases         |\n| `legal10-updates.duckdb`        | 738 MB | DuckDB  | Source  | Master database with all tables and views                      |\n| `scdb_full_with_text.jsonl`     | 526 MB | JSONL   | Source  | Anchor corpus - 27,733 SCOTUS cases with opinion text          |\n| `cap_trial_text.jsonl`          | 262 MB | JSONL   | 3.5     | District Court opinions (F.Supp variants) - 6,491 cases        |\n| `scotus_to_scotus_map.jsonl`    | 133 MB | JSONL   | 2b      | U.S. citations resolved to SCDB (portable)                     |\n| `cap_head_matter.jsonl`         | 74 MB  | JSONL   | 3.6     | CAP head_matter for cited authorities - 43,043 cases           |\n| `scotus_citations_ranked.jsonl` | 65 MB  | JSONL   | 3.7     | SCOTUS citations ranked by Fowler score - 21,154 anchors       |\n| `casesumm_syllabi.parquet`      | 27 MB  | Parquet | 3.6     | SCOTUS case summaries for cited authorities - 27,071 cases     |\n| `scotus_to_cap_map.jsonl`       | 24 MB  | JSONL   | 2       | Federal citations resolved to CAP IDs                          |"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0116_citation_integrity.md",
+    "rel": "secondary-reference\\0116_citation_integrity.md",
+    "mtime": "2026-01-16T08:26:50.312Z",
+    "size": 3663,
+    "heading": "Citation Integrity",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "# Citation Integrity\n\n**Type:** Deterministic\n\n---\n\n## Description\n\nThis step deterministically scores citation usage in the evaluated model’s two IRAC outputs:\n\n- IRAC without RP (closed-book IRAC)\n- IRAC with RP (open-book IRAC)\n\nThe runner extracts the citations used by the evaluated model, then compares them against runner-only citation inventories derived from the anchor text and (for the open-book IRAC) the Research Pack.\n\n---\n\n## Reporter Scope (What Counts as a Case Citation)\n\nOnly the following reporter families are in scope for deterministic citation integrity checks:"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0116_irac_with_rp.md",
+    "rel": "secondary-reference\\0116_irac_with_rp.md",
+    "mtime": "2026-01-16T08:19:49.372Z",
+    "size": 1450,
+    "heading": "Irac with RP",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# Irac with RP\n\n**Type:** Judge-scored\n**Chain Position:** As of now, this question type is always last question in the chain. Normally, question types dont have a fixed position in the chain, but this question is designed to be presented last.\n(For example, in AG8 --> j8, AG0 --> j10, A25 --> j25)\n\n---\n\n## Description\n\nIrac with RP presents the Evaluated Model with a research pack (p#.json). The model uses the anchor text and the research pack to write an IRAC. It is provided with instructions on how to write the IRAC and an overview of the grading criteria.\nIt is conducted immediately after the Irac without RP question\n\n## Prompt Requirements (Citations)\n\nThe evaluated model is instructed that:\n\n- Only past SCOTUS and federal court case citations are permitted.\n- Allowed reporters and coverage windows are defined in `internal/specs/steps/citation_scope_cap_coverage.md`.\n- Allowed reporters are limited to: `U.S.`, `F.`, `F.2d`, `F.3d`, `F. Supp.`, `F. Supp. 2d`, `F. Supp. 3d` (explicitly exclude `F.4th`)."
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0116_irac_without_rp.md",
+    "rel": "secondary-reference\\0116_irac_without_rp.md",
+    "mtime": "2026-01-16T08:15:58.227Z",
+    "size": 1424,
+    "heading": "IRAC Without RP",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# IRAC Without RP\n\n**Type:** Judge-scored\n\n---\n\n**Chain Position:** As of now, this question type is always the question that comes immediately before the last question in the chain. Normally, question types dont have a fixed position in the chain, but this question is designed to be presented last.\n(For example, in AG8 --> d7, AG10 --> d9, A25 --> d24)\n\n---\n\n## Description\n\nIrac without RP asks the model to use the anchor text and write an IRAC. It is provided with instructions on how to write the IRAC and an overview of the grading criteria.\nIt is conducted immediately before the Irac with RP question\n\n## Prompt Requirements (Citations)\n\nThe evaluated model is instructed that:\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0116_known_authority-SC.md",
+    "rel": "secondary-reference\\0116_known_authority-SC.md",
+    "mtime": "2026-01-16T08:21:16.735Z",
+    "size": 3732,
+    "heading": "Known Authority",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "# Known Authority\n\n**Name: Known Authority**\n\n**Chain Position:** As of now, this question type is always first question in the chain. Normally, question types dont have a fixed position in the chain, but this question is designed to be presented first.\n(For other question types: relative positions that aren't fixed)\n\n**Total no. of questions** 4\n\n---\n\n## Known Authority Question Format\n\n| Q#  | Question Type             | Sample Question                                | Ground Truth                      |\n| --- | ------------------------- | ---------------------------------------------- | --------------------------------- |\n| 1   | **Controlling authority** | \"Which citation is most authoritative?\"        | Fowler score ranking              |\n| 2   | **In-favor citations**    | \"Which citations support the holding?\"         | Shepards positive treatment edges |\n| 3   | **Against citations**     | \"Which citations oppose or limit the holding?\" | Shepards negative treatment edges |\n| 4   | **Occurrence frequency**  | \"Which citation appears most often?\"           | Citation array count              |\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0121_IRAC_Scoring_Spec_v2.0.md",
+    "rel": "secondary-reference\\0121_IRAC_Scoring_Spec_v2.0.md",
+    "mtime": "2026-01-22T04:40:10.324Z",
+    "size": 29276,
+    "heading": "IRAC Scoring Specification v2.0",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "# IRAC Scoring Specification v2.0\n\n**Version:** 2.0\n**Date:** 2026-01-21\n**Status:** Consolidated specification (supersedes v1.1.8 + v1.1.9)\n**Scope:** IRAC synthesis scoring for d9 (closed-book) and j10 (open-book) steps\n\n---\n\n## Changelog from v1.1.8/v1.1.9\n\n| Change | Rationale |\n|--------|-----------|\n| S6 → d9/j10 naming | Align with d*/j* step naming convention |\n| S7 voiding → citation_integrity post-action | No run-voiding semantics in v1 baseline |\n| Removed S5:cb Mode dependency | d9/j10 mode determined by payload admission, not S5 step |\n| Consolidated v1.1.8 + v1.1.9 | Single authoritative document |\n| Integrated Addendum C fixes | L1-L8 fixes merged inline |\n| Removed duplicate Two-Pass section | Content unified in §13 |\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0122_canary v c-nonexist1.md",
+    "rel": "secondary-reference\\0122_canary v c-nonexist1.md",
+    "mtime": "2026-01-23T11:14:14.873Z",
+    "size": 2517,
+    "heading": "Canary vs C-NONEXIST1: Relationship Analysis",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "# Canary vs C-NONEXIST1: Relationship Analysis\n\n## Core Comparison\n\n| Aspect | Canary (C1/C2) | C-NONEXIST1 |\n|--------|----------------|-------------|\n| **Citation** | Real case, exists in databases | Fake case, doesn't exist anywhere |\n| **Model's pretraining** | Probably saw this case | Definitely never saw this case |\n| **What we withheld** | The full opinion text | Nothing to withhold - it's fictional |\n| **Failure mode** | Using pretraining instead of staying within provided materials | Pure confabulation under pressure |\n| **Tests** | *Discipline* - \"use only what I gave you\" | *Honesty* - \"don't invent things\" |\n\n---\n\n## The Hierarchy of Truthfulness Probes\n\n```\nLevel 1: C-NONEXIST1 (strictest)\n   \"Will you make up holdings for a case that doesn't exist?\"\n   → Tests: raw confabulation / \"will you lie?\""
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\0122_fdq-top-3.md",
+    "rel": "secondary-reference\\0122_fdq-top-3.md",
+    "mtime": "2026-01-23T11:11:55.009Z",
+    "size": 21224,
+    "heading": "Fully Developed Question Specifications — Top 3",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "# Fully Developed Question Specifications — Top 3\n\n**Version:** 1.0  \n**Date:** 2026-01-23  \n**Status:** Implementation-Ready\n\n---\n\n# FDQ 1: C-NONEXIST1 — Fake Citation Holding Probe\n\n## 1. Question ID\n\n| Field | Value |\n|-------|-------|\n| **Question ID** | `C-NONEXIST1` |\n| **QB Reference** | 3.4 |\n| **Family** | Canary (Truthfulness) |\n| **Reasoning Depth** | Level 1 (epistemic discipline) |\n\n---"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\1_0117_01QB_ALL_v1.3.md",
+    "rel": "secondary-reference\\1_0117_01QB_ALL_v1.3.md",
+    "mtime": "2026-01-24T04:54:41.708Z",
+    "size": 70937,
+    "heading": "Purpose",
+    "meta": {},
+    "terms": [
+      "requirement",
+      "model"
+    ],
+    "preview": "**Legal-10 Question Bank**\n\n*Atomic, runspec-driven question types for deterministic and judge-scored steps*\n\nVersion: v1.3   |   Date: 2026-01-16\n\n> **v1.3 additions:** 27 new templates from Gentry/Cho analysis across sections 1.x, 2.x, 3.x, 5.x, 8.x, 9.x, 10.x, 11.x, 12.x. See _new_content.md for categorization rationale.\n\n---\n\n## Purpose\n\nThis document consolidates the question types currently used (or planned) in Legal-10 into a single question bank. Each question type is expressed in atomic form so it can be selected in a UI, compiled into a runspec, and deterministically expanded into EU packages (prompts, ground truth artifacts, and scorers).\n\nThis QB also tracks whether each template is **implementation-ready** (a \"Fully Developed Question\") per:\n\n- `internal/specs/steps/_defining_fully_developed_question.md`\n\nEach template below includes a short **Development status** line: `Fully developed`, `Partially developed`, or `Deferred`.\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\[C] [legal-10] safety-design-decisions.md",
+    "rel": "secondary-reference\\[C] [legal-10] safety-design-decisions.md",
+    "mtime": "2026-01-27T17:52:18.984Z",
+    "size": 26207,
+    "heading": "Legal-10: Safety-Focused Design Decisions",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "# Legal-10: Safety-Focused Design Decisions\n\nThis document catalogs the architectural and methodological decisions in Legal-10 that prioritize objectivity, accuracy, safety, and verifiability. Every decision listed here was made to address a specific failure mode in AI evaluation or legal AI deployment.\n\n---\n\n## Category 1: Hallucination Detection & Truthfulness\n\nThese innovations directly detect when models fabricate information rather than reasoning from evidence.\n\n### 1.1 Synthetic Case Traps\n\n**The Problem:** Language models can generate plausible-sounding but entirely fictional case citations. A citation like \"Smith v. Johnson, 347 U.S. 215 (1954)\" follows the correct format but may not exist. Without verification, such fabrications pass undetected.\n\n**The Solution:** Legal-10 maintains a set of deterministically-generated fake citations that look real but do not exist:\n- Fake SCOTUS citations (e.g., \"999 U.S. 1\" - impossible volume numbers)\n- Fake CAP citations (collision-checked against real federal reporters)\n- 2 synthetic traps introduced randomly per evaluation\n\n**Why It Matters:** If a model cites one of these synthetic traps, it is *definitive proof* of hallucination. These cases cannot exist in any training data because they were algorithmically generated and collision-checked against the complete SCDB universe."
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\[blockers] [legal-10] [mvp] end-to-end blockers.md",
+    "rel": "secondary-reference\\[blockers] [legal-10] [mvp] end-to-end blockers.md",
+    "mtime": "2026-02-03T09:54:14.464Z",
+    "size": 3292,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "runtime"
+    ],
+    "preview": "✅ EXISTS (verified in this repo)\n\n1.      fdq-01-ka-sc.md, fdq-02-irac without rp.md, fdq-03-irac with rp.md all exist under docs/[legal-10] [mvp]/ and are already “3-step”: d2 + j3 and Chain Position 2/3 (not d9/j10).\n2.      0124-irac-scoring-v2.md exists: 0124-irac-scoring-v2.md.\n3.      0117_d1_known_authority_scorer.py exists: 0117_d1_known_authority_scorer.py.\n4.      Citation integrity implementation exists as post_citation_integrity.py (it does anchor_inventory_full + rp_subset checks).\n5.      Benchmark structure spec exists as [C] [platform] [legal-10] [10-s] benchmark package structures-bench-eu-rp.v4.md (and it explicitly expects p1.json, p2.json, ground_truth.json).\n6.      3-step outputs + structure docs exist under docs/[legal-10] [mvp]/ (see run-outputs.md and 3-step-run-benchmark-structure.md).\n7.      Builders exist: build_research_packs.py, build_eus.py.\n8.      Sealing spec exists: 8_feature_signed-manifest-integrity-plan.md (it specifies embedded signature inside manifest.json, no separate signature file).\n\n❌ GAPS (confirmed)\n\n1.      Gap #1 payload naming mismatch is real right now: RP builder writes d1.json + d2.json (build_research_packs.py (line 611), build_research_packs.py (line 612)) and EU builder consumes d1.json/d2.json (build_eus.py (line 17), build_eus.py (line 18)), but v4 expects p2.json + ground_truth.json ([C] [platform] [legal-10] [10-s] benchmark package structures-bench-eu-rp.v4.md).    \n2.      Gap #2 benchmark builder: benchmark-builder.py not found (repo-wide).\n3.      Gap #3 plan file: no plan.json exists anywhere (repo-wide).\n4.      Gap #4/#5: no *.json or *.json directories/files exist (repo-wide).\n5.      Gap #6 ground truth shape: EU builder currently writes eu.json (metadata + ground_truth) and a per-EU manifest.json (build_eus.py (line 24), build_eus.py (line 571)) — not ground_truth.json as separate files.\n6.      Gap #7 signing: no ed25519 signing implemented in either builder; and the sealing spec wants signature embedded in the root manifest (8_feature_signed-manifest-integrity-plan.md (line 8), 8_feature_signed-manifest-integrity-plan.md (line 33)).    \n7.      Gap #8 roster: partially overstated — RP/EU builders already have --limit and stable ordering mechanisms, but if you want an explicit published roster of the 200 anchors/EUs inside the sealed bundle, that artifact isn’t being produced yet."
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\secondary-reference\\[legal-10] [10-s] [platform] eval-design-features.md",
+    "rel": "secondary-reference\\[legal-10] [10-s] [platform] eval-design-features.md",
+    "mtime": "2026-01-26T06:02:46.895Z",
+    "size": 27352,
+    "heading": "Legal-10: Safety-Focused Design Decisions",
+    "meta": {
+      "status": "in-progress draft"
+    },
+    "terms": [
+      "runtime",
+      "requirement",
+      "model"
+    ],
+    "preview": "**IMPORTANT:** This document includes both agchain system architecture-relevant materials as well as legal-10 architecture and features related materials. Ensure proper usage across both. \n\nstatus: in-progress draft\n\n# Legal-10: Safety-Focused Design Decisions\n\nThis document catalogs the architectural and methodological decisions in Legal-10 that prioritize objectivity, accuracy, safety, and verifiability. Every decision listed here was made to address a specific failure mode in AI evaluation or legal AI deployment.\n\n---\n\n## Category 1: Hallucination Detection & Truthfulness\n\nThese innovations directly detect when models fabricate information rather than reasoning from evidence.\n\n### 1.1 Synthetic Case Traps\n\n**The Problem:** Language models can generate plausible-sounding but entirely fictional case citations. A citation like \"Smith v. Johnson, 347 U.S. 215 (1954)\" follows the correct format but may not exist. Without verification, such fabrications pass undetected.\n\n**The Solution:** Legal-10 maintains a set of deterministically-generated fake citations that look real but do not exist:\n- Fake SCOTUS citations (e.g., \"999 U.S. 1\" - impossible volume numbers)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\specifications\\02092026.md",
+    "rel": "specifications\\02092026.md",
+    "mtime": "2026-02-09T10:36:07.283Z",
+    "size": 47702,
+    "heading": "Legal-10 3-Step MVP (“3-STEP-RUN”) — Updated Specification (Runspec + MVP)",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model",
+      "provider"
+    ],
+    "preview": "# Legal-10 3-Step MVP (“3-STEP-RUN”) — Updated Specification (Runspec + MVP)\n\n**Document date:** 2026-02-09  \n**Scope:** Legal-10 “3-Step MVP” (d1 → d2 → j3) plus the build-time + run-time machinery required to produce and run it.  \n**Primary implementation target:** `legal-10/runspecs/3-STEP-RUN/`  \n**Output of this document:** A self-contained, end-to-end spec for building and running the 3-Step MVP, including: (1) desired end product, (2) artifacts/packages (RP/EU/benchmark/bundle), (3) runner semantics (prompts/statefulness/audit), (4) scoring, (5) sealing/integrity, (6) objective “implemented vs. needs work” assessment.\n\n---\n\n## 0) Authority, scope boundaries, and conflict policy\n\n### 0.1 Canonical authority hierarchy (when docs conflict)\nPer `legal-10/docs/_INDEX.md`:\n1. `legal-10/docs/mvp/M1-buildtime-packaging-sealing-dev-brief.md` (M1) — highest authority for **bundle layout, schemas, and sealing** for the 3-step MVP.\n2. `legal-10/docs/platform/inter-step-requirements.md` — highest authority for **runner semantics** (IS-* requirements).\n3. `legal-10/docs/fdq/*.md` and `legal-10/docs/fdq/post/*.md` — authoritative for **step prompts, output contracts, and scoring**.\n4. Everything else under `legal-10/docs/**` — supplementary, historical, or forward-looking (10-step).\n\n### 0.2 Explicit conflicts identified (and resolved for MVP)\n1. **Sealing format conflict**"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\specifications\\3-step-mvp-consolidated-spec.md",
+    "rel": "specifications\\3-step-mvp-consolidated-spec.md",
+    "mtime": "2026-02-09T12:30:30.328Z",
+    "size": 28878,
+    "heading": "Legal-10 3-Step MVP: Consolidated Specification and Assessment",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "requirement",
+      "model",
+      "provider"
+    ],
+    "preview": "# Legal-10 3-Step MVP: Consolidated Specification and Assessment\n\n**Date:** 2026-02-09\n**Scope:** Complete sweep of `legal-10/docs/`, `legal-10/runspecs/3-STEP-RUN/`, `legal-10/runs/run_20260208_080028_154291/`, and `legal-10/scripts/`\n**Method:** Full reading of 80+ documents, 13 source files, 6 benchmark configs, and 1 actual run output\n\n---\n\n## Table of Contents\n\n1. [Product Overview: What the 3-Step MVP Is](#1-product-overview)\n2. [Package Architecture: RP, EU, and Benchmark](#2-package-architecture)\n3. [Build Pipeline: How Packages Are Assembled](#3-build-pipeline)\n4. [Runner Semantics: How the Chain Executes](#4-runner-semantics)\n5. [Prompt Architecture](#5-prompt-architecture)\n6. [Scoring Specifications](#6-scoring-specifications)\n7. [Statefulness and Isolation](#7-statefulness-and-isolation)\n8. [FDQ Catalog](#8-fdq-catalog)\n9. [Implementation Status: What Exists vs. What Is Missing](#9-implementation-status)\n10. [Prioritized Development Gaps](#10-prioritized-development-gaps)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_distinguish.md",
+    "rel": "steps-reference\\0113_distinguish.md",
+    "mtime": "2026-01-23T10:20:57.963Z",
+    "size": 280,
+    "heading": "Distinguish",
+    "meta": {},
+    "terms": [],
+    "preview": "# Distinguish\n\nScoring: 0.5 * agree_match + 0.5 * treatment_match\nGT Source: edge.agree + normalize_shepards_to_treatment(edge.shepards)\nResponse Contract: V2_TREATMENT_ENUM (8 values) + boolean agree\nWhy keep: Treatment normalization is robust, Shepard's GT is deterministic"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_fact_extraction.md",
+    "rel": "steps-reference\\0113_fact_extraction.md",
+    "mtime": "2026-01-23T10:21:28.426Z",
+    "size": 308,
+    "heading": "Fact Extraction",
+    "meta": {},
+    "terms": [],
+    "preview": "# Fact Extraction\n\nScoring: 0.5 * disposition_match + 0.5 * party_winning_match\nGT Source: SCDB codes via disposition_code_to_v2() + party_winning_code_to_text()\nResponse Contract: Closed enums (9 dispositions, 3 party_winning)\nWhy keep: Closed enums eliminate ambiguity, GT from SCDB is authoritative\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_oyez_oral_argument.md",
+    "rel": "steps-reference\\0113_oyez_oral_argument.md",
+    "mtime": "2026-01-23T10:23:16.576Z",
+    "size": 324,
+    "heading": "OYEZ Oral Argument",
+    "meta": {},
+    "terms": [],
+    "preview": "# OYEZ Oral Argument\n\nScoring: Binary exact match (unclear prediction = 0.0)\nGT Source: SCDB party_winning code (1=petitioner, 0=respondent, 2=unclear)\nResponse Contract: {predicted_winner: petitioner | respondent | unclear}\nWhy keep: Simple classification with deterministic GT\n\n- Only first step in use of this data"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_unknown_authority.md",
+    "rel": "steps-reference\\0113_unknown_authority.md",
+    "mtime": "2026-01-23T10:21:52.915Z",
+    "size": 280,
+    "heading": "Unknown Authority",
+    "meta": {},
+    "terms": [],
+    "preview": "# Unknown Authority\n\nScoring: MRR (Mean Reciprocal Rank) - score = 1/rank, correct if rank ≤ 10\nGT Source: edge.citing_case_us_cite from ChainContext\nResponse Contract: {citing_cases: [{us_cite, case_name}]}\nWhy keep: MRR is a standard IR metric, GT derivation is clean\n\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\0113_validate_authority.md",
+    "rel": "steps-reference\\0113_validate_authority.md",
+    "mtime": "2026-01-23T10:21:15.155Z",
+    "size": 311,
+    "heading": "Validate Authority",
+    "meta": {},
+    "terms": [],
+    "preview": "# Validate Authority\n\nScoring: Exact match on consistency_flag\nGT Source: _compute_consistency_flag(curated_present, edge_label) - fully deterministic\nResponse Contract: 4-value enum: CONSISTENT | INCONSISTENT | CURATED_ONLY | CITATOR_ONLY\nWhy keep: Clean enum, deterministic GT computation function exists"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\1_0116_new-question-mapping.md",
+    "rel": "steps-reference\\1_0116_new-question-mapping.md",
+    "mtime": "2026-01-17T04:20:17.153Z",
+    "size": 16468,
+    "heading": "Capability Spectra Across the 9-Family Structure",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "# Capability Spectra Across the 9-Family Structure\n\nthis following content will be an extra view to view our data. it does not replace our existing 12 question type structure\n\n## The New 9 Families\n\n| #   | Family                  | Merged From |\n| --- | ----------------------- | ----------- |\n| 1.x | Known Authority (KA)    | 1.x + 2.x   |\n| 2.x | Canary                  | 3.x         |\n| 3.x | Citation Integrity      | 4.x         |\n| 4.x | Transitive Reasoning    | 5.x         |\n| 5.x | IRAC Synthesis          | 6.x + 7.x   |\n| 6.x | Reverse Citator (RC)    | 8.x         |\n| 7.x | Fact Extraction (FE)    | 10.x        |\n| 8.x | Edge Treatment          | 11.x + 9.x  |\n| 9.x | Cross-Source Validation | 12.x        |\n\n---\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/legal-10/docs",
+    "path": "E:\\writing-system\\_agchain\\legal-10\\docs\\steps-reference\\[legal-10] [fdq] [new] implementation-guide-citation-polarity.md",
+    "rel": "steps-reference\\[legal-10] [fdq] [new] implementation-guide-citation-polarity.md",
+    "mtime": "2026-01-25T05:32:46.676Z",
+    "size": 16212,
+    "heading": "Citation Polarity Methods: Implementation Guide",
+    "meta": {},
+    "terms": [],
+    "preview": "# Citation Polarity Methods: Implementation Guide\n\n## Overview\n\nThis guide details the implementation of two complementary citation polarity extraction methods:\n\n1. **Bluebook Signal Extraction** (δ-Stance approach) - Extracts author-indicated stance from citation signals\n2. **Quoted Passage Extraction** (LePaRD approach) - Extracts quoted text and context for passage retrieval\n\nThese methods are implemented as separate database views/tables first, then integrated with existing Shepard's treatment data for hybrid polarity scoring.\n\n---\n\n## PART 1: SEPARATE VIEWS (Step 1)\n\n### 1A. Bluebook Signal Extraction\n\n#### Method Definition (from δ-Stance Paper)\n\nThe δ-Stance approach extracts citation signals that appear **immediately before** citations in legal text. These signals indicate the author's (judge's) intended relationship between their argument and the cited authority."
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\atomic.md",
+    "rel": "docs\\benchmarks\\atomic.md",
+    "mtime": "2026-02-11T02:29:59.141Z",
+    "size": 217,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Atomic\ndescription: Atomic benchmark — a separate evaluation effort on the AgChain platform.\nsidebar:\n  order: 2\n---\n\nAtomic is a planned benchmark on the AgChain platform. Details are under development.\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\index.md",
+    "rel": "docs\\benchmarks\\index.md",
+    "mtime": "2026-02-11T02:46:00.894Z",
+    "size": 848,
+    "heading": "Active benchmarks",
+    "meta": {},
+    "terms": [
+      "runtime"
+    ],
+    "preview": "---\ntitle: Overview\ndescription: Benchmarks hosted on the AgChain platform — Legal-10, Atomic, L7, and Quantization.\nsidebar:\n  order: 0\n---\n\nAgChain hosts multiple independent benchmarks as runspecs. Each benchmark defines its own chain topology, evaluation steps, scoring methods, and package structure — the platform provides the runtime engine, isolation, and audit infrastructure.\n\n## Active benchmarks\n\n| Benchmark | Steps | Status | Description |\n|-----------|-------|--------|-------------|\n| **Legal-10** | 10 (3-step MVP) | Flagship — in development | Stateful, multi-step legal reasoning over sealed evidence |\n| **Atomic** | TBD | Planned | Separate benchmark effort |\n| **L7** | TBD | Planned | Separate benchmark effort |\n| **Quantization** | — | Evaluation dimension | Precision-tier evaluation across quantization methods |\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\l7.md",
+    "rel": "docs\\benchmarks\\l7.md",
+    "mtime": "2026-02-11T02:30:00.256Z",
+    "size": 205,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: L7\ndescription: L7 benchmark — a separate evaluation effort on the AgChain platform.\nsidebar:\n  order: 3\n---\n\nL7 is a planned benchmark on the AgChain platform. Details are under development.\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\data-model\\data-sources.md",
+    "rel": "docs\\benchmarks\\legal-10\\data-model\\data-sources.md",
+    "mtime": "2026-02-11T03:33:26.792Z",
+    "size": 920,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Data Sources\ndescription: Raw data sources — SCDB, CAP, Shepard's, Oyez, Fowler, Martin-Quinn, Songer, CourtListener.\nsidebar:\n  order: 1\n---\n\nLegal-10's build pipeline draws from eight primary legal data sources:\n\n| Source | Content | Coverage |\n|--------|---------|----------|\n| **SCDB** | Supreme Court case metadata, votes, dispositions | 1791–present |\n| **CAP** | Full-text case opinions from all U.S. jurisdictions | Historical–2020 |\n| **Shepard's** | Citation treatment edges (positive/negative/distinguished) | Cross-jurisdictional |\n| **Oyez** | Oral argument metadata and summaries | SCOTUS |\n| **Fowler** | Authority scores for Supreme Court opinions | SCOTUS |\n| **Martin-Quinn** | Ideological scores for justices | SCOTUS |\n| **Songer** | Appellate court case attributes | U.S. Courts of Appeals |\n| **CourtListener** | Cross-reference IDs and supplemental metadata | All jurisdictions |\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\data-model\\duckdb-schema.md",
+    "rel": "docs\\benchmarks\\legal-10\\data-model\\duckdb-schema.md",
+    "mtime": "2026-02-11T08:16:49.461Z",
+    "size": 786,
+    "heading": "Scale",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: DuckDB Schema\ndescription: Database schema — 13 tables and 7 views spanning 8 legal data sources.\nsidebar:\n  order: 2\n---\n\n`legal-10/datasets/legal10-updates.duckdb` contains the integrated legal dataset.\n\n## Scale\n\n| Table | Rows | Description |\n|-------|------|-------------|\n| `shepards_edges` | 5.7M | Citation graph edges |\n| `cap_cases_meta` | 855K | Case metadata from CAP |\n| `cl_crosswalk` | 866K | CourtListener cross-reference IDs |\n| `cap_citations_ranked` | 430K | Ranked authority citations |\n| `citation_inventory` | 345K | Normalized citation index |\n\n## Data sources"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\data-model\\index.md",
+    "rel": "docs\\benchmarks\\legal-10\\data-model\\index.md",
+    "mtime": "2026-02-11T04:19:09.284Z",
+    "size": 242,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Data Model\ndescription: Core data sources, schema, and dataset assumptions used to build sealed benchmark artifacts.\nsidebar:\n  order: 4\n---\n\nLegal-10 data sources and schema that feed the build pipeline (sources + DuckDB schema).\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\evaluation-steps.md",
+    "rel": "docs\\benchmarks\\legal-10\\evaluation-steps.md",
+    "mtime": "2026-02-11T08:13:24.212Z",
+    "size": 3067,
+    "heading": "What runs today (3-step MVP)",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Evaluation Steps (FDQs)\ndescription: What each step asks, what it must return, and how it is scored.\nsidebar:\n  order: 1\n---\n\nEach Legal-10 step is specified by a **Formal Delivery Query (FDQ)**: a self-contained spec that includes the prompt intent, the output contract, the ground truth derivation, and the scoring rule.\n\nTwo IDs matter:\n\n- **FDQ ID (spec):** the numbered FDQ document in `legal-10/docs/fdq/` (example: `01-ka-sc.md`).\n- **Step ID (execution):** the `step_id` in a benchmark packet's `plan.json` (example: `d1`, `d2`, `j3`).\n\nStep IDs are plan-specific. The same FDQ can be reused under different step IDs depending on the chain (for example, the closed-book IRAC is `d2` in the MVP plan but `d9` in the 10-step spec).\n\n## What runs today (3-step MVP)\n\nThe shipped MVP plan is `legal10_3step_v1` (`legal-10/runspecs/3-STEP-RUN/benchmark/plan.json`):\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\index.md",
+    "rel": "docs\\benchmarks\\legal-10\\index.md",
+    "mtime": "2026-02-11T08:12:06.490Z",
+    "size": 2708,
+    "heading": "What ships today (3-step MVP)",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "---\ntitle: Legal-10 Overview\ndescription: What Legal-10 evaluates, what ships today, and where the specs and code live.\nsidebar:\n  order: 0\n---\n\nLegal-10 is the flagship benchmark hosted on AgChain. It evaluates whether a model can do **multi-step legal reasoning** over a single U.S. Supreme Court *anchor opinion*, while staying faithful to the evidence it is given.\n\nTwo principles drive most design decisions:\n\n- **Sealed evidence:** all \"open-book\" material is built ahead of time into versioned artifacts (no runtime retrieval).\n- **Plan-driven execution:** the runner executes exactly what `plan.json` declares (step order, payload admission, scoring mode).\n\n## What ships today (3-step MVP)\n\nThe currently implemented vertical slice is `legal10_3step_v1` in `legal-10/runspecs/3-STEP-RUN/benchmark/plan.json`:\n\n- `d1` (Known Authority / KA-SC): classify citations in the anchor opinion (deterministic scoring).\n- `d2` (IRAC without RP): write a closed-book IRAC from the anchor only (judge-scored)."
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\packages.md",
+    "rel": "docs\\benchmarks\\legal-10\\packages.md",
+    "mtime": "2026-02-11T02:30:52.364Z",
+    "size": 1443,
+    "heading": "Evaluation Unit (EU)",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Packages\ndescription: Evaluation Units, Research Packs, benchmark packets, and bundle sealing.\nsidebar:\n  order: 3\n---\n\nLegal-10 packages evidence into sealed, versioned artifacts at build time.\n\n## Evaluation Unit (EU)\n\nOne EU = one anchor opinion packaged for evaluation. Contains:\n\n- **`p1.json`** (anchor payload) — case text, citation roster, metadata. Candidate-visible.\n- **`p2.json`** (authorities payload) — research pack authorities with ranking data. Candidate-visible only when admitted by `plan.json`.\n- **`ground_truth.json`** — known authority answers, anchor inventory, RP subset. Runner-only; never exposed to evaluated model.\n\n## Research Pack (RP)\n\nBuild-time intermediate. Assembled from datasets by `rp_builder.py` and shipped inside the EU as `p2.json`. The RP directory itself is not included in the released bundle."
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\legal-10\\scoring.md",
+    "rel": "docs\\benchmarks\\legal-10\\scoring.md",
+    "mtime": "2026-02-11T02:30:44.779Z",
+    "size": 1411,
+    "heading": "d1 — Deterministic scoring",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Scoring\ndescription: Deterministic scoring, judge-scored IRAC, citation integrity, and score aggregation.\nsidebar:\n  order: 2\n---\n\nLegal-10 uses a hybrid scoring approach combining deterministic checks with LLM-as-judge evaluation.\n\n## d1 — Deterministic scoring\n\nThe d1 score is the mean of four 0.25-weight components:\n\n| Component | Method |\n|-----------|--------|\n| `controlling_authority` | Exact match |\n| `in_favor` | F1 (precision × recall) |\n| `against` | F1 (precision × recall) |\n| `most_frequent` | Exact match |\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\benchmarks\\quantization.md",
+    "rel": "docs\\benchmarks\\quantization.md",
+    "mtime": "2026-02-11T02:30:01.695Z",
+    "size": 290,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Quantization\ndescription: Precision-tier evaluation across quantization methods.\nsidebar:\n  order: 4\n---\n\nQuantization is an evaluation dimension that measures how model performance degrades across precision tiers (FP16, INT8, INT4, etc.) and post-training quantization methods.\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\index.mdx",
+    "rel": "docs\\index.mdx",
+    "mtime": "2026-02-11T03:35:05.008Z",
+    "size": 1126,
+    "heading": "Platform",
+    "meta": {},
+    "terms": [
+      "runtime"
+    ],
+    "preview": "---\ntitle: AgChain Docs\ndescription: Canonical specifications, architecture, and roadmap for the AgChain benchmark authoring and deployment platform.\n---\n\nAgChain is a benchmark authoring and deployment platform for evaluating LLM reasoning over multi-step, stateful chains. It provides the runtime engine, isolation guarantees, and audit infrastructure that individual benchmarks plug into.\n\n## Platform\n\n- **[Platform](platform/)** — Runner engine, staging & isolation, state management, message assembly, audit.\n\n## Benchmarks\n\n- **[Benchmarks](benchmarks/)** — Legal-10 (flagship), Atomic, L7, Quantization — independent evaluation efforts hosted on AgChain.\n- **[Legal-10](benchmarks/legal-10/)** — Deep dive into the flagship benchmark: evaluation steps, scoring, packages, and bundle sealing.\n\n## Build & Deploy\n\n- **[Build Pipeline](pipeline/)** — RP builder, EU builder, benchmark builder, DuckDB schema, data sources.\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\builders\\benchmark-builder.md",
+    "rel": "docs\\pipeline\\builders\\benchmark-builder.md",
+    "mtime": "2026-02-11T02:32:12.189Z",
+    "size": 792,
+    "heading": "Outputs",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Benchmark Builder\ndescription: Materializes the benchmark packet — plan, step definitions, judge prompts.\nsidebar:\n  order: 3\n---\n\n`runspecs/3-STEP-RUN/benchmark_builder.py` materializes the benchmark packet from FDQ specifications.\n\n## Outputs\n\nUnder `runspecs/3-STEP-RUN/benchmark/`:\n\n- `benchmark.json` — metadata, version, system message\n- `plan.json` — step ordering, payload admission rules, scoring modes\n- `model_steps/{d1,d2,j3}.json` — prompt templates, placeholders, output schemas\n- `judge_prompts/irac_mee_pair_v1.json` — judge evaluation protocol\n\n## Responsibilities\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\builders\\eu-builder.md",
+    "rel": "docs\\pipeline\\builders\\eu-builder.md",
+    "mtime": "2026-02-11T02:32:06.894Z",
+    "size": 775,
+    "heading": "Outputs",
+    "meta": {},
+    "terms": [
+      "runtime"
+    ],
+    "preview": "---\ntitle: EU Builder\ndescription: Evaluation Unit builder — converts Research Packs into runtime EU packages with ground truth.\nsidebar:\n  order: 2\n---\n\n`scripts/eu_builder.py` converts RP outputs into EU packages consumable by the runner.\n\n## Outputs\n\nPer-EU directory under `datasets/eus/<benchmark_id>/eus/<eu_id>/`:\n\n- `p1.json` — anchor payload (candidate-visible)\n- `p2.json` — authorities payload (candidate-visible when admitted)\n- `ground_truth.json` — runner-only answers\n\n## Ground truth derivation\n\n- `anchor_inventory_full` — sorted unique normalized citations from anchor"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\builders\\index.md",
+    "rel": "docs\\pipeline\\builders\\index.md",
+    "mtime": "2026-02-11T03:33:02.106Z",
+    "size": 216,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Builders\ndescription: Build-time CLIs that materialize RPs, EUs, and benchmark packets.\nsidebar:\n  order: 2\n---\n\nBuilders convert local datasets into sealed, versioned artifacts consumable by the runner.\n\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\builders\\rp-builder.md",
+    "rel": "docs\\pipeline\\builders\\rp-builder.md",
+    "mtime": "2026-02-11T02:32:02.214Z",
+    "size": 805,
+    "heading": "Outputs",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: RP Builder\ndescription: Research Pack builder — assembles authority sets from datasets for each anchor opinion.\nsidebar:\n  order: 1\n---\n\n`scripts/rp_builder.py` builds Research Packs from seven data sources. Each RP contains the anchor opinion payload and a ranked set of authorities.\n\n## Outputs\n\nPer-RP directory under `datasets/rps/rpv1__<caseId>/`:\n\n- `payloads/d1.json` — anchor text + citation roster\n- `payloads/d2.json` — ranked authorities\n- `manifest.json` — per-RP hashes for reproducibility\n\n## Authority selection\n\n- SCOTUS authorities: top K=10 by Fowler score"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\index.md",
+    "rel": "docs\\pipeline\\index.md",
+    "mtime": "2026-02-11T04:19:03.771Z",
+    "size": 847,
+    "heading": "Build stages",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Overview\ndescription: Build-time pipeline — builders and sealing for benchmark bundles.\nsidebar:\n  order: 0\n---\n\nThe build pipeline turns benchmark-specific datasets into benchmark-ready artifacts. All build-time operations use local inputs (no network retrieval).\n\n## Build stages\n\n```\nRaw benchmark datasets\n    ↓\nBenchmark dataset + schema\n    ↓\nRP Builder (scripts/rp_builder.py)\n    -> datasets/rps/rpv1__<caseId>/\n    ↓\nEU Builder (scripts/eu_builder.py)"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\pipeline\\release-integrity\\index.md",
+    "rel": "docs\\pipeline\\release-integrity\\index.md",
+    "mtime": "2026-02-11T08:16:49.462Z",
+    "size": 296,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Release Integrity\ndescription: Bundle sealing and verification to detect any modification to released benchmark artifacts.\nsidebar:\n  order: 3\n---\n\nReleased bundles must be sealed so the runner can refuse to run if any file differs from the published artifact (manifest + signature).\n\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\audit-repro\\audit.md",
+    "rel": "docs\\platform\\audit-repro\\audit.md",
+    "mtime": "2026-02-11T03:33:26.791Z",
+    "size": 1007,
+    "heading": "Audit log",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Audit & Integrity\ndescription: Hash proofs, run artifacts, and reproducibility.\nsidebar:\n  order: 1\n---\n\n## Audit log\n\n`audit_log.jsonl` records one entry per step boundary:\n\n- SHA-256 hashes of all staged files\n- Hash of the final assembled message\n- Message byte count\n- Payloads admitted at that step\n- `ground_truth_accessed: false` confirmation for candidate steps\n\n## Run artifacts\n\n| Artifact | Purpose |"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\audit-repro\\index.md",
+    "rel": "docs\\platform\\audit-repro\\index.md",
+    "mtime": "2026-02-11T03:33:02.101Z",
+    "size": 289,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Audit & Reproducibility\ndescription: Hash proofs, run artifacts, and determinism constraints.\nsidebar:\n  order: 4\n---\n\nAudit records prove exactly what bytes were staged and what messages were sent. Reproducibility depends on deterministic builders and stable runner behavior.\n\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\index.md",
+    "rel": "docs\\platform\\index.md",
+    "mtime": "2026-02-11T02:45:58.966Z",
+    "size": 1002,
+    "heading": "Core platform concerns",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "---\ntitle: Overview\ndescription: AgChain benchmark authoring and deployment platform — runner engine, staging, state management, audit.\nsidebar:\n  order: 0\n---\n\nAgChain is a benchmark authoring and deployment platform for evaluating LLM reasoning over multi-step, stateful chains. It provides the runtime engine, isolation guarantees, and audit infrastructure that individual benchmarks (runspecs) plug into.\n\n## Core platform concerns\n\n- **Plan-driven execution** — benchmarks declare their chain topology in `plan.json`; the platform executes steps in order\n- **Structural no-leak** — staging directories ensure the evaluated model only sees admitted evidence\n- **Stateful carry-forward** — sanitized `candidate_state.json` carries model outputs between steps without leaking ground truth\n- **Audit instrumentation** — SHA-256 hash proofs of every staged file and model message\n- **Sealed evidence** — research packs and evaluation units are built at build time, not retrieved at runtime\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\isolation-security\\index.md",
+    "rel": "docs\\platform\\isolation-security\\index.md",
+    "mtime": "2026-02-11T03:33:02.097Z",
+    "size": 342,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Isolation & Security\ndescription: Staging directories, structural no-leak, and separation between evaluated model and runner-only data.\nsidebar:\n  order: 2\n---\n\nIsolation is enforced via per-call staging directories: the evaluated model only sees the current step definition, admitted payloads, and sanitized carry-forward state.\n\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\isolation-security\\staging-isolation.md",
+    "rel": "docs\\platform\\isolation-security\\staging-isolation.md",
+    "mtime": "2026-02-11T03:33:26.785Z",
+    "size": 740,
+    "heading": "Staging protocol",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: Staging & Isolation\ndescription: Per-call staging directories and the structural no-leak invariant.\nsidebar:\n  order: 1\n---\n\nBefore each evaluated model call, the runner creates an isolated staging directory containing only the files the model is allowed to see.\n\n## Staging protocol\n\n1. Create `staging/{run_id}/{call_id}/`\n2. Copy the current step definition\n3. Copy only admitted payload files\n4. Copy sanitized `candidate_state.json`\n5. Hash all staged files for audit\n6. Assemble messages from staged content\n7. Call evaluated model\n8. Delete staging directory after completion\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\runtime\\index.md",
+    "rel": "docs\\platform\\runtime\\index.md",
+    "mtime": "2026-02-11T03:33:02.096Z",
+    "size": 294,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "runtime",
+      "model"
+    ],
+    "preview": "---\ntitle: Runtime\ndescription: Runner execution model, orchestration contract, and evaluated-model vs judge-model separation.\nsidebar:\n  order: 1\n---\n\nRuntime concerns cover how a benchmark plan is executed step-by-step, including model adapter selection and the evaluated/judge model split.\n\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\runtime\\runner-engine.md",
+    "rel": "docs\\platform\\runtime\\runner-engine.md",
+    "mtime": "2026-02-11T02:29:12.667Z",
+    "size": 774,
+    "heading": "Execution contract",
+    "meta": {},
+    "terms": [
+      "model",
+      "provider"
+    ],
+    "preview": "---\ntitle: Runner Engine\ndescription: Plan-driven chain execution, step orchestration, and model adapter architecture.\nsidebar:\n  order: 1\n---\n\nThe runner executes benchmark chains by reading `plan.json` and stepping through each evaluation in array order. Each step is a blocking operation — step N must complete before step N+1 begins.\n\n## Execution contract\n\n- Accepts a benchmark directory, EU directory (or root), and model adapter configs\n- Generates a unique `run_id` per execution\n- Produces `run.jsonl`, `audit_log.jsonl`, `candidate_state.json`, `summary.json`, and `run_manifest.json`\n\n## Model adapters\n\nThe platform supports pluggable model adapters (OpenAI, Anthropic) with configurable provider/model pairs for both the evaluated model and the judge model.\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\state-messages\\index.md",
+    "rel": "docs\\platform\\state-messages\\index.md",
+    "mtime": "2026-02-11T03:33:02.099Z",
+    "size": 283,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: State & Messages\ndescription: Candidate state carry-forward, sanitization rules, and fenced-window message assembly.\nsidebar:\n  order: 3\n---\n\nState and message construction define what information is carried between steps and how prompts are assembled deterministically.\n\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\state-messages\\message-assembly.md",
+    "rel": "docs\\platform\\state-messages\\message-assembly.md",
+    "mtime": "2026-02-11T03:33:26.789Z",
+    "size": 845,
+    "heading": "Fenced window protocol",
+    "meta": {},
+    "terms": [
+      "environment"
+    ],
+    "preview": "---\ntitle: Message Assembly\ndescription: Fenced window protocol and prompt construction.\nsidebar:\n  order: 2\n---\n\n## Fenced window protocol\n\nEach prompt window is a separate `{\"role\":\"user\",\"content\": ...}` message, fenced with delimiters:\n\n```\n<<<BEGIN_{NAME}>>>\n...content...\n<<<END_{NAME}>>>\n```\n\n## Window ordering (fixed)\n\n1. **ENV** — environment context"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\platform\\state-messages\\state-management.md",
+    "rel": "docs\\platform\\state-messages\\state-management.md",
+    "mtime": "2026-02-11T03:33:26.787Z",
+    "size": 864,
+    "heading": "Candidate state",
+    "meta": {},
+    "terms": [
+      "model"
+    ],
+    "preview": "---\ntitle: State Management\ndescription: Candidate state carry-forward, sanitization, and session strategies.\nsidebar:\n  order: 1\n---\n\n## Candidate state\n\n`candidate_state.json` carries model-derived artifacts between steps. It is keyed by step ID and accumulates — each step adds, never removes prior outputs.\n\n## Sanitization\n\nThe following are forbidden in candidate state:\n\n- Ground truth data\n- Scores or scoring details\n- Judge outputs\n- Runner internal bookkeeping\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\project\\frontend\\index.md",
+    "rel": "docs\\project\\frontend\\index.md",
+    "mtime": "2026-02-11T03:33:26.795Z",
+    "size": 402,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Frontend\ndescription: AgChain website architecture, site-shell, navigation, and leaderboard.\nsidebar:\n  order: 1\n---\n\nThe AgChain website is a static site with shell-based page injection, AG Grid leaderboards, and Tailwind CSS styling.\n\n- Site-shell architecture (`site-shell.js`)\n- Navigation system (`nav.json`)\n- Leaderboard and AG Grid integration\n- Design tokens and glass-card pattern\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\project\\index.md",
+    "rel": "docs\\project\\index.md",
+    "mtime": "2026-02-11T03:33:02.110Z",
+    "size": 366,
+    "heading": "",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Overview\ndescription: Website, infrastructure, and roadmap documentation for the AgChain project.\nsidebar:\n  order: 0\n---\n\n- **[Frontend](frontend/)** — website architecture, navigation, and leaderboard\n- **[Infrastructure](infrastructure/)** — deployment and operational configuration\n- **[Roadmap](roadmap/)** — milestone tracking and priorities\n\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\project\\infrastructure\\index.md",
+    "rel": "docs\\project\\infrastructure\\index.md",
+    "mtime": "2026-02-11T03:33:26.795Z",
+    "size": 357,
+    "heading": "",
+    "meta": {},
+    "terms": [
+      "environment"
+    ],
+    "preview": "---\ntitle: Infrastructure\ndescription: Deployment, cloud services, and operational configuration.\nsidebar:\n  order: 2\n---\n\nAgChain infrastructure spans GCP, PocketBase, Supabase, and Vercel.\n\n- GCP deployment and cloud functions\n- PocketBase hub configuration\n- Supabase integration\n- Vercel static deployment\n- Environment variables and secrets management\n"
+  },
+  {
+    "root": "E:/writing-system/_agchain/docs-site/src/content",
+    "path": "E:\\writing-system\\_agchain\\docs-site\\src\\content\\docs\\project\\roadmap\\index.md",
+    "rel": "docs\\project\\roadmap\\index.md",
+    "mtime": "2026-02-11T03:33:26.798Z",
+    "size": 540,
+    "heading": "Current focus: Legal-10 3-Step MVP",
+    "meta": {},
+    "terms": [],
+    "preview": "---\ntitle: Roadmap\ndescription: Prescriptive development roadmap and milestone tracking.\nsidebar:\n  order: 3\n---\n\nPrescriptive roadmap for AgChain platform and benchmark development.\n\n## Current focus: Legal-10 3-Step MVP\n\n- Bundle sealing (manifest + signature generation)\n- Runner preflight verification\n- Output contract validation\n- Full placeholder resolution\n\n## Upcoming\n\n- Scale EU generation (200 target EUs)\n- Full 10-step chain implementation"
+  }
+]

@@ -1,0 +1,7 @@
+The first thing to do is figuring out how to properly restore the code we have in agchain and surface them again as menus in the frontend so that we can start building towards a working product; but there are gaps in the code as well; the important thing is 
+- inspect-ai is a reference/benchmark for us when it can be. It does most things well and for areas it does well, we want to utilize it as a base/standard. 
+- there are areas that are weak in inspect-ai - for these areas, if our plan for a feature far exceededs the level of detail or depth that inspect-ai has, there are likely two paths for this. 
+  1. if inspect-ai scope of this feature can be utilzied as an intermediary basis, so that we can build our planned feature on top; then the development should be develope inspect-ai compatible build of this feature first, then build our plannbed funcitonalities on top 
+2. if our planned direction for a feature is a drastically and fundamentally different direction; then plan and build our functionalities directly; BUT first check to see if braintrust (which does not open its backend or src code) but only its frontend which we can visually see through the platform website - see if they offer any guidance on how to build it out. 
+if they do, show visually something that lcosely aligns with our implementation plan for a feature; use their visual frontend as a gudie by porting or desgining something similar so that our development of the backend without any direct src code to guide the implementation can still be guided by something. 
+
