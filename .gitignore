@@ -4,6 +4,7 @@
 .codex/settings.local.json
 .mcp.json
 skills/
+tools/
 json-schemas/
 .codex/
 .codex-tmp/
@@ -138,3 +139,4 @@ secpol-export*.cfg
 tmp_*.ps1
 tmp_*
 tmp-*
+jon-work/
