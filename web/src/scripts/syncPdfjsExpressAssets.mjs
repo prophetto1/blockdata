@@ -12,23 +12,39 @@ function hasPdfjsExpressAssets(directory) {
   return requiredAssetMarkers.every((relativePath) => existsSync(path.join(directory, relativePath)));
 }
 
+function resolveInstalledPackageDir() {
+  try {
+    return path.dirname(require.resolve('@pdftron/pdfjs-express/package.json'));
+  } catch {
+    return null;
+  }
+}
+
 export function syncPdfjsExpressAssets({
-  packageDir = path.dirname(require.resolve('@pdftron/pdfjs-express/package.json')),
+  packageDir,
   destinationDir = path.resolve(projectRoot, 'public', 'vendor', 'pdfjs-express'),
 } = {}) {
-  const sourceDir = path.resolve(packageDir, 'public');
+  const resolvedPackageDir = packageDir ?? resolveInstalledPackageDir();
+  const sourceDir = resolvedPackageDir ? path.resolve(resolvedPackageDir, 'public') : null;
 
-  if (hasPdfjsExpressAssets(sourceDir)) {
+  if (sourceDir && hasPdfjsExpressAssets(sourceDir)) {
     mkdirSync(path.dirname(destinationDir), { recursive: true });
     cpSync(sourceDir, destinationDir, { recursive: true, force: true });
     return { mode: 'copied', sourceDir, destinationDir };
   }
 
   if (hasPdfjsExpressAssets(destinationDir)) {
-    console.warn(
-      `PDF.js Express package assets were not found at ${sourceDir}. Using committed assets in ${destinationDir}.`
-    );
+    const warning = sourceDir
+      ? `PDF.js Express package assets were not found at ${sourceDir}. Using committed assets in ${destinationDir}.`
+      : `PDF.js Express package is not installed. Using committed assets in ${destinationDir}.`;
+    console.warn(warning);
     return { mode: 'fallback', sourceDir, destinationDir };
+  }
+
+  if (!sourceDir) {
+    throw new Error(
+      `PDF.js Express package is not installed, and no committed fallback exists at ${destinationDir}.`
+    );
   }
 
   throw new Error(

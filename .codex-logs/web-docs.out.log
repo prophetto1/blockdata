@@ -1,0 +1,21 @@
+
+> web-docs@1.0.0 dev
+> astro dev --host 0.0.0.0 --port 4421
+
+[2m13:20:36[22m [34m[starlight-site-graph-integration][39m Retrieving links from Markdown content (with patterns **/*)
+[2m13:20:36[22m [34m[starlight-site-graph-integration][39m Ignoring following Starlight links in sitemap: !/, **/*/
+[2m13:20:36[22m [34m[starlight-site-graph-integration][39m Finished retrieving links from Markdown content
+[2m13:20:36[22m [34m[types][39m Generated [2m1ms[22m
+[2m13:20:37[22m [34m[content][39m Syncing content
+[2m13:20:37[22m [34m[content][39m Synced content
+[2m13:20:37[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+
+[42m[1m astro [22m[49m [32mv5.18.1[39m [2mready in[22m 2744 [2mms[22m
+
+[2m┃[22m Local    [36mhttp://localhost:4421/[39m
+[2m┃[22m Network  [36mhttp://192.168.0.84:4421/[39m
+
+[2m13:20:37[22m [32mwatching for file changes...[39m
+[2m13:22:07[22m [34m[200][39m / [2m930ms[22m
+[2m14:13:02[22m [34m[200][39m / [2m83ms[22m
+[2m14:17:26[22m [34m[200][39m / [2m152ms[22m

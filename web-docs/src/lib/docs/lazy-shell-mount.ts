@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+
 import { SHELL_MODE_ATTR } from './shell-state';
 
 type RepoTreeNode = {
@@ -43,9 +45,9 @@ function mountOnceWhenFiletreeMode(
   });
 }
 
-async function renderReactComponent<TProps>(
+async function renderReactComponent<TProps extends object>(
   container: HTMLElement,
-  loadComponent: () => Promise<{ default: (props: TProps) => JSX.Element }>,
+  loadComponent: () => Promise<{ default: ComponentType<TProps> }>,
   props: TProps,
 ) {
   const [{ createElement }, { createRoot }, componentModule] = await Promise.all([

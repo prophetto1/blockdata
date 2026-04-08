@@ -147,7 +147,7 @@ describe('SuperuserOperationalReadiness', () => {
           env_loaded: true,
           repo_root_match: true,
           state_file_present: true,
-          state_path: 'E:/writing-system/.codex-tmp/platform-api-dev/state.json',
+          state_path: '.codex-tmp/platform-api-dev/state.json',
           state_written_at: '2026-03-31T16:00:00Z',
         },
         last_probe: {

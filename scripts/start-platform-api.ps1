@@ -44,6 +44,17 @@ function Set-DotEnvVariables {
 }
 
 function Resolve-PythonCommand {
+  $localPythonCandidates = @(
+    (Join-Path $serviceDir ".venv\Scripts\python.exe"),
+    (Join-Path $repoRoot ".venv\Scripts\python.exe")
+  )
+
+  foreach ($candidate in $localPythonCandidates) {
+    if (Test-Path $candidate) {
+      return @($candidate, "-m", "uvicorn")
+    }
+  }
+
   $python = Get-Command python.exe -ErrorAction SilentlyContinue
   if ($python) {
     return @($python.Source, "-m", "uvicorn")

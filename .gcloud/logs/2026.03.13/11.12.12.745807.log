@@ -1,0 +1,96 @@
+2026-03-13 11:12:12,747 DEBUG    root            Loaded Command Group: ['gcloud', 'run']
+2026-03-13 11:12:13,049 DEBUG    root            Loaded Command Group: ['gcloud', 'run', 'services']
+2026-03-13 11:12:13,191 DEBUG    root            Loaded Command Group: ['gcloud', 'run', 'services', 'describe']
+2026-03-13 11:12:13,199 DEBUG    root            Running [gcloud.run.services.describe] with arguments: [--format: "json", --project: "agchain", --region: "us-central1", SERVICE: "blockdata-platform-api"]
+2026-03-13 11:12:13,200 DEBUG    root            Failed to read GCE cache file: [WinError 2] The system cannot find the file specified: 'e:\\writing-system\\.gcloud\\gce'
+2026-03-13 11:12:13,683 DEBUG    root            Failed to check metadata server: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-13 11:12:13,684 DEBUG    root            On GCE from server: False
+2026-03-13 11:12:13,920 DEBUG    root            On GCE from memory cache: False
+2026-03-13 11:12:13,921 DEBUG    root            (gcloud.run.services.describe) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+Traceback (most recent call last):
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\calliope\cli.py", line 944, in Execute
+    resources = calliope_command.Run(cli=self, args=args)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\calliope\backend.py", line 960, in Run
+    resources = command_instance.Run(args)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\surface\run\services\describe.py", line 104, in Run
+    with serverless_operations.Connect(conn_context) as client:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\platform\bundledpython\Lib\contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\command_lib\run\serverless_operations.py", line 118, in Connect
+    op_client = apis.GetClientInstance(
+        conn_context.api_name,
+        conn_context.api_version,
+        skip_activation_prompt=already_activated_service,
+    )
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\api_lib\util\apis.py", line 282, in GetClientInstance
+    return apis_internal._GetClientInstance(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        api_name,
+        ^^^^^^^^^
+    ...<5 lines>...
+        region=regional.LocationToRegion(location) if location else None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\api_lib\util\apis_internal.py", line 178, in _GetClientInstance
+    http_client = transports.GetApitoolsTransport(
+        response_encoding=transport.ENCODING,
+        timeout=http_timeout_sec if http_timeout_sec else 'unset')
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\core\credentials\transports.py", line 73, in GetApitoolsTransport
+    session = requests.GetSession(
+        timeout=timeout,
+    ...<4 lines>...
+        redact_request_body_reason=redact_request_body_reason,
+    )
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\core\credentials\requests.py", line 84, in GetSession
+    credentials = store.LoadIfEnabled(
+        allow_account_impersonation
+    )
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\core\credentials\store.py", line 604, in LoadIfEnabled
+    return Load(
+        allow_account_impersonation=allow_account_impersonation)
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\core\credentials\store.py", line 828, in Load
+    cred = _Load(
+        account,
+    ...<2 lines>...
+        cache_only_rapt=cache_only_rapt,
+    )
+  File "C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin\..\lib\googlecloudsdk\core\credentials\store.py", line 964, in _Load
+    raise creds_exceptions.NoActiveAccountException(
+        named_configs.ActiveConfig(False).file_path)
+googlecloudsdk.core.credentials.exceptions.NoActiveAccountException: You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.
+2026-03-13 11:12:13,934 ERROR    root            (gcloud.run.services.describe) You do not currently have an active account selected.
+Please run:
+
+  $ gcloud auth login
+
+to obtain new credentials.
+
+If you have already logged in with a different account, run:
+
+  $ gcloud config set account ACCOUNT
+
+to select an already authenticated account to use.

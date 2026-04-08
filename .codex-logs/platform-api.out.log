@@ -1,0 +1,20 @@
+
+> platform-api:dev
+> powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1 -NoReload
+
+=== platform-api Config ===
+ENV_FILE:       E:\blockdata-agchain\.env
+STATE_FILE:     E:\blockdata-agchain\.codex-tmp\platform-api-dev\state.json
+SUPABASE_URL:   https://dbdzzhshmigewyprahej.supabase.co
+LOG_LEVEL:      INFO
+OTEL_ENABLED:   false
+OTEL_OTLP:      http://localhost:4318
+SIGNOZ_UI_URL:  http://localhost:8080
+===========================
+INFO:     127.0.0.1:54128 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54138 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58984 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64924 - "POST /auth/oauth/attempts HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:64925 - "GET /admin/auth/oauth/providers/status HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58762 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60495 - "GET /health HTTP/1.1" 200 OK
