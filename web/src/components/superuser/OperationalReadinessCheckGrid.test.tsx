@@ -1,8 +1,11 @@
-import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { OperationalReadinessCheckGrid } from './OperationalReadinessCheckGrid';
-import type { OperationalReadinessSurface } from '@/lib/operationalReadiness';
+import type {
+  OperationalReadinessCheckDetailState,
+  OperationalReadinessSurface,
+} from '@/lib/operationalReadiness';
 
 const surface: OperationalReadinessSurface = {
   id: 'blockdata',
@@ -152,6 +155,70 @@ describe('OperationalReadinessCheckGrid', () => {
     expect(corsCheck.getByText('Retry a browser upload from the app')).toBeInTheDocument();
     expect(corsCheck.getByText('Next if still failing')).toBeInTheDocument();
     expect(corsCheck.getByText('Inspect the live bucket policy')).toBeInTheDocument();
+  });
+
+  it('renders persisted latest probe/action detail and routes verify requests through the mounted check row', () => {
+    const onVerifyCheck = vi.fn();
+    const detailStates: Record<string, OperationalReadinessCheckDetailState> = {
+      'blockdata.storage.bucket_cors': {
+        loading: false,
+        verifying: false,
+        error: null,
+        detail: {
+          check: surface.checks[0],
+          latest_probe_run: {
+            probe_run_id: 'probe-run-1',
+            probe_kind: 'readiness_check_verify',
+            check_id: 'blockdata.storage.bucket_cors',
+            result: 'fail',
+            duration_ms: 8.2,
+            evidence: { status: 'fail', surface_id: 'blockdata' },
+            failure_reason: 'Bucket browser-upload CORS rules are missing or incomplete.',
+            created_at: '2026-04-08T16:15:00Z',
+          },
+          latest_action_run: {
+            action_run_id: 'action-run-1',
+            action_kind: 'storage_browser_upload_cors_reconcile',
+            check_id: 'blockdata.storage.bucket_cors',
+            result: 'ok',
+            duration_ms: 21.4,
+            request: { confirmed: true },
+            result_payload: { bucket_name: 'blockdata-user-content-prod' },
+            failure_reason: null,
+            created_at: '2026-04-08T16:17:00Z',
+          },
+        },
+      },
+    };
+
+    render(
+      <OperationalReadinessCheckGrid
+        surface={surface}
+        detailStates={detailStates}
+        onVerifyCheck={onVerifyCheck}
+      />,
+    );
+
+    const corsRow = screen.getAllByRole('button', { name: /bucket cors/i })[0]!;
+    const corsCheck = within(corsRow.closest('[data-part="root"]')!);
+
+    expect(corsCheck.getByText('Latest verification')).toBeInTheDocument();
+    expect(corsCheck.getByText('Latest backend action')).toBeInTheDocument();
+    expect(corsCheck.getByRole('button', { name: 'Verify now' })).toBeInTheDocument();
+
+    expect(onVerifyCheck).not.toHaveBeenCalled();
+  });
+
+  it('does not render backend-remediation actions for non-actionable checks', () => {
+    render(<OperationalReadinessCheckGrid surface={surface} />);
+
+    const configRow = screen.getAllByRole('button', { name: /storage bucket config/i })[0]!;
+    const configCheck = within(configRow.closest('[data-part="root"]')!);
+
+    fireEvent.click(configRow);
+
+    expect(configCheck.queryByText('Available actions')).not.toBeInTheDocument();
+    expect(configCheck.queryByRole('button', { name: /reconcile/i })).not.toBeInTheDocument();
   });
 
   it('auto-expands surfaces with failures and collapses all-ok surfaces', () => {

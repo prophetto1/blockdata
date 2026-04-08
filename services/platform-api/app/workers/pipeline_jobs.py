@@ -169,6 +169,11 @@ def _run_pipeline_job_sync(job_id: str, pipeline_kind: str) -> None:
             raise
 
 
+def run_pipeline_job_now(*, job_id: str, pipeline_kind: str) -> dict[str, Any]:
+    _run_pipeline_job_sync(job_id, pipeline_kind)
+    return _load_pipeline_job_sync(job_id)
+
+
 def _reap_stale_jobs_once_sync() -> int:
     with pipeline_tracer.start_as_current_span("pipeline.job.reap") as span:
         rows = _reap_stale_pipeline_jobs_sync()

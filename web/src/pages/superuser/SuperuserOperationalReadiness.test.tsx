@@ -5,6 +5,8 @@ import { Component as SuperuserOperationalReadiness } from './SuperuserOperation
 
 const refreshMock = vi.fn();
 const executeActionMock = vi.fn();
+const loadCheckDetailMock = vi.fn();
+const verifyCheckMock = vi.fn();
 const refreshStatusMock = vi.fn();
 const recoverMock = vi.fn();
 const useOperationalReadinessMock = vi.fn();
@@ -30,6 +32,8 @@ describe('SuperuserOperationalReadiness', () => {
   beforeEach(() => {
     refreshMock.mockReset();
     executeActionMock.mockReset();
+    loadCheckDetailMock.mockReset();
+    verifyCheckMock.mockReset();
     refreshStatusMock.mockReset();
     recoverMock.mockReset();
 
@@ -132,8 +136,49 @@ describe('SuperuserOperationalReadiness', () => {
           summary: 'Current browser origin for this session.',
         },
       ],
+      checkDetails: {
+        'blockdata.storage.bucket_cors': {
+          loading: false,
+          verifying: false,
+          error: null,
+          detail: {
+            check: {
+              check_id: 'blockdata.storage.bucket_cors',
+              surface_id: 'blockdata',
+              category: 'connectivity',
+              status: 'fail',
+              label: 'Bucket CORS',
+              summary: 'Browser upload CORS is missing.',
+              cause: null,
+              cause_confidence: null,
+              depends_on: [],
+              blocked_by: [],
+              available_actions: [],
+              verify_after: [],
+              next_if_still_failing: [],
+              actionability: 'backend_action',
+              evidence: { cors_configured: false },
+              remediation: 'Apply the browser upload CORS policy to the bucket.',
+              checked_at: '2026-03-30T16:00:00Z',
+            },
+            latest_probe_run: {
+              probe_run_id: 'probe-run-1',
+              probe_kind: 'readiness_check_verify',
+              check_id: 'blockdata.storage.bucket_cors',
+              result: 'fail',
+              duration_ms: 5.1,
+              evidence: { status: 'fail' },
+              failure_reason: 'Bucket browser-upload CORS rules are missing or incomplete.',
+              created_at: '2026-04-08T16:15:00Z',
+            },
+            latest_action_run: null,
+          },
+        },
+      },
       actionStates: {},
       executeAction: executeActionMock,
+      loadCheckDetail: loadCheckDetailMock,
+      verifyCheck: verifyCheckMock,
       refresh: refreshMock,
     });
 
@@ -241,5 +286,13 @@ describe('SuperuserOperationalReadiness', () => {
         route: '/admin/runtime/storage/browser-upload-cors/reconcile',
       }),
     );
+  });
+
+  it('routes the mounted verify action through the readiness hook', () => {
+    render(<SuperuserOperationalReadiness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Verify now' }));
+
+    expect(verifyCheckMock).toHaveBeenCalledWith('blockdata.storage.bucket_cors');
   });
 });

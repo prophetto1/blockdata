@@ -102,6 +102,118 @@ def load_pipeline_source_set_markdown_members(*, owner_id: str, source_set_id: s
     return members
 
 
+def store_pipeline_probe_source(
+    *,
+    owner_id: str,
+    project_id: str,
+    pipeline_kind: str,
+    source_uid: str,
+    filename: str,
+    doc_title: str,
+    markdown_bytes: bytes,
+    supabase_admin=None,
+) -> dict:
+    from app.api.routes.storage import build_object_key, _sync_pipeline_source_registry
+
+    settings = get_settings()
+    if not settings.gcs_user_storage_bucket:
+        raise RuntimeError("GCS_USER_STORAGE_BUCKET is not configured")
+
+    definition = get_pipeline_definition(pipeline_kind)
+    if definition is None:
+        raise RuntimeError(f"Unknown pipeline kind: {pipeline_kind}")
+
+    admin = supabase_admin or get_supabase_admin()
+    object_key = build_object_key(
+        user_id=owner_id,
+        project_id=project_id,
+        filename=filename,
+        storage_kind="source",
+        source_uid=source_uid,
+        artifact_name=filename,
+        storage_surface="pipeline-services",
+        storage_service_slug=str(definition["storage_service_slug"]),
+    )
+    reservation = admin.rpc(
+        "reserve_user_storage",
+        {
+            "p_user_id": owner_id,
+            "p_project_id": project_id,
+            "p_bucket": settings.gcs_user_storage_bucket,
+            "p_object_key": object_key,
+            "p_requested_bytes": len(markdown_bytes),
+            "p_content_type": "text/markdown",
+            "p_original_filename": filename,
+            "p_storage_kind": "source",
+            "p_source_uid": source_uid,
+            "p_source_type": "md",
+            "p_doc_title": doc_title,
+            "p_storage_surface": "pipeline-services",
+            "p_storage_service_slug": definition["storage_service_slug"],
+        },
+    ).execute().data
+    if not isinstance(reservation, dict):
+        raise RuntimeError("Failed to reserve pipeline probe source upload")
+
+    blob = _gcs_client().bucket(settings.gcs_user_storage_bucket).blob(object_key)
+    blob.upload_from_string(markdown_bytes, content_type="text/markdown", timeout=60)
+
+    storage_object = admin.rpc(
+        "complete_user_storage_upload",
+        {
+            "p_reservation_id": reservation["reservation_id"],
+            "p_owner_user_id": owner_id,
+            "p_actual_bytes": len(markdown_bytes),
+            "p_checksum_sha256": hashlib.sha256(markdown_bytes).hexdigest(),
+        },
+    ).execute().data
+    if not isinstance(storage_object, dict):
+        raise RuntimeError("Failed to complete pipeline probe source upload")
+
+    reservation_context = {
+        **reservation,
+        "storage_kind": "source",
+        "storage_surface": "pipeline-services",
+        "storage_service_slug": definition["storage_service_slug"],
+        "project_id": project_id,
+        "source_uid": source_uid,
+        "doc_title": doc_title,
+        "source_type": "md",
+        "original_filename": filename,
+    }
+    _sync_pipeline_source_registry(
+        admin,
+        owner_id=owner_id,
+        reservation=reservation_context,
+        storage_object=storage_object,
+    )
+
+    pipeline_source = (
+        admin.table("pipeline_sources")
+        .select("pipeline_source_id, storage_object_id")
+        .eq("owner_id", owner_id)
+        .eq("project_id", project_id)
+        .eq("pipeline_kind", pipeline_kind)
+        .eq("source_uid", source_uid)
+        .limit(1)
+        .execute()
+        .data
+    )
+    row = pipeline_source[0] if isinstance(pipeline_source, list) and pipeline_source else None
+    if row is None:
+        raise RuntimeError("Pipeline probe source was not registered")
+
+    return {
+        "project_id": project_id,
+        "pipeline_kind": pipeline_kind,
+        "storage_service_slug": definition["storage_service_slug"],
+        "source_uid": source_uid,
+        "pipeline_source_id": row["pipeline_source_id"],
+        "storage_object_id": row["storage_object_id"],
+        "reservation_id": reservation["reservation_id"],
+    }
+
+
 def store_pipeline_artifact(
     *,
     job: dict,

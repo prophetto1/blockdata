@@ -130,6 +130,13 @@ web/.tmp-vitest-*
 # pnpm home cache
 .pnpm-home/
 
+# Husky hooks scaffolding (ignored for now)
+.husky/
+scripts/husky/
+scripts/repo-hygiene/
+scripts/tests/husky-*.test.mjs
+scripts/tests/remove-desktop-ini.test.mjs
+
 # Dev output (logs, playwright, scripts)
 output/
 docs/design-layouts/logs/

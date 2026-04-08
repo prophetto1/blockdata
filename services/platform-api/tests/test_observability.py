@@ -1,7 +1,7 @@
 """Tests for OpenTelemetry observability configuration and bootstrap."""
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import FastAPI
 from app.core.config import Settings, get_settings, _parse_otlp_headers
 from app.observability import configure_telemetry, shutdown_telemetry, get_telemetry_status
@@ -339,6 +339,9 @@ def test_get_telemetry_status_shape():
     assert status["logs_enabled"] is True
     assert status["signoz_ui_url"] == "http://localhost:8080"
     assert status["jaeger_ui_url"] == "http://localhost:16686"
+    assert status["proof_status"] == "unverified"
+    assert status["proof_summary"] == "No telemetry export probe has been run yet."
+    assert status["latest_export_probe_run"] is None
     assert "signoz_ui_url" in status
     assert "jaeger_ui_url" in status
 
@@ -353,6 +356,60 @@ def test_telemetry_status_returns_signoz_ui_url_and_deprecated_alias():
     )
     assert status["signoz_ui_url"] == "http://localhost:8080"
     assert status["jaeger_ui_url"] == "http://localhost:16686"
+
+
+@pytest.mark.asyncio
+async def test_execute_telemetry_export_probe_posts_trace_payload_and_persists_success(monkeypatch):
+    import app.observability.otel as otel_module
+
+    posted: dict[str, object] = {}
+
+    class DummyResponse:
+        status_code = 200
+        text = ""
+
+    class DummyClient:
+        async def post(self, url, content, headers):
+            posted["url"] = url
+            posted["content"] = content
+            posted["headers"] = headers
+            return DummyResponse()
+
+    persisted = {
+        "probe_run_id": "probe-run-1",
+        "probe_kind": "telemetry_export_probe",
+        "check_id": "observability.telemetry.export",
+        "result": "ok",
+        "duration_ms": 12.4,
+        "evidence": {
+            "proof_level": "collector_ingest",
+            "request_url": "http://localhost:4318/v1/traces",
+            "http_status_code": 200,
+        },
+        "failure_reason": None,
+        "actor_id": "test-admin",
+        "created_at": "2026-04-08T18:10:00Z",
+    }
+
+    monkeypatch.setattr(
+        "app.services.runtime_probe_service.store_runtime_probe_run",
+        lambda **kwargs: {**persisted, **kwargs},
+    )
+
+    result = await otel_module.execute_telemetry_export_probe(
+        _make_settings(otel_enabled=True),
+        actor_id="test-admin",
+        http_client=DummyClient(),
+    )
+
+    assert posted["url"] == "http://localhost:4318/v1/traces"
+    assert posted["headers"]["Content-Type"] == "application/x-protobuf"
+    assert isinstance(posted["content"], bytes)
+    assert posted["content"]
+    assert result["latest_export_probe_run"]["probe_kind"] == "telemetry_export_probe"
+    assert result["latest_export_probe_run"]["check_id"] == "observability.telemetry.export"
+    assert result["latest_export_probe_run"]["result"] == "ok"
+    assert result["latest_export_probe_run"]["evidence"]["proof_level"] == "collector_ingest"
 
 
 def test_runtime_readiness_metrics_register_action_observability_contract(monkeypatch):
@@ -444,20 +501,78 @@ def test_telemetry_status_returns_shape_for_superuser(monkeypatch):
     from app.main import create_app
     from fastapi.testclient import TestClient
     app = create_app()
+    with patch("app.api.routes.telemetry.get_latest_runtime_probe_run_for_probe_kind", return_value=None):
+        with TestClient(app) as c:
+            resp = c.get(
+                "/observability/telemetry-status",
+                headers={"Authorization": "Bearer test-key"},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert "enabled" in body
+            assert "service_name" in body
+            assert "otlp_endpoint" in body
+            assert "sampler" in body
+            assert "log_correlation" in body
+            assert "signoz_ui_url" in body
+            assert "jaeger_ui_url" in body
+            assert "proof_status" in body
+            assert "proof_summary" in body
+            assert "latest_export_probe_run" in body
+    get_settings.cache_clear()
+
+
+def test_telemetry_export_probe_rejects_no_auth(monkeypatch):
+    """POST /admin/runtime/telemetry/export/probe without auth returns 401."""
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+    get_settings.cache_clear()
+
+    from app.main import create_app
+    from fastapi.testclient import TestClient
+    app = create_app()
     with TestClient(app) as c:
-        resp = c.get(
-            "/observability/telemetry-status",
-            headers={"Authorization": "Bearer test-key"},
-        )
-        assert resp.status_code == 200
-        body = resp.json()
-        assert "enabled" in body
-        assert "service_name" in body
-        assert "otlp_endpoint" in body
-        assert "sampler" in body
-        assert "log_correlation" in body
-        assert "signoz_ui_url" in body
-        assert "jaeger_ui_url" in body
+        resp = c.post("/admin/runtime/telemetry/export/probe")
+        assert resp.status_code == 401
+    get_settings.cache_clear()
+
+
+def test_telemetry_export_probe_returns_probe_result_for_superuser(monkeypatch):
+    """Superuser can execute the telemetry export probe and receive latest proof state."""
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+    get_settings.cache_clear()
+
+    from app.main import create_app
+    from fastapi.testclient import TestClient
+    app = create_app()
+    with patch(
+        "app.api.routes.telemetry.execute_telemetry_export_probe",
+        new=AsyncMock(
+            return_value={
+                "proof_status": "passing",
+                "proof_summary": "Latest telemetry export probe reached the collector and was accepted.",
+                "latest_export_probe_run": {
+                    "probe_run_id": "probe-run-1",
+                    "probe_kind": "telemetry_export_probe",
+                    "check_id": "observability.telemetry.export",
+                    "result": "ok",
+                },
+            }
+        ),
+    ) as probe_mock:
+        with TestClient(app) as c:
+            resp = c.post(
+                "/admin/runtime/telemetry/export/probe",
+                headers={"Authorization": "Bearer test-key"},
+            )
+
+    assert resp.status_code == 200
+    assert resp.json()["proof_status"] == "passing"
+    assert resp.json()["latest_export_probe_run"]["probe_kind"] == "telemetry_export_probe"
+    probe_mock.assert_awaited_once()
     get_settings.cache_clear()
 
 

@@ -3,9 +3,12 @@ from __future__ import annotations
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from unittest.mock import MagicMock
 
+from app.auth.dependencies import require_superuser
 from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
+from app.main import create_app
 
 
 def _user_auth() -> AuthPrincipal:
@@ -15,6 +18,60 @@ def _user_auth() -> AuthPrincipal:
         roles=frozenset({"authenticated"}),
         auth_source="test",
     )
+
+
+def _superuser_principal() -> AuthPrincipal:
+    return AuthPrincipal(
+        subject_type="user",
+        subject_id="admin-user",
+        roles=frozenset({"authenticated", "platform_admin"}),
+        auth_source="test",
+        email="admin@example.com",
+    )
+
+
+def _make_app(monkeypatch):
+    from app.core.config import get_settings
+    import app.main as main_module
+
+    monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
+    monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
+
+    get_settings.cache_clear()
+    monkeypatch.setattr(
+        main_module,
+        "init_pool",
+        lambda: MagicMock(status=lambda: {"max_workers": 0, "max_queue_depth": 0, "active": 0, "saturated": False}),
+    )
+    monkeypatch.setattr(main_module, "shutdown_pool", lambda: None)
+    monkeypatch.setattr(main_module, "start_pipeline_jobs_worker", lambda: None)
+    monkeypatch.setattr(main_module, "stop_pipeline_jobs_worker", lambda: None)
+    monkeypatch.setattr(main_module, "start_storage_cleanup_worker", lambda: None)
+    monkeypatch.setattr(main_module, "stop_storage_cleanup_worker", lambda: None)
+    return create_app()
+
+
+@pytest.fixture
+def client(monkeypatch):
+    from app.core.config import get_settings
+
+    app = _make_app(monkeypatch)
+    with TestClient(app) as test_client:
+        yield test_client
+    get_settings.cache_clear()
+
+
+@pytest.fixture
+def superuser_client(monkeypatch):
+    from app.core.config import get_settings
+
+    app = _make_app(monkeypatch)
+    app.dependency_overrides[require_superuser] = _superuser_principal
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+    get_settings.cache_clear()
 
 
 @pytest.mark.asyncio
@@ -520,3 +577,88 @@ def test_pipelines_router_is_mounted(monkeypatch):
     get_settings.cache_clear()
 
     assert response.status_code == 200
+
+
+def test_pipeline_browser_upload_probe_requires_superuser(client):
+    response = client.post(
+        "/admin/runtime/pipeline-services/browser-upload/probe",
+        json={"project_id": "project-1", "pipeline_kind": "markdown_index_builder"},
+    )
+
+    assert response.status_code in (401, 403)
+
+
+def test_pipeline_browser_upload_probe_returns_persisted_probe_run(superuser_client, monkeypatch):
+    payload = {
+        "probe_run_id": "probe-run-browser-upload-1",
+        "probe_kind": "pipeline_browser_upload_probe",
+        "check_id": None,
+        "result": "ok",
+        "duration_ms": 14.6,
+        "evidence": {
+            "project_id": "project-1",
+            "pipeline_kind": "markdown_index_builder",
+            "source_uid": "probe-source-1",
+            "pipeline_source_id": "pipeline-source-1",
+            "source_registry_verified": True,
+        },
+        "failure_reason": None,
+        "created_at": "2026-04-08T18:40:00Z",
+    }
+
+    monkeypatch.setattr(
+        "app.api.routes.pipelines.execute_pipeline_browser_upload_probe",
+        lambda **_kwargs: payload,
+        raising=False,
+    )
+
+    response = superuser_client.post(
+        "/admin/runtime/pipeline-services/browser-upload/probe",
+        json={"project_id": "project-1", "pipeline_kind": "markdown_index_builder"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == payload
+
+
+def test_pipeline_job_execution_probe_requires_superuser(client):
+    response = client.post(
+        "/admin/runtime/pipeline-services/job-execution/probe",
+        json={"project_id": "project-1", "pipeline_kind": "markdown_index_builder"},
+    )
+
+    assert response.status_code in (401, 403)
+
+
+def test_pipeline_job_execution_probe_returns_persisted_probe_run(superuser_client, monkeypatch):
+    payload = {
+        "probe_run_id": "probe-run-job-execution-1",
+        "probe_kind": "pipeline_job_execution_probe",
+        "check_id": None,
+        "result": "ok",
+        "duration_ms": 62.1,
+        "evidence": {
+            "project_id": "project-1",
+            "pipeline_kind": "markdown_index_builder",
+            "source_set_id": "source-set-1",
+            "job_id": "job-1",
+            "deliverable_kind": "lexical_sqlite",
+            "deliverable_download_verified": True,
+        },
+        "failure_reason": None,
+        "created_at": "2026-04-08T18:45:00Z",
+    }
+
+    monkeypatch.setattr(
+        "app.api.routes.pipelines.execute_pipeline_job_execution_probe",
+        lambda **_kwargs: payload,
+        raising=False,
+    )
+
+    response = superuser_client.post(
+        "/admin/runtime/pipeline-services/job-execution/probe",
+        json={"project_id": "project-1", "pipeline_kind": "markdown_index_builder"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == payload

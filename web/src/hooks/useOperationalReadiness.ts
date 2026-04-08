@@ -4,8 +4,11 @@ import { loadOperationalReadinessWithBootstrap } from '@/lib/platformApiDiagnost
 import {
   collectClientDiagnostics,
   executeOperationalReadinessAction,
+  getOperationalReadinessCheckDetail,
   getOperationalReadinessActionStateKey,
   type OperationalReadinessActionExecutionState,
+  type OperationalReadinessCheckDetailResponse,
+  type OperationalReadinessCheckDetailState,
   type OperationalReadinessAvailableAction,
   normalizeOperationalReadinessSnapshot,
   type ClientDiagnostic,
@@ -13,6 +16,7 @@ import {
   type OperationalReadinessSnapshot,
   type OperationalReadinessSummary,
   type OperationalReadinessSurface,
+  verifyOperationalReadinessCheck,
 } from '@/lib/operationalReadiness';
 
 type UseOperationalReadinessState = {
@@ -25,7 +29,10 @@ type UseOperationalReadinessState = {
   surfaces: OperationalReadinessSurface[];
   clientDiagnostics: ClientDiagnostic[];
   actionStates: Record<string, OperationalReadinessActionExecutionState>;
+  checkDetails: Record<string, OperationalReadinessCheckDetailState>;
   executeAction: (checkId: string, action: OperationalReadinessAvailableAction) => Promise<void>;
+  loadCheckDetail: (checkId: string, options?: { force?: boolean }) => Promise<void>;
+  verifyCheck: (checkId: string) => Promise<void>;
   refresh: () => Promise<void>;
 };
 
@@ -107,6 +114,29 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
   const [surfaces, setSurfaces] = useState<OperationalReadinessSurface[]>([]);
   const [clientDiagnostics, setClientDiagnostics] = useState<ClientDiagnostic[]>(() => collectClientDiagnostics());
   const [actionStates, setActionStates] = useState<Record<string, OperationalReadinessActionExecutionState>>({});
+  const [checkDetails, setCheckDetails] = useState<Record<string, OperationalReadinessCheckDetailState>>({});
+
+  function upsertCheckDetailState(
+    checkId: string,
+    updater: (current: OperationalReadinessCheckDetailState | undefined) => OperationalReadinessCheckDetailState,
+  ) {
+    setCheckDetails((current) => ({
+      ...current,
+      [checkId]: updater(current[checkId]),
+    }));
+  }
+
+  function storeCheckDetail(
+    checkId: string,
+    detail: OperationalReadinessCheckDetailResponse,
+  ) {
+    upsertCheckDetailState(checkId, () => ({
+      loading: false,
+      verifying: false,
+      error: null,
+      detail,
+    }));
+  }
 
   async function refresh() {
     setRefreshing(true);
@@ -136,6 +166,64 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
     }
   }
 
+  async function loadCheckDetail(checkId: string, options?: { force?: boolean }) {
+    const currentDetailState = checkDetails[checkId];
+    if (!options?.force && (currentDetailState?.loading || currentDetailState?.detail)) {
+      return;
+    }
+
+    upsertCheckDetailState(checkId, (current) => ({
+      loading: true,
+      verifying: current?.verifying ?? false,
+      error: null,
+      detail: current?.detail ?? null,
+    }));
+
+    try {
+      const detail = await getOperationalReadinessCheckDetail(checkId, {
+        platformApiTarget: bootstrap.platform_api_target,
+      });
+      storeCheckDetail(checkId, detail);
+    } catch (nextError) {
+      upsertCheckDetailState(checkId, (current) => ({
+        loading: false,
+        verifying: current?.verifying ?? false,
+        error: nextError instanceof Error ? nextError.message : String(nextError),
+        detail: current?.detail ?? null,
+      }));
+    }
+  }
+
+  async function verifyCheck(checkId: string) {
+    upsertCheckDetailState(checkId, (current) => ({
+      loading: current?.loading ?? false,
+      verifying: true,
+      error: null,
+      detail: current?.detail ?? null,
+    }));
+
+    try {
+      const detail = await verifyOperationalReadinessCheck(checkId, {
+        platformApiTarget: bootstrap.platform_api_target,
+      });
+      storeCheckDetail(checkId, detail);
+      await refresh();
+      upsertCheckDetailState(checkId, (current) => ({
+        loading: false,
+        verifying: false,
+        error: null,
+        detail: current?.detail ?? detail,
+      }));
+    } catch (nextError) {
+      upsertCheckDetailState(checkId, (current) => ({
+        loading: false,
+        verifying: false,
+        error: nextError instanceof Error ? nextError.message : String(nextError),
+        detail: current?.detail ?? null,
+      }));
+    }
+  }
+
   async function executeAction(checkId: string, action: OperationalReadinessAvailableAction) {
     const actionKey = getOperationalReadinessActionStateKey(checkId, action.action_kind);
     setError(null);
@@ -153,6 +241,7 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
         platformApiTarget: bootstrap.platform_api_target,
       });
       await refresh();
+      await loadCheckDetail(checkId, { force: true });
 
       setActionStates((current) => ({
         ...current,
@@ -186,7 +275,10 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
     surfaces,
     clientDiagnostics,
     actionStates,
+    checkDetails,
     executeAction,
+    loadCheckDetail,
+    verifyCheck,
     refresh,
   };
 }

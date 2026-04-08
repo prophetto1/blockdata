@@ -168,11 +168,15 @@ def create_app() -> FastAPI:
     app.include_router(storage_router)
 
     # 5f. Pipeline services routes (user-scoped, before plugin catch-all)
+    from app.api.routes.pipelines import admin_router as admin_pipelines_router
     from app.api.routes.pipelines import router as pipelines_router
+    app.include_router(admin_pipelines_router)
     app.include_router(pipelines_router)
 
     # 5g. Observability endpoints (superuser, before plugin catch-all)
     from app.api.routes.telemetry import router as telemetry_router
+    from app.api.routes.telemetry import admin_router as admin_telemetry_router
+    app.include_router(admin_telemetry_router)
     app.include_router(telemetry_router)
 
     # 5h. User variables (user-scoped, before plugin catch-all)

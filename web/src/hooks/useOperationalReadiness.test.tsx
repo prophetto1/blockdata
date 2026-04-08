@@ -407,4 +407,122 @@ describe('useOperationalReadiness', () => {
       );
     });
   });
+
+  it('loads persisted readiness detail on demand and stores the latest probe/action runs', async () => {
+    loadOperationalReadinessWithBootstrapMock.mockResolvedValueOnce({
+      bootstrap: readyBootstrap,
+      snapshot: failingBucketCorsSnapshot,
+      clientDiagnostics: [],
+    });
+    platformApiFetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        check: failingBucketCorsSnapshot.surfaces[0].checks[0],
+        latest_probe_run: {
+          probe_run_id: 'probe-run-1',
+          probe_kind: 'readiness_check_verify',
+          check_id: 'blockdata.storage.bucket_cors',
+          result: 'fail',
+          duration_ms: 6.8,
+          evidence: { status: 'fail', surface_id: 'blockdata' },
+          failure_reason: 'Bucket browser-upload CORS rules are missing or incomplete.',
+          created_at: '2026-04-08T16:15:00Z',
+        },
+        latest_action_run: {
+          action_run_id: 'action-run-1',
+          action_kind: 'storage_browser_upload_cors_reconcile',
+          check_id: 'blockdata.storage.bucket_cors',
+          result: 'ok',
+          duration_ms: 19.3,
+          request: { confirmed: true },
+          result_payload: { bucket_name: 'blockdata-user-content-dev' },
+          failure_reason: null,
+          created_at: '2026-04-08T16:17:00Z',
+        },
+      }),
+    );
+
+    const { result } = renderHook(() => useOperationalReadiness());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await act(async () => {
+      await result.current.loadCheckDetail('blockdata.storage.bucket_cors');
+    });
+
+    await waitFor(() => {
+      expect(platformApiFetchMock).toHaveBeenCalledWith(
+        '/admin/runtime/readiness/checks/blockdata.storage.bucket_cors',
+        {},
+        { platformApiTarget: '/platform-api' },
+      );
+      expect(result.current.checkDetails['blockdata.storage.bucket_cors']?.detail?.latest_probe_run?.probe_run_id).toBe('probe-run-1');
+      expect(result.current.checkDetails['blockdata.storage.bucket_cors']?.detail?.latest_action_run?.action_run_id).toBe('action-run-1');
+    });
+  });
+
+  it('verifies a readiness check, refreshes the snapshot, and stores the persisted verify result', async () => {
+    loadOperationalReadinessWithBootstrapMock
+      .mockResolvedValueOnce({
+        bootstrap: readyBootstrap,
+        snapshot: failingBucketCorsSnapshot,
+        clientDiagnostics: [],
+      })
+      .mockResolvedValueOnce({
+        bootstrap: readyBootstrap,
+        snapshot: passingBucketCorsSnapshot,
+        clientDiagnostics: [],
+      });
+    platformApiFetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        check: passingBucketCorsSnapshot.surfaces[0].checks[0],
+        latest_probe_run: {
+          probe_run_id: 'probe-run-2',
+          probe_kind: 'readiness_check_verify',
+          check_id: 'blockdata.storage.bucket_cors',
+          result: 'ok',
+          duration_ms: 7.4,
+          evidence: { status: 'ok', surface_id: 'blockdata' },
+          failure_reason: null,
+          created_at: '2026-04-08T16:20:00Z',
+        },
+        latest_action_run: null,
+      }),
+    );
+
+    const { result } = renderHook(() => useOperationalReadiness());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    let verification: Promise<void>;
+    act(() => {
+      verification = result.current.verifyCheck('blockdata.storage.bucket_cors');
+    });
+
+    expect(result.current.checkDetails['blockdata.storage.bucket_cors']).toMatchObject({
+      verifying: true,
+    });
+
+    await act(async () => {
+      await verification!;
+    });
+
+    await waitFor(() => {
+      expect(platformApiFetchMock).toHaveBeenCalledWith(
+        '/admin/runtime/readiness/checks/blockdata.storage.bucket_cors/verify',
+        expect.objectContaining({ method: 'POST' }),
+        { platformApiTarget: '/platform-api' },
+      );
+      expect(loadOperationalReadinessWithBootstrapMock).toHaveBeenCalledTimes(2);
+      expect(result.current.surfaces.find((surface) => surface.id === 'blockdata')!.checks[0]!.status).toBe('ok');
+      expect(result.current.checkDetails['blockdata.storage.bucket_cors']?.detail?.latest_probe_run?.result).toBe('ok');
+      expect(result.current.checkDetails['blockdata.storage.bucket_cors']).toMatchObject({
+        verifying: false,
+        error: null,
+      });
+    });
+  });
 });

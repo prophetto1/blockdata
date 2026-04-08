@@ -38,6 +38,7 @@ describe('IndexJobFilesTab', () => {
         selectedSourceUids={['source-1']}
         sourcesLoading={false}
         sourcesError={null}
+        browserUploadProbeRun={null}
         onToggleSource={onToggleSource}
         onUpload={vi.fn()}
         onRemoveSource={vi.fn()}
@@ -61,6 +62,7 @@ describe('IndexJobFilesTab', () => {
         selectedSourceUids={[]}
         sourcesLoading={false}
         sourcesError={null}
+        browserUploadProbeRun={null}
         onToggleSource={vi.fn()}
         onUpload={onUpload}
         onRemoveSource={vi.fn()}
@@ -96,6 +98,19 @@ describe('IndexJobFilesTab', () => {
           selectedSourceUids={selectedSourceUids}
           sourcesLoading={false}
           sourcesError={null}
+          browserUploadProbeRun={{
+            probe_run_id: 'probe-run-1',
+            probe_kind: 'pipeline_browser_upload_probe',
+            check_id: null,
+            result: 'ok',
+            duration_ms: 12.4,
+            evidence: {
+              source_registry_verified: true,
+              pipeline_source_id: 'psrc-uploaded-0',
+            },
+            failure_reason: null,
+            created_at: '2026-04-08T19:10:00Z',
+          }}
           onToggleSource={(sourceUid) => {
             setSelectedSourceUids((current) => (
               current.includes(sourceUid)
@@ -135,5 +150,36 @@ describe('IndexJobFilesTab', () => {
     });
 
     expect(await screen.findByRole('checkbox', { name: /include gamma\.md/i })).toBeChecked();
+  });
+
+  it('surfaces the latest backend-owned upload proof next to the mounted file workbench', () => {
+    render(
+      <IndexJobFilesTab
+        sources={SOURCES}
+        selectedSourceUids={['source-1']}
+        sourcesLoading={false}
+        sourcesError={null}
+        browserUploadProbeRun={{
+          probe_run_id: 'probe-run-2',
+          probe_kind: 'pipeline_browser_upload_probe',
+          check_id: null,
+          result: 'ok',
+          duration_ms: 18.9,
+          evidence: {
+            source_uid: 'source-1',
+            pipeline_source_id: 'psrc-1',
+            source_registry_verified: true,
+          },
+          failure_reason: null,
+          created_at: '2026-04-08T19:15:00Z',
+        }}
+        onToggleSource={vi.fn()}
+        onUpload={vi.fn()}
+        onRemoveSource={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/latest backend upload proof verified pipeline source registration/i)).toBeInTheDocument();
+    expect(screen.getByText(/psrc-1/i)).toBeInTheDocument();
   });
 });

@@ -6,6 +6,7 @@ import PipelineServicesPage from './PipelineServicesPage';
 
 const platformApiFetchMock = vi.fn();
 const useShellHeaderTitleMock = vi.fn();
+const useProjectFocusMock = vi.fn();
 
 vi.mock('@/lib/platformApi', () => ({
   platformApiFetch: (...args: unknown[]) => platformApiFetchMock(...args),
@@ -13,6 +14,10 @@ vi.mock('@/lib/platformApi', () => ({
 
 vi.mock('@/components/common/useShellHeaderTitle', () => ({
   useShellHeaderTitle: (...args: unknown[]) => useShellHeaderTitleMock(...args),
+}));
+
+vi.mock('@/hooks/useProjectFocus', () => ({
+  useProjectFocus: () => useProjectFocusMock(),
 }));
 
 afterEach(() => {
@@ -40,6 +45,8 @@ describe('PipelineServicesPage', () => {
   beforeEach(() => {
     platformApiFetchMock.mockReset();
     useShellHeaderTitleMock.mockReset();
+    useProjectFocusMock.mockReset();
+    useProjectFocusMock.mockReturnValue({ resolvedProjectId: 'project-1' });
     platformApiFetchMock.mockResolvedValue(
       jsonResponse({
         items: [
@@ -80,5 +87,16 @@ describe('PipelineServicesPage', () => {
     expect(screen.queryByText('Service Overview')).not.toBeInTheDocument();
     expect(screen.queryByText('Runs & Downloads')).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Upload' })).not.toBeInTheDocument();
+  });
+
+  it('mounts the operational proof panel on the current pipeline surface', async () => {
+    renderAt('/app/pipeline-services');
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /operational proof/i })).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: /run browser upload probe/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /run job execution probe/i })).toBeInTheDocument();
   });
 });

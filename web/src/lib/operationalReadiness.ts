@@ -65,6 +65,13 @@ export type OperationalReadinessActionExecutionState = {
   message: string | null;
 };
 
+export type OperationalReadinessCheckDetailState = {
+  loading: boolean;
+  verifying: boolean;
+  error: string | null;
+  detail: OperationalReadinessCheckDetailResponse | null;
+};
+
 export type OperationalReadinessVerifyTarget = {
   probe_kind: OperationalReadinessProbeKind;
   label: string;
@@ -117,6 +124,19 @@ export function getOperationalReadinessActionStateKey(
   return `${checkId}:${actionKind}`;
 }
 
+async function readOperationalReadinessErrorDetail(response: Response, fallback: string) {
+  try {
+    const body = await response.json() as { detail?: string };
+    if (typeof body.detail === 'string' && body.detail.trim()) {
+      return body.detail;
+    }
+  } catch {
+    // Keep the status-derived fallback when the body cannot be parsed.
+  }
+
+  return fallback;
+}
+
 export async function executeOperationalReadinessAction(
   action: OperationalReadinessAvailableAction,
   options?: {
@@ -137,16 +157,12 @@ export async function executeOperationalReadinessAction(
   );
 
   if (!response.ok) {
-    let failureDetail = `Operational readiness action failed: ${response.status}`;
-    try {
-      const body = await response.json() as { detail?: string };
-      if (typeof body.detail === 'string' && body.detail.trim()) {
-        failureDetail = body.detail;
-      }
-    } catch {
-      // Keep the status-derived fallback when the body cannot be parsed.
-    }
-    throw new Error(failureDetail);
+    throw new Error(
+      await readOperationalReadinessErrorDetail(
+        response,
+        `Operational readiness action failed: ${response.status}`,
+      ),
+    );
   }
 
   return response.json().catch(() => null);
@@ -180,6 +196,56 @@ export type OperationalReadinessCheckDetailResponse = {
   latest_probe_run: OperationalReadinessProbeRun | null;
   latest_action_run: OperationalReadinessActionRun | null;
 };
+
+export async function getOperationalReadinessCheckDetail(
+  checkId: string,
+  options?: {
+    platformApiTarget?: string;
+  },
+): Promise<OperationalReadinessCheckDetailResponse> {
+  const response = await platformApiFetch(
+    `/admin/runtime/readiness/checks/${encodeURIComponent(checkId)}`,
+    {},
+    options?.platformApiTarget ? { platformApiTarget: options.platformApiTarget } : {},
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readOperationalReadinessErrorDetail(
+        response,
+        `Operational readiness detail request failed: ${response.status}`,
+      ),
+    );
+  }
+
+  return await response.json() as OperationalReadinessCheckDetailResponse;
+}
+
+export async function verifyOperationalReadinessCheck(
+  checkId: string,
+  options?: {
+    platformApiTarget?: string;
+  },
+): Promise<OperationalReadinessCheckDetailResponse> {
+  const response = await platformApiFetch(
+    `/admin/runtime/readiness/checks/${encodeURIComponent(checkId)}/verify`,
+    {
+      method: 'POST',
+    },
+    options?.platformApiTarget ? { platformApiTarget: options.platformApiTarget } : {},
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readOperationalReadinessErrorDetail(
+        response,
+        `Operational readiness verify request failed: ${response.status}`,
+      ),
+    );
+  }
+
+  return await response.json() as OperationalReadinessCheckDetailResponse;
+}
 
 export type ClientDiagnostic = {
   id: string;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { PipelineSource } from '@/lib/pipelineService';
+import type { PipelineSource, RuntimeProbeRun } from '@/lib/pipelineService';
 
 function formatBytes(value?: number) {
   if (!value || value <= 0) return '0 B';
@@ -17,6 +17,7 @@ export function IndexJobFilesTab({
   selectedSourceUids,
   sourcesLoading,
   sourcesError,
+  browserUploadProbeRun,
   onToggleSource,
   onUpload,
   onRemoveSource,
@@ -25,6 +26,7 @@ export function IndexJobFilesTab({
   selectedSourceUids: string[];
   sourcesLoading: boolean;
   sourcesError: string | null;
+  browserUploadProbeRun?: RuntimeProbeRun | null;
   onToggleSource: (sourceUid: string) => void;
   onUpload: (files: File[]) => Promise<void>;
   onRemoveSource: (sourceUid: string) => void;
@@ -35,6 +37,9 @@ export function IndexJobFilesTab({
 
   const selectedSources = sources.filter((source) => selectedSourceUids.includes(source.source_uid));
   const totalSize = selectedSources.reduce((sum, source) => sum + (source.byte_size ?? 0), 0);
+  const proofSourceId = typeof browserUploadProbeRun?.evidence?.pipeline_source_id === 'string'
+    ? browserUploadProbeRun.evidence.pipeline_source_id
+    : null;
 
   function addFiles(fileList: FileList | null) {
     if (!fileList) return;
@@ -55,6 +60,25 @@ export function IndexJobFilesTab({
   return (
     <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4">
       <div className="space-y-4">
+        {browserUploadProbeRun ? (
+          <div className={`rounded-md border px-3 py-2 text-sm ${
+            browserUploadProbeRun.result === 'ok'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+              : 'border-destructive/30 bg-destructive/10 text-destructive'
+          }`}>
+            <div className="font-medium">
+              {browserUploadProbeRun.result === 'ok'
+                ? 'Latest backend upload proof verified pipeline source registration.'
+                : (browserUploadProbeRun.failure_reason ?? 'The latest backend upload proof failed.')}
+            </div>
+            {proofSourceId ? (
+              <div className="mt-1 text-xs opacity-90">
+                Pipeline source registered: {proofSourceId}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         <label
           htmlFor="index-job-file-input"
           onDragOver={(event) => {

@@ -1,5 +1,23 @@
 # Tool Integration Platforms — Assessment Report
 
+To
+Tools - calls endpoints to g
+    - HTTP via built 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 **Date:** 2026-04-07
 **Scope:** `docs/study-patterns/05-tool-integration-platforms/` + `I:\tool-registry\` junction
 **Target directories assessed against:** `_agchain/`, `docs/plans/`, `jon/Tools/`, `jon/new-skills-needed/`, `jon/new-service/`, `web/`, `web-docs/`, `services/`, `supabase/`

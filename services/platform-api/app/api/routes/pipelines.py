@@ -8,9 +8,11 @@ from google.cloud.exceptions import NotFound
 from pydantic import BaseModel, Field
 
 from app.api.routes.storage import _assert_project_ownership, _gcs_client
+from app.auth.dependencies import require_superuser
 from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.infra.supabase_client import get_supabase_admin
+from app.observability.contract import set_span_attributes
 from app.observability.pipeline_metrics import (
     log_pipeline_source_set_changed,
     pipeline_tracer,
@@ -20,6 +22,7 @@ from app.observability.pipeline_metrics import (
     record_pipeline_source_set_member_count,
     record_pipeline_source_set_update,
 )
+from app.observability.runtime_readiness_metrics import record_runtime_probe, tracer
 from app.pipelines.registry import (
     get_pipeline_definition,
     get_pipeline_worker_definition,
@@ -27,8 +30,13 @@ from app.pipelines.registry import (
 )
 from app.services import pipeline_source_library
 from app.services import pipeline_source_sets as pipeline_source_sets_service
+from app.services.runtime_probe_service import (
+    execute_pipeline_browser_upload_probe,
+    execute_pipeline_job_execution_probe,
+)
 
 router = APIRouter(prefix="/pipelines", tags=["pipelines"])
+admin_router = APIRouter(prefix="/admin/runtime/pipeline-services", tags=["admin-runtime-pipelines"])
 
 
 class CreatePipelineSourceSetRequest(BaseModel):
@@ -44,6 +52,11 @@ class UpdatePipelineSourceSetRequest(BaseModel):
 
 class CreatePipelineJobRequest(BaseModel):
     source_set_id: str = Field(min_length=1)
+
+
+class ExecutePipelineProbeRequest(BaseModel):
+    project_id: str = Field(min_length=1)
+    pipeline_kind: str = Field(min_length=1)
 
 
 def _require_pipeline_definition(pipeline_kind: str) -> dict:
@@ -206,6 +219,37 @@ def _http_status_code(exc: Exception) -> int:
     if isinstance(exc, HTTPException):
         return exc.status_code
     return 500
+
+
+def _record_probe_observability(
+    *,
+    span,
+    probe_id: str,
+    result: str,
+    duration_ms: float,
+    error_type: str | None,
+    http_status_code: int,
+) -> None:
+    try:
+        set_span_attributes(
+            span,
+            {
+                "probe_id": probe_id,
+                "surface": "pipeline-services",
+                "result": result,
+                "error_type": error_type,
+                "http.status_code": http_status_code,
+            },
+        )
+        record_runtime_probe(
+            probe_id=probe_id,
+            surface="pipeline-services",
+            result=result,
+            duration_ms=duration_ms,
+            error_type=error_type,
+        )
+    except Exception:
+        pass
 
 
 @router.get("/definitions")
@@ -503,3 +547,61 @@ async def download_pipeline_deliverable(
             )
             span.set_attribute("http.status_code", status)
             raise
+
+
+@admin_router.post("/browser-upload/probe", openapi_extra={"x-required-role": "platform_admin"})
+async def post_pipeline_browser_upload_probe(
+    body: ExecutePipelineProbeRequest,
+    auth: AuthPrincipal = Depends(require_superuser),
+):
+    started = perf_counter()
+    with tracer.start_as_current_span("runtime.probe.execute") as span:
+        probe_run = execute_pipeline_browser_upload_probe(
+            project_id=body.project_id,
+            pipeline_kind=body.pipeline_kind,
+            actor_id=auth.user_id,
+        )
+        error_type = None
+        evidence = probe_run.get("evidence")
+        if isinstance(evidence, dict):
+            next_error_type = evidence.get("error_type")
+            if isinstance(next_error_type, str):
+                error_type = next_error_type
+        _record_probe_observability(
+            span=span,
+            probe_id="pipeline.browser_upload",
+            result="success" if probe_run.get("result") == "ok" else "failure",
+            duration_ms=(perf_counter() - started) * 1000.0,
+            error_type=error_type,
+            http_status_code=200,
+        )
+        return probe_run
+
+
+@admin_router.post("/job-execution/probe", openapi_extra={"x-required-role": "platform_admin"})
+async def post_pipeline_job_execution_probe(
+    body: ExecutePipelineProbeRequest,
+    auth: AuthPrincipal = Depends(require_superuser),
+):
+    started = perf_counter()
+    with tracer.start_as_current_span("runtime.probe.execute") as span:
+        probe_run = execute_pipeline_job_execution_probe(
+            project_id=body.project_id,
+            pipeline_kind=body.pipeline_kind,
+            actor_id=auth.user_id,
+        )
+        error_type = None
+        evidence = probe_run.get("evidence")
+        if isinstance(evidence, dict):
+            next_error_type = evidence.get("error_type")
+            if isinstance(next_error_type, str):
+                error_type = next_error_type
+        _record_probe_observability(
+            span=span,
+            probe_id="pipeline.job_execution",
+            result="success" if probe_run.get("result") == "ok" else "failure",
+            duration_ms=(perf_counter() - started) * 1000.0,
+            error_type=error_type,
+            http_status_code=200,
+        )
+        return probe_run

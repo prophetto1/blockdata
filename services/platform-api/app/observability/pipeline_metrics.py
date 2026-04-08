@@ -247,3 +247,25 @@ def log_pipeline_source_set_changed(
             }
         ),
     )
+
+
+def log_pipeline_probe_verified(
+    *,
+    pipeline_kind: str,
+    probe_kind: str,
+    project_id: str,
+    source_set_id: str | None = None,
+    deliverable_kind: str | None = None,
+) -> None:
+    _logger.info(
+        "pipeline.probe.verified",
+        extra=_clean(
+            {
+                "pipeline.kind": pipeline_kind,
+                "probe.kind": probe_kind,
+                "project_id": project_id,
+                "source_set_id": source_set_id,
+                "deliverable.kind": deliverable_kind,
+            }
+        ),
+    )

@@ -301,6 +301,14 @@ describe('IndexBuilderPage — job detail view', () => {
     expect(screen.getByText('asset.semantic.zip')).toBeInTheDocument();
   });
 
+  it('renders the mounted operational proof panel inside the current workbench surface', () => {
+    renderPage('/app/pipeline-services/index-builder?job=set-1');
+
+    expect(screen.getByRole('heading', { name: /operational proof/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /run browser upload probe/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /run job execution probe/i })).toBeInTheDocument();
+  });
+
 });
 
 describe('IndexBuilderPage — one-page search params', () => {

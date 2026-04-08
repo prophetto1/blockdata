@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { useIndexBuilderList } from '@/hooks/useIndexBuilderList';
@@ -9,8 +9,14 @@ import { IndexJobFilesTab } from '@/components/pipelines/IndexJobFilesTab';
 import { IndexJobConfigTab } from '@/components/pipelines/IndexJobConfigTab';
 import { IndexJobRunsTab } from '@/components/pipelines/IndexJobRunsTab';
 import { IndexJobArtifactsTab } from '@/components/pipelines/IndexJobArtifactsTab';
+import { PipelineOperationalProbePanel } from '@/components/pipelines/PipelineOperationalProbePanel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import {
+  executePipelineBrowserUploadProbe,
+  executePipelineJobExecutionProbe,
+  type RuntimeProbeRun,
+} from '@/lib/pipelineService';
 
 function parseSelectedJobId(rawValue: string | null) {
   const trimmed = rawValue?.trim() ?? '';
@@ -21,6 +27,10 @@ export default function IndexBuilderPage() {
   useShellHeaderTitle({ title: 'Index Builder', breadcrumbs: ['Pipeline Services', 'Index Builder'] });
 
   const list = useIndexBuilderList();
+  const [browserUploadProbeRun, setBrowserUploadProbeRun] = useState<RuntimeProbeRun | null>(null);
+  const [jobExecutionProbeRun, setJobExecutionProbeRun] = useState<RuntimeProbeRun | null>(null);
+  const [isRunningBrowserUploadProbe, setIsRunningBrowserUploadProbe] = useState(false);
+  const [isRunningJobExecutionProbe, setIsRunningJobExecutionProbe] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedJobId = parseSelectedJobId(searchParams.get('job'));
   const updateSelectedJobId = useCallback((nextJobId: string | null) => {
@@ -62,6 +72,33 @@ export default function IndexBuilderPage() {
   const isDetailView = selectedJobId !== null;
   const isDetailReady = isDetailView && !job.isLoading && !job.loadError;
   const selectedListJobId = selectedJobId && selectedJobId !== 'new' ? selectedJobId : null;
+  const resolvedProjectId = job.resolvedProjectId ?? list.resolvedProjectId ?? null;
+
+  const runBrowserUploadProbe = useCallback(async () => {
+    if (!resolvedProjectId) return;
+    try {
+      setIsRunningBrowserUploadProbe(true);
+      setBrowserUploadProbeRun(await executePipelineBrowserUploadProbe({
+        projectId: resolvedProjectId,
+        pipelineKind: job.service.pipelineKind,
+      }));
+    } finally {
+      setIsRunningBrowserUploadProbe(false);
+    }
+  }, [job.service.pipelineKind, resolvedProjectId]);
+
+  const runJobExecutionProbe = useCallback(async () => {
+    if (!resolvedProjectId) return;
+    try {
+      setIsRunningJobExecutionProbe(true);
+      setJobExecutionProbeRun(await executePipelineJobExecutionProbe({
+        projectId: resolvedProjectId,
+        pipelineKind: job.service.pipelineKind,
+      }));
+    } finally {
+      setIsRunningJobExecutionProbe(false);
+    }
+  }, [job.service.pipelineKind, resolvedProjectId]);
 
   return (
     <div className="h-full w-full min-h-0 p-2">
@@ -130,6 +167,18 @@ export default function IndexBuilderPage() {
 
                 <div className="min-h-0 flex-1 overflow-y-auto">
                   <div className="flex flex-col gap-6 px-4 py-4">
+                    {resolvedProjectId ? (
+                      <PipelineOperationalProbePanel
+                        serviceLabel={job.service.label}
+                        browserUploadRun={browserUploadProbeRun}
+                        jobExecutionRun={jobExecutionProbeRun}
+                        isRunningBrowserUpload={isRunningBrowserUploadProbe}
+                        isRunningJobExecution={isRunningJobExecutionProbe}
+                        onRunBrowserUpload={runBrowserUploadProbe}
+                        onRunJobExecution={runJobExecutionProbe}
+                      />
+                    ) : null}
+
                     <div className="flex flex-col gap-4 xl:flex-row">
                       <div className="min-w-0 flex-[2]">
                         <IndexJobFilesTab
@@ -137,6 +186,7 @@ export default function IndexBuilderPage() {
                           selectedSourceUids={job.pipelineSourceSet.selectedSourceUids}
                           sourcesLoading={job.pipelineSourceSet.sourcesLoading}
                           sourcesError={job.pipelineSourceSet.sourcesError}
+                          browserUploadProbeRun={browserUploadProbeRun}
                           onToggleSource={job.pipelineSourceSet.toggleSource}
                           onUpload={job.handleUpload}
                           onRemoveSource={job.pipelineSourceSet.removeSource}
@@ -152,6 +202,7 @@ export default function IndexBuilderPage() {
                       isPolling={job.pipelineJob.isPolling}
                       jobLoading={job.pipelineJob.jobLoading}
                       jobError={job.pipelineJob.jobError}
+                      jobExecutionProbeRun={jobExecutionProbeRun}
                     />
 
                     <IndexJobArtifactsTab
@@ -159,6 +210,7 @@ export default function IndexBuilderPage() {
                       onDownload={job.handleDownload}
                       downloadError={job.downloadError}
                       downloadingKind={job.downloadingKind}
+                      jobExecutionProbeRun={jobExecutionProbeRun}
                     />
                   </div>
                 </div>

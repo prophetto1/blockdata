@@ -1,15 +1,17 @@
+import { useEffect, useState } from 'react';
 import type {
-  OperationalReadinessCheck,
   OperationalReadinessActionExecutionState,
+  OperationalReadinessActionRun,
   OperationalReadinessAvailableAction,
+  OperationalReadinessCheck,
+  OperationalReadinessCheckDetailState,
+  OperationalReadinessProbeRun,
   OperationalReadinessStatus,
   OperationalReadinessSurface,
 } from '@/lib/operationalReadiness';
 import { getOperationalReadinessActionStateKey } from '@/lib/operationalReadiness';
-import { CollapsibleRoot, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-
-/* ── Status ring SVG (inspired by pipeline builder reference) ──────────── */
 
 const RING_COLORS: Record<OperationalReadinessStatus, { stroke: string; fill: string }> = {
   ok: { stroke: 'stroke-emerald-500', fill: 'fill-emerald-500' },
@@ -17,35 +19,6 @@ const RING_COLORS: Record<OperationalReadinessStatus, { stroke: string; fill: st
   fail: { stroke: 'stroke-rose-500', fill: 'fill-rose-500' },
   unknown: { stroke: 'stroke-slate-400', fill: 'fill-slate-400' },
 };
-
-function StatusRing({ status, size = 20 }: { status: OperationalReadinessStatus; size?: number }) {
-  const { stroke, fill } = RING_COLORS[status];
-  const r = size / 2 - 2;
-  const cx = size / 2;
-  const cy = size / 2;
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0" aria-hidden="true">
-      <circle cx={cx} cy={cy} r={r} className={`${stroke} fill-none`} strokeWidth={2} />
-      {status === 'ok' ? (
-        <circle cx={cx} cy={cy} r={r - 3} className={fill} />
-      ) : status === 'fail' ? (
-        <>
-          <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} className={stroke} strokeWidth={2} strokeLinecap="round" />
-          <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} className={stroke} strokeWidth={2} strokeLinecap="round" />
-        </>
-      ) : status === 'warn' ? (
-        <>
-          <line x1={cx} y1={cy - 3} x2={cx} y2={cy + 1} className={stroke} strokeWidth={2} strokeLinecap="round" />
-          <circle cx={cx} cy={cy + 3.5} r={1} className={fill} />
-        </>
-      ) : (
-        <circle cx={cx} cy={cy} r={2} className={fill} />
-      )}
-    </svg>
-  );
-}
-
-/* ── Constants ─────────────────────────────────────────────────────────── */
 
 const STATUS_BADGE: Record<OperationalReadinessStatus, string> = {
   ok: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
@@ -83,7 +56,32 @@ const INLINE_FACT_KEYS = [
   'allowed_methods',
 ] as const;
 
-/* ── Helpers ───────────────────────────────────────────────────────────── */
+function StatusRing({ status, size = 20 }: { status: OperationalReadinessStatus; size?: number }) {
+  const { stroke, fill } = RING_COLORS[status];
+  const r = size / 2 - 2;
+  const cx = size / 2;
+  const cy = size / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0" aria-hidden="true">
+      <circle cx={cx} cy={cy} r={r} className={`${stroke} fill-none`} strokeWidth={2} />
+      {status === 'ok' ? (
+        <circle cx={cx} cy={cy} r={r - 3} className={fill} />
+      ) : status === 'fail' ? (
+        <>
+          <line x1={cx - 3} y1={cy - 3} x2={cx + 3} y2={cy + 3} className={stroke} strokeWidth={2} strokeLinecap="round" />
+          <line x1={cx + 3} y1={cy - 3} x2={cx - 3} y2={cy + 3} className={stroke} strokeWidth={2} strokeLinecap="round" />
+        </>
+      ) : status === 'warn' ? (
+        <>
+          <line x1={cx} y1={cy - 3} x2={cx} y2={cy + 1} className={stroke} strokeWidth={2} strokeLinecap="round" />
+          <circle cx={cx} cy={cy + 3.5} r={1} className={fill} />
+        </>
+      ) : (
+        <circle cx={cx} cy={cy} r={2} className={fill} />
+      )}
+    </svg>
+  );
+}
 
 function formatTimestamp(value: string): string {
   const parsed = new Date(value);
@@ -91,15 +89,27 @@ function formatTimestamp(value: string): string {
   return parsed.toLocaleString();
 }
 
+function formatDurationMs(durationMs: number): string {
+  if (!Number.isFinite(durationMs)) return 'Unavailable';
+  if (durationMs >= 1000) {
+    return `${(durationMs / 1000).toFixed(2)} s`;
+  }
+  return `${durationMs.toFixed(1)} ms`;
+}
+
 function formatEvidenceKey(key: string): string {
-  return key.replace(/[_\.]+/g, ' ').replace(/\b\w/g, (v) => v.toUpperCase());
+  return key.replace(/[_\.]+/g, ' ').replace(/\b\w/g, (value) => value.toUpperCase());
 }
 
 function formatEvidenceValue(value: unknown): string {
   if (value === null) return 'null';
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'string' || typeof value === 'number') return String(value);
-  try { return JSON.stringify(value); } catch { return String(value); }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
 }
 
 function formatCompactFactValue(value: unknown): string {
@@ -135,29 +145,344 @@ function isNoActionRemediation(text: string): boolean {
   return !lower || lower === 'no action required.' || lower === 'no action required';
 }
 
-/* ── Component ─────────────────────────────────────────────────────────── */
+function formatRunResult(result: 'ok' | 'fail' | 'error') {
+  if (result === 'ok') {
+    return {
+      label: 'OK',
+      className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    };
+  }
+  if (result === 'fail') {
+    return {
+      label: 'Fail',
+      className: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    };
+  }
+  return {
+    label: 'Error',
+    className: 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+  };
+}
+
+function DetailRunCard({
+  title,
+  runKind,
+  run,
+  emptyMessage,
+}: {
+  title: string;
+  runKind: string;
+  run: OperationalReadinessProbeRun | OperationalReadinessActionRun | null | undefined;
+  emptyMessage: string;
+}) {
+  if (!run) {
+    return (
+      <div className="rounded-lg border border-dashed border-border/60 bg-background/40 px-3 py-3 text-sm text-muted-foreground">
+        {emptyMessage}
+      </div>
+    );
+  }
+
+  const result = formatRunResult(run.result);
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-foreground">{title}</span>
+        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${result.className}`}>
+          {result.label}
+        </span>
+      </div>
+      <div className="mt-2 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[minmax(0,140px)_1fr]">
+        <div className="contents">
+          <dt className="text-muted-foreground">{runKind}</dt>
+          <dd className="font-medium text-foreground">
+            {'probe_kind' in run ? run.probe_kind : run.action_kind}
+          </dd>
+        </div>
+        <div className="contents">
+          <dt className="text-muted-foreground">Recorded at</dt>
+          <dd className="font-medium text-foreground">{formatTimestamp(run.created_at)}</dd>
+        </div>
+        <div className="contents">
+          <dt className="text-muted-foreground">Duration</dt>
+          <dd className="font-medium text-foreground">{formatDurationMs(run.duration_ms)}</dd>
+        </div>
+        {run.failure_reason ? (
+          <div className="contents">
+            <dt className="text-muted-foreground">Failure reason</dt>
+            <dd className="font-medium text-foreground">{run.failure_reason}</dd>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function OperationalReadinessCheckRow({
+  check,
+  isLast,
+  actionStates,
+  detailState,
+  onExecuteAction,
+  onLoadCheckDetail,
+  onVerifyCheck,
+}: {
+  check: OperationalReadinessCheck;
+  isLast: boolean;
+  actionStates: Record<string, OperationalReadinessActionExecutionState>;
+  detailState?: OperationalReadinessCheckDetailState;
+  onExecuteAction?: (checkId: string, action: OperationalReadinessAvailableAction) => Promise<void> | void;
+  onLoadCheckDetail?: (checkId: string, options?: { force?: boolean }) => Promise<void> | void;
+  onVerifyCheck?: (checkId: string) => Promise<void> | void;
+}) {
+  const evidenceEntries = Object.entries(check.evidence);
+  const inlineFacts = getInlineFacts(check);
+  const hasRemediation = !isNoActionRemediation(check.remediation);
+  const showCause = (check.status === 'fail' || check.status === 'warn') && Boolean(check.cause);
+  const startsExpanded = check.actionability === 'backend_action' && check.available_actions.length > 0;
+  const hasExpandedSections =
+    evidenceEntries.length > 0 ||
+    check.available_actions.length > 0 ||
+    check.verify_after.length > 0 ||
+    check.next_if_still_failing.length > 0 ||
+    Boolean(onVerifyCheck) ||
+    Boolean(onLoadCheckDetail) ||
+    Boolean(detailState?.detail) ||
+    Boolean(detailState?.error);
+  const [open, setOpen] = useState(startsExpanded);
+
+  useEffect(() => {
+    if (open && onLoadCheckDetail) {
+      void onLoadCheckDetail(check.check_id);
+    }
+  }, [check.check_id, onLoadCheckDetail, open]);
+
+  return (
+    <CollapsibleRoot
+      open={open}
+      onOpenChange={(details) => setOpen(details.open)}
+      className="relative rounded-none border-0 bg-transparent"
+    >
+      <CollapsibleTrigger
+        className={`group flex w-full items-start gap-3 rounded-xl px-0 py-2.5 text-left transition-colors hover:bg-accent/30 ${
+          check.status === 'fail' ? 'bg-rose-500/[0.04]' : check.status === 'warn' ? 'bg-amber-500/[0.03]' : ''
+        }`}
+      >
+        <div className="relative z-10 mt-0.5 flex shrink-0 items-center justify-center rounded-full bg-card" style={{ width: 20 }}>
+          <StatusRing status={check.status} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium text-foreground">{check.label}</span>
+            <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              {CATEGORY_LABELS[check.category]}
+            </span>
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_BADGE[check.status]}`}>
+              {check.status}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">{check.summary}</p>
+          {showCause ? (
+            <p className="mt-1 text-sm text-foreground">
+              <span className="font-medium text-muted-foreground">Cause: </span>
+              {check.cause}
+            </p>
+          ) : null}
+          {inlineFacts.length > 0 ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="font-medium text-muted-foreground">Key facts:</span>
+              {inlineFacts.map((fact) => (
+                <span
+                  key={`${check.check_id}-${fact.label}`}
+                  className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-foreground"
+                >
+                  <span className="text-muted-foreground">{fact.label}: </span>
+                  <span className="font-medium">{fact.value}</span>
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {hasRemediation ? (
+            <p className="mt-1 text-sm text-foreground">
+              <span className="font-medium text-muted-foreground">Fix: </span>
+              {check.remediation}
+            </p>
+          ) : null}
+        </div>
+      </CollapsibleTrigger>
+
+      {hasExpandedSections ? (
+        <CollapsibleContent className={`ml-[28px] ${isLast ? 'mb-1' : 'mb-2'} rounded-xl border border-border/60 bg-background/80 p-3 dark:bg-background/40`}>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Check detail</span>
+            <span className="text-[11px] text-muted-foreground">Checked {formatTimestamp(check.checked_at)}</span>
+          </div>
+
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Latest verification</h4>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={!onVerifyCheck || detailState?.verifying === true}
+                onClick={() => {
+                  if (!onVerifyCheck) return;
+                  void onVerifyCheck(check.check_id);
+                }}
+              >
+                {detailState?.verifying ? 'Verifying...' : 'Verify now'}
+              </Button>
+            </div>
+            <div className="mt-2 space-y-2">
+              {detailState?.loading && !detailState.detail ? (
+                <div className="rounded-lg border border-border/60 bg-background/40 px-3 py-3 text-sm text-muted-foreground">
+                  Loading persisted run history...
+                </div>
+              ) : null}
+              {detailState?.error ? (
+                <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-3 text-sm text-rose-700 dark:text-rose-300">
+                  {detailState.error}
+                </div>
+              ) : null}
+              <DetailRunCard
+                title="Latest verification"
+                runKind="Probe kind"
+                run={detailState?.detail?.latest_probe_run}
+                emptyMessage="No verification run recorded yet."
+              />
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Latest backend action</h4>
+            <div className="mt-2">
+              <DetailRunCard
+                title="Latest backend action"
+                runKind="Action kind"
+                run={detailState?.detail?.latest_action_run}
+                emptyMessage="No backend action has been recorded yet."
+              />
+            </div>
+          </div>
+
+          {evidenceEntries.length > 0 ? (
+            <div className="mt-4">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Evidence</span>
+              <div className="mt-2 grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[minmax(0,160px)_1fr]">
+                {evidenceEntries.map(([key, value]) => (
+                  <div key={key} className="contents">
+                    <dt className="text-muted-foreground">{formatEvidenceKey(key)}</dt>
+                    <dd className="min-w-0 break-words font-medium text-foreground">{formatEvidenceValue(value)}</dd>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {check.available_actions.length > 0 ? (
+            <div className="mt-4">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Available actions</h4>
+              <ul className="mt-2 space-y-2 text-sm">
+                {check.available_actions.map((action) => {
+                  const actionState = actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)];
+                  return (
+                    <li key={`${check.check_id}-${action.action_kind}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <p className="font-medium text-foreground">{action.label}</p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={!onExecuteAction || actionState?.status === 'pending'}
+                          onClick={() => {
+                            if (!onExecuteAction) return;
+                            void onExecuteAction(check.check_id, action);
+                          }}
+                        >
+                          {actionState?.status === 'pending' ? 'Running...' : action.label}
+                        </Button>
+                      </div>
+                      <p className="mt-1 text-muted-foreground">{action.description}</p>
+                      {actionState?.message ? (
+                        <p
+                          className={`mt-2 text-sm ${
+                            actionState.status === 'error'
+                              ? 'text-rose-600 dark:text-rose-300'
+                              : actionState.status === 'success'
+                                ? 'text-emerald-700 dark:text-emerald-300'
+                                : 'text-muted-foreground'
+                          }`}
+                        >
+                          {actionState.message}
+                        </p>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+
+          {check.verify_after.length > 0 ? (
+            <div className="mt-4">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Verify after</h4>
+              <ul className="mt-2 space-y-2 text-sm">
+                {check.verify_after.map((target) => (
+                  <li key={`${check.check_id}-${target.probe_kind}-${target.route}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                    <p className="font-medium text-foreground">{target.label}</p>
+                    <p className="mt-1 text-muted-foreground">{target.route}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {check.next_if_still_failing.length > 0 ? (
+            <div className="mt-4">
+              <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Next if still failing</h4>
+              <ul className="mt-2 space-y-2 text-sm">
+                {check.next_if_still_failing.map((step) => (
+                  <li key={`${check.check_id}-${step.step_kind}-${step.label}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                    <p className="font-medium text-foreground">{step.label}</p>
+                    <p className="mt-1 text-muted-foreground">{step.description}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </CollapsibleContent>
+      ) : null}
+    </CollapsibleRoot>
+  );
+}
 
 export function OperationalReadinessCheckGrid({
   surface,
   actionStates = {},
+  detailStates = {},
   onExecuteAction,
+  onLoadCheckDetail,
+  onVerifyCheck,
 }: {
   surface: OperationalReadinessSurface;
   actionStates?: Record<string, OperationalReadinessActionExecutionState>;
+  detailStates?: Record<string, OperationalReadinessCheckDetailState>;
   onExecuteAction?: (checkId: string, action: OperationalReadinessAvailableAction) => Promise<void> | void;
+  onLoadCheckDetail?: (checkId: string, options?: { force?: boolean }) => Promise<void> | void;
+  onVerifyCheck?: (checkId: string) => Promise<void> | void;
 }) {
-  const allOk = surface.checks.every((c) => c.status === 'ok');
-
+  const allOk = surface.checks.every((check) => check.status === 'ok');
   const summaryLine = allOk
-    ? `${surface.label} — ${surface.checks.length}/${surface.checks.length} OK`
-    : `${surface.label} — ${surface.summary.fail} fail, ${surface.summary.warn} warn, ${surface.summary.ok} ok`;
+    ? `${surface.label} - ${surface.checks.length}/${surface.checks.length} OK`
+    : `${surface.label} - ${surface.summary.fail} fail, ${surface.summary.warn} warn, ${surface.summary.ok} ok`;
 
   return (
     <details
       open={!allOk}
       className={`overflow-hidden rounded-2xl border border-border/70 bg-card/70 shadow-sm ${SURFACE_TREATMENT[surface.id]}`}
     >
-      {/* ── Surface summary header ───────────────────────────────────── */}
       <summary className="cursor-pointer list-none px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -165,16 +490,15 @@ export function OperationalReadinessCheckGrid({
             <span className="text-base font-semibold text-foreground">{summaryLine}</span>
           </div>
           <div className="flex gap-2">
-            {(['ok', 'warn', 'fail', 'unknown'] as const).filter((s) => surface.summary[s] > 0).map((s) => (
-              <span key={s} className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase ${STATUS_BADGE[s]}`}>
-                {surface.summary[s]} {s}
+            {(['ok', 'warn', 'fail', 'unknown'] as const).filter((status) => surface.summary[status] > 0).map((status) => (
+              <span key={status} className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase ${STATUS_BADGE[status]}`}>
+                {surface.summary[status]} {status}
               </span>
             ))}
           </div>
         </div>
       </summary>
 
-      {/* ── Timeline check list ──────────────────────────────────────── */}
       <div className="border-t border-border/60 px-4 py-3">
         <div className="relative">
           {surface.checks.length > 1 ? (
@@ -186,176 +510,18 @@ export function OperationalReadinessCheckGrid({
           ) : null}
 
           <div className="space-y-0">
-            {surface.checks.map((check, idx) => {
-              const evidenceEntries = Object.entries(check.evidence);
-              const inlineFacts = getInlineFacts(check);
-              const isLast = idx === surface.checks.length - 1;
-              const hasRemediation = !isNoActionRemediation(check.remediation);
-              const showCause = (check.status === 'fail' || check.status === 'warn') && Boolean(check.cause);
-              const startsExpanded = check.actionability === 'backend_action' && check.available_actions.length > 0;
-              const hasExpandedSections =
-                evidenceEntries.length > 0 ||
-                check.available_actions.length > 0 ||
-                check.verify_after.length > 0 ||
-                check.next_if_still_failing.length > 0;
-
-              return (
-                <CollapsibleRoot
-                  key={check.check_id}
-                  defaultOpen={startsExpanded}
-                  className="relative rounded-none border-0 bg-transparent"
-                >
-                  {/* ── Check row ─────────────────────────────────── */}
-                  <CollapsibleTrigger
-                    className={`group flex w-full items-start gap-3 rounded-xl px-0 py-2.5 text-left transition-colors hover:bg-accent/30 ${
-                      check.status === 'fail' ? 'bg-rose-500/[0.04]' : check.status === 'warn' ? 'bg-amber-500/[0.03]' : ''
-                    }`}
-                  >
-                    {/* Status ring (timeline node) */}
-                    <div className="relative z-10 mt-0.5 flex shrink-0 items-center justify-center rounded-full bg-card" style={{ width: 20 }}>
-                      <StatusRing status={check.status} />
-                    </div>
-
-                    {/* Content */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-foreground">{check.label}</span>
-                        <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                          {CATEGORY_LABELS[check.category]}
-                        </span>
-                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${STATUS_BADGE[check.status]}`}>
-                          {check.status}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground">{check.summary}</p>
-                      {showCause ? (
-                        <p className="mt-1 text-sm text-foreground">
-                          <span className="font-medium text-muted-foreground">Cause: </span>
-                          {check.cause}
-                        </p>
-                      ) : null}
-                      {inlineFacts.length > 0 ? (
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                          <span className="font-medium text-muted-foreground">Key facts:</span>
-                          {inlineFacts.map((fact) => (
-                            <span
-                              key={`${check.check_id}-${fact.label}`}
-                              className="rounded-full border border-border/60 bg-background/70 px-2 py-0.5 text-foreground"
-                            >
-                              <span className="text-muted-foreground">{fact.label}: </span>
-                              <span className="font-medium">{fact.value}</span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                      {hasRemediation ? (
-                        <p className="mt-1 text-sm text-foreground">
-                          <span className="font-medium text-muted-foreground">Fix: </span>
-                          {check.remediation}
-                        </p>
-                      ) : null}
-                    </div>
-                  </CollapsibleTrigger>
-
-                  {/* ── Expanded evidence ── */}
-                  {hasExpandedSections ? (
-                    <CollapsibleContent className={`ml-[28px] ${isLast ? 'mb-1' : 'mb-2'} rounded-xl border border-border/60 bg-background/80 p-3 dark:bg-background/40`}>
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Check detail</span>
-                        <span className="text-[11px] text-muted-foreground">Checked {formatTimestamp(check.checked_at)}</span>
-                      </div>
-
-                      {evidenceEntries.length > 0 ? (
-                        <div>
-                          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Evidence</span>
-                          <div className="mt-2 grid gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[minmax(0,160px)_1fr]">
-                            {evidenceEntries.map(([key, value]) => (
-                              <div key={key} className="contents">
-                                <dt className="text-muted-foreground">{formatEvidenceKey(key)}</dt>
-                                <dd className="min-w-0 break-words font-medium text-foreground">{formatEvidenceValue(value)}</dd>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {check.available_actions.length > 0 ? (
-                        <div className="mt-4">
-                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Available actions</h4>
-                          <ul className="mt-2 space-y-2 text-sm">
-                            {check.available_actions.map((action) => (
-                              <li key={`${check.check_id}-${action.action_kind}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
-                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                  <p className="font-medium text-foreground">{action.label}</p>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    disabled={
-                                      !onExecuteAction ||
-                                      actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.status === 'pending'
-                                    }
-                                    onClick={() => {
-                                      if (!onExecuteAction) return;
-                                      void onExecuteAction(check.check_id, action);
-                                    }}
-                                  >
-                                    {actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.status === 'pending'
-                                      ? 'Running…'
-                                      : action.label}
-                                  </Button>
-                                </div>
-                                <p className="mt-1 text-muted-foreground">{action.description}</p>
-                                {actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.message ? (
-                                  <p
-                                    className={`mt-2 text-sm ${
-                                      actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.status === 'error'
-                                        ? 'text-rose-600 dark:text-rose-300'
-                                        : actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.status === 'success'
-                                          ? 'text-emerald-700 dark:text-emerald-300'
-                                          : 'text-muted-foreground'
-                                    }`}
-                                  >
-                                    {actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.message}
-                                  </p>
-                                ) : null}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-
-                      {check.verify_after.length > 0 ? (
-                        <div className="mt-4">
-                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Verify after</h4>
-                          <ul className="mt-2 space-y-2 text-sm">
-                            {check.verify_after.map((target) => (
-                              <li key={`${check.check_id}-${target.probe_kind}-${target.route}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
-                                <p className="font-medium text-foreground">{target.label}</p>
-                                <p className="mt-1 text-muted-foreground">{target.route}</p>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-
-                      {check.next_if_still_failing.length > 0 ? (
-                        <div className="mt-4">
-                          <h4 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Next if still failing</h4>
-                          <ul className="mt-2 space-y-2 text-sm">
-                            {check.next_if_still_failing.map((step) => (
-                              <li key={`${check.check_id}-${step.step_kind}-${step.label}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
-                                <p className="font-medium text-foreground">{step.label}</p>
-                                <p className="mt-1 text-muted-foreground">{step.description}</p>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                    </CollapsibleContent>
-                  ) : null}
-                </CollapsibleRoot>
-              );
-            })}
+            {surface.checks.map((check, index) => (
+              <OperationalReadinessCheckRow
+                key={check.check_id}
+                check={check}
+                isLast={index === surface.checks.length - 1}
+                actionStates={actionStates}
+                detailState={detailStates[check.check_id]}
+                onExecuteAction={onExecuteAction}
+                onLoadCheckDetail={onLoadCheckDetail}
+                onVerifyCheck={onVerifyCheck}
+              />
+            ))}
           </div>
         </div>
 

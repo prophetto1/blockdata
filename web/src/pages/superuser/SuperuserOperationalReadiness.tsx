@@ -30,7 +30,10 @@ export function Component() {
     surfaces,
     clientDiagnostics,
     actionStates,
+    checkDetails,
     executeAction,
+    loadCheckDetail,
+    verifyCheck,
     refresh,
   } = useOperationalReadiness();
   const devRecovery = usePlatformApiDevRecovery({
@@ -112,7 +115,10 @@ export function Component() {
                 key={surface.id}
                 surface={surface}
                 actionStates={actionStates}
+                detailStates={checkDetails}
                 onExecuteAction={executeAction}
+                onLoadCheckDetail={loadCheckDetail}
+                onVerifyCheck={verifyCheck}
               />
             ))}
           </div>

@@ -74,6 +74,17 @@ export type PipelineUploadResult = {
   completed: CompletedUpload;
 };
 
+export type RuntimeProbeRun = {
+  probe_run_id: string;
+  probe_kind: string;
+  check_id: string | null;
+  result: string;
+  duration_ms: number;
+  evidence: Record<string, unknown>;
+  failure_reason?: string | null;
+  created_at?: string | null;
+};
+
 function buildQuery(params: Record<string, string | undefined | null>) {
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -116,6 +127,34 @@ export async function listPipelineDefinitions(): Promise<PipelineDefinition[]> {
     'pipeline definitions request failed',
   );
   return Array.isArray(payload.items) ? payload.items : [];
+}
+
+export async function executePipelineBrowserUploadProbe(params: {
+  projectId: string;
+  pipelineKind: string;
+}): Promise<RuntimeProbeRun> {
+  return postJson<RuntimeProbeRun>(
+    '/admin/runtime/pipeline-services/browser-upload/probe',
+    {
+      project_id: params.projectId,
+      pipeline_kind: params.pipelineKind,
+    },
+    'pipeline browser-upload probe failed',
+  );
+}
+
+export async function executePipelineJobExecutionProbe(params: {
+  projectId: string;
+  pipelineKind: string;
+}): Promise<RuntimeProbeRun> {
+  return postJson<RuntimeProbeRun>(
+    '/admin/runtime/pipeline-services/job-execution/probe',
+    {
+      project_id: params.projectId,
+      pipeline_kind: params.pipelineKind,
+    },
+    'pipeline job-execution probe failed',
+  );
 }
 
 export async function listPipelineSources(params: {

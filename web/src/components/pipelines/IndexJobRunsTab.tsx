@@ -5,7 +5,7 @@ import {
   IconLoader2,
   IconPlayerPlay,
 } from '@tabler/icons-react';
-import type { PipelineJob } from '@/lib/pipelineService';
+import type { PipelineJob, RuntimeProbeRun } from '@/lib/pipelineService';
 
 const STAGE_DISPLAY = [
   { value: 'loading_sources', label: 'Loading sources' },
@@ -179,12 +179,21 @@ export function IndexJobRunsTab({
   isPolling,
   jobLoading,
   jobError,
+  jobExecutionProbeRun,
 }: {
   job: PipelineJob | null;
   isPolling: boolean;
   jobLoading: boolean;
   jobError: string | null;
+  jobExecutionProbeRun?: RuntimeProbeRun | null;
 }) {
+  const proofJobId = typeof jobExecutionProbeRun?.evidence?.job_id === 'string'
+    ? jobExecutionProbeRun.evidence.job_id
+    : null;
+  const proofSourceSetId = typeof jobExecutionProbeRun?.evidence?.source_set_id === 'string'
+    ? jobExecutionProbeRun.evidence.source_set_id
+    : null;
+
   if (jobLoading) {
     return (
       <section className="rounded-lg border border-border bg-card">
@@ -215,15 +224,38 @@ export function IndexJobRunsTab({
         <div className="border-b border-border px-4 py-3">
           <h3 className="text-sm font-medium text-foreground">Latest run</h3>
         </div>
-        <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-center">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <IconPlayerPlay size={18} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">No run yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Save this definition and start a run to see progress, results, and output stats here.
-            </p>
+        <div className="space-y-4 px-4 py-4">
+          {jobExecutionProbeRun ? (
+            <div className={`rounded-md border px-3 py-2 text-sm ${
+              jobExecutionProbeRun.result === 'ok'
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                : 'border-destructive/30 bg-destructive/10 text-destructive'
+            }`}>
+              <div className="font-medium">
+                {jobExecutionProbeRun.result === 'ok'
+                  ? 'Latest backend job proof verified source-set persistence and job execution.'
+                  : (jobExecutionProbeRun.failure_reason ?? 'The latest backend job proof failed.')}
+              </div>
+              {proofSourceSetId || proofJobId ? (
+                <div className="mt-1 text-xs opacity-90">
+                  {[proofSourceSetId ? `Source set: ${proofSourceSetId}` : null, proofJobId ? `Job: ${proofJobId}` : null]
+                    .filter(Boolean)
+                    .join(' | ')}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+            <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <IconPlayerPlay size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">No run yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Save this definition and start a run to see progress, results, and output stats here.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -274,6 +306,27 @@ export function IndexJobRunsTab({
       </div>
 
       <div className="space-y-5 px-4 py-4">
+        {jobExecutionProbeRun ? (
+          <div className={`rounded-md border px-3 py-2 text-sm ${
+            jobExecutionProbeRun.result === 'ok'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+              : 'border-destructive/30 bg-destructive/10 text-destructive'
+          }`}>
+            <div className="font-medium">
+              {jobExecutionProbeRun.result === 'ok'
+                ? 'Latest backend job proof verified source-set persistence and job execution.'
+                : (jobExecutionProbeRun.failure_reason ?? 'The latest backend job proof failed.')}
+            </div>
+            {proofSourceSetId || proofJobId ? (
+              <div className="mt-1 text-xs opacity-90">
+                {[proofSourceSetId ? `Source set: ${proofSourceSetId}` : null, proofJobId ? `Job: ${proofJobId}` : null]
+                  .filter(Boolean)
+                  .join(' | ')}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         {job.status === 'failed' && job.error_message ? (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-3">
             <p className="text-xs font-medium text-destructive">

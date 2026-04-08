@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 export type PipelineServiceViewModel = {
@@ -13,10 +14,12 @@ export function PipelineCatalogPanel({
   services,
   loading,
   error,
+  probePanel,
 }: {
   services: PipelineServiceViewModel[];
   loading: boolean;
   error: string | null;
+  probePanel?: ReactNode;
 }) {
   return (
     <div className="h-full overflow-auto">
@@ -37,6 +40,12 @@ export function PipelineCatalogPanel({
             </p>
           </div>
         </section>
+
+        {probePanel ? (
+          <section>
+            {probePanel}
+          </section>
+        ) : null}
 
         <section className="grid gap-4 md:grid-cols-2">
           {services.map((service) => (
