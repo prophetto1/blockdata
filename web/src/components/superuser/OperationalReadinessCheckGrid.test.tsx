@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { OperationalReadinessCheckGrid } from './OperationalReadinessCheckGrid';
@@ -131,28 +131,27 @@ describe('OperationalReadinessCheckGrid', () => {
     expect(screen.getByText(/Cause:/i)).toBeInTheDocument();
     expect(screen.getByText(/does not expose the browser upload origins required by the live app/i)).toBeInTheDocument();
     expect(screen.getByText(/Key facts:/i)).toBeInTheDocument();
-    expect(screen.getByText(/blockdata-user-content-prod/i)).toBeInTheDocument();
-    expect(screen.getByText(/https:\/\/blockdata\.run/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/blockdata-user-content-prod/i)).toHaveLength(2);
+    expect(screen.getAllByText(/https:\/\/blockdata\.run/i)).toHaveLength(2);
     expect(screen.getByText('Apply the browser upload CORS policy to the bucket.')).toBeInTheDocument();
     expect(screen.getByText('Storage bucket config')).toBeInTheDocument();
   });
 
-  it('expands evidence, actions, and verification guidance on row click', () => {
+  it('starts backend-actionable rows expanded so executable actions are visible from the mounted page', () => {
     render(<OperationalReadinessCheckGrid surface={surface} />);
 
-    expect(screen.queryByText('Available actions')).not.toBeInTheDocument();
+    const corsRow = screen.getAllByRole('button', { name: /bucket cors/i })[0]!;
+    const corsCheck = within(corsRow.closest('[data-part="root"]')!);
+    expect(corsRow).toHaveAttribute('aria-expanded', 'true');
 
-    const corsRow = screen.getAllByRole('button', { name: /bucket cors/i });
-    fireEvent.click(corsRow[0]!);
-
-    expect(screen.getByText(/evidence/i)).toBeInTheDocument();
-    expect(screen.getByText('Bucket Name')).toBeInTheDocument();
-    expect(screen.getByText('Available actions')).toBeInTheDocument();
-    expect(screen.getByText('Reconcile browser upload CORS')).toBeInTheDocument();
-    expect(screen.getByText('Verify after')).toBeInTheDocument();
-    expect(screen.getByText('Retry a browser upload from the app')).toBeInTheDocument();
-    expect(screen.getByText('Next if still failing')).toBeInTheDocument();
-    expect(screen.getByText('Inspect the live bucket policy')).toBeInTheDocument();
+    expect(corsCheck.getByText(/evidence/i)).toBeInTheDocument();
+    expect(corsCheck.getByText('Bucket Name')).toBeInTheDocument();
+    expect(corsCheck.getByText('Available actions')).toBeInTheDocument();
+    expect(corsCheck.getByRole('button', { name: 'Reconcile browser upload CORS' })).toBeInTheDocument();
+    expect(corsCheck.getByText('Verify after')).toBeInTheDocument();
+    expect(corsCheck.getByText('Retry a browser upload from the app')).toBeInTheDocument();
+    expect(corsCheck.getByText('Next if still failing')).toBeInTheDocument();
+    expect(corsCheck.getByText('Inspect the live bucket policy')).toBeInTheDocument();
   });
 
   it('auto-expands surfaces with failures and collapses all-ok surfaces', () => {

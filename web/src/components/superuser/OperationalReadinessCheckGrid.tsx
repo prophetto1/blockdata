@@ -1,9 +1,13 @@
 import type {
   OperationalReadinessCheck,
+  OperationalReadinessActionExecutionState,
+  OperationalReadinessAvailableAction,
   OperationalReadinessStatus,
   OperationalReadinessSurface,
 } from '@/lib/operationalReadiness';
+import { getOperationalReadinessActionStateKey } from '@/lib/operationalReadiness';
 import { CollapsibleRoot, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 /* ── Status ring SVG (inspired by pipeline builder reference) ──────────── */
 
@@ -135,8 +139,12 @@ function isNoActionRemediation(text: string): boolean {
 
 export function OperationalReadinessCheckGrid({
   surface,
+  actionStates = {},
+  onExecuteAction,
 }: {
   surface: OperationalReadinessSurface;
+  actionStates?: Record<string, OperationalReadinessActionExecutionState>;
+  onExecuteAction?: (checkId: string, action: OperationalReadinessAvailableAction) => Promise<void> | void;
 }) {
   const allOk = surface.checks.every((c) => c.status === 'ok');
 
@@ -184,6 +192,7 @@ export function OperationalReadinessCheckGrid({
               const isLast = idx === surface.checks.length - 1;
               const hasRemediation = !isNoActionRemediation(check.remediation);
               const showCause = (check.status === 'fail' || check.status === 'warn') && Boolean(check.cause);
+              const startsExpanded = check.actionability === 'backend_action' && check.available_actions.length > 0;
               const hasExpandedSections =
                 evidenceEntries.length > 0 ||
                 check.available_actions.length > 0 ||
@@ -191,7 +200,11 @@ export function OperationalReadinessCheckGrid({
                 check.next_if_still_failing.length > 0;
 
               return (
-                <CollapsibleRoot key={check.check_id} className="relative rounded-none border-0 bg-transparent">
+                <CollapsibleRoot
+                  key={check.check_id}
+                  defaultOpen={startsExpanded}
+                  className="relative rounded-none border-0 bg-transparent"
+                >
                   {/* ── Check row ─────────────────────────────────── */}
                   <CollapsibleTrigger
                     className={`group flex w-full items-start gap-3 rounded-xl px-0 py-2.5 text-left transition-colors hover:bg-accent/30 ${
@@ -272,8 +285,39 @@ export function OperationalReadinessCheckGrid({
                           <ul className="mt-2 space-y-2 text-sm">
                             {check.available_actions.map((action) => (
                               <li key={`${check.check_id}-${action.action_kind}`} className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
-                                <p className="font-medium text-foreground">{action.label}</p>
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                  <p className="font-medium text-foreground">{action.label}</p>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    disabled={
+                                      !onExecuteAction ||
+                                      actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.status === 'pending'
+                                    }
+                                    onClick={() => {
+                                      if (!onExecuteAction) return;
+                                      void onExecuteAction(check.check_id, action);
+                                    }}
+                                  >
+                                    {actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.status === 'pending'
+                                      ? 'Running…'
+                                      : action.label}
+                                  </Button>
+                                </div>
                                 <p className="mt-1 text-muted-foreground">{action.description}</p>
+                                {actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.message ? (
+                                  <p
+                                    className={`mt-2 text-sm ${
+                                      actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.status === 'error'
+                                        ? 'text-rose-600 dark:text-rose-300'
+                                        : actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.status === 'success'
+                                          ? 'text-emerald-700 dark:text-emerald-300'
+                                          : 'text-muted-foreground'
+                                    }`}
+                                  >
+                                    {actionStates[getOperationalReadinessActionStateKey(check.check_id, action.action_kind)]?.message}
+                                  </p>
+                                ) : null}
                               </li>
                             ))}
                           </ul>

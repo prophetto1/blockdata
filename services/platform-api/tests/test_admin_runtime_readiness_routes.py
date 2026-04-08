@@ -244,3 +244,336 @@ def test_get_runtime_readiness_still_returns_backend_500_when_error_metrics_rais
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Failed to build runtime readiness snapshot"}
+
+
+def test_reconcile_browser_upload_cors_requires_superuser(client):
+    response = client.post(
+        "/admin/runtime/storage/browser-upload-cors/reconcile",
+        json={"confirmed": True},
+    )
+
+    assert response.status_code in (401, 403)
+
+
+def test_reconcile_browser_upload_cors_requires_confirmation(superuser_client):
+    response = superuser_client.post(
+        "/admin/runtime/storage/browser-upload-cors/reconcile",
+        json={"confirmed": False},
+    )
+
+    assert response.status_code == 422
+
+
+def test_reconcile_browser_upload_cors_executes_action_and_records_success(superuser_client, monkeypatch):
+    recorded: list[dict[str, object]] = []
+    persisted: list[dict[str, object]] = []
+    mock_logger = MagicMock()
+
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.reconcile_storage_browser_upload_cors",
+        lambda **_kwargs: {
+            "action_kind": "storage_browser_upload_cors_reconcile",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "success",
+            "result_payload": {
+                "bucket_name": "blockdata-user-content-dev",
+                "cors_rule_count": 1,
+            },
+        },
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.record_runtime_readiness_action",
+        lambda **kwargs: recorded.append(kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.logger",
+        mock_logger,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.store_runtime_action_run",
+        lambda **kwargs: persisted.append(kwargs) or {"action_run_id": "action-run-1"},
+        raising=False,
+    )
+
+    response = superuser_client.post(
+        "/admin/runtime/storage/browser-upload-cors/reconcile",
+        json={"confirmed": True},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "action_kind": "storage_browser_upload_cors_reconcile",
+        "check_id": "blockdata.storage.bucket_cors",
+        "result": "success",
+        "result_payload": {
+            "bucket_name": "blockdata-user-content-dev",
+            "cors_rule_count": 1,
+        },
+    }
+    assert recorded == [
+        {
+            "action_id": "storage_browser_upload_cors_reconcile",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "success",
+            "duration_ms": pytest.approx(recorded[0]["duration_ms"], rel=0.01),
+            "error_type": None,
+        }
+    ]
+    assert persisted == [
+        {
+            "action_kind": "storage_browser_upload_cors_reconcile",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "ok",
+            "duration_ms": pytest.approx(persisted[0]["duration_ms"], rel=0.01),
+            "request": {"confirmed": True},
+            "result_payload": {
+                "bucket_name": "blockdata-user-content-dev",
+                "cors_rule_count": 1,
+            },
+            "failure_reason": None,
+            "actor_id": "admin-user",
+        }
+    ]
+    mock_logger.info.assert_called_once_with(
+        "runtime_readiness_action",
+        extra={
+            "action_id": "storage_browser_upload_cors_reconcile",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "success",
+        },
+    )
+
+
+def test_reconcile_browser_upload_cors_returns_500_and_records_failure(superuser_client, monkeypatch):
+    recorded: list[dict[str, object]] = []
+    persisted: list[dict[str, object]] = []
+    mock_logger = MagicMock()
+
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.reconcile_storage_browser_upload_cors",
+        lambda **_kwargs: (_ for _ in ()).throw(ValueError("bucket patch failed")),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.record_runtime_readiness_action",
+        lambda **kwargs: recorded.append(kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.logger",
+        mock_logger,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.store_runtime_action_run",
+        lambda **kwargs: persisted.append(kwargs) or {"action_run_id": "action-run-2"},
+        raising=False,
+    )
+
+    response = superuser_client.post(
+        "/admin/runtime/storage/browser-upload-cors/reconcile",
+        json={"confirmed": True},
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Failed to reconcile browser upload CORS policy"}
+    assert recorded == [
+        {
+            "action_id": "storage_browser_upload_cors_reconcile",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "failure",
+            "duration_ms": pytest.approx(recorded[0]["duration_ms"], rel=0.01),
+            "error_type": "ValueError",
+        }
+    ]
+    assert persisted == [
+        {
+            "action_kind": "storage_browser_upload_cors_reconcile",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "error",
+            "duration_ms": pytest.approx(persisted[0]["duration_ms"], rel=0.01),
+            "request": {"confirmed": True},
+            "result_payload": {},
+            "failure_reason": "bucket patch failed",
+            "actor_id": "admin-user",
+        }
+    ]
+    mock_logger.exception.assert_called_once_with(
+        "runtime_readiness_action",
+        extra={
+            "action_id": "storage_browser_upload_cors_reconcile",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "failure",
+            "error_type": "ValueError",
+        },
+    )
+
+
+def test_get_runtime_readiness_check_detail_requires_superuser(client):
+    response = client.get("/admin/runtime/readiness/checks/blockdata.storage.bucket_cors")
+
+    assert response.status_code in (401, 403)
+
+
+def test_get_runtime_readiness_check_detail_returns_current_check_and_latest_runs(superuser_client, monkeypatch):
+    payload = {
+        "check": {
+            "id": "blockdata.storage.bucket_cors",
+            "check_id": "blockdata.storage.bucket_cors",
+            "surface_id": "blockdata",
+            "category": "connectivity",
+            "status": "fail",
+            "label": "Bucket CORS",
+            "summary": "Bucket browser-upload CORS rules are missing or incomplete.",
+            "cause": "The bucket has no browser-upload CORS rules.",
+            "cause_confidence": "high",
+            "depends_on": [],
+            "blocked_by": [],
+            "available_actions": [],
+            "verify_after": [],
+            "next_if_still_failing": [],
+            "actionability": "backend_action",
+            "evidence": {"cors_configured": False},
+            "remediation": "Apply browser upload CORS rules that allow PUT/POST to the bucket.",
+            "checked_at": "2026-04-08T16:15:00Z",
+        },
+        "latest_probe_run": {
+            "probe_run_id": "probe-run-1",
+            "probe_kind": "readiness_check_verify",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "fail",
+            "duration_ms": 5.0,
+            "evidence": {"status": "fail"},
+            "failure_reason": "Bucket browser-upload CORS rules are missing or incomplete.",
+            "created_at": "2026-04-08T16:15:00Z",
+        },
+        "latest_action_run": None,
+    }
+
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.get_runtime_readiness_check_detail",
+        lambda **_kwargs: payload,
+        raising=False,
+    )
+
+    response = superuser_client.get("/admin/runtime/readiness/checks/blockdata.storage.bucket_cors")
+
+    assert response.status_code == 200
+    assert response.json() == payload
+
+
+def test_verify_runtime_readiness_check_requires_superuser(client):
+    response = client.post("/admin/runtime/readiness/checks/blockdata.storage.bucket_cors/verify")
+
+    assert response.status_code in (401, 403)
+
+
+def test_verify_runtime_readiness_check_executes_probe_and_records_success(superuser_client, monkeypatch):
+    recorded: list[dict[str, object]] = []
+    mock_logger = MagicMock()
+    payload = {
+        "check": {
+            "id": "blockdata.storage.bucket_cors",
+            "check_id": "blockdata.storage.bucket_cors",
+            "surface_id": "blockdata",
+            "status": "ok",
+            "summary": "Bucket browser-upload CORS rules are configured.",
+            "label": "Bucket CORS",
+        },
+        "latest_probe_run": {
+            "probe_run_id": "probe-run-2",
+            "probe_kind": "readiness_check_verify",
+            "check_id": "blockdata.storage.bucket_cors",
+            "result": "ok",
+            "duration_ms": 7.3,
+            "evidence": {"status": "ok", "surface_id": "blockdata"},
+            "failure_reason": None,
+            "created_at": "2026-04-08T16:20:00Z",
+        },
+        "latest_action_run": None,
+    }
+
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.verify_runtime_readiness_check",
+        lambda **_kwargs: payload,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.record_runtime_probe",
+        lambda **kwargs: recorded.append(kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.logger",
+        mock_logger,
+        raising=False,
+    )
+
+    response = superuser_client.post("/admin/runtime/readiness/checks/blockdata.storage.bucket_cors/verify")
+
+    assert response.status_code == 200
+    assert response.json() == payload
+    assert recorded == [
+        {
+            "probe_id": "readiness_check_verify",
+            "surface": "blockdata",
+            "result": "success",
+            "duration_ms": pytest.approx(recorded[0]["duration_ms"], rel=0.01),
+            "error_type": None,
+        }
+    ]
+    mock_logger.info.assert_called_once_with(
+        "runtime_probe_run",
+        extra={
+            "probe_id": "readiness_check_verify",
+            "surface": "blockdata",
+            "result": "success",
+        },
+    )
+
+
+def test_verify_runtime_readiness_check_returns_500_and_records_failure(superuser_client, monkeypatch):
+    recorded: list[dict[str, object]] = []
+    mock_logger = MagicMock()
+
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.verify_runtime_readiness_check",
+        lambda **_kwargs: (_ for _ in ()).throw(ValueError("probe exploded")),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.record_runtime_probe",
+        lambda **kwargs: recorded.append(kwargs),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.admin_runtime_readiness.logger",
+        mock_logger,
+        raising=False,
+    )
+
+    response = superuser_client.post("/admin/runtime/readiness/checks/blockdata.storage.bucket_cors/verify")
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Failed to verify runtime readiness check"}
+    assert recorded == [
+        {
+            "probe_id": "readiness_check_verify",
+            "surface": "blockdata",
+            "result": "failure",
+            "duration_ms": pytest.approx(recorded[0]["duration_ms"], rel=0.01),
+            "error_type": "ValueError",
+        }
+    ]
+    mock_logger.exception.assert_called_once_with(
+        "runtime_probe_run",
+        extra={
+            "probe_id": "readiness_check_verify",
+            "surface": "blockdata",
+            "result": "failure",
+            "error_type": "ValueError",
+        },
+    )

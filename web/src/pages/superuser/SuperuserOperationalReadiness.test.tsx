@@ -1,9 +1,10 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Component as SuperuserOperationalReadiness } from './SuperuserOperationalReadiness';
 
 const refreshMock = vi.fn();
+const executeActionMock = vi.fn();
 const refreshStatusMock = vi.fn();
 const recoverMock = vi.fn();
 const useOperationalReadinessMock = vi.fn();
@@ -28,6 +29,7 @@ describe('SuperuserOperationalReadiness', () => {
 
   beforeEach(() => {
     refreshMock.mockReset();
+    executeActionMock.mockReset();
     refreshStatusMock.mockReset();
     recoverMock.mockReset();
 
@@ -97,10 +99,18 @@ describe('SuperuserOperationalReadiness', () => {
               cause_confidence: null,
               depends_on: [],
               blocked_by: [],
-              available_actions: [],
+              available_actions: [
+                {
+                  action_kind: 'storage_browser_upload_cors_reconcile',
+                  label: 'Reconcile bucket CORS policy',
+                  description: 'Apply the checked-in browser upload CORS policy to the user-storage bucket.',
+                  route: '/admin/runtime/storage/browser-upload-cors/reconcile',
+                  requires_confirmation: true,
+                },
+              ],
               verify_after: [],
               next_if_still_failing: [],
-              actionability: 'info_only',
+              actionability: 'backend_action',
               evidence: { cors_configured: false },
               remediation: 'Apply the browser upload CORS policy to the bucket.',
               checked_at: '2026-03-30T16:00:00Z',
@@ -122,6 +132,8 @@ describe('SuperuserOperationalReadiness', () => {
           summary: 'Current browser origin for this session.',
         },
       ],
+      actionStates: {},
+      executeAction: executeActionMock,
       refresh: refreshMock,
     });
 
@@ -187,6 +199,7 @@ describe('SuperuserOperationalReadiness', () => {
     // Surfaces render in order
     expect(screen.getByText('Platform API readiness')).toBeInTheDocument();
     expect(screen.getByText('Bucket CORS')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reconcile bucket CORS policy' })).toBeInTheDocument();
 
     // Remediation visible for failed check
     expect(screen.getByText('Apply the browser upload CORS policy to the bucket.')).toBeInTheDocument();
@@ -214,5 +227,19 @@ describe('SuperuserOperationalReadiness', () => {
     expect(screen.queryByRole('button', { name: 'Recover platform-api' })).not.toBeInTheDocument();
     expect(screen.getByText('Snapshot loaded')).toBeInTheDocument();
     expect(screen.getByText('Platform API readiness')).toBeInTheDocument();
+  });
+
+  it('routes the mounted bucket CORS action through the readiness hook', () => {
+    render(<SuperuserOperationalReadiness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reconcile bucket CORS policy' }));
+
+    expect(executeActionMock).toHaveBeenCalledWith(
+      'blockdata.storage.bucket_cors',
+      expect.objectContaining({
+        action_kind: 'storage_browser_upload_cors_reconcile',
+        route: '/admin/runtime/storage/browser-upload-cors/reconcile',
+      }),
+    );
   });
 });

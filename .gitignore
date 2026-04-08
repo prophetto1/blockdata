@@ -120,6 +120,13 @@ __start-here/blockdata
 __start-here/agchain
 __start-here/specification
 
+# Study-patterns category junctions (point to external repos)
+docs/study-patterns/*/
+docs/study-patterns/*$repo/
+
+# Temp vitest artifacts
+web/.tmp-vitest-*
+
 # pnpm home cache
 .pnpm-home/
 
@@ -140,3 +147,4 @@ tmp_*.ps1
 tmp_*
 tmp-*
 jon-work/
+jon/

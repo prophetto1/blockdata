@@ -29,6 +29,8 @@ export function Component() {
     summary,
     surfaces,
     clientDiagnostics,
+    actionStates,
+    executeAction,
     refresh,
   } = useOperationalReadiness();
   const devRecovery = usePlatformApiDevRecovery({
@@ -106,7 +108,12 @@ export function Component() {
 
           <div className="space-y-6">
             {surfaces.map((surface) => (
-              <OperationalReadinessCheckGrid key={surface.id} surface={surface} />
+              <OperationalReadinessCheckGrid
+                key={surface.id}
+                surface={surface}
+                actionStates={actionStates}
+                onExecuteAction={executeAction}
+              />
             ))}
           </div>
         </>

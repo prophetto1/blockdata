@@ -306,7 +306,7 @@ def check_blockdata_storage_bucket_config(settings: Settings) -> dict:
                 "route": "/admin/runtime/readiness?surface=blockdata",
             }
         ],
-        actionability="info_only" if has_bucket else "backend_action",
+        actionability="info_only" if has_bucket else "external_change",
     )
 
 
@@ -352,7 +352,7 @@ def check_blockdata_storage_signed_url_signing(settings: Settings) -> dict:
                     "description": "Configure GCS_USER_STORAGE_BUCKET for the platform-api process before re-running the signing probe.",
                 }
             ],
-            actionability="backend_action",
+            actionability="external_change",
         )
 
     try:
@@ -422,7 +422,7 @@ def check_blockdata_storage_signed_url_signing(settings: Settings) -> dict:
                     "description": "Verify whether the process is running with a signer-capable service account or key file.",
                 }
             ],
-            actionability="backend_action",
+            actionability="external_change",
         )
     except Exception as exc:
         parsed = _parse_google_error_info(exc)
@@ -468,7 +468,7 @@ def check_blockdata_storage_signed_url_signing(settings: Settings) -> dict:
                 }
             ],
             next_if_still_failing=[next_step],
-            actionability="backend_action",
+            actionability="external_change",
         )
 
 
@@ -501,7 +501,7 @@ def check_blockdata_storage_bucket_cors(settings: Settings) -> dict:
                     "route": "/admin/runtime/readiness?surface=blockdata",
                 }
             ],
-            actionability="backend_action",
+            actionability="external_change",
         )
 
     try:
@@ -679,7 +679,8 @@ def check_agchain_models_providers(_settings: Settings) -> dict:
 
 def check_agchain_models_targets(_settings: Settings, *, actor_id: str) -> dict:
     try:
-        payload = list_model_targets(user_id=actor_id, limit=1, offset=0)
+        _ = actor_id
+        payload = list_model_targets(limit=1, offset=0)
         return _make_check(
             check_id="agchain.models.targets",
             category="product",
@@ -701,53 +702,8 @@ def check_agchain_models_targets(_settings: Settings, *, actor_id: str) -> dict:
         )
 
 
-def _execute_check(
-    *,
-    surface: SurfaceId,
-    check_id: str,
-    category: str,
-    label: str,
-    check_factory: CheckFactory,
-    settings: Settings,
-    actor_id: str,
-) -> dict:
-    started = perf_counter()
-    try:
-        with tracer.start_as_current_span("admin.runtime.readiness.check") as span:
-            check = check_factory(settings, actor_id)
-            duration_ms = (perf_counter() - started) * 1000.0
-            set_span_attributes(
-                span,
-                {
-                    "surface": surface,
-                    "check.id": check["id"],
-                    "check.category": check["category"],
-                    "status": check["status"],
-                },
-            )
-            record_runtime_readiness_check(
-                surface=surface,
-                check_id=check["id"],
-                check_category=check["category"],
-                status=check["status"],
-                duration_ms=duration_ms,
-            )
-            return check
-    except Exception as exc:
-        logger.exception(
-            "Runtime readiness check failed",
-            extra={"surface": surface, "check_id": check_id},
-        )
-        return _make_unknown_check(
-            check_id=check_id,
-            category=category,
-            label=label,
-            exc=exc,
-        )
-
-
-def _surface_checks(surface: SurfaceId, settings: Settings, actor_id: str) -> list[dict]:
-    registry: dict[SurfaceId, list[tuple[str, str, str, CheckFactory]]] = {
+def _runtime_readiness_registry() -> dict[SurfaceId, list[tuple[str, str, str, CheckFactory]]]:
+    return {
         "shared": [
             (
                 "shared.platform_api.ready",
@@ -821,6 +777,62 @@ def _surface_checks(surface: SurfaceId, settings: Settings, actor_id: str) -> li
             ),
         ],
     }
+
+
+def _lookup_runtime_readiness_check(check_id: str) -> tuple[SurfaceId, str, str, CheckFactory]:
+    for surface, entries in _runtime_readiness_registry().items():
+        for candidate_check_id, category, label, check_factory in entries:
+            if candidate_check_id == check_id:
+                return surface, category, label, check_factory
+    raise KeyError(check_id)
+
+
+def _execute_check(
+    *,
+    surface: SurfaceId,
+    check_id: str,
+    category: str,
+    label: str,
+    check_factory: CheckFactory,
+    settings: Settings,
+    actor_id: str,
+) -> dict:
+    started = perf_counter()
+    try:
+        with tracer.start_as_current_span("admin.runtime.readiness.check") as span:
+            check = check_factory(settings, actor_id)
+            duration_ms = (perf_counter() - started) * 1000.0
+            set_span_attributes(
+                span,
+                {
+                    "surface": surface,
+                    "check.id": check["id"],
+                    "check.category": check["category"],
+                    "status": check["status"],
+                },
+            )
+            record_runtime_readiness_check(
+                surface=surface,
+                check_id=check["id"],
+                check_category=check["category"],
+                status=check["status"],
+                duration_ms=duration_ms,
+            )
+            return check
+    except Exception as exc:
+        logger.exception(
+            "Runtime readiness check failed",
+            extra={"surface": surface, "check_id": check_id},
+        )
+        return _make_unknown_check(
+            check_id=check_id,
+            category=category,
+            label=label,
+            exc=exc,
+        )
+
+
+def _surface_checks(surface: SurfaceId, settings: Settings, actor_id: str) -> list[dict]:
     return [
         _execute_check(
             surface=surface,
@@ -831,8 +843,33 @@ def _surface_checks(surface: SurfaceId, settings: Settings, actor_id: str) -> li
             settings=settings,
             actor_id=actor_id,
         )
-        for check_id, category, label, check_factory in registry[surface]
+        for check_id, category, label, check_factory in _runtime_readiness_registry()[surface]
     ]
+
+
+def get_runtime_readiness_check(
+    *,
+    check_id: str,
+    actor_id: str,
+) -> dict:
+    settings = get_settings()
+    try:
+        surface, category, label, check_factory = _lookup_runtime_readiness_check(check_id)
+    except KeyError as exc:
+        raise RuntimeError(f"Unknown runtime readiness check: {check_id}") from exc
+
+    check = _execute_check(
+        surface=surface,
+        check_id=check_id,
+        category=category,
+        label=label,
+        check_factory=check_factory,
+        settings=settings,
+        actor_id=actor_id,
+    )
+    check["check_id"] = check["id"]
+    check["surface_id"] = surface
+    return check
 
 
 def get_runtime_readiness_snapshot(

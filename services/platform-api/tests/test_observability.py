@@ -355,6 +355,28 @@ def test_telemetry_status_returns_signoz_ui_url_and_deprecated_alias():
     assert status["jaeger_ui_url"] == "http://localhost:16686"
 
 
+def test_runtime_readiness_metrics_register_action_observability_contract(monkeypatch):
+    import importlib
+
+    import app.observability.runtime_readiness_metrics as runtime_readiness_metrics
+    from opentelemetry import metrics as otel_metrics
+
+    meter = MagicMock()
+    monkeypatch.setattr(otel_metrics, "get_meter", lambda _name: meter)
+
+    reloaded = importlib.reload(runtime_readiness_metrics)
+
+    counter_names = [call.args[0] for call in meter.create_counter.call_args_list]
+    histogram_names = [call.args[0] for call in meter.create_histogram.call_args_list]
+
+    assert "runtime_readiness_actions_total" in counter_names
+    assert "runtime_probes_total" in counter_names
+    assert "runtime_readiness_action_duration_ms" in histogram_names
+    assert "runtime_probe_duration_ms" in histogram_names
+
+    importlib.reload(reloaded)
+
+
 # --- Task 5: Manual span tests ---
 
 

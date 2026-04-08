@@ -1,3 +1,5 @@
+import { platformApiFetch } from '@/lib/platformApi';
+
 export type OperationalReadinessStatus = 'ok' | 'warn' | 'fail' | 'unknown';
 export type PlatformApiBaseMode = 'relative_proxy' | 'absolute_direct';
 export type BootstrapProbeStatus = 'pending' | 'ok' | 'warn' | 'fail' | 'skipped';
@@ -33,6 +35,7 @@ export type OperationalReadinessProbeKind =
   | 'pipeline_services_browser_upload'
   | 'pipeline_services_job_execution';
 export type OperationalReadinessActionKind = 'storage_browser_upload_cors_reconcile';
+export type OperationalReadinessActionExecutionStatus = 'idle' | 'pending' | 'success' | 'error';
 
 export type OperationalReadinessSummary = {
   ok: number;
@@ -55,6 +58,11 @@ export type OperationalReadinessAvailableAction = {
   description: string;
   route: '/admin/runtime/storage/browser-upload-cors/reconcile';
   requires_confirmation: boolean;
+};
+
+export type OperationalReadinessActionExecutionState = {
+  status: OperationalReadinessActionExecutionStatus;
+  message: string | null;
 };
 
 export type OperationalReadinessVerifyTarget = {
@@ -101,6 +109,48 @@ export type OperationalReadinessSnapshot = {
   summary: OperationalReadinessSummary;
   surfaces: OperationalReadinessSurface[];
 };
+
+export function getOperationalReadinessActionStateKey(
+  checkId: string,
+  actionKind: OperationalReadinessActionKind,
+): string {
+  return `${checkId}:${actionKind}`;
+}
+
+export async function executeOperationalReadinessAction(
+  action: OperationalReadinessAvailableAction,
+  options?: {
+    platformApiTarget?: string;
+    confirmed?: boolean;
+  },
+) {
+  const response = await platformApiFetch(
+    action.route,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ confirmed: options?.confirmed ?? true }),
+    },
+    options?.platformApiTarget ? { platformApiTarget: options.platformApiTarget } : {},
+  );
+
+  if (!response.ok) {
+    let failureDetail = `Operational readiness action failed: ${response.status}`;
+    try {
+      const body = await response.json() as { detail?: string };
+      if (typeof body.detail === 'string' && body.detail.trim()) {
+        failureDetail = body.detail;
+      }
+    } catch {
+      // Keep the status-derived fallback when the body cannot be parsed.
+    }
+    throw new Error(failureDetail);
+  }
+
+  return response.json().catch(() => null);
+}
 
 export type OperationalReadinessProbeRun = {
   probe_run_id: string;

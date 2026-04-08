@@ -4,6 +4,7 @@ import os
 from types import SimpleNamespace
 
 from app.services.runtime_readiness import (
+    check_agchain_models_targets,
     check_agchain_benchmarks_catalog,
     check_blockdata_storage_bucket_config,
     check_shared_platform_api_ready,
@@ -30,7 +31,7 @@ def test_signed_url_signing_returns_fail_when_current_credentials_cannot_sign(mo
     assert result["evidence"]["has_signing_credentials"] is False
     assert result["cause"] == "The active credential cannot sign URLs directly."
     assert result["cause_confidence"] == "high"
-    assert result["actionability"] == "backend_action"
+    assert result["actionability"] == "external_change"
     assert result["evidence"]["signing_mode"] == "local_private_key_required"
     assert result["evidence"]["error_type"] == "AttributeError"
     assert result["evidence"]["error_reason"] == "missing_private_key"
@@ -75,7 +76,7 @@ def test_signed_url_signing_returns_transport_error_detail_for_signblob_scope_fa
     assert result["status"] == "fail"
     assert result["cause"] == "The runtime reached IAM signBlob, but the access token lacks the required OAuth scope."
     assert result["cause_confidence"] == "high"
-    assert result["actionability"] == "backend_action"
+    assert result["actionability"] == "external_change"
     assert result["evidence"]["bucket_name"] == "blockdata-user-content-dev"
     assert result["evidence"]["signing_mode"] == "iam_signblob"
     assert result["evidence"]["error_type"] == "TransportError"
@@ -132,6 +133,16 @@ def test_bucket_cors_returns_fail_when_no_browser_upload_rules_exist(monkeypatch
     assert "cors" in result["remediation"].lower()
 
 
+def test_bucket_cors_requires_external_change_when_bucket_is_missing():
+    result = check_blockdata_storage_bucket_cors(
+        SimpleNamespace(gcs_user_storage_bucket=None)
+    )
+
+    assert result["status"] == "fail"
+    assert result["actionability"] == "external_change"
+    assert result["evidence"]["has_bucket"] is False
+
+
 def test_platform_api_ready_returns_unknown_when_conversion_pool_status_raises(monkeypatch):
     fake_pool = SimpleNamespace(
         status=lambda: (_ for _ in ()).throw(PermissionError("pool status unavailable"))
@@ -182,6 +193,50 @@ def test_bucket_config_returns_richer_evidence():
         "bucket_name": "blockdata-user-content-dev",
         "max_file_bytes": 1073741824,
         "cleanup_interval_seconds": 300,
+    }
+
+
+def test_bucket_config_requires_external_change_when_bucket_is_missing():
+    settings = SimpleNamespace(
+        gcs_user_storage_bucket=None,
+        user_storage_max_file_bytes=1073741824,
+        storage_cleanup_interval_seconds=300,
+    )
+
+    result = check_blockdata_storage_bucket_config(settings)
+
+    assert result["status"] == "fail"
+    assert result["actionability"] == "external_change"
+    assert result["remediation"] == "Set GCS_USER_STORAGE_BUCKET for upload flows."
+
+
+def test_signed_url_signing_requires_external_change_when_bucket_is_missing():
+    result = check_blockdata_storage_signed_url_signing(
+        SimpleNamespace(gcs_user_storage_bucket=None)
+    )
+
+    assert result["status"] == "fail"
+    assert result["actionability"] == "external_change"
+    assert result["evidence"]["error_reason"] == "missing_bucket"
+
+
+def test_agchain_model_targets_uses_current_registry_signature(monkeypatch):
+    captured: dict[str, object] = {}
+
+    def _mock_list_model_targets(**kwargs):
+        captured.update(kwargs)
+        return {"items": [], "total": 29}
+
+    monkeypatch.setattr("app.services.runtime_readiness.list_model_targets", _mock_list_model_targets)
+
+    result = check_agchain_models_targets(SimpleNamespace(), actor_id="user-123")
+
+    assert result["id"] == "agchain.models.targets"
+    assert result["status"] == "ok"
+    assert result["evidence"]["total"] == 29
+    assert captured == {
+        "limit": 1,
+        "offset": 0,
     }
 
 

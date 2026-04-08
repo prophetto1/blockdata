@@ -44,6 +44,7 @@ When answering product, architecture, implementation, or design questions:
 - Do not replace a large existing document with a smaller rewrite unless the user explicitly asked for replacement of that exact file.
 - If you touch the wrong file, stop further editing immediately, disclose the mistake plainly, and switch into recovery-only mode until the user decides otherwise.
 - Recovery-only mode means: inspect history, identify the pre-edit state, quarantine your mistaken artifact if needed, and restore the damaged file only with explicit user approval.
+- For local files, never use Markdown links or browser-style file references in responses. Always provide plain absolute Windows paths in backticks so the user can open or search for the file directly without being sent to a browser error page.
 
 ## Repo Workflows
 

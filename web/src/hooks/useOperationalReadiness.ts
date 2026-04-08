@@ -3,6 +3,10 @@ import { platformApiFetch } from '@/lib/platformApi';
 import { loadOperationalReadinessWithBootstrap } from '@/lib/platformApiDiagnostics';
 import {
   collectClientDiagnostics,
+  executeOperationalReadinessAction,
+  getOperationalReadinessActionStateKey,
+  type OperationalReadinessActionExecutionState,
+  type OperationalReadinessAvailableAction,
   normalizeOperationalReadinessSnapshot,
   type ClientDiagnostic,
   type OperationalReadinessBootstrapState,
@@ -20,6 +24,8 @@ type UseOperationalReadinessState = {
   summary: OperationalReadinessSummary | null;
   surfaces: OperationalReadinessSurface[];
   clientDiagnostics: ClientDiagnostic[];
+  actionStates: Record<string, OperationalReadinessActionExecutionState>;
+  executeAction: (checkId: string, action: OperationalReadinessAvailableAction) => Promise<void>;
   refresh: () => Promise<void>;
 };
 
@@ -100,6 +106,7 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
   const [summary, setSummary] = useState<OperationalReadinessSummary | null>(null);
   const [surfaces, setSurfaces] = useState<OperationalReadinessSurface[]>([]);
   const [clientDiagnostics, setClientDiagnostics] = useState<ClientDiagnostic[]>(() => collectClientDiagnostics());
+  const [actionStates, setActionStates] = useState<Record<string, OperationalReadinessActionExecutionState>>({});
 
   async function refresh() {
     setRefreshing(true);
@@ -129,6 +136,42 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
     }
   }
 
+  async function executeAction(checkId: string, action: OperationalReadinessAvailableAction) {
+    const actionKey = getOperationalReadinessActionStateKey(checkId, action.action_kind);
+    setError(null);
+    setActionStates((current) => ({
+      ...current,
+      [actionKey]: {
+        status: 'pending',
+        message: 'Executing backend action…',
+      },
+    }));
+
+    try {
+      await executeOperationalReadinessAction(action, {
+        confirmed: true,
+        platformApiTarget: bootstrap.platform_api_target,
+      });
+      await refresh();
+
+      setActionStates((current) => ({
+        ...current,
+        [actionKey]: {
+          status: 'success',
+          message: 'Action completed and the readiness snapshot was refreshed.',
+        },
+      }));
+    } catch (nextError) {
+      setActionStates((current) => ({
+        ...current,
+        [actionKey]: {
+          status: 'error',
+          message: nextError instanceof Error ? nextError.message : String(nextError),
+        },
+      }));
+    }
+  }
+
   useEffect(() => {
     void refresh();
   }, []);
@@ -142,6 +185,8 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
     summary,
     surfaces,
     clientDiagnostics,
+    actionStates,
+    executeAction,
     refresh,
   };
 }
