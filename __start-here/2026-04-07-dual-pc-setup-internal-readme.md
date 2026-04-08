@@ -1,8 +1,10 @@
 # Dual-PC Internal Setup README
 
-This document reflects the current state of this machine as verified on April 7, 2026 from `E:\blockdata-agchain`.
+This document explains the relationship between the two active working copies involved in the current AGChain and Blockdata work.
 
-In one sentence: this PC hosts its own local working tree at `E:\blockdata-agchain`, currently has live dev services on `5374`, `5375`, `4421`, and `8000`, and can also reach the other PC through mapped SMB drives.
+It was originally written on April 7, 2026 and was updated on April 8, 2026 to make the path and Git relationship explicit.
+
+In one sentence: this PC has its own local repo at `E:\blockdata-agchain`, it can also see the other PC's repo through the mapped `P:` drive, and the most common source of confusion is that the same remote folder appears as `P:\writing-system` here but as `E:\writing-system` on the other machine.
 
 ## Purpose
 
@@ -10,12 +12,65 @@ In one sentence: this PC hosts its own local working tree at `E:\blockdata-agcha
 - Capture what is shared across frontend, backend, database, docs, and generated scaffolds.
 - Record what is specific to this PC so local setup stays easy to reason about.
 
+## Read This First
+
+If you only read one section, read this one.
+
+- There are two active working copies involved right now.
+- This machine's local repo is `E:\blockdata-agchain`.
+- The other machine's repo is visible from here at `P:\writing-system`.
+- `P:\writing-system` on this machine is the same remote folder as `E:\writing-system` on the other PC.
+- Drive letters are machine-local labels. The folder can be the same even when the drive letter is different.
+- These are not one magically shared working tree. They are two repos or working copies that can drift until code is fetched, merged, copied, or committed on purpose.
+
+## Path Translation Cheat Sheet
+
+| What you see on this PC | What it means on the other PC | What to assume |
+|---|---|---|
+| `E:\blockdata-agchain` | no direct equivalent implied | This is this machine's own local repo |
+| `P:\writing-system` | `E:\writing-system` | Same remote folder, different drive letter |
+| `P:/writing-system/.git` | `E:\writing-system\.git` | The Git repo on the other PC |
+| `otherpc` Git remote | `P:/writing-system/.git` | The local Git name used here for the other PC repo |
+
+## Mental Model
+
+Use this model when talking to anyone about paths, branches, or file locations.
+
+- `E:\blockdata-agchain` is the local repo on `BUDDY`.
+- `P:\writing-system` is not a second local copy on `BUDDY`; it is the other PC's repo exposed over SMB.
+- When someone on this machine says `P:\writing-system\...`, a person sitting at the other PC should mentally translate that to `E:\writing-system\...`.
+- When someone on the other PC says `E:\writing-system\...`, a person on this machine should mentally translate that to `P:\writing-system\...`.
+- Do not tell someone on the other PC to open `P:`. That drive letter only exists on this machine.
+- Do not assume a change made in one repo automatically appears in the other. Shared network visibility does not mean shared Git state.
+
+## Repo Relationship
+
+For current Git work, treat the setup like this:
+
+- This machine's active branch is currently `buddy` in `E:\blockdata-agchain`.
+- GitHub is still `origin`.
+- The other PC repo is currently available here as the `otherpc` remote pointing to `P:/writing-system/.git`.
+- That means code can be fetched directly from the other machine without going through GitHub first.
+
+Practical rule:
+
+- Use Git to move code between repos when possible.
+- Use SMB copy for generated artifacts, data bundles, snapshots, and emergency one-off transfers.
+- When discussing audit fixes, always say which repo you mean: `E:\blockdata-agchain` on this PC, or `P:\writing-system` here which means `E:\writing-system` there.
+
 ## This PC
 
 ### Repo and workspace
 
 - Primary working copy on this PC:
   - `E:\blockdata-agchain`
+- This tree is now a top-level Git repo on this machine:
+  - `.git` exists at `E:\blockdata-agchain\.git`
+- Current local branch:
+  - `buddy`
+- Current Git remotes:
+  - `origin` -> `https://github.com/prophetto1/blockdata.git`
+  - `otherpc` -> `P:/writing-system/.git`
 - This tree already contains the main project surfaces locally, including:
   - `web`
   - `web-docs`
@@ -34,8 +89,6 @@ In one sentence: this PC hosts its own local working tree at `E:\blockdata-agcha
   - `.vscode`
   - `node_modules`
   - `output`
-- This copy is still not a Git repo from the top level:
-  - there is no top-level `.git` directory in `E:\blockdata-agchain`
 
 ### Local machine and runtime facts
 
@@ -133,10 +186,19 @@ The other PC is currently reachable through these active mapped drives:
 Most relevant currently reachable project paths include:
 
 - `P:\writing-system`
+  - this path is the other PC's `E:\writing-system`
   - this path exposes a near-full project-family tree, including `engine`, `integrations`, `services`, `supabase`, `web`, `web-docs`, `_agchain`, and `__start-here`
 - `P:\engine`
 - `R:\agchain-blockdata`
 - `S:\agchain`
+
+### How to talk about the other PC without confusing people
+
+- On this machine, say `P:\writing-system` when you mean the other PC repo as seen from here.
+- When giving instructions to someone physically on the other PC, translate `P:\writing-system` to `E:\writing-system`.
+- If a note or audit mentions `P:\...`, that path is from the perspective of this machine.
+- If a note or audit mentions `E:\writing-system\...`, that path is from the perspective of the other PC.
+- If a note or audit mentions `E:\blockdata-agchain\...`, that is this machine's own local repo, not the remote-mapped one.
 
 ### Stale mappings
 
@@ -258,6 +320,7 @@ Important distinction:
 - Shared contract does not mean shared process.
 - Each PC can run its own local web server, docs server, and Platform API process.
 - External services such as hosted Supabase may still be shared even when compute is local to each machine.
+- Shared network visibility does not mean shared branch state. Git state still moves by fetch, merge, rebase, restore, or copy.
 
 ## Divergence Already Visible
 
@@ -267,8 +330,9 @@ Known visible differences include:
 
 - this PC uses `E:\blockdata-agchain` as the active working copy
 - this PC is `BUDDY`; the mapped remote shares are exposed from `\\JON\...`
+- the other PC's repo appears here at `P:\writing-system` but appears there as `E:\writing-system`
 - this local tree already contains `engine` and `integrations`
-- this copy currently has no top-level Git metadata
+- this copy now has top-level Git metadata and currently tracks `origin` plus the `otherpc` remote
 - `.vscode/settings.json` still contains a legacy Python interpreter path for another user and machine context
 - `gh`, Docker, and Supabase CLI are currently missing on this PC
 - local PowerShell sessions still emit the `InitializeDefaultDrives` error because stale remembered mappings remain registered
@@ -279,8 +343,9 @@ Assume drift is possible until both sides are intentionally normalized.
 ## Working Model for Parallel Development
 
 - Treat the two machines as parallel development environments on the same LAN.
-- Treat `E:\blockdata-agchain` as a local working tree, not just a thin copy target.
-- Use Git for source-code movement whenever possible once top-level repo wiring is restored where needed.
+- Treat `E:\blockdata-agchain` as this machine's local working tree.
+- Treat `P:\writing-system` as the other PC's working tree as seen from here.
+- Use Git for source-code movement whenever possible.
 - Use SMB copy only when it is the practical choice for:
   - generated scaffolds
   - data bundles
@@ -292,6 +357,8 @@ Recommended rule:
 
 - Prefer Git for code.
 - Reserve SMB copy for data, generated artifacts, or temporary bootstrap work.
+- When in doubt, name both the machine view and the translated path in the same sentence.
+  - Example: "Fetch from `otherpc`, which is `P:\writing-system` here and `E:\writing-system` on JON."
 
 ## Operational Warnings
 
@@ -303,7 +370,8 @@ Recommended rule:
 
 ## Practical Next Steps
 
-- Re-establish top-level Git wiring for `E:\blockdata-agchain` if this copy is meant to be a first-class repo.
+- Keep the path-translation rule at the top of any audit or handoff that mentions both repos.
+- Re-establish or keep Git-first movement between the two repos through `origin` or the `otherpc` remote.
 - Normalize `.vscode/settings.json` so the Python interpreter path reflects this machine instead of `C:\Users\jwchu\...`.
 - Decide which machine is authoritative for `engine` and `integrations` now that those directories exist both locally and on the mapped remote tree.
 - Clean up stale mapped drives `V:` through `Z:` if the PowerShell startup error should be eliminated.

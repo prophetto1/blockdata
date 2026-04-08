@@ -133,6 +133,8 @@ def create_app() -> FastAPI:
     app.include_router(admin_runtime_readiness_router)
     from app.api.routes.admin_config_docling import router as admin_config_docling_router
     app.include_router(admin_config_docling_router)
+    from app.api.routes.admin_ai_providers import router as admin_ai_providers_router
+    app.include_router(admin_ai_providers_router)
 
     # 4. Future /api/v1/* routes (stubs)
     from app.api.routes.crews import router as crews_router

@@ -12,11 +12,15 @@ function hasPdfjsExpressAssets(directory) {
   return requiredAssetMarkers.every((relativePath) => existsSync(path.join(directory, relativePath)));
 }
 
-function resolveInstalledPackageDir() {
+function resolvePdfjsExpressPackageDir() {
   try {
     return path.dirname(require.resolve('@pdftron/pdfjs-express/package.json'));
-  } catch {
-    return null;
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'MODULE_NOT_FOUND') {
+      return null;
+    }
+
+    throw error;
   }
 }
 
@@ -24,7 +28,7 @@ export function syncPdfjsExpressAssets({
   packageDir,
   destinationDir = path.resolve(projectRoot, 'public', 'vendor', 'pdfjs-express'),
 } = {}) {
-  const resolvedPackageDir = packageDir ?? resolveInstalledPackageDir();
+  const resolvedPackageDir = packageDir ?? resolvePdfjsExpressPackageDir();
   const sourceDir = resolvedPackageDir ? path.resolve(resolvedPackageDir, 'public') : null;
 
   if (sourceDir && hasPdfjsExpressAssets(sourceDir)) {
@@ -34,21 +38,18 @@ export function syncPdfjsExpressAssets({
   }
 
   if (hasPdfjsExpressAssets(destinationDir)) {
-    const warning = sourceDir
-      ? `PDF.js Express package assets were not found at ${sourceDir}. Using committed assets in ${destinationDir}.`
-      : `PDF.js Express package is not installed. Using committed assets in ${destinationDir}.`;
-    console.warn(warning);
+    console.warn(
+      sourceDir
+        ? `PDF.js Express package assets were not found at ${sourceDir}. Using committed assets in ${destinationDir}.`
+        : `PDF.js Express package could not be resolved. Using committed assets in ${destinationDir}.`
+    );
     return { mode: 'fallback', sourceDir, destinationDir };
   }
 
-  if (!sourceDir) {
-    throw new Error(
-      `PDF.js Express package is not installed, and no committed fallback exists at ${destinationDir}.`
-    );
-  }
-
   throw new Error(
-    `PDF.js Express assets were not found at ${sourceDir}, and no committed fallback exists at ${destinationDir}.`
+    sourceDir
+      ? `PDF.js Express assets were not found at ${sourceDir}, and no committed fallback exists at ${destinationDir}.`
+      : `PDF.js Express package could not be resolved, and no committed fallback exists at ${destinationDir}.`
   );
 }
 

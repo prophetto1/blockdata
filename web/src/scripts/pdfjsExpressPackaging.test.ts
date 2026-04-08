@@ -1,23 +1,20 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 
-const packageJsonPath = path.resolve(import.meta.dirname, '..', '..', 'package.json');
-const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
-  scripts?: Record<string, string>;
-};
+const webPackageJsonPath = path.resolve(import.meta.dirname, '..', '..', 'package.json');
 
 describe('PDF.js Express packaging scripts', () => {
-  it('keeps asset sync as an explicit maintenance command', () => {
-    expect(packageJson.scripts?.['pdfjs-express:assets:refresh']).toBe(
-      'node ./src/scripts/syncPdfjsExpressAssets.mjs'
-    );
-  });
+  it('does not block dev or build on refreshing copied assets', () => {
+    const webPackageJson = JSON.parse(readFileSync(webPackageJsonPath, 'utf8')) as {
+      scripts: Record<string, string>;
+    };
 
-  it('does not block dev or build commands on asset refresh', () => {
-    expect(packageJson.scripts?.dev).not.toContain('pdfjs-express:assets');
-    expect(packageJson.scripts?.['dev:alt']).not.toContain('pdfjs-express:assets');
-    expect(packageJson.scripts?.build).not.toContain('pdfjs-express:assets');
+    expect(webPackageJson.scripts.dev).not.toContain('pdfjs-express:assets');
+    expect(webPackageJson.scripts['dev:alt']).not.toContain('pdfjs-express:assets');
+    expect(webPackageJson.scripts.build).not.toContain('pdfjs-express:assets');
+    expect(webPackageJson.scripts['pdfjs-express:assets:refresh']).toBe(
+      'node ./src/scripts/syncPdfjsExpressAssets.mjs',
+    );
   });
 });

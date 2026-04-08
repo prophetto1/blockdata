@@ -46,7 +46,7 @@ const DEFAULT_IGNORED_BASENAMES = new Set([
   'desktop.ini',
 ]);
 
-const ABSOLUTE_WINDOWS_PATH_PATTERN = /(?<![A-Za-z0-9_])([A-Za-z]:(?:\\+|\/)[^\s"'`<>,;\r\n]+)/g;
+const ABSOLUTE_WINDOWS_PATH_START_PATTERN = /(?<![A-Za-z0-9_])[A-Za-z]:(?:\\+|\/)/g;
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -150,8 +150,91 @@ function locateIndex(lineStarts, index) {
   };
 }
 
+function sanitizeMatchedPathToken(candidate) {
+  const trailingTextAfterExtensionMatch = candidate.match(
+    /^(.*\.[A-Za-z0-9]{1,8})(?:\s+.*)$/,
+  );
+  if (trailingTextAfterExtensionMatch) {
+    candidate = trailingTextAfterExtensionMatch[1];
+  }
+
+  // When scanning source files, broad regex matching can run through escaped
+  // control sequences like `\n` after a file extension in a string literal.
+  // Trim that suffix so we only rewrite the actual path token.
+  const escapedControlSuffixMatch = candidate.match(
+    /^(.*?\.[A-Za-z0-9]{1,8})(?:\\+[nrtbfv0].*)$/,
+  );
+  if (escapedControlSuffixMatch) {
+    return escapedControlSuffixMatch[1];
+  }
+
+  return candidate;
+}
+
 function isOverlap(start, end, occupiedRanges) {
   return occupiedRanges.some((range) => start < range.end && end > range.start);
+}
+
+function findAbsoluteWindowsPathCandidates(text) {
+  const candidates = [];
+  ABSOLUTE_WINDOWS_PATH_START_PATTERN.lastIndex = 0;
+
+  for (const match of text.matchAll(ABSOLUTE_WINDOWS_PATH_START_PATTERN)) {
+    const start = match.index;
+    let end = start + match[0].length;
+
+    while (end < text.length) {
+      const char = text[end];
+      if (char === '"' || char === '\'' || char === '`' || char === '<' || char === '>' || char === ',' || char === ';' || char === '\r' || char === '\n') {
+        break;
+      }
+
+      if (char === '\\') {
+        const next = text[end + 1] ?? '';
+        const nextNext = text[end + 2] ?? '';
+        if (/[nrtbfv0]/.test(next) && /[A-Z]/.test(nextNext)) {
+          break;
+        }
+      }
+
+      end += 1;
+    }
+
+    candidates.push({
+      start,
+      end,
+      token: text.slice(start, end),
+    });
+  }
+
+  return candidates;
+}
+
+function collectAbsoluteMatches(text, rootMappings, occupiedRanges, lineStarts) {
+  const matches = [];
+
+  for (const candidate of findAbsoluteWindowsPathCandidates(text)) {
+    const token = sanitizeMatchedPathToken(candidate.token);
+    const start = candidate.start;
+    const end = start + token.length;
+
+    if (isOverlap(start, end, occupiedRanges)) {
+      continue;
+    }
+
+    const details = classifyAbsolutePathToken(token, rootMappings);
+    const location = locateIndex(lineStarts, start);
+    matches.push({
+      start,
+      end,
+      original: token,
+      ...details,
+      ...location,
+    });
+    occupiedRanges.push({ start, end });
+  }
+
+  return matches;
 }
 
 function classifyAbsolutePathToken(token, rootMappings) {
@@ -202,8 +285,9 @@ function collectMatches(text, pattern, classifyToken, occupiedRanges, lineStarts
   pattern.lastIndex = 0;
 
   for (const match of text.matchAll(pattern)) {
-    const token = match[1] ?? match[0];
-    const start = match.index + match[0].indexOf(token);
+    const rawToken = match[1] ?? match[0];
+    const token = sanitizeMatchedPathToken(rawToken);
+    const start = match.index + match[0].indexOf(rawToken);
     const end = start + token.length;
 
     if (isOverlap(start, end, occupiedRanges)) {
@@ -244,10 +328,9 @@ export function rewriteHardcodedPathsInText(
   const lineStarts = createLineStarts(text);
   const occupiedRanges = [];
 
-  const matches = collectMatches(
+  const matches = collectAbsoluteMatches(
     text,
-    ABSOLUTE_WINDOWS_PATH_PATTERN,
-    (token) => classifyAbsolutePathToken(token, rootMappings),
+    rootMappings,
     occupiedRanges,
     lineStarts,
   );

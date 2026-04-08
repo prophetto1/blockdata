@@ -19,7 +19,7 @@ import FlowsList from '@/pages/FlowsList';
 import Schemas from '@/pages/Schemas';
 import SchemaLayout from '@/pages/SchemaLayout';
 
-import { SettingsLayout, SettingsAccount, SettingsAiOverview, SettingsProviderForm, SettingsModelRoles, SettingsGridSample, SettingsSecrets, SettingsThemes } from '@/pages/settings';
+import { SettingsLayout, SettingsAccount, SettingsModelRoles, SettingsGridSample, SettingsSecrets, SettingsThemes } from '@/pages/settings';
 import PlatformLanding from '@/pages/experiments/PlatformLanding';
 import Landing from '@/pages/Landing';
 import Agents from '@/pages/Agents';
@@ -403,8 +403,14 @@ export const router = createBrowserRouter([
               { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
               { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
               { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
-              { path: 'ai-providers', element: <SettingsAiOverview /> },
-              { path: 'ai-providers/:providerId', element: <SettingsProviderForm /> },
+              {
+                path: 'ai-providers',
+                lazy: async () => ({ Component: (await import('@/pages/admin/BlockdataAdminAiProvidersPage')).default }),
+              },
+              {
+                path: 'ai-providers/:providerId',
+                lazy: async () => ({ Component: (await import('@/pages/admin/BlockdataAdminAiProvidersPage')).default }),
+              },
               { path: 'model-roles', element: <SettingsModelRoles /> },
               { path: 'connections', element: <ConnectionsPanel /> },
               { path: 'mcp', element: <McpServers /> },

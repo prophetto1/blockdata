@@ -103,6 +103,62 @@ test('rewriteHardcodedPathsInText reports external absolute paths without rewrit
   assert.equal(result.matches[0].replacement, null);
 });
 
+test('rewriteHardcodedPathsInText stops repo-relative matches before escaped newline sequences', () => {
+  const input = String.raw`See docs\\sessions\\0407\\ai-tool-directory-inventory.md\nNext`;
+  const result = rewriteHardcodedPathsInText(input, {
+    repoRoot: 'E:/blockdata-agchain',
+    repoEntries: ['docs'],
+  });
+
+  assert.equal(
+    result.text,
+    String.raw`See docs/sessions/0407/ai-tool-directory-inventory.md\nNext`,
+  );
+  assert.equal(result.matches.length, 1);
+  assert.equal(
+    result.matches[0].original,
+    String.raw`docs\\sessions\\0407\\ai-tool-directory-inventory.md`,
+  );
+  assert.equal(
+    result.matches[0].replacement,
+    'docs/sessions/0407/ai-tool-directory-inventory.md',
+  );
+});
+
+test('rewriteHardcodedPathsInText captures full external absolute Windows paths with spaces', () => {
+  const input = String.raw`IconResource=C:\Program Files\Google\Drive File Stream\123.0.1.0\GoogleDriveFS.exe,27`;
+  const result = rewriteHardcodedPathsInText(input, {
+    repoRoot: 'E:/blockdata-agchain',
+    repoEntries: ['docs', 'services'],
+  });
+
+  assert.equal(result.text, input);
+  assert.equal(result.matches.length, 1);
+  assert.equal(result.matches[0].kind, 'external-absolute');
+  assert.equal(
+    result.matches[0].original,
+    String.raw`C:\Program Files\Google\Drive File Stream\123.0.1.0\GoogleDriveFS.exe`,
+  );
+});
+
+test('rewriteHardcodedPathsInText splits external absolute paths separated by escaped newline text', () => {
+  const input = String.raw`External: C:\Users\buddy\AppData\Roaming\uv\python.exe\nMirror: P:\writing-system\docs\sessions\0407\ai-tool-directory-inventory.md`;
+  const result = rewriteHardcodedPathsInText(input, {
+    repoRoot: 'E:/blockdata-agchain',
+    repoEntries: ['docs', 'services'],
+  });
+
+  assert.equal(result.text, input);
+  assert.equal(result.matches.length, 2);
+  assert.deepEqual(
+    result.matches.map((match) => match.original),
+    [
+      String.raw`C:\Users\buddy\AppData\Roaming\uv\python.exe`,
+      String.raw`P:\writing-system\docs\sessions\0407\ai-tool-directory-inventory.md`,
+    ],
+  );
+});
+
 test('auditHardcodedPaths rewrites matching files when write mode is enabled', () => {
   const root = makeTempDir();
   writeFile(path.join(root, 'docs', '.keep'), '');
