@@ -8,8 +8,10 @@ const __dirname = path.dirname(__filename);
 const webRoot = path.resolve(__dirname, '../../..');
 
 const MOUNTED_REAL_PAGES = [
+  'src/pages/agchain/settings/AgchainOrganizationAiProvidersPage.tsx',
   'src/pages/agchain/settings/AgchainOrganizationMembersPage.tsx',
   'src/pages/agchain/settings/AgchainPermissionGroupsPage.tsx',
+  'src/pages/agchain/AgchainAiProvidersPage.tsx',
   'src/pages/agchain/AgchainProjectsPage.tsx',
   'src/pages/agchain/AgchainOverviewPage.tsx',
   'src/pages/agchain/AgchainDatasetsPage.tsx',

@@ -1,5 +1,5 @@
 # Smoke Test Script (v2): schema upload -> run creation -> export-jsonl by run_id
-# Run from project root: .\scripts\smoke-test-schema-run.ps1
+# Run from project root: scripts/smoke-test-schema-run.ps1
 
 $ErrorActionPreference = "Stop"
 
@@ -67,8 +67,8 @@ Write-Host "Using project: $($projects[0].project_name) ($projectId)" -Foregroun
 # ============================================================================
 Write-Host "`n=== STEP 2: Ingesting a markdown document ===" -ForegroundColor Cyan
 
-$testFile = ".\docs\tests\test-pack\a2-v4.8-10787.docx.md"
-if (-not (Test-Path $testFile)) { $testFile = ".\docs\tests\test-pack\sample-doc.md" }
+$testFile = "docs/tests/test-pack/a2-v4.8-10787.docx.md"
+if (-not (Test-Path $testFile)) { $testFile = "docs/tests/test-pack/sample-doc.md" }
 if (-not (Test-Path $testFile)) { throw "No test markdown file found." }
 
 Write-Host "Using markdown file: $testFile" -ForegroundColor Gray
@@ -94,7 +94,7 @@ Write-Host "Ingested conv_uid: $conv_uid (blocks_count=$($ingest.blocks_count))"
 Write-Host "`n=== STEP 3: Uploading annotation schema ===" -ForegroundColor Cyan
 
 $schemaFile = if ($env:SCHEMA_FILE) { $env:SCHEMA_FILE } else { "" }
-if (-not $schemaFile) { $schemaFile = ".\docs\tests\user-defined\prose-optimizer-v1.schema.json" }
+if (-not $schemaFile) { $schemaFile = "docs/tests/user-defined/prose-optimizer-v1.schema.json" }
 if (-not (Test-Path $schemaFile)) { $schemaFile = ".\json-schemas\user-defined\prose-optimizer-v1.schema.json" }
 if (-not (Test-Path $schemaFile)) { throw "Missing schema file. Set `$env:SCHEMA_FILE or add a schema under docs/tests/user-defined/." }
 
@@ -148,7 +148,7 @@ Write-Host "Run created! run_id=$run_id total_blocks=$($runResp.total_blocks)" -
 # ============================================================================
 Write-Host "`n=== STEP 5: Exporting JSONL by run_id ===" -ForegroundColor Cyan
 
-$exportFile = ".\scripts\export-run-$run_id.jsonl"
+$exportFile = "scripts/export-run-$run_id.jsonl"
 curl.exe -sS -L "$env:SUPABASE_URL/functions/v1/export-jsonl?run_id=$run_id" `
     -H "Authorization: Bearer $token" `
     -H "apikey: $env:SUPABASE_ANON_KEY" `

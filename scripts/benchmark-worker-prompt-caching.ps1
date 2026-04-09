@@ -1,6 +1,6 @@
 # Benchmark worker prompt caching with paired OFF/ON runs on the same document+schema.
 # Run from project root:
-#   .\scripts\benchmark-worker-prompt-caching.ps1
+#   scripts/benchmark-worker-prompt-caching.ps1
 # Optional args:
 #   -ConvUid <conv_uid> -SchemaId <schema_id> -BatchSize 25
 
@@ -317,7 +317,7 @@ $summary = [ordered]@{
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$outFile = ".\scripts\logs\prompt-caching-benchmark-$timestamp.json"
+$outFile = "scripts/logs/prompt-caching-benchmark-$timestamp.json"
 $summary | ConvertTo-Json -Depth 8 | Set-Content -Path $outFile -Encoding Ascii
 
 Write-Host ""

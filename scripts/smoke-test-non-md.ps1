@@ -102,10 +102,10 @@ Write-Host "`n=== STEP 2: Preparing non-markdown upload ===" -ForegroundColor Cy
 
 if (-not $FilePath) {
     # Default to .docx fixture to test the Docling track
-    $FilePath = ".\docs\tests\test-pack\lorem_ipsum.docx"
+    $FilePath = "docs/tests/test-pack/lorem_ipsum.docx"
     if (-not (Test-Path $FilePath)) {
         # Fallback to .txt if docx fixture is missing
-        $FilePath = ".\\scripts\\test-non-md.txt"
+        $FilePath = "scripts/test-non-md.txt"
         @"
 Hello from the non-markdown pipeline.
 
@@ -251,7 +251,7 @@ Write-Host "Ingest complete! conv_uid=$conv_uid" -ForegroundColor Green
 # ============================================================================
 Write-Host "`n=== STEP 5: Exporting JSONL ===" -ForegroundColor Cyan
 
-$exportFile = ".\\scripts\\export-non-md-test.jsonl"
+$exportFile = "scripts/export-non-md-test.jsonl"
 
 curl.exe -sS -L "$env:SUPABASE_URL/functions/v1/export-jsonl?conv_uid=$conv_uid" `
     -H "Authorization: Bearer $token" `

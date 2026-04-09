@@ -36,7 +36,7 @@ This revision is a targeted structural rewrite responding to the pre-implementat
 2. There is already one unmanaged local hook at `.git/hooks/pre-push` that runs `cd "$(git rev-parse --show-toplevel)/web"` followed by `npx tsc -b --noEmit`. That behavior must survive migration into `.husky/pre-push`.
 3. Supabase validation is already encoded in CI through `npm run test:workflow-guardrails`, `npm run test:supabase-extension-replay-guardrails`, and `npm run test:supabase-migration-reconciliation-contract`, while `supabase db start` and `supabase db reset` remain CI-owned because they require local Supabase runtime and Docker.
 4. Platform API bootstrap/dev recovery already has contract tests in `services/platform-api/tests/test_dev_bootstrap_contract.py` and `services/platform-api/tests/test_procfile_startup.py`.
-5. Telemetry truthfulness already has backend verification in `services/platform-api/tests/test_observability.py` and `services/platform-api/tests/test_observability_contract.py`, but the frontend pages `web/src/pages/ObservabilityTelemetry.tsx` and `web/src/pages/ObservabilityTraces.tsx` currently have no direct tests.
+5. Telemetry truthfulness already has backend verification in `services/platform-api/tests/test_observability.py` and `services/platform-api/tests/test_observability_contract.py`; `web/src/pages/ObservabilityTelemetry.tsx` already has a direct test at `web/src/pages/ObservabilityTelemetry.test.tsx`, while `web/src/pages/ObservabilityTraces.tsx` still needs direct frontend coverage.
 6. The top-priority frontend/backend seams already have substantial regression coverage:
    - readiness: `web/src/components/superuser/OperationalReadinessCheckGrid.test.tsx`, `web/src/hooks/useOperationalReadiness.test.tsx`, `web/src/pages/superuser/SuperuserOperationalReadiness.test.tsx`, `services/platform-api/tests/test_runtime_readiness_service.py`, `services/platform-api/tests/test_admin_runtime_readiness_routes.py`
    - bucket CORS/browser upload: `web/src/lib/storageUploadService.test.ts`, `services/platform-api/tests/test_runtime_action_service.py`, `services/platform-api/tests/test_storage_routes.py`
@@ -44,12 +44,12 @@ This revision is a targeted structural rewrite responding to the pre-implementat
    - shared selector: `web/src/components/shell/ProjectSwitcher.test.tsx`, `web/src/components/shell/ProjectFocusSelectorPopover.test.tsx`, `web/src/components/agchain/AgchainProjectSwitcher.test.tsx`, `web/src/components/layout/AgchainShellLayout.test.tsx`, `web/src/components/shell/TopCommandBar.test.tsx`
    - AGChain focus sync: `web/src/hooks/agchain/useAgchainProjectFocus.test.tsx`, `web/src/lib/agchainProjectFocus.test.ts`, `web/src/components/agchain/AgchainWorkspaceSync.test.tsx`, `web/src/pages/agchain/AgchainProjectsPage.test.tsx`, `web/src/pages/agchain/AgchainOverviewPage.test.tsx`
    - AGChain provider/model surfaces: `services/platform-api/tests/test_agchain_model_providers.py`, `services/platform-api/tests/test_agchain_models.py`, `web/src/pages/agchain/AgchainModelsPage.test.tsx`, `web/src/components/agchain/models/AgchainProviderCredentialModal.test.tsx`, `web/src/components/agchain/models/AgchainProviderCredentialsTable.test.tsx`
-7. Five missing test seams should be created as part of this Husky rollout so the hook families have real commands to run:
-   - `web/src/pages/ObservabilityTelemetry.test.tsx`
-   - `web/src/pages/ObservabilityTraces.test.tsx`
-   - `web/src/hooks/useIndexBuilderList.test.ts`
-   - `web/src/pages/agchain/AgchainAiProvidersPage.test.tsx`
-   - `web/src/pages/agchain/settings/AgchainOrganizationAiProvidersPage.test.tsx`
+7. Five frontend verification seams are in scope for this Husky rollout so the hook families have real commands to run:
+   - modified existing coverage: `web/src/pages/ObservabilityTelemetry.test.tsx`
+   - new coverage: `web/src/pages/ObservabilityTraces.test.tsx`
+   - new coverage: `web/src/hooks/useIndexBuilderList.test.ts`
+   - new coverage: `web/src/pages/agchain/AgchainAiProvidersPage.test.tsx`
+   - new coverage: `web/src/pages/agchain/settings/AgchainOrganizationAiProvidersPage.test.tsx`
 8. `scripts/path-normalizer/normalize-hardcoded-paths.mjs` now works better than before, but its repo-wide report still over-reports doc/provenance paths. Phase 1 Husky blocking must therefore target code/config/scripts first and treat approved operational-doc exceptions as review-only.
 9. Edge functions are real repo assets under `supabase/functions/`, but local deploy/validation is still CI-owned by `.github/workflows/deploy-edge-functions.yml`. There is no cheap existing local edge-function hook command that matches the current efficiency target, so edge-function local enforcement is an explicit phase-1 zero-case.
 10. The current protected branch set is backed by repo evidence: the local branch inventory shows only `master`, and `.github/workflows/supabase-db-deploy.yml` deploys production migrations only from pushes to `master`.
@@ -161,7 +161,8 @@ Verification-only frontend additions in scope:
 
 | Type | Count | Files |
 | --- | --- | --- |
-| New frontend test modules | `5` | `web/src/pages/ObservabilityTelemetry.test.tsx`, `web/src/pages/ObservabilityTraces.test.tsx`, `web/src/hooks/useIndexBuilderList.test.ts`, `web/src/pages/agchain/AgchainAiProvidersPage.test.tsx`, `web/src/pages/agchain/settings/AgchainOrganizationAiProvidersPage.test.tsx` |
+| New frontend test modules | `4` | `web/src/pages/ObservabilityTraces.test.tsx`, `web/src/hooks/useIndexBuilderList.test.ts`, `web/src/pages/agchain/AgchainAiProvidersPage.test.tsx`, `web/src/pages/agchain/settings/AgchainOrganizationAiProvidersPage.test.tsx` |
+| Modified frontend test modules | `1` | `web/src/pages/ObservabilityTelemetry.test.tsx` |
 
 ### Frontend Implications Of This Hook Rollout
 
@@ -250,7 +251,7 @@ Forbidden scope creep:
 | Repo metadata cleanup | `pre-commit`, `post-checkout`, `post-merge`, `post-rewrite` | any repo touch | `node scripts/repo-hygiene/remove-desktop-ini.mjs --write` |
 | Hardcoded path prohibition | `pre-commit` | staged blocking-scope files plus review-only doc classes | `node scripts/husky/check-hardcoded-paths.mjs --staged` |
 | Secret leakage scan | `pre-commit` | staged files | `node scripts/husky/check-secrets.mjs --staged` on added lines only |
-| Frontend build-safety foundation | `pre-commit` and `pre-push` | `web/**` | `cd web && npm run lint -- <changed-web-files>` on `pre-commit`; `cd web && npx tsc -b --noEmit` on `pre-push` |
+| Frontend build-safety foundation | `pre-commit` and `pre-push` | `web/**` | `cd web && npx eslint <changed-web-files>` on `pre-commit`; `cd web && npx tsc -b --noEmit` on `pre-push` |
 | Protected push / unsafe push | `pre-push` | any push | `node scripts/husky/check-protected-push.mjs` blocks direct updates to `refs/heads/master` and remote deletes |
 | Supabase migration history + linked-dev schema parity | `pre-push` | `supabase/migrations/**`, `supabase/seed.sql`, `supabase/config.toml`, `.github/workflows/supabase-db-validate.yml`, `.github/workflows/supabase-db-deploy.yml`, `.github/workflows/migration-history-hygiene.yml`, `scripts/tests/supabase-*.test.mjs`, `package.json` | `npm run test:workflow-guardrails && npm run test:supabase-extension-replay-guardrails && npm run test:supabase-migration-reconciliation-contract` |
 | Superuser Operational Readiness contract | `pre-push` | `services/platform-api/app/api/routes/admin_runtime_readiness.py`, `services/platform-api/app/services/runtime_readiness.py`, `services/platform-api/app/observability/runtime_readiness_metrics.py`, `web/src/lib/operationalReadiness.ts`, `web/src/hooks/useOperationalReadiness.ts`, `web/src/components/superuser/OperationalReadinessCheckGrid.tsx`, `web/src/pages/superuser/SuperuserOperationalReadiness.tsx` | `cd services/platform-api && pytest -q tests/test_runtime_readiness_service.py tests/test_admin_runtime_readiness_routes.py` and `cd web && npm run test -- src/components/superuser/OperationalReadinessCheckGrid.test.tsx src/hooks/useOperationalReadiness.test.tsx src/pages/superuser/SuperuserOperationalReadiness.test.tsx` |
@@ -274,7 +275,8 @@ Forbidden scope creep:
 
 #### Frontend verification
 
-- New frontend regression test modules: `5`
+- New frontend regression test modules: `4`
+- Modified frontend regression test modules: `1`
 - Modified frontend product pages/components/hooks/services: `0`
 
 #### Backend/runtime
@@ -306,16 +308,16 @@ Forbidden scope creep:
 16. `scripts/tests/husky-hardcoded-paths.test.mjs`
 17. `scripts/tests/husky-secret-scan.test.mjs`
 18. `scripts/tests/husky-protected-push.test.mjs`
-19. `web/src/pages/ObservabilityTelemetry.test.tsx`
-20. `web/src/pages/ObservabilityTraces.test.tsx`
-21. `web/src/hooks/useIndexBuilderList.test.ts`
-22. `web/src/pages/agchain/AgchainAiProvidersPage.test.tsx`
-23. `web/src/pages/agchain/settings/AgchainOrganizationAiProvidersPage.test.tsx`
+19. `web/src/pages/ObservabilityTraces.test.tsx`
+20. `web/src/hooks/useIndexBuilderList.test.ts`
+21. `web/src/pages/agchain/AgchainAiProvidersPage.test.tsx`
+22. `web/src/pages/agchain/settings/AgchainOrganizationAiProvidersPage.test.tsx`
 
 #### Modified files
 
 1. `package.json`
 2. `__start-here/2026-04-07-dual-pc-setup-internal-readme.md`
+3. `web/src/pages/ObservabilityTelemetry.test.tsx`
 
 #### Tool-managed but intentionally unlocked
 

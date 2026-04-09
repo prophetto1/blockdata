@@ -114,6 +114,9 @@ _agchain/legal-10/src/integrations/inspect-ai/
 _agchain/legal-10/pitch-deck/out/
 _agchain/legal-10/pitch-deck/package-lock.json
 _agchain/**/__pycache__/
+_agchain/memory/
+_agchain/sqlite/
+memory-tool.db
 
 # Start-here documentation shortcuts (junctions)
 __start-here/blockdata

@@ -1,5 +1,5 @@
 # Smoke Test Script for Block Inventory Pipeline (v2)
-# Run from project root: .\scripts\smoke-test.ps1
+# Run from project root: scripts/smoke-test.ps1
 
 $ErrorActionPreference = "Stop"
 
@@ -125,7 +125,7 @@ catch {
 Write-Host "`n=== STEP 2: Uploading test document ===" -ForegroundColor Cyan
 
 # Choose an existing markdown doc (default: PRD) or generate a small test doc.
-$testFile = ".\docs\tests\test-pack\sample-doc.md"
+$testFile = "docs/tests/test-pack/sample-doc.md"
 if (-not (Test-Path $testFile)) { $testFile = ".\json-schemas\prd-v4.md" }
 if (-not (Test-Path $testFile)) {
     $testMd = @"
@@ -146,7 +146,7 @@ A paragraph in a deeper subsection. This tests nested heading tracking.
 Final paragraph in section two. This should be the last block.
 "@
 
-    $testFile = ".\scripts\test-document.md"
+    $testFile = "scripts/test-document.md"
     $testMd | Out-File -FilePath $testFile -Encoding UTF8
     Write-Host "Created test file: $testFile" -ForegroundColor Gray
 }
@@ -198,7 +198,7 @@ catch {
 # ============================================================================
 Write-Host "`n=== STEP 3: Exporting JSONL ===" -ForegroundColor Cyan
 
-$exportFile = ".\scripts\export-test.jsonl"
+$exportFile = "scripts/export-test.jsonl"
 
 curl.exe -sS -L "$env:SUPABASE_URL/functions/v1/export-jsonl?conv_uid=$conv_uid" `
     -H "Authorization: Bearer $token" `

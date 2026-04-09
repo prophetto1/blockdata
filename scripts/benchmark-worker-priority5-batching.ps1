@@ -1,6 +1,6 @@
 # Benchmark worker Priority 5 batching with a fixed OFF/ON triplet on the same conv+schema.
 # Run from project root:
-#   .\scripts\benchmark-worker-priority5-batching.ps1
+#   scripts/benchmark-worker-priority5-batching.ps1
 # Optional args:
 #   -ConvUid <conv_uid> -SchemaId <schema_id> -BatchSize 25
 
@@ -387,11 +387,11 @@ $summary = [ordered]@{
     }
 }
 
-if (-not (Test-Path ".\scripts\logs")) {
-    New-Item -ItemType Directory -Path ".\scripts\logs" | Out-Null
+if (-not (Test-Path "scripts/logs")) {
+    New-Item -ItemType Directory -Path "scripts/logs" | Out-Null
 }
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$outFile = ".\scripts\logs\priority5-batching-benchmark-$timestamp.json"
+$outFile = "scripts/logs/priority5-batching-benchmark-$timestamp.json"
 $summary | ConvertTo-Json -Depth 10 | Set-Content -Path $outFile -Encoding Ascii
 
 Write-Host ""

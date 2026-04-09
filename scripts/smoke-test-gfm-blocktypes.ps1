@@ -1,5 +1,5 @@
 # Smoke Test: GFM block extraction (tables + footnotes) via ingest -> export-jsonl
-# Run from project root: .\scripts\smoke-test-gfm-blocktypes.ps1
+# Run from project root: scripts/smoke-test-gfm-blocktypes.ps1
 #
 # Verifies the open-source parser pipeline produces these v2 block types:
 # - table (requires remark-gfm)
@@ -59,8 +59,8 @@ Write-Host "Authenticated as: $TEST_EMAIL" -ForegroundColor Green
 # ============================================================================
 Write-Host "`n=== STEP 2: Ingesting GFM smoke markdown ===" -ForegroundColor Cyan
 
-$testFile = ".\docs\tests\test-pack\gfm-smoke.md"
-if (-not (Test-Path $testFile)) { $testFile = ".\docs\test-pack\gfm-smoke.md" }
+$testFile = "docs/tests/test-pack/gfm-smoke.md"
+if (-not (Test-Path $testFile)) { $testFile = "docs/test-pack/gfm-smoke.md" }
 if (-not (Test-Path $testFile)) { throw "Missing test markdown file: gfm-smoke.md" }
 
 Write-Host "Using markdown file: $testFile" -ForegroundColor Gray

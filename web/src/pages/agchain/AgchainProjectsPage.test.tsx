@@ -1,7 +1,23 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import AgchainProjectsPage from './AgchainProjectsPage';
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+class IntersectionObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() { return []; }
+  root = null;
+  rootMargin = '';
+  thresholds = [];
+}
 
 const navigateMock = vi.fn();
 const reloadAndSelectMock = vi.fn();
@@ -49,6 +65,21 @@ const PROJECT_ROW = {
 
 afterEach(() => {
   cleanup();
+});
+
+beforeAll(() => {
+  if (typeof globalThis.ResizeObserver === 'undefined') {
+    globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
+  }
+  if (typeof globalThis.IntersectionObserver === 'undefined') {
+    globalThis.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
+  }
+  if (typeof window !== 'undefined' && typeof window.ResizeObserver === 'undefined') {
+    window.ResizeObserver = globalThis.ResizeObserver;
+  }
+  if (typeof window !== 'undefined' && typeof window.IntersectionObserver === 'undefined') {
+    window.IntersectionObserver = globalThis.IntersectionObserver;
+  }
 });
 
 describe('AgchainProjectsPage', () => {

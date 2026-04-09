@@ -1,6 +1,6 @@
 # Benchmark worker adaptive batching with baseline and packed scenarios.
 # Run from project root:
-#   .\scripts\benchmark-worker-batching.ps1
+#   scripts/benchmark-worker-batching.ps1
 # Optional args:
 #   -ConvUid <conv_uid> -SchemaId <schema_id> -BatchSize 25 -PromptCachingEnabled $true
 
@@ -364,7 +364,7 @@ $summary = [ordered]@{
 }
 
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$outFile = ".\scripts\logs\worker-batching-benchmark-$timestamp.json"
+$outFile = "scripts/logs/worker-batching-benchmark-$timestamp.json"
 $summary | ConvertTo-Json -Depth 8 | Set-Content -Path $outFile -Encoding Ascii
 
 Write-Host ""
