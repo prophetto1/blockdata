@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, type MouseEventHandler } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -11,7 +11,10 @@ import {
   type Connection,
   type Edge,
   type Node,
+  type NodeMouseHandler,
   type NodeProps,
+  type OnEdgesChange,
+  type OnNodesChange,
   useEdgesState,
   useNodesState,
 } from '@xyflow/react';
@@ -20,9 +23,10 @@ import { cn } from '@/lib/utils';
 import type { FlowTask } from './nocode/flow-document';
 import './flow-canvas.css';
 
-type FlowNodeData = {
+export type FlowNodeData = {
   title: string;
   body: string;
+  kind?: 'object' | 'skill' | 'prompt';
   status?: 'default' | 'warning' | 'error' | 'disabled';
   variant?: 'start' | 'default';
 };
@@ -35,7 +39,10 @@ const FlowNode = memo(({ data, selected, dragging }: NodeProps<Node<FlowNodeData
       data-status={data.status ?? 'default'}
     >
       <Handle type="target" position={Position.Left} id="in" />
-      <div className="pm-flow-node__title">{data.title}</div>
+      <div className="pm-flow-node__header">
+        <div className="pm-flow-node__title">{data.title}</div>
+        {data.kind ? <div className="pm-flow-node__kind">{data.kind}</div> : null}
+      </div>
       <div className="pm-flow-node__body">{data.body}</div>
       <Handle type="source" position={Position.Right} id="out" />
     </div>
@@ -93,11 +100,29 @@ const fallbackEdges: Edge[] = [];
 
 type FlowCanvasProps = {
   tasks?: FlowTask[];
+  nodes?: Node<FlowNodeData>[];
+  edges?: Edge[];
+  onNodesChange?: OnNodesChange<Node<FlowNodeData>>;
+  onEdgesChange?: OnEdgesChange<Edge>;
+  onConnect?: (connection: Connection) => void;
+  onNodeClick?: NodeMouseHandler<Node<FlowNodeData>>;
+  onPaneClick?: MouseEventHandler<Element>;
+  interactiveControls?: boolean;
 };
 
 const nodeTypes = { pmNode: FlowNode };
 
-export default function FlowCanvas({ tasks }: FlowCanvasProps) {
+export default function FlowCanvas({
+  tasks,
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  onConnect,
+  onNodeClick,
+  onPaneClick,
+  interactiveControls = false,
+}: FlowCanvasProps) {
   const hasTasks = tasks && tasks.length > 0;
 
   const derivedNodes = useMemo(
@@ -110,22 +135,46 @@ export default function FlowCanvas({ tasks }: FlowCanvasProps) {
     [hasTasks, tasks],
   );
 
-  const [nodes, , onNodesChange] = useNodesState(derivedNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(derivedEdges);
+  const [internalNodes, setInternalNodes, onInternalNodesChange] = useNodesState(derivedNodes);
+  const [internalEdges, setInternalEdges, onInternalEdgesChange] = useEdgesState(derivedEdges);
 
-  const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges],
+  useEffect(() => {
+    if (nodes) return;
+    setInternalNodes(derivedNodes);
+  }, [derivedNodes, nodes, setInternalNodes]);
+
+  useEffect(() => {
+    if (edges) return;
+    setInternalEdges(derivedEdges);
+  }, [derivedEdges, edges, setInternalEdges]);
+
+  const resolvedNodes = nodes ?? internalNodes;
+  const resolvedEdges = edges ?? internalEdges;
+  const resolvedOnNodesChange = onNodesChange ?? onInternalNodesChange;
+  const resolvedOnEdgesChange = onEdgesChange ?? onInternalEdgesChange;
+
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (onConnect) {
+        onConnect(connection);
+        return;
+      }
+
+      setInternalEdges((existingEdges) => addEdge(connection, existingEdges));
+    },
+    [onConnect, setInternalEdges],
   );
 
   return (
     <div className="pm-reactflow-wrap">
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        nodes={resolvedNodes}
+        edges={resolvedEdges}
+        onNodesChange={resolvedOnNodesChange}
+        onEdgesChange={resolvedOnEdgesChange}
+        onConnect={handleConnect}
+        onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
         fitView
         snapToGrid
@@ -146,7 +195,7 @@ export default function FlowCanvas({ tasks }: FlowCanvasProps) {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <Controls showInteractive={false} />
+        <Controls showInteractive={interactiveControls} />
         <MiniMap pannable zoomable nodeColor="var(--card)" maskColor="rgba(0, 0, 0, 0.3)" />
       </ReactFlow>
     </div>

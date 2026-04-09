@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-07T04:58:00.320Z",
+  "generatedAt": "2026-04-09T11:35:24.227Z",
   "scope": "auth",
   "pages": [
     {
@@ -745,9 +745,9 @@
     },
     {
       "page": "src/pages/IndexBuilderPage.tsx",
-      "componentCount": 8,
+      "componentCount": 9,
       "categoryCounts": {
-        "local-components": 8
+        "local-components": 9
       },
       "components": [
         {
@@ -812,6 +812,15 @@
           "importedAs": "IndexJobsList",
           "category": "local-components",
           "definition": "IndexJobsList comes from @/components/pipelines/IndexJobsList (named import of IndexJobsList)"
+        },
+        {
+          "component": "PipelineOperationalProbePanel",
+          "usedAs": "PipelineOperationalProbePanel",
+          "source": "@/components/pipelines/PipelineOperationalProbePanel",
+          "importKind": "named",
+          "importedAs": "PipelineOperationalProbePanel",
+          "category": "local-components",
+          "definition": "PipelineOperationalProbePanel comes from @/components/pipelines/PipelineOperationalProbePanel (named import of PipelineOperationalProbePanel)"
         },
         {
           "component": "Skeleton",
@@ -1452,9 +1461,9 @@
     },
     {
       "page": "src/pages/PipelineServicesPage.tsx",
-      "componentCount": 1,
+      "componentCount": 2,
       "categoryCounts": {
-        "local-components": 1
+        "local-components": 2
       },
       "components": [
         {
@@ -1465,6 +1474,15 @@
           "importedAs": "PipelineCatalogPanel",
           "category": "local-components",
           "definition": "PipelineCatalogPanel comes from @/components/pipelines/PipelineCatalogPanel (named import of PipelineCatalogPanel)"
+        },
+        {
+          "component": "PipelineOperationalProbePanel",
+          "usedAs": "PipelineOperationalProbePanel",
+          "source": "@/components/pipelines/PipelineOperationalProbePanel",
+          "importKind": "named",
+          "importedAs": "PipelineOperationalProbePanel",
+          "category": "local-components",
+          "definition": "PipelineOperationalProbePanel comes from @/components/pipelines/PipelineOperationalProbePanel (named import of PipelineOperationalProbePanel)"
         }
       ]
     },
@@ -4578,10 +4596,10 @@
       ]
     }
   ],
-  "totalComponentUsages": 448,
+  "totalComponentUsages": 450,
   "categoryTotals": {
     "local-pages": 2,
-    "local-components": 165,
+    "local-components": 167,
     "tabler-icons": 74,
     "in-file component": 21,
     "ark-ui": 138,

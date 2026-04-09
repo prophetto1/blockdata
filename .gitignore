@@ -6,6 +6,9 @@
 skills/
 tools/
 json-schemas/
+
+# Cross-machine Syncthing draft area (never pushed to remote)
+_collaborate/
 .codex/
 .codex-tmp/
 .agent/
@@ -116,6 +119,8 @@ _agchain/legal-10/pitch-deck/package-lock.json
 _agchain/**/__pycache__/
 _agchain/memory/
 _agchain/sqlite/
+_agchain/memory-desktop/
+_agchain/sqlite-desktop/
 memory-tool.db
 
 # Start-here documentation shortcuts (junctions)

@@ -22,6 +22,9 @@ describe('SkillDrivenDev', () => {
     render(<SkillDrivenDev />);
 
     expect(screen.getByTestId('skill-driven-dev-canvas')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Object' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Skill' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Prompt' })).toBeInTheDocument();
 
     const devOnlySection = SUPERUSER_NAV_SECTIONS.find((section) => section.label === 'DEV ONLY');
     expect(devOnlySection?.items.some((item) => item.path === '/app/superuser/skill-driven-dev')).toBe(true);

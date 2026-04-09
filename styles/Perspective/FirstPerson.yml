@@ -1,0 +1,7 @@
+extends: existence
+message: "Possessive/first-person phrasing — replace with neutral reference."
+level: warning
+tokens:
+  - '\b(?:my|this|that) (?:PC|machine|computer|laptop|host)\b'
+  - '\bour (?:repo|repository)\b'
+  - '\bI (?:use|run)\b'

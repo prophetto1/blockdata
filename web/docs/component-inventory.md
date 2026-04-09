@@ -1,10 +1,10 @@
 # Component Inventory
 
-Generated: 2026-04-07T04:58:00.345Z
+Generated: 2026-04-09T11:35:24.233Z
 Scope: auth
 
 Pages scanned: 55
-Unique component usages: 448
+Unique component usages: 450
 
 ## Category Totals
 
@@ -13,7 +13,7 @@ Unique component usages: 448
 | ark-ui | 138 |
 | external-package | 23 |
 | in-file component | 21 |
-| local-components | 165 |
+| local-components | 167 |
 | local-pages | 2 |
 | relative-local | 25 |
 | tabler-icons | 74 |
@@ -174,7 +174,7 @@ Component usages: 38
 
 ## src/pages/IndexBuilderPage.tsx
 
-Component usages: 8
+Component usages: 9
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
@@ -185,6 +185,7 @@ Component usages: 8
 | `IndexJobFilesTab` | `@/components/pipelines/IndexJobFilesTab` | local-components | IndexJobFilesTab comes from @/components/pipelines/IndexJobFilesTab (named import of IndexJobFilesTab) |
 | `IndexJobRunsTab` | `@/components/pipelines/IndexJobRunsTab` | local-components | IndexJobRunsTab comes from @/components/pipelines/IndexJobRunsTab (named import of IndexJobRunsTab) |
 | `IndexJobsList` | `@/components/pipelines/IndexJobsList` | local-components | IndexJobsList comes from @/components/pipelines/IndexJobsList (named import of IndexJobsList) |
+| `PipelineOperationalProbePanel` | `@/components/pipelines/PipelineOperationalProbePanel` | local-components | PipelineOperationalProbePanel comes from @/components/pipelines/PipelineOperationalProbePanel (named import of PipelineOperationalProbePanel) |
 | `Skeleton` | `@/components/ui/skeleton` | local-components | Skeleton comes from @/components/ui/skeleton (named import of Skeleton) |
 
 ## src/pages/kestra/LogsPage.tsx
@@ -318,11 +319,12 @@ Component usages: 1
 
 ## src/pages/PipelineServicesPage.tsx
 
-Component usages: 1
+Component usages: 2
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `PipelineCatalogPanel` | `@/components/pipelines/PipelineCatalogPanel` | local-components | PipelineCatalogPanel comes from @/components/pipelines/PipelineCatalogPanel (named import of PipelineCatalogPanel) |
+| `PipelineOperationalProbePanel` | `@/components/pipelines/PipelineOperationalProbePanel` | local-components | PipelineOperationalProbePanel comes from @/components/pipelines/PipelineOperationalProbePanel (named import of PipelineOperationalProbePanel) |
 
 ## src/pages/ProjectAssetsPage.tsx
 

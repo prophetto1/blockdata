@@ -22,10 +22,10 @@
 }
 
 .pm-flow-node {
-  min-width: 180px;
-  max-width: 230px;
+  min-width: 148px;
+  max-width: 196px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--card);
   color: var(--foreground);
   box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
@@ -35,16 +35,36 @@
   border-left: 4px solid var(--primary);
 }
 
+.pm-flow-node__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 9px 3px;
+}
+
 .pm-flow-node__title {
-  padding: 8px 12px 4px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  line-height: 1.25;
+}
+
+.pm-flow-node__kind {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 6px;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .pm-flow-node__body {
-  padding: 0 12px 10px;
+  padding: 0 9px 8px;
   color: var(--muted-foreground);
-  font-size: 12px;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .pm-flow-node[data-status='warning'] {
@@ -65,8 +85,8 @@
 }
 
 .pm-flow-node .react-flow__handle {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border: 1px solid var(--input);
   background: var(--card);
 }
@@ -110,4 +130,3 @@
   fill: var(--background);
   opacity: 0.6;
 }
-

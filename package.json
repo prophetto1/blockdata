@@ -7,9 +7,13 @@
   ],
   "scripts": {
     "capture-server": "node scripts/capture-server.mjs",
+    "docs:perspective:audit": "node scripts/docs-perspective-audit.mjs",
+    "paths:hardcoded:audit": "node scripts/hardcoded-path-audit.mjs",
     "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1 -NoReload",
     "platform-api:recover": "powershell -ExecutionPolicy Bypass -File scripts/platform-api-dev-control.ps1 -Action recover",
     "prepare": "husky && git config core.hooksPath .husky",
+    "test:hardcoded-path-audit": "node --test scripts/tests/hardcoded-path-audit.test.mjs",
+    "test:docs-perspective-audit": "node --test scripts/tests/docs-perspective-audit.test.mjs",
     "test:supabase-extension-replay-guardrails": "node --test scripts/tests/supabase-extension-replay-guardrails.test.mjs",
     "test:workflow-guardrails": "node --test scripts/tests/supabase-db-workflows.test.mjs",
     "test:supabase-migration-reconciliation-contract": "node --test scripts/tests/supabase-migration-reconciliation-contract.test.mjs"
