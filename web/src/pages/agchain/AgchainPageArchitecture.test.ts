@@ -15,6 +15,7 @@ const MOUNTED_REAL_PAGES = [
   'src/pages/agchain/AgchainProjectsPage.tsx',
   'src/pages/agchain/AgchainOverviewPage.tsx',
   'src/pages/agchain/AgchainDatasetsPage.tsx',
+  'src/pages/agchain/AgchainWorkflowPage.tsx',
   'src/pages/agchain/AgchainToolsPage.tsx',
   'src/pages/agchain/AgchainBenchmarksPage.tsx',
 ] as const;

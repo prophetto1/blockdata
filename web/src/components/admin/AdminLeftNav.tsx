@@ -60,6 +60,7 @@ export const SUPERUSER_NAV_SECTIONS: AdminNavSection[] = [
     label: 'DEV ONLY',
     items: [
       { label: 'Operational Readiness', icon: IconServer, path: '/app/superuser/operational-readiness' },
+      { label: 'Coordination Runtime', icon: IconPlugConnected, path: '/app/superuser/coordination-runtime' },
       { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
       { label: 'Skill-Driven Dev', icon: IconRoute, path: '/app/superuser/skill-driven-dev' },
       { label: 'Plan Tracker', icon: IconClipboardList, path: '/app/superuser/plan-tracker' },

@@ -445,6 +445,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="/app/superuser/operational-readiness" replace /> },
               { path: 'operational-readiness', lazy: () => import('@/pages/superuser/SuperuserOperationalReadiness') },
+              { path: 'coordination-runtime', lazy: () => import('@/pages/superuser/CoordinationRuntime') },
               { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
               { path: 'skill-driven-dev', lazy: () => import('@/pages/superuser/SkillDrivenDev') },
               { path: 'plan-tracker', lazy: () => import('@/pages/superuser/PlanTracker') },
@@ -494,6 +495,10 @@ export const router = createBrowserRouter([
               {
                 path: 'prompts',
                 lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainPromptsPage')).default }),
+              },
+              {
+                path: 'workflow',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainWorkflowPage')).default }),
               },
               {
                 path: 'scorers',

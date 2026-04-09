@@ -8,6 +8,13 @@ from app.core.config import get_settings
 from app.domain.plugins.registry import discover_plugins, FUNCTION_NAME_MAP
 from app.core.reserved_routes import check_collisions
 from app.observability import configure_telemetry, shutdown_telemetry
+from app.services.coordination import (
+    CoordinationAuditWriter,
+    CoordinationClient,
+    CoordinationEventStreamService,
+    CoordinationStatusService,
+    build_coordination_settings,
+)
 from app.workers.agchain_operations import (
     start_agchain_operations_worker,
     stop_agchain_operations_worker,
@@ -64,6 +71,7 @@ def _can_start_supabase_workers(settings) -> bool:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    coordination_settings = build_coordination_settings()
     configure_logging(settings)
 
     @asynccontextmanager
@@ -84,9 +92,12 @@ def create_app() -> FastAPI:
             if settings.agchain_operations_worker_enabled:
                 start_agchain_operations_worker()
 
+        await app.state.coordination_event_stream_service.start()
+
         yield
 
         # Shutdown background workers gracefully
+        await app.state.coordination_event_stream_service.close()
         stop_agchain_operations_worker()
         stop_pipeline_jobs_worker()
         stop_storage_cleanup_worker()
@@ -98,6 +109,24 @@ def create_app() -> FastAPI:
         logger.info("Conversion pool shut down.")
 
     app = FastAPI(title="Platform API", lifespan=lifespan)
+    coordination_audit_writer = CoordinationAuditWriter(
+        coordination_settings.runtime_root,
+        host=coordination_settings.host,
+        agent_id=coordination_settings.agent_id,
+    )
+    coordination_client = CoordinationClient(coordination_settings)
+    coordination_event_stream_service = CoordinationEventStreamService(
+        coordination_settings,
+        coordination_client,
+        coordination_audit_writer,
+    )
+    app.state.coordination_status_service = CoordinationStatusService(
+        coordination_settings,
+        coordination_client,
+        coordination_audit_writer,
+        coordination_event_stream_service,
+    )
+    app.state.coordination_event_stream_service = coordination_event_stream_service
 
     # Bootstrap OpenTelemetry (idempotent, no-ops when OTEL_ENABLED=false)
     app.state.telemetry = configure_telemetry(app, settings)
@@ -135,6 +164,8 @@ def create_app() -> FastAPI:
     app.include_router(admin_runtime_actions_router)
     from app.api.routes.admin_config_docling import router as admin_config_docling_router
     app.include_router(admin_config_docling_router)
+    from app.api.routes.admin_coordination import router as admin_coordination_router
+    app.include_router(admin_coordination_router)
 
     # 4. Future /api/v1/* routes (stubs)
     from app.api.routes.crews import router as crews_router

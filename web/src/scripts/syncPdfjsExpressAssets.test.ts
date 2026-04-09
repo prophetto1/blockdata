@@ -1,9 +1,24 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { syncPdfjsExpressAssets } from './syncPdfjsExpressAssets.mjs';
+type SyncPdfjsExpressAssetsResult = {
+  mode: 'copied' | 'fallback';
+  sourceDir: string | null;
+  destinationDir: string;
+};
+
+type SyncPdfjsExpressAssets = (options?: {
+  packageDir?: string;
+  destinationDir?: string;
+}) => SyncPdfjsExpressAssetsResult;
+
+const require = createRequire(import.meta.url);
+const { syncPdfjsExpressAssets } = require('./syncPdfjsExpressAssets.mjs') as {
+  syncPdfjsExpressAssets: SyncPdfjsExpressAssets;
+};
 
 const tempDirectories: string[] = [];
 
@@ -30,14 +45,16 @@ describe('syncPdfjsExpressAssets', () => {
     }
   });
 
-  it('uses existing fallback assets when the package cannot be resolved', () => {
+  it('uses existing fallback assets when the installed package payload is unavailable', () => {
+    const packageDirectory = createTempDirectory('pdfjs-express-package-');
     const destinationDirectory = createTempDirectory('pdfjs-express-destination-');
     writeRequiredMarkers(destinationDirectory);
 
-    expect(() => syncPdfjsExpressAssets({ destinationDir: destinationDirectory })).not.toThrow();
-
-    const result = syncPdfjsExpressAssets({ destinationDir: destinationDirectory });
-    expect(['copied', 'fallback']).toContain(result.mode);
+    const result = syncPdfjsExpressAssets({
+      packageDir: packageDirectory,
+      destinationDir: destinationDirectory,
+    });
+    expect(result.mode).toBe('fallback');
     expect(result.destinationDir).toBe(destinationDirectory);
   });
 });

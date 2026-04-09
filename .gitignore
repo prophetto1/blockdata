@@ -57,6 +57,7 @@ node_modules/
 # Temporary files
 *.tmp
 *.bak
+*.bak-*
 ~$*
 .worktrees/
 tmp-*.log
@@ -64,6 +65,8 @@ scripts/logs/*.log
 web-docs/scripts/*.log
 web/dev-*.log
 web-docs/dev-server.log
+.codex-tmp/nats-runtime/
+.codex-tmp/coordination-runtime/
 services/*/.pytest_cache/
 services/*/__pycache__/
 services/*/.venv/
@@ -148,6 +151,7 @@ scripts/tests/remove-desktop-ini.test.mjs
 # Dev output (logs, playwright, scripts)
 output/
 docs/design-layouts/logs/
+docs/baseline-test/
 .codex-*.log
 .codex-*.err.log
 .playwright-cli/

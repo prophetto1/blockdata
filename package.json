@@ -7,6 +7,8 @@
   ],
   "scripts": {
     "capture-server": "node scripts/capture-server.mjs",
+    "coordination:agent": "node scripts/coordination/agent-coord.mjs",
+    "coordination:smoke": "node scripts/coordination/agent-bus-smoke.mjs",
     "docs:perspective:audit": "node scripts/docs-perspective-audit.mjs",
     "paths:hardcoded:audit": "node scripts/hardcoded-path-audit.mjs",
     "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1 -NoReload",
@@ -19,6 +21,7 @@
     "test:supabase-migration-reconciliation-contract": "node --test scripts/tests/supabase-migration-reconciliation-contract.test.mjs"
   },
   "dependencies": {
+    "nats": "^2.29.3",
     "pg": "^8.19.0"
   },
   "devDependencies": {

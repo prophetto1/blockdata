@@ -106,3 +106,34 @@ PIPELINE_JOB_FAILED_LOG_EVENT: str = "pipeline.job.failed"
 PIPELINE_JOB_REAPED_LOG_EVENT: str = "pipeline.job.reaped"
 PIPELINE_SOURCE_SET_CHANGED_LOG_EVENT: str = "pipeline.source_set.changed"
 PIPELINE_STAGE_EXECUTE_SPAN_NAME: str = "pipeline.stage.execute"
+
+# Coordination meter/tracer identity
+
+COORDINATION_TRACER_NAME: str = "platform.coordination"
+COORDINATION_METER_NAME: str = "platform.coordination"
+COORDINATION_PUBLISH_COUNTER_NAME: str = "platform.coordination.publish.count"
+COORDINATION_BUFFERED_COUNTER_NAME: str = "platform.coordination.buffered.count"
+COORDINATION_CLAIM_COUNTER_NAME: str = "platform.coordination.claim.count"
+COORDINATION_CLAIM_CONFLICT_COUNTER_NAME: str = "platform.coordination.claim_conflict.count"
+COORDINATION_OUTBOX_FLUSH_COUNTER_NAME: str = "platform.coordination.outbox.flush.count"
+COORDINATION_OUTBOX_BACKLOG_EVENTS_GAUGE_NAME: str = "platform.coordination.outbox.backlog.events"
+COORDINATION_PRESENCE_ACTIVE_AGENTS_GAUGE_NAME: str = "platform.coordination.presence.active_agents"
+COORDINATION_STREAM_BRIDGE_CLIENTS_GAUGE_NAME: str = "platform.coordination.stream.bridge.clients"
+COORDINATION_PUBLISH_DURATION_MS_HISTOGRAM_NAME: str = "platform.coordination.publish.duration.ms"
+COORDINATION_OUTBOX_FLUSH_DURATION_MS_HISTOGRAM_NAME: str = (
+    "platform.coordination.outbox.flush.duration.ms"
+)
+COORDINATION_API_STREAM_CONNECTION_DURATION_MS_HISTOGRAM_NAME: str = (
+    "platform.coordination.api.stream.connection.duration.ms"
+)
+COORDINATION_TASK_EVENT_LOG_EVENT: str = "coordination.task.event"
+COORDINATION_CONNECTION_STATE_CHANGE_LOG_EVENT: str = "coordination.connection.state_change"
+COORDINATION_OUTBOX_FLUSH_LOG_EVENT: str = "coordination.outbox.flush"
+COORDINATION_CLAIM_CONFLICT_LOG_EVENT: str = "coordination.claim.conflict"
+COORDINATION_NATS_CONNECT_SPAN_NAME: str = "coordination.nats.connect"
+COORDINATION_JETSTREAM_PUBLISH_SPAN_NAME: str = "coordination.jetstream.publish"
+COORDINATION_KV_CLAIM_UPSERT_SPAN_NAME: str = "coordination.kv.claim.upsert"
+COORDINATION_KV_STATE_PATCH_SPAN_NAME: str = "coordination.kv.state.patch"
+COORDINATION_OUTBOX_FLUSH_SPAN_NAME: str = "coordination.outbox.flush"
+COORDINATION_API_STATUS_READ_SPAN_NAME: str = "coordination.api.status.read"
+COORDINATION_API_STREAM_OPEN_SPAN_NAME: str = "coordination.api.stream.open"

@@ -73,32 +73,34 @@ export default function IndexBuilderPage() {
   const isDetailReady = isDetailView && !job.isLoading && !job.loadError;
   const selectedListJobId = selectedJobId && selectedJobId !== 'new' ? selectedJobId : null;
   const resolvedProjectId = job.resolvedProjectId ?? list.resolvedProjectId ?? null;
+  const pipelineKind = job.service?.pipelineKind ?? null;
+  const serviceLabel = job.service?.label ?? null;
 
   const runBrowserUploadProbe = useCallback(async () => {
-    if (!resolvedProjectId) return;
+    if (!resolvedProjectId || !pipelineKind) return;
     try {
       setIsRunningBrowserUploadProbe(true);
       setBrowserUploadProbeRun(await executePipelineBrowserUploadProbe({
         projectId: resolvedProjectId,
-        pipelineKind: job.service.pipelineKind,
+        pipelineKind,
       }));
     } finally {
       setIsRunningBrowserUploadProbe(false);
     }
-  }, [job.service.pipelineKind, resolvedProjectId]);
+  }, [pipelineKind, resolvedProjectId]);
 
   const runJobExecutionProbe = useCallback(async () => {
-    if (!resolvedProjectId) return;
+    if (!resolvedProjectId || !pipelineKind) return;
     try {
       setIsRunningJobExecutionProbe(true);
       setJobExecutionProbeRun(await executePipelineJobExecutionProbe({
         projectId: resolvedProjectId,
-        pipelineKind: job.service.pipelineKind,
+        pipelineKind,
       }));
     } finally {
       setIsRunningJobExecutionProbe(false);
     }
-  }, [job.service.pipelineKind, resolvedProjectId]);
+  }, [pipelineKind, resolvedProjectId]);
 
   return (
     <div className="h-full w-full min-h-0 p-2">
@@ -167,9 +169,9 @@ export default function IndexBuilderPage() {
 
                 <div className="min-h-0 flex-1 overflow-y-auto">
                   <div className="flex flex-col gap-6 px-4 py-4">
-                    {resolvedProjectId ? (
+                    {resolvedProjectId && serviceLabel ? (
                       <PipelineOperationalProbePanel
-                        serviceLabel={job.service.label}
+                        serviceLabel={serviceLabel}
                         browserUploadRun={browserUploadProbeRun}
                         jobExecutionRun={jobExecutionProbeRun}
                         isRunningBrowserUpload={isRunningBrowserUploadProbe}

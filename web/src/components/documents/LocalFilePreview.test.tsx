@@ -29,7 +29,9 @@ describe('LocalFilePreview', () => {
           path: 'resume.md',
           extension: '.md',
           kind: 'file',
-          handle: {} as FileSystemFileHandle,
+          handle: {
+            getFile: vi.fn(async () => new File(['# Your Name'], 'resume.md', { type: 'text/markdown' })),
+          } as unknown as FileSystemFileHandle,
         }}
       />,
     );

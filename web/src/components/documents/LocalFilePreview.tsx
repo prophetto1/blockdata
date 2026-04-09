@@ -1,141 +1,273 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { JsonTreeView } from '@ark-ui/react/json-tree-view';
+import { IconChevronRight, IconDownload } from '@tabler/icons-react';
+import ReactMarkdown from 'react-markdown';
+import remarkFrontmatter from 'remark-frontmatter';
+import remarkGfm from 'remark-gfm';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { FsNode } from '@/lib/fs-access';
-import { readFileContent } from '@/lib/fs-access';
+import { type FsNode, readFileContent } from '@/lib/fs-access';
+
+import { CodePreview } from './CodePreview';
+import { DocumentPreviewFrame, DocumentPreviewMessage } from './DocumentPreviewShell';
+import { DocxPreview } from './DocxPreview';
+import { PdfjsExpressPreview } from './PdfjsExpressPreview';
+import { PptxPreview } from './PptxPreview';
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.bmp', '.ico']);
-const TEXT_EXTENSIONS = new Set([
-  '.md', '.mdx', '.txt', '.csv', '.tsv', '.json', '.yaml', '.yml', '.toml',
-  '.xml', '.html', '.css', '.js', '.jsx', '.ts', '.tsx', '.py', '.rs', '.go',
-  '.java', '.sql', '.sh', '.bash', '.env', '.ini', '.cfg', '.log', '.vue',
-  '.svelte', '.rb', '.php', '.c', '.cpp', '.h', '.hpp', '.swift', '.kt',
+const MARKDOWN_EXTENSIONS = new Set(['.md', '.mdx']);
+const JSON_EXTENSIONS = new Set(['.json']);
+const CODE_EXTENSIONS = new Set([
+  '.js', '.jsx', '.ts', '.tsx', '.html', '.htm', '.css', '.py', '.rs', '.go',
+  '.yaml', '.yml', '.sql', '.sh', '.bash', '.vue', '.svelte',
 ]);
+const TEXT_EXTENSIONS = new Set([
+  '.txt', '.csv', '.tsv', '.toml', '.xml', '.ini', '.cfg', '.log', '.env',
+]);
+const PDF_EXTENSIONS = new Set(['.pdf']);
+const DOCX_EXTENSIONS = new Set(['.docx']);
+const PPTX_EXTENSIONS = new Set(['.pptx']);
+const XLSX_EXTENSIONS = new Set(['.xlsx']);
 
-function isImageFile(ext: string): boolean {
-  return IMAGE_EXTENSIONS.has(ext);
+type LocalPreviewKind =
+  | 'none'
+  | 'image'
+  | 'markdown'
+  | 'json'
+  | 'text'
+  | 'code'
+  | 'pdf'
+  | 'docx'
+  | 'pptx'
+  | 'xlsx'
+  | 'file';
+
+function getPreviewKind(extension: string): LocalPreviewKind {
+  if (IMAGE_EXTENSIONS.has(extension)) return 'image';
+  if (MARKDOWN_EXTENSIONS.has(extension)) return 'markdown';
+  if (JSON_EXTENSIONS.has(extension)) return 'json';
+  if (PDF_EXTENSIONS.has(extension)) return 'pdf';
+  if (DOCX_EXTENSIONS.has(extension)) return 'docx';
+  if (PPTX_EXTENSIONS.has(extension)) return 'pptx';
+  if (XLSX_EXTENSIONS.has(extension)) return 'xlsx';
+  if (CODE_EXTENSIONS.has(extension)) return 'code';
+  if (TEXT_EXTENSIONS.has(extension) || extension === '') return 'text';
+  return 'file';
 }
 
-function isTextFile(ext: string): boolean {
-  if (TEXT_EXTENSIONS.has(ext)) return true;
-  return ext === '';
+function formatBadge(extension: string): string {
+  if (!extension) return 'FILE';
+  return extension.slice(1).toUpperCase() || 'FILE';
 }
 
 export function LocalFilePreview({ node }: { node: FsNode | null }) {
-  const [content, setContent] = useState<string | null>(null);
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [previewKind, setPreviewKind] = useState<LocalPreviewKind>('none');
+  const [previewText, setPreviewText] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setContent(null);
+
+    setPreviewKind('none');
+    setPreviewText(null);
     setError(null);
-    if (objectUrl) {
-      URL.revokeObjectURL(objectUrl);
-      setObjectUrl(null);
-    }
+    setLoading(false);
+    setPreviewUrl((currentUrl) => {
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      return null;
+    });
 
     if (!node || node.kind !== 'file') {
-      setLoading(false);
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
+    const nextKind = getPreviewKind(node.extension);
     const handle = node.handle as FileSystemFileHandle;
+    setLoading(true);
 
-    if (isImageFile(node.extension)) {
-      setLoading(true);
-      handle.getFile().then((file) => {
+    const loadPreview = async () => {
+      try {
+        const file = await handle.getFile();
         if (cancelled) return;
-        const url = URL.createObjectURL(file);
-        setObjectUrl(url);
+
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+
+        if (nextKind === 'markdown' || nextKind === 'json' || nextKind === 'text' || nextKind === 'code') {
+          const text = await readFileContent(handle);
+          if (cancelled) return;
+          const truncated = text.length > 200_000 ? `${text.slice(0, 200_000)}\n\n[Preview truncated]` : text;
+          setPreviewKind(nextKind);
+          setPreviewText(truncated.length > 0 ? truncated : '[Empty file]');
+          setLoading(false);
+          return;
+        }
+
+        setPreviewKind(nextKind);
         setLoading(false);
-      }).catch((err) => {
+      } catch (previewError) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
+        setError(previewError instanceof Error ? previewError.message : 'Preview unavailable.');
         setLoading(false);
-      });
-    } else if (isTextFile(node.extension)) {
-      setLoading(true);
-      readFileContent(handle).then((text) => {
-        if (cancelled) return;
-        const truncated = text.length > 200_000 ? `${text.slice(0, 200_000)}\n\n[Preview truncated]` : text;
-        setContent(truncated.length > 0 ? truncated : '[Empty file]');
-        setLoading(false);
-      }).catch((err) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
-        setLoading(false);
-      });
-    } else {
-      setLoading(true);
-      handle.getFile().then((file) => {
-        if (cancelled) return;
-        const sizeKb = (file.size / 1024).toFixed(1);
-        setContent(`File: ${node.name}\nSize: ${sizeKb} KB\n\nNo preview available for this file type.`);
-        setLoading(false);
-      }).catch((err) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
-        setLoading(false);
-      });
-    }
+      }
+    };
+
+    void loadPreview();
 
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node?.id]);
+  }, [node]);
 
-  useEffect(() => {
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [objectUrl]);
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  const jsonData = useMemo(() => {
+    if (previewKind !== 'json' || !previewText) return null;
+    try {
+      const parsed = JSON.parse(previewText);
+      return parsed !== null && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }, [previewKind, previewText]);
 
   if (!node) {
     return (
-      <div className="h-full w-full min-h-0 p-1">
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            Select a local file to preview
-          </div>
-        </div>
-      </div>
+      <DocumentPreviewFrame>
+        <DocumentPreviewMessage message="Select a local file to preview." />
+      </DocumentPreviewFrame>
     );
   }
 
+  const downloadAction = previewUrl ? (
+    <a
+      href={previewUrl}
+      download={node.name}
+      aria-label="Download local file"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+    >
+      <IconDownload size={16} />
+    </a>
+  ) : null;
+
   return (
-    <div className="h-full w-full min-h-0 p-1">
-      <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card">
-        <div className="flex min-h-10 items-center border-b border-border bg-card px-3">
-          <span className="truncate text-sm font-medium">{node.name}</span>
+    <DocumentPreviewFrame scroll={false} padded={false}>
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="grid min-h-10 grid-cols-[auto_1fr_auto] items-center border-b border-border bg-card px-2">
+          <span className="inline-flex min-w-[34px] justify-center rounded border border-border bg-muted/60 px-1 py-0.5 text-[11px] font-semibold text-muted-foreground">
+            {formatBadge(node.extension)}
+          </span>
+          <span
+            className="min-w-0 px-2 text-center text-[13px] font-medium text-foreground truncate"
+            title={node.path}
+          >
+            {node.name}
+          </span>
+          <div className="ml-auto flex min-w-[32px] items-center justify-end gap-2">
+            {downloadAction}
+          </div>
         </div>
 
-        {loading && (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            Loading…
+        {loading ? (
+          <div className="min-h-0 flex-1">
+            <DocumentPreviewMessage message="Loading preview..." />
           </div>
-        )}
+        ) : null}
 
-        {error && (
-          <div className="flex h-full items-center justify-center text-sm text-destructive">
-            {error}
+        {!loading && error ? (
+          <div className="min-h-0 flex-1">
+            <DocumentPreviewMessage message={error} isError />
           </div>
-        )}
+        ) : null}
 
-        {!loading && !error && objectUrl && (
-          <div className="flex h-full w-full items-center justify-center overflow-auto">
-            <img src={objectUrl} alt={node.name} className="max-h-full max-w-full" />
+        {!loading && !error && previewKind === 'pdf' && previewUrl ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <PdfjsExpressPreview url={previewUrl} />
           </div>
-        )}
+        ) : null}
 
-        {!loading && !error && content && !objectUrl && (
-          <ScrollArea className="min-h-0 flex-1 bg-card">
-            <pre className="whitespace-pre-wrap break-words p-4 text-sm font-mono">{content}</pre>
+        {!loading && !error && previewKind === 'docx' && previewUrl ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <DocxPreview title={node.name} url={previewUrl} hideToolbar />
+          </div>
+        ) : null}
+
+        {!loading && !error && previewKind === 'pptx' && previewUrl ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <PptxPreview title={node.name} url={previewUrl} hideHeaderMeta />
+          </div>
+        ) : null}
+
+        {!loading && !error && previewKind === 'image' && previewUrl ? (
+          <ScrollArea className="min-h-0 flex-1 bg-card" viewportClass="h-full overflow-y-auto overflow-x-hidden p-4">
+            <div className="flex h-full w-full items-center justify-center overflow-auto">
+              <img src={previewUrl} alt={node.name} className="max-h-full max-w-full" />
+            </div>
           </ScrollArea>
-        )}
+        ) : null}
+
+        {!loading && !error && previewKind === 'markdown' ? (
+          <ScrollArea className="min-h-0 flex-1 bg-card" viewportClass="h-full overflow-y-auto overflow-x-hidden p-4">
+            <div className="parse-markdown-preview">
+              <ReactMarkdown remarkPlugins={[remarkFrontmatter, remarkGfm]}>
+                {previewText ?? ''}
+              </ReactMarkdown>
+            </div>
+          </ScrollArea>
+        ) : null}
+
+        {!loading && !error && previewKind === 'json' ? (
+          <ScrollArea className="min-h-0 flex-1 bg-card" viewportClass="h-full overflow-y-auto overflow-x-hidden p-4">
+            {jsonData ? (
+              <JsonTreeView.Root
+                defaultExpandedDepth={2}
+                data={jsonData as Record<string, unknown>}
+                className="json-tree-root"
+              >
+                <JsonTreeView.Tree className="json-tree" arrow={<IconChevronRight size={14} />} />
+              </JsonTreeView.Root>
+            ) : (
+              <pre className="parse-preview-text">{previewText ?? ''}</pre>
+            )}
+          </ScrollArea>
+        ) : null}
+
+        {!loading && !error && previewKind === 'code' && previewText ? (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <CodePreview content={previewText} extension={node.extension} />
+          </div>
+        ) : null}
+
+        {!loading && !error && previewKind === 'text' ? (
+          <ScrollArea className="min-h-0 flex-1 bg-card" viewportClass="h-full overflow-y-auto overflow-x-hidden p-4">
+            <pre className="parse-preview-text">{previewText ?? ''}</pre>
+          </ScrollArea>
+        ) : null}
+
+        {!loading && !error && previewKind === 'xlsx' ? (
+          <div className="min-h-0 flex-1">
+            <DocumentPreviewMessage message="Spreadsheet preview is not available for local files yet." />
+          </div>
+        ) : null}
+
+        {!loading && !error && previewKind === 'file' && previewUrl ? (
+          <div className="min-h-0 flex-1">
+            <DocumentPreviewMessage
+              message={(
+                <a href={previewUrl} download={node.name} className="text-primary hover:underline">
+                  Download file
+                </a>
+              )}
+            />
+          </div>
+        ) : null}
       </div>
-    </div>
+    </DocumentPreviewFrame>
   );
 }

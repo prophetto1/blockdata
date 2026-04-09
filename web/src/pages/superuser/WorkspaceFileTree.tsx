@@ -68,11 +68,24 @@ type Props = {
   refreshKey?: number;
   /** IndexedDB key for persisting this tree's directory handle (allows independent persistence per layout). */
   storeKey?: string;
+  /** Hide mutation affordances and present the tree as a simple local browser. */
+  readOnly?: boolean;
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDeleteNode, onCreateFile, onCreateFolder, onRootHandle, refreshKey, storeKey }: Props) {
+export function WorkspaceFileTree({
+  onSelectFile,
+  onMoveNode,
+  onRenameNode,
+  onDeleteNode,
+  onCreateFile,
+  onCreateFolder,
+  onRootHandle,
+  refreshKey,
+  storeKey,
+  readOnly = false,
+}: Props) {
   const [nodes, setNodes] = useState<FsNode[]>([]);
   const [folderName, setFolderName] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -168,24 +181,28 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
   // ── Drag handlers ─────────────────────────────────────────────────────────
 
   const handleDragStart = useCallback((e: React.DragEvent, node: FsNode) => {
+    if (readOnly) return;
     dragNodeRef.current = node;
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', node.id);
-  }, []);
+  }, [readOnly]);
 
   const handleDragOver = useCallback((e: React.DragEvent, targetNode: FsNode) => {
+    if (readOnly) return;
     if (targetNode.kind !== 'directory') return;
     if (dragNodeRef.current?.id === targetNode.id) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     (e.currentTarget as HTMLElement).dataset.dragOver = 'true';
-  }, []);
+  }, [readOnly]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (readOnly) return;
     delete (e.currentTarget as HTMLElement).dataset.dragOver;
-  }, []);
+  }, [readOnly]);
 
   const handleDrop = useCallback((e: React.DragEvent, targetNode: FsNode) => {
+    if (readOnly) return;
     e.preventDefault();
     delete (e.currentTarget as HTMLElement).dataset.dragOver;
     const source = dragNodeRef.current;
@@ -193,7 +210,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
     if (!source || targetNode.kind !== 'directory') return;
     if (source.id === targetNode.id) return;
     onMoveNode?.(source, targetNode);
-  }, [onMoveNode]);
+  }, [onMoveNode, readOnly]);
 
   const handleDragEnd = useCallback(() => {
     dragNodeRef.current = null;
@@ -204,9 +221,10 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: FsNode } | null>(null);
 
   const handleContextMenu = useCallback((e: React.MouseEvent, node: FsNode) => {
+    if (readOnly) return;
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, node });
-  }, []);
+  }, [readOnly]);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -314,47 +332,49 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
           <span className="truncate">{folderName}</span>
         </div>
         <div className="flex items-center gap-1">
-          <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 4 } }}>
-            <MenuTrigger asChild>
-              <button
-                type="button"
-                className="rounded p-0.5 text-muted-foreground hover:bg-accent"
-                title="New..."
-              >
-                <Plus size={13} strokeWidth={ICON_STROKE} />
-              </button>
-            </MenuTrigger>
-            <MenuPortal>
-              <MenuPositioner>
-                <MenuContent>
-                  <MenuItem
-                    value="new-file"
-                    leftSection={<FilePlus size={14} strokeWidth={ICON_STROKE} />}
-                    onClick={() => {
-                      const root = rootHandleRef.current;
-                      if (!root) return;
-                      const name = window.prompt('New file name:');
-                      if (name?.trim()) onCreateFile?.(root, name.trim());
-                    }}
-                  >
-                    New File
-                  </MenuItem>
-                  <MenuItem
-                    value="new-folder"
-                    leftSection={<FolderPlus size={14} strokeWidth={ICON_STROKE} />}
-                    onClick={() => {
-                      const root = rootHandleRef.current;
-                      if (!root) return;
-                      const name = window.prompt('New folder name:');
-                      if (name?.trim()) onCreateFolder?.(root, name.trim());
-                    }}
-                  >
-                    New Folder
-                  </MenuItem>
-                </MenuContent>
-              </MenuPositioner>
-            </MenuPortal>
-          </MenuRoot>
+          {!readOnly ? (
+            <MenuRoot positioning={{ placement: 'bottom-end', offset: { mainAxis: 4 } }}>
+              <MenuTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded p-0.5 text-muted-foreground hover:bg-accent"
+                  title="New..."
+                >
+                  <Plus size={13} strokeWidth={ICON_STROKE} />
+                </button>
+              </MenuTrigger>
+              <MenuPortal>
+                <MenuPositioner>
+                  <MenuContent>
+                    <MenuItem
+                      value="new-file"
+                      leftSection={<FilePlus size={14} strokeWidth={ICON_STROKE} />}
+                      onClick={() => {
+                        const root = rootHandleRef.current;
+                        if (!root) return;
+                        const name = window.prompt('New file name:');
+                        if (name?.trim()) onCreateFile?.(root, name.trim());
+                      }}
+                    >
+                      New File
+                    </MenuItem>
+                    <MenuItem
+                      value="new-folder"
+                      leftSection={<FolderPlus size={14} strokeWidth={ICON_STROKE} />}
+                      onClick={() => {
+                        const root = rootHandleRef.current;
+                        if (!root) return;
+                        const name = window.prompt('New folder name:');
+                        if (name?.trim()) onCreateFolder?.(root, name.trim());
+                      }}
+                    >
+                      New Folder
+                    </MenuItem>
+                  </MenuContent>
+                </MenuPositioner>
+              </MenuPortal>
+            </MenuRoot>
+          ) : null}
           <button
             type="button"
             className="rounded p-0.5 text-muted-foreground hover:bg-accent"
@@ -381,8 +401,9 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
           collection={collection}
           selectionMode="single"
           expandOnClick
-          canRename={(node) => node.id !== 'dir:root'}
+          canRename={(node) => !readOnly && node.id !== 'dir:root'}
           onRenameComplete={(details) => {
+            if (readOnly) return;
             const node = findNodeById(nodes, details.value);
             if (node && details.label && details.label !== node.name) {
               onRenameNode?.(node, details.label);
@@ -396,6 +417,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
                 node={node}
                 indexPath={[index]}
                 onSelect={onSelectFile}
+                readOnly={readOnly}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -408,7 +430,7 @@ export function WorkspaceFileTree({ onSelectFile, onMoveNode, onRenameNode, onDe
         </TreeViewRoot>
       </ScrollArea>
 
-      {contextMenu && (
+      {!readOnly && contextMenu && (
         <div
           className="ui-menu-content fixed z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
           style={{ top: contextMenu.y, left: contextMenu.x }}
@@ -476,6 +498,7 @@ function findNodeById(nodes: FsNode[], id: string): FsNode | null {
 
 type TreeNodeViewProps = TreeViewNodeProviderProps<FsNode> & {
   onSelect: (node: FsNode) => void;
+  readOnly: boolean;
   onDragStart: (e: React.DragEvent, node: FsNode) => void;
   onDragOver: (e: React.DragEvent, node: FsNode) => void;
   onDragLeave: (e: React.DragEvent) => void;
@@ -488,6 +511,7 @@ function TreeNodeView({
   node,
   indexPath,
   onSelect,
+  readOnly,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -502,7 +526,7 @@ function TreeNodeView({
           <TreeViewBranchControl className="min-w-0">
             <TreeViewBranchTrigger
               className="flex w-full min-w-0 items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-sm hover:bg-accent data-[drag-over=true]:bg-accent/50 data-[drag-over=true]:ring-1 data-[drag-over=true]:ring-primary/50"
-              draggable
+              draggable={!readOnly}
               onDragStart={(e) => onDragStart(e, node)}
               onDragOver={(e) => onDragOver(e, node)}
               onDragLeave={onDragLeave}
@@ -536,6 +560,7 @@ function TreeNodeView({
                 node={child}
                 indexPath={[...indexPath, i]}
                 onSelect={onSelect}
+                readOnly={readOnly}
                 onDragStart={onDragStart}
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
@@ -557,7 +582,7 @@ function TreeNodeView({
           type="button"
           className="flex w-full min-w-0 items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-sm hover:bg-accent"
           onClick={() => onSelect(node)}
-          draggable
+          draggable={!readOnly}
           onDragStart={(e) => onDragStart(e, node)}
           onDragEnd={onDragEnd}
           onContextMenu={(e) => onContextMenu(e, node)}

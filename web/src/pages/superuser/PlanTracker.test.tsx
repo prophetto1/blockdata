@@ -15,14 +15,14 @@ vi.mock('@/components/common/useShellHeaderTitle', () => ({
 vi.mock('./usePlanTracker', () => ({
   usePlanTracker: (...args: unknown[]) => usePlanTrackerMock(...args),
   PLAN_TRACKER_TABS: [
-    { id: 'plan-state', label: 'Plans', icon: null },
-    { id: 'document', label: 'Document', icon: null },
-    { id: 'metadata', label: 'Metadata', icon: null },
+    { id: 'files', label: 'Files', icon: null },
+    { id: 'preview', label: 'Preview', icon: null },
+    { id: 'placeholder', label: 'Placeholder', icon: null },
   ],
   PLAN_TRACKER_DEFAULT_PANES: [
-    { id: 'pane-1', activeTab: 'plan-state' },
-    { id: 'pane-2', activeTab: 'document' },
-    { id: 'pane-3', activeTab: 'metadata' },
+    { id: 'pane-1', activeTab: 'files' },
+    { id: 'pane-2', activeTab: 'preview' },
+    { id: 'pane-3', activeTab: 'placeholder' },
   ],
 }));
 
@@ -52,16 +52,16 @@ afterEach(() => {
 describe('PlanTracker', () => {
   it('renders the live three-pane shell from the tracker hook instead of fixture data', () => {
     usePlanTrackerMock.mockReturnValue({
-      renderContent: (tabId: string) => <div data-testid={`content-${tabId}`}>live-{tabId}</div>,
-    });
+        renderContent: (tabId: string) => <div data-testid={`content-${tabId}`}>live-{tabId}</div>,
+      });
 
     render(<PlanTracker />);
 
     expect(usePlanTrackerMock).toHaveBeenCalled();
     expect(screen.getByTestId('plan-tracker-workbench')).toBeInTheDocument();
-    expect(screen.getByTestId('content-plan-state')).toHaveTextContent('live-plan-state');
-    expect(screen.getByTestId('content-document')).toHaveTextContent('live-document');
-    expect(screen.getByTestId('content-metadata')).toHaveTextContent('live-metadata');
+    expect(screen.getByTestId('content-files')).toHaveTextContent('live-files');
+    expect(screen.getByTestId('content-preview')).toHaveTextContent('live-preview');
+    expect(screen.getByTestId('content-placeholder')).toHaveTextContent('live-placeholder');
     expect(screen.queryByText('Fixture mode only. Workflow actions stay unwired until the live tracker hook is introduced.')).not.toBeInTheDocument();
   });
 

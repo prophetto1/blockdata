@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, type MouseEventHandler } from 'react';
+import { memo, useCallback, useEffect, useMemo, type ChangeEventHandler, type MouseEventHandler } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -29,21 +29,114 @@ export type FlowNodeData = {
   kind?: 'object' | 'skill' | 'prompt';
   status?: 'default' | 'warning' | 'error' | 'disabled';
   variant?: 'start' | 'default';
+  expanded?: boolean;
+  connectionCount?: number;
+  onTitleChange?: (value: string) => void;
+  onBodyChange?: (value: string) => void;
+  onKindChange?: (kind: 'object' | 'skill' | 'prompt') => void;
+  onDelete?: () => void;
+  onCollapse?: () => void;
 };
 
 const FlowNode = memo(({ data, selected, dragging }: NodeProps<Node<FlowNodeData>>) => {
+  const handleTitleChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+    data.onTitleChange?.(event.target.value);
+  };
+
+  const handleBodyChange: ChangeEventHandler<HTMLTextAreaElement> = (event) => {
+    data.onBodyChange?.(event.target.value);
+  };
+
+  const handleKindChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
+    data.onKindChange?.(event.target.value as 'object' | 'skill' | 'prompt');
+  };
+
   return (
     <div
-      className={cn('pm-flow-node', selected && 'is-selected', dragging && 'is-dragging')}
+      className={cn(
+        'pm-flow-node',
+        selected && 'is-selected',
+        dragging && 'is-dragging',
+        data.expanded && 'is-expanded',
+      )}
       data-variant={data.variant ?? 'default'}
       data-status={data.status ?? 'default'}
     >
       <Handle type="target" position={Position.Left} id="in" />
       <div className="pm-flow-node__header">
         <div className="pm-flow-node__title">{data.title}</div>
-        {data.kind ? <div className="pm-flow-node__kind">{data.kind}</div> : null}
+        <div className="pm-flow-node__header-actions">
+          {data.kind ? <div className="pm-flow-node__kind">{data.kind}</div> : null}
+          {data.expanded ? (
+            <button
+              type="button"
+              className="pm-flow-node__collapse nodrag nopan"
+              onClick={data.onCollapse}
+            >
+              Done
+            </button>
+          ) : null}
+        </div>
       </div>
-      <div className="pm-flow-node__body">{data.body}</div>
+      {data.expanded ? (
+        <div className="pm-flow-node__editor nodrag nopan nowheel">
+          <label className="pm-flow-node__field">
+            <span className="pm-flow-node__field-label">Title</span>
+            <input
+              value={data.title}
+              onChange={handleTitleChange}
+              className="pm-flow-node__input"
+            />
+          </label>
+
+          <label className="pm-flow-node__field">
+            <span className="pm-flow-node__field-label">Type</span>
+            <select
+              value={data.kind ?? 'object'}
+              onChange={handleKindChange}
+              className="pm-flow-node__input"
+            >
+              <option value="object">Object</option>
+              <option value="skill">Skill</option>
+              <option value="prompt">Prompt</option>
+            </select>
+          </label>
+
+          <label className="pm-flow-node__field">
+            <span className="pm-flow-node__field-label">Description</span>
+            <textarea
+              value={data.body}
+              onChange={handleBodyChange}
+              rows={5}
+              className="pm-flow-node__textarea"
+            />
+          </label>
+
+          <div className="pm-flow-node__meta">
+            <span>Connections</span>
+            <strong>{data.connectionCount ?? 0}</strong>
+          </div>
+
+          <div className="pm-flow-node__footer">
+            <button
+              type="button"
+              className="pm-flow-node__footer-button nodrag nopan"
+              onClick={data.onCollapse}
+            >
+              Collapse
+            </button>
+            <button
+              type="button"
+              className="pm-flow-node__footer-button pm-flow-node__footer-button--danger nodrag nopan"
+              onClick={data.onDelete}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="pm-flow-node__body">{data.body}</div>
+      )}
       <Handle type="source" position={Position.Right} id="out" />
     </div>
   );
