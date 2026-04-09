@@ -1,15 +1,23 @@
 # Local Claude/Codex settings
 .claude/
 .cursor/
+.agents/
 .codex/settings.local.json
 .mcp.json
 skills/
 tools/
 json-schemas/
+
+# Cross-machine Syncthing draft area (never pushed to remote)
+_collaborate/
+
 .codex/
 .codex-tmp/
 .agent/
 .ai/
+.gcloud/
+.pytest_cache/
+.uv-cache/
 .worktrees/
 # Project-specific ignores
 ref-repos/
@@ -55,7 +63,6 @@ node_modules/
 *.tmp
 *.bak
 ~$*
-.worktrees/
 tmp-*.log
 scripts/logs/*.log
 web-docs/scripts/*.log
@@ -72,7 +79,7 @@ scripts/export-test.jsonl
 scripts/test-document.md
 ref-repos/mdast
 ref-repos/remark
-.vercel
+.vercel/
 
 # Supabase local CLI artifacts
 supabase/.temp/
