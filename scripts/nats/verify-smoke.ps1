@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [string]$ServiceName = 'nats-coordination',
+  [string]$ServiceName = 'nats-server',
   [string]$HostName = '127.0.0.1',
   [int]$ClientPort = 4222,
   [int]$MonitorPort = 8222

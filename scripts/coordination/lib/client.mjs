@@ -1,5 +1,11 @@
 import path from 'node:path';
-import { JSONCodec, connect } from 'nats';
+import {
+  DiscardPolicy,
+  JSONCodec,
+  RetentionPolicy,
+  StorageType,
+  connect,
+} from 'nats';
 
 import {
   DEFAULT_COORDINATION_NATS_URL,
@@ -16,6 +22,7 @@ import {
 
 const codec = JSONCodec();
 const HOURS_PER_NANOSECOND = 1 / (1_000_000_000 * 60 * 60);
+const HOURS_TO_NANOSECONDS = 60 * 60 * 1_000_000_000;
 
 export const EXPECTED_COORD_EVENTS_STREAM = Object.freeze({
   name: STREAMS.COORD_EVENTS,
@@ -26,6 +33,52 @@ export const EXPECTED_COORD_EVENTS_STREAM = Object.freeze({
   duplicateWindowHours: 24,
   discard: 'old',
 });
+
+function buildCoordEventsStreamConfig() {
+  return {
+    name: EXPECTED_COORD_EVENTS_STREAM.name,
+    subjects: [...EXPECTED_COORD_EVENTS_STREAM.subjects],
+    retention: RetentionPolicy.Limits,
+    storage: StorageType.File,
+    max_consumers: -1,
+    max_msgs: -1,
+    max_msgs_per_subject: -1,
+    max_age: EXPECTED_COORD_EVENTS_STREAM.maxAgeHours * HOURS_TO_NANOSECONDS,
+    max_bytes: -1,
+    max_msg_size: -1,
+    discard: DiscardPolicy.Old,
+    discard_new_per_subject: false,
+    duplicate_window: EXPECTED_COORD_EVENTS_STREAM.duplicateWindowHours * HOURS_TO_NANOSECONDS,
+    allow_rollup_hdrs: false,
+    num_replicas: EXPECTED_COORD_EVENTS_STREAM.replicas,
+    deny_delete: false,
+    deny_purge: false,
+    allow_direct: false,
+    mirror_direct: false,
+    sealed: false,
+    first_seq: 0,
+  };
+}
+
+async function ensureCoordinationInfrastructure({ js, jsm }) {
+  try {
+    await jsm.streams.info(STREAMS.COORD_EVENTS);
+  } catch (error) {
+    if (String(error?.message ?? '').toLowerCase() !== 'stream not found') {
+      throw error;
+    }
+
+    await jsm.streams.add(buildCoordEventsStreamConfig());
+  }
+
+  await Promise.all(
+    Object.values(KV_BUCKETS).map((bucketName) => js.views.kv(bucketName, {
+      replicas: 1,
+      storage: StorageType.File,
+      timeout: 2000,
+    })),
+  );
+}
 
 function parseEnabledFlag(value) {
   return String(value ?? 'true').toLowerCase() !== 'false';
@@ -93,6 +146,7 @@ export async function connectCoordinationBus({
   });
   const js = nc.jetstream();
   const jsm = await nc.jetstreamManager();
+  await ensureCoordinationInfrastructure({ js, jsm });
 
   return {
     enabled: true,

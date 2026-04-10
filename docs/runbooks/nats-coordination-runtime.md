@@ -6,7 +6,7 @@ This runbook covers the writing-system coordination substrate built on NATS + Je
 
 The runtime contract is:
 
-- JON hosts the only broker as Windows service `nats-coordination`.
+- JON hosts the only broker as Windows service `nats-server`.
 - Each machine runs the repo-managed coordination client from its own local checkout.
 - `services/platform-api` owns the authenticated runtime bridge.
 - `web` consumes that bridge through the superuser runtime page.
@@ -36,7 +36,7 @@ The runtime contract is:
 
 | Setting | Contract |
 |---|---|
-| Windows service name | `nats-coordination` |
+| Windows service name | `nats-server` |
 | Broker host | JON |
 | Client connection env | `COORDINATION_NATS_URL` |
 | Runtime root env | `COORDINATION_RUNTIME_ROOT` |
@@ -95,7 +95,7 @@ powershell -ExecutionPolicy Bypass -File scripts\nats\status-service.ps1
 
 The status output should show:
 
-- service name `nats-coordination`
+- service name `nats-server`
 - rendered config under `.codex-tmp\nats-runtime\nats-server.rendered.conf`
 - runtime root under `.codex-tmp\nats-runtime`
 
@@ -338,7 +338,7 @@ Operator response:
 
 ## Quick Verification Checklist
 
-- JON broker service installed as `nats-coordination`
+- JON broker service installed as `nats-server`
 - `scripts\nats\verify-smoke.ps1` passes
 - `npm run coordination:smoke` passes
 - BUDDY can create and watch a task over `COORDINATION_NATS_URL`

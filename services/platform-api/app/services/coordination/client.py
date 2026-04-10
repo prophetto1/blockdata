@@ -111,7 +111,7 @@ class CoordinationClient:
                         timeout=self.settings.connect_timeout_seconds,
                     )
                     self._js = self._nc.jetstream()
-                    self._jsm = self._nc.jetstream_manager()
+                    self._jsm = self._nc.jsm()
                     self._last_error = None
                     logger.info(
                         COORDINATION_CONNECTION_STATE_CHANGE_LOG_EVENT,

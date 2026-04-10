@@ -1,9 +1,51 @@
 [CmdletBinding()]
 param(
-  [string]$ServiceName = 'nats-coordination'
+  [string]$ServiceName = 'nats-server'
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Get-ServiceInstance([string]$ServiceName) {
+  return Get-CimInstance Win32_Service -Filter "Name='$ServiceName'" -ErrorAction SilentlyContinue
+}
+
+function Resolve-ServiceChangeFailure([uint32]$ReturnValue) {
+  switch ($ReturnValue) {
+    2 { return 'Access denied while changing the service configuration.' }
+    21 { return 'Invalid parameter passed to Win32_Service.Change.' }
+    default { return "Win32_Service.Change returned $ReturnValue." }
+  }
+}
+
+function Invoke-ScCommand([string[]]$Arguments, [string]$FailureMessage) {
+  $stdoutPath = [System.IO.Path]::GetTempFileName()
+  $stderrPath = [System.IO.Path]::GetTempFileName()
+
+  try {
+    $process = Start-Process -FilePath 'sc.exe' -ArgumentList $Arguments -Wait -NoNewWindow -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+
+    $output = @()
+    if (Test-Path $stdoutPath) {
+      $output += Get-Content $stdoutPath
+    }
+    if (Test-Path $stderrPath) {
+      $output += Get-Content $stderrPath
+    }
+
+    if ($process.ExitCode -ne 0) {
+      $detail = if ($output.Count -gt 0) {
+        ($output | Out-String).Trim()
+      } else {
+        'sc.exe exited with a non-zero code and did not return output.'
+      }
+      throw "$FailureMessage`n$detail"
+    }
+
+    return $output
+  } finally {
+    Remove-Item $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
+  }
+}
 
 function Resolve-RepoRoot {
   return (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -47,17 +89,41 @@ Write-RenderedConfig -TemplatePath $templatePath -RenderedPath $renderedConfigPa
 
 $binaryPath = Resolve-NatsServerPath
 $binPath = "`"$binaryPath`" -c `"$renderedConfigPath`""
-$service = Get-CimInstance Win32_Service -Filter "Name='$ServiceName'" -ErrorAction SilentlyContinue
+$service = Get-ServiceInstance -ServiceName $ServiceName
 
 if ($service) {
-  & sc.exe config $ServiceName "binPath= $binPath" "start= auto" | Out-Null
+  $changeResult = Invoke-CimMethod -InputObject $service -MethodName Change -Arguments @{
+    DisplayName = 'NATS Coordination'
+    PathName = $binPath
+    StartMode = 'Automatic'
+  }
+  if ($changeResult.ReturnValue -ne 0) {
+    $reason = Resolve-ServiceChangeFailure -ReturnValue $changeResult.ReturnValue
+    throw "Failed to update service '$ServiceName'. $reason"
+  }
 } else {
-  & sc.exe create $ServiceName "binPath= $binPath" "start= auto" "DisplayName= NATS Coordination" | Out-Null
+  try {
+    New-Service -Name $ServiceName -BinaryPathName $binPath -DisplayName 'NATS Coordination' -StartupType Automatic -ErrorAction Stop | Out-Null
+  } catch {
+    throw "Failed to install service '$ServiceName'. $($_.Exception.Message)"
+  }
 }
 
-& sc.exe description $ServiceName 'NATS + JetStream broker for writing-system coordination runtime' | Out-Null
+Invoke-ScCommand -Arguments @(
+  'description',
+  $ServiceName,
+  'NATS + JetStream broker for writing-system coordination runtime'
+) -FailureMessage "Failed to set the description for service '$ServiceName'."
 
-$updatedService = Get-CimInstance Win32_Service -Filter "Name='$ServiceName'" -ErrorAction Stop
+$updatedService = Get-ServiceInstance -ServiceName $ServiceName
+if (-not $updatedService) {
+  throw "Service '$ServiceName' was not found after install/update."
+}
+
+if ([string]::IsNullOrWhiteSpace($updatedService.PathName)) {
+  throw "Service '$ServiceName' exists after install/update but did not report a binary path."
+}
+
 [pscustomobject]@{
   ServiceName = $ServiceName
   Installed = $true

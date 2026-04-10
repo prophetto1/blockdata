@@ -1,1 +1,0 @@
-The designs produced in here will be evaluated by design team members to decide whether they will be utilized or not in the platform. 

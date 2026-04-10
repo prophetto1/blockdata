@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [string]$ServiceName = 'nats-coordination'
+  [string]$ServiceName = 'nats-server'
 )
 
 $ErrorActionPreference = 'Stop'

@@ -5,7 +5,7 @@ This directory defines the checked-in broker contract for the writing-system coo
 ## Phase 0/1/2 ownership
 
 - JON hosts the only NATS + JetStream broker.
-- The Windows service name is fixed as `nats-coordination`.
+- The Windows service name is fixed as `nats-server`.
 - BUDDY connects remotely over the LAN through `COORDINATION_NATS_URL`.
 
 ## Authoritative config
