@@ -13,7 +13,7 @@
     "paths:hardcoded:audit": "node scripts/hardcoded-path-audit.mjs",
     "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1 -NoReload",
     "platform-api:recover": "powershell -ExecutionPolicy Bypass -File scripts/platform-api-dev-control.ps1 -Action recover",
-    "prepare": "husky && git config core.hooksPath .husky",
+    "prepare": "[ -z \"$VERCEL\" ] && [ -z \"$CI\" ] && husky && git config core.hooksPath .husky || true",
     "test:hardcoded-path-audit": "node --test scripts/tests/hardcoded-path-audit.test.mjs",
     "test:docs-perspective-audit": "node --test scripts/tests/docs-perspective-audit.test.mjs",
     "test:supabase-extension-replay-guardrails": "node --test scripts/tests/supabase-extension-replay-guardrails.test.mjs",
