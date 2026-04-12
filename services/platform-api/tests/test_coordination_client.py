@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from types import SimpleNamespace
 import pytest
 
 from app.services.coordination.client import CoordinationClient
@@ -33,6 +35,25 @@ class _FakeNatsModule:
         return self.connection
 
 
+class _FakePublishAck:
+    duplicate = False
+
+
+class _FakeJetStream:
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    async def publish(self, subject, payload, headers):
+        self.calls.append(
+            {
+                "subject": subject,
+                "payload": json.loads(payload.decode("utf-8")),
+                "headers": headers,
+            }
+        )
+        return _FakePublishAck()
+
+
 @pytest.mark.asyncio
 async def test_connect_uses_jsm_api(monkeypatch, tmp_path):
     settings = CoordinationSettings(
@@ -63,3 +84,34 @@ async def test_connect_uses_jsm_api(monkeypatch, tmp_path):
 
 def test_durable_name_is_subject_token_safe():
     assert "." not in COORDINATION_DURABLE_NAME
+
+
+@pytest.mark.asyncio
+async def test_publish_task_event_generates_unique_message_ids(monkeypatch, tmp_path):
+    settings = CoordinationSettings(
+        enabled=True,
+        nats_url="nats://127.0.0.1:4222",
+        runtime_root=tmp_path,
+        host="JON",
+        agent_id="platform-api",
+    )
+    client = CoordinationClient(settings)
+    fake_js = _FakeJetStream()
+
+    async def fake_ensure_connected():
+        return fake_js, object()
+
+    monkeypatch.setattr(client, "_ensure_connected", fake_ensure_connected)
+    monkeypatch.setattr("app.services.coordination.client.time_ns", lambda: 123456789)
+    suffixes = iter(["aaaabbbb", "ccccdddd"])
+    monkeypatch.setattr("app.services.coordination.client.uuid4", lambda: SimpleNamespace(hex=next(suffixes)))
+
+    first = await client.publish_task_event(task_id="task-1", event_kind="progress", note="alpha")
+    second = await client.publish_task_event(task_id="task-1", event_kind="progress", note="beta")
+
+    assert first["event_id"] == "JON-platform-api-123456789-aaaabbbb"
+    assert second["event_id"] == "JON-platform-api-123456789-ccccdddd"
+    assert fake_js.calls[0]["headers"]["Nats-Msg-Id"] == first["event_id"]
+    assert fake_js.calls[1]["headers"]["Nats-Msg-Id"] == second["event_id"]
+    assert fake_js.calls[0]["payload"]["eventId"] == first["event_id"]
+    assert fake_js.calls[1]["payload"]["eventId"] == second["event_id"]

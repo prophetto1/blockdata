@@ -82,6 +82,26 @@ class CoordinationStatusService:
                 "streams": {},
                 "kv_buckets": {},
                 "presence_summary": {"active_agents": 0},
+                "identity_summary": {
+                    "active_count": 0,
+                    "stale_count": 0,
+                    "host_count": 0,
+                    "family_counts": {},
+                },
+                "discussion_summary": {
+                    "thread_count": 0,
+                    "pending_count": 0,
+                    "stale_count": 0,
+                    "workspace_bound_count": 0,
+                },
+                "hook_audit_summary": {
+                    "state": "not_configured",
+                    "record_count": 0,
+                    "allow_count": 0,
+                    "warn_count": 0,
+                    "block_count": 0,
+                    "error_count": 0,
+                },
             }
 
         _active_agents["value"] = int((broker_snapshot.get("presence_summary") or {}).get("active_agents") or 0)
@@ -91,6 +111,9 @@ class CoordinationStatusService:
             "streams": broker_snapshot["streams"],
             "kv_buckets": broker_snapshot["kv_buckets"],
             "presence_summary": broker_snapshot["presence_summary"],
+            "identity_summary": broker_snapshot["identity_summary"],
+            "discussion_summary": broker_snapshot["discussion_summary"],
+            "hook_audit_summary": broker_snapshot["hook_audit_summary"],
             "local_host_outbox_backlog": backlog,
             "app_runtime": {
                 "runtime_enabled": self.settings.enabled,
@@ -99,6 +122,52 @@ class CoordinationStatusService:
             },
             "stream_bridge": bridge_snapshot,
         }
+
+    async def get_identities(
+        self,
+        *,
+        host: str | None,
+        family: str | None,
+        include_stale: bool,
+    ) -> dict:
+        if not self.enabled:
+            raise CoordinationRuntimeDisabledError("Coordination runtime is disabled")
+
+        try:
+            return await self.client.get_identities(
+                host=host,
+                family=family,
+                include_stale=include_stale,
+            )
+        except CoordinationUnavailableError:
+            raise
+        except Exception as exc:
+            logger.warning("Failed to read coordination identities", exc_info=True)
+            raise CoordinationUnavailableError(str(exc)) from exc
+
+    async def get_discussions(
+        self,
+        *,
+        task_id: str | None,
+        workspace_path: str | None,
+        status: str,
+        limit: int,
+    ) -> dict:
+        if not self.enabled:
+            raise CoordinationRuntimeDisabledError("Coordination runtime is disabled")
+
+        try:
+            return await self.client.get_discussions(
+                task_id=task_id,
+                workspace_path=workspace_path,
+                status=status,
+                limit=limit,
+            )
+        except CoordinationUnavailableError:
+            raise
+        except Exception as exc:
+            logger.warning("Failed to read coordination discussions", exc_info=True)
+            raise CoordinationUnavailableError(str(exc)) from exc
 
     async def get_task_snapshot(self, *, task_id: str, limit: int = 25) -> dict:
         if not self.enabled:

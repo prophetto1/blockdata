@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CoordinationEventFeed } from '@/components/superuser/CoordinationEventFeed';
-import { router } from '@/router';
 import { useCoordinationStream } from '@/hooks/useCoordinationStream';
+import routerSource from '@/router.tsx?raw';
 
 const platformApiFetchMock = vi.fn();
 
@@ -23,22 +23,6 @@ vi.mock('@/components/common/useShellHeaderTitle', () => ({
 vi.mock('@/lib/platformApi', () => ({
   platformApiFetch: (...args: unknown[]) => platformApiFetchMock(...args),
 }));
-
-type RouteNode = {
-  path?: string;
-  children?: RouteNode[];
-};
-
-function findRoute(routes: RouteNode[], targetPath: string): RouteNode | null {
-  for (const route of routes) {
-    if (route.path === targetPath) return route;
-    if (route.children) {
-      const nested = findRoute(route.children, targetPath);
-      if (nested) return nested;
-    }
-  }
-  return null;
-}
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -80,7 +64,7 @@ describe('CoordinationRuntime', () => {
   });
 
   it('registers the coordination runtime route under superuser', () => {
-    expect(findRoute(router.routes as RouteNode[], 'coordination-runtime')).not.toBeNull();
+    expect(routerSource).toContain("path: 'coordination-runtime'");
   });
 
   it('keeps the live event buffer bounded to the latest 250 entries', async () => {
@@ -133,6 +117,94 @@ describe('CoordinationRuntime', () => {
     );
     expect(platformApiFetchMock).toHaveBeenCalledTimes(1);
     expect(platformApiFetchMock).toHaveBeenCalledWith('/admin/runtime/coordination/status');
+  });
+
+  it('renders an error alert when the initial runtime status request fails', async () => {
+    platformApiFetchMock
+      .mockRejectedValueOnce(new Error('Coordination fetch failed'))
+      .mockResolvedValue(eventStreamResponse([]));
+
+    const { Component } = await importPage();
+    render(<Component />);
+
+    expect(await screen.findByText(/coordination fetch failed/i)).toBeInTheDocument();
+  });
+
+  it('loads the status, identity, and discussion operator panels on the runtime page', async () => {
+    platformApiFetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          broker: { state: 'available', url: 'nats://127.0.0.1:4222' },
+          streams: { COORD_EVENTS: { messages: 3 } },
+          kv_buckets: { COORD_AGENT_PRESENCE: { active_keys: 2 } },
+          presence_summary: { active_agents: 2 },
+          identity_summary: { active_count: 2, stale_count: 0, host_count: 1, family_counts: { cdx: 2 } },
+          discussion_summary: { thread_count: 1, pending_count: 1, stale_count: 0, workspace_bound_count: 1 },
+          hook_audit_summary: {
+            state: 'not_configured',
+            record_count: 0,
+            allow_count: 0,
+            warn_count: 0,
+            block_count: 0,
+            error_count: 0,
+          },
+          local_host_outbox_backlog: { files: 0, events: 0, bytes: 0 },
+          app_runtime: { runtime_enabled: true, host: 'JON', runtime_root: 'E:/writing-system' },
+          stream_bridge: { state: 'connected', client_count: 1, last_error: null },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          summary: { active_count: 1, stale_count: 1, host_count: 1, family_counts: { cdx: 2 } },
+          identities: [
+            {
+              identity: 'cdx',
+              host: 'JON',
+              family: 'cdx',
+              session_agent_id: 'jon-runtime',
+              claimed_at: '2026-04-11T12:00:00Z',
+              last_heartbeat_at: '2026-04-11T12:01:00Z',
+              expires_at: '2026-04-11T12:03:00Z',
+              stale: false,
+              revision: 4,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          summary: { thread_count: 1, pending_count: 1, stale_count: 0, workspace_bound_count: 1 },
+          discussions: [
+            {
+              task_id: 'task-1',
+              workspace_type: 'research',
+              workspace_path: 'E:/writing-system/_collaborate/research/topic',
+              directional_doc: 'E:/writing-system/_collaborate/research/topic/plan.md',
+              participants: [{ host: 'JON', agent_id: 'cdx' }],
+              pending_recipients: [{ host: 'JON', agent_id: 'cdx2' }],
+              last_event_kind: 'response_requested',
+              status: 'pending',
+              updated_at: '2026-04-11T12:00:00Z',
+            },
+          ],
+        }),
+      )
+      .mockResolvedValue(eventStreamResponse([]));
+
+    const { Component } = await importPage();
+    render(<Component />);
+
+    expect(await screen.findByTestId('coordination-identity-table')).toBeInTheDocument();
+    expect(screen.getByTestId('coordination-discussion-queue')).toBeInTheDocument();
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(1, '/admin/runtime/coordination/status');
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      2,
+      '/admin/runtime/coordination/identities?include_stale=true',
+    );
+    expect(platformApiFetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/admin/runtime/coordination/discussions?status=all&limit=50',
+    );
   });
 
   it('exposes pause and clear controls on the event feed', () => {

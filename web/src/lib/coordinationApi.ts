@@ -23,6 +23,26 @@ export type CoordinationStatusResponse = {
   presence_summary: {
     active_agents: number;
   };
+  identity_summary: {
+    active_count: number;
+    stale_count: number;
+    host_count: number;
+    family_counts: Record<string, number>;
+  };
+  discussion_summary: {
+    thread_count: number;
+    pending_count: number;
+    stale_count: number;
+    workspace_bound_count: number;
+  };
+  hook_audit_summary: {
+    state: string;
+    record_count: number;
+    allow_count: number;
+    warn_count: number;
+    block_count: number;
+    error_count: number;
+  };
   local_host_outbox_backlog: {
     files: number;
     events: number;
@@ -46,6 +66,45 @@ export type CoordinationTaskSnapshotResponse = {
   participants: Record<string, unknown>[];
   recent_events: CoordinationStreamEvent[];
   local_host_audit_file: string;
+};
+
+export type CoordinationIdentity = {
+  identity: string;
+  host: string | null;
+  family: string | null;
+  session_agent_id: string | null;
+  claimed_at: string | null;
+  last_heartbeat_at: string | null;
+  expires_at: string | null;
+  stale: boolean;
+  revision: number | null;
+};
+
+export type CoordinationIdentityResponse = {
+  summary: CoordinationStatusResponse['identity_summary'];
+  identities: CoordinationIdentity[];
+};
+
+export type CoordinationDiscussionParticipant = {
+  host: string | null;
+  agent_id: string | null;
+};
+
+export type CoordinationDiscussion = {
+  task_id: string;
+  workspace_type: string | null;
+  workspace_path: string | null;
+  directional_doc: string | null;
+  participants: CoordinationDiscussionParticipant[];
+  pending_recipients: CoordinationDiscussionParticipant[];
+  last_event_kind: string | null;
+  status: 'pending' | 'acknowledged' | 'stale';
+  updated_at: string | null;
+};
+
+export type CoordinationDiscussionResponse = {
+  summary: CoordinationStatusResponse['discussion_summary'];
+  discussions: CoordinationDiscussion[];
 };
 
 export type CoordinationControlEnvelope = {
@@ -121,15 +180,14 @@ async function requireJson<T>(response: Response): Promise<T> {
   throw new Error(readErrorMessage(payload, response.status));
 }
 
-function buildCoordinationQuery(params: {
-  taskId?: string;
-  subjectPrefix?: string;
-  limit?: number;
-} = {}): string {
+function buildCoordinationQuery(
+  params: Record<string, string | number | boolean | null | undefined> = {},
+): string {
   const searchParams = new URLSearchParams();
-  if (params.taskId) searchParams.set('task_id', params.taskId);
-  if (params.subjectPrefix) searchParams.set('subject_prefix', params.subjectPrefix);
-  if (typeof params.limit === 'number') searchParams.set('limit', String(params.limit));
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined || value === '') continue;
+    searchParams.set(key, String(value));
+  }
   const query = searchParams.toString();
   return query ? `?${query}` : '';
 }
@@ -152,6 +210,42 @@ export async function getCoordinationTaskSnapshot(
   );
 }
 
+export async function getCoordinationIdentities(
+  options: {
+    host?: string;
+    family?: string;
+    includeStale?: boolean;
+  } = {},
+): Promise<CoordinationIdentityResponse> {
+  const query = buildCoordinationQuery({
+    host: options.host,
+    family: options.family,
+    include_stale: options.includeStale,
+  });
+  return requireJson<CoordinationIdentityResponse>(
+    await platformApiFetch(`/admin/runtime/coordination/identities${query}`),
+  );
+}
+
+export async function getCoordinationDiscussions(
+  options: {
+    taskId?: string;
+    workspacePath?: string;
+    status?: 'pending' | 'acknowledged' | 'stale' | 'all';
+    limit?: number;
+  } = {},
+): Promise<CoordinationDiscussionResponse> {
+  const query = buildCoordinationQuery({
+    task_id: options.taskId,
+    workspace_path: options.workspacePath,
+    status: options.status,
+    limit: options.limit,
+  });
+  return requireJson<CoordinationDiscussionResponse>(
+    await platformApiFetch(`/admin/runtime/coordination/discussions${query}`),
+  );
+}
+
 export async function openCoordinationEventStream(
   params: {
     taskId?: string;
@@ -160,6 +254,10 @@ export async function openCoordinationEventStream(
   } = {},
   init: RequestInit = {},
 ): Promise<Response> {
-  const query = buildCoordinationQuery(params);
+  const query = buildCoordinationQuery({
+    task_id: params.taskId,
+    subject_prefix: params.subjectPrefix,
+    limit: params.limit,
+  });
   return platformApiFetch(`/admin/runtime/coordination/events/stream${query}`, init);
 }

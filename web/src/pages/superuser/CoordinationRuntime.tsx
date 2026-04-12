@@ -2,13 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { WorkbenchPage } from '@/components/common/WorkbenchPage';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
+import { CoordinationDiscussionQueue } from '@/components/superuser/CoordinationDiscussionQueue';
 import { CoordinationEventFeed } from '@/components/superuser/CoordinationEventFeed';
+import { CoordinationIdentityTable } from '@/components/superuser/CoordinationIdentityTable';
 import { CoordinationStatusSummary } from '@/components/superuser/CoordinationStatusSummary';
 import { Button } from '@/components/ui/button';
 import { useCoordinationStream } from '@/hooks/useCoordinationStream';
 import {
+  getCoordinationDiscussions,
+  getCoordinationIdentities,
   CoordinationRuntimeDisabledError,
   getCoordinationStatus,
+  type CoordinationDiscussionResponse,
+  type CoordinationIdentityResponse,
   type CoordinationStatusResponse,
 } from '@/lib/coordinationApi';
 
@@ -49,6 +55,8 @@ export function Component() {
   const [error, setError] = useState<string | null>(null);
   const [disabledMessage, setDisabledMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<CoordinationStatusResponse | null>(null);
+  const [identities, setIdentities] = useState<CoordinationIdentityResponse | null>(null);
+  const [discussions, setDiscussions] = useState<CoordinationDiscussionResponse | null>(null);
 
   const loadStatus = useCallback(async () => {
     setRefreshing(true);
@@ -56,12 +64,20 @@ export function Component() {
 
     try {
       const nextStatus = await getCoordinationStatus();
+      const [nextIdentities, nextDiscussions] = await Promise.all([
+        getCoordinationIdentities({ includeStale: true }),
+        getCoordinationDiscussions({ status: 'all', limit: 50 }),
+      ]);
       setStatus(nextStatus);
+      setIdentities(nextIdentities);
+      setDiscussions(nextDiscussions);
       setDisabledMessage(null);
     } catch (nextError) {
       if (nextError instanceof CoordinationRuntimeDisabledError) {
         setDisabledMessage(nextError.message);
         setStatus(null);
+        setIdentities(null);
+        setDiscussions(null);
         setError(null);
       } else {
         setError(nextError instanceof Error ? nextError.message : String(nextError));
@@ -100,6 +116,10 @@ export function Component() {
       ) : (
         <>
           <CoordinationStatusSummary status={status} loading={loading} />
+          <div className="grid gap-4 xl:grid-cols-2">
+            <CoordinationIdentityTable data={identities} loading={loading} />
+            <CoordinationDiscussionQueue data={discussions} loading={loading} />
+          </div>
           {!loading ? <CoordinationRuntimeLive /> : null}
         </>
       )}

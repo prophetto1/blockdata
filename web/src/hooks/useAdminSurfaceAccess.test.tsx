@@ -136,7 +136,7 @@ describe('useAdminSurfaceAccess', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/app/blockdata-admin/instance-config']}>
+      <MemoryRouter initialEntries={['/app/blockdata-admin/parsers-docling']}>
         <ShellWorkspaceSelector />
         <Routes>
           <Route path="/app" element={<div data-testid="app-home">app home</div>} />

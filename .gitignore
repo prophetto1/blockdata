@@ -4,21 +4,17 @@
 .codex/settings.local.json
 .mcp.json
 skills/
-tools/
 json-schemas/
 
 # Cross-machine Syncthing draft area (never pushed to remote)
-_collaborate/
 .codex/
 .codex-tmp/
 .agent/
 .ai/
 .worktrees/
-# Project-specific ignores
-ref-repos/
+# All underscore-prefixed folders (local/private workspace dirs)
+_*/
 
--personal-/
-_legalAGI/
 src-content/
 .mypy_cache/
 .playwright-mcp/
@@ -36,11 +32,7 @@ third_party/meta-configurator/meta_configurator/NUL
 !.env.example
 
 # GCP service account keys (never commit)
-docs/test-keys/
 secrets/
-
-# Personal docs (Jon)
-docs/jon/
 
 # OS generated files
 .DS_Store
@@ -50,6 +42,11 @@ desktop.ini
 # Editor directories
 .vscode/
 .idea/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
 
 # Node modules (if any)
 node_modules/
@@ -97,39 +94,8 @@ web-docs/*.log
 
 # External repos / clones
 external/
-_external/
-_agentDev/
-_reference/
 tmp/
 .temp/
-
-# _agchain
-_agchain/_reference/
-_agchain/.*
-!_agchain/.gitattributes
-!_agchain/.editorconfig
-!_agchain/.hub_state
-_agchain/-personal-/
-_agchain/-refs/
-_agchain/_platformDirections/
-_agchain/agchain-416e399dbaa0.json
-_agchain/datasets/
-_agchain/docs/
-docs/agchain/
-_agchain/legal-10/src/integrations/inspect-ai/
-_agchain/legal-10/pitch-deck/out/
-_agchain/legal-10/pitch-deck/package-lock.json
-_agchain/**/__pycache__/
-_agchain/memory/
-_agchain/sqlite/
-_agchain/memory-desktop/
-_agchain/sqlite-desktop/
-memory-tool.db
-
-# Start-here documentation shortcuts (junctions)
-__start-here/blockdata
-__start-here/agchain
-__start-here/specification
 
 # Study-patterns category junctions (point to external repos)
 docs/study-patterns/*/
@@ -141,12 +107,6 @@ web/.tmp-vitest-*
 # pnpm home cache
 .pnpm-home/
 
-# Husky hooks scaffolding (ignored for now)
-.husky/
-scripts/husky/
-scripts/repo-hygiene/
-scripts/tests/husky-*.test.mjs
-scripts/tests/remove-desktop-ini.test.mjs
 
 # Dev output (logs, playwright, scripts)
 output/

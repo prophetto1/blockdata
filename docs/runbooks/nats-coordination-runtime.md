@@ -136,15 +136,15 @@ Common identity flags:
 Useful commands:
 
 ```powershell
-node scripts/coordination/agent-coord.mjs status --host JON --agent-id jon-runtime
-node scripts/coordination/agent-coord.mjs broker-probe --host JON --agent-id jon-runtime
-node scripts/coordination/agent-coord.mjs presence-heartbeat --host JON --agent-id jon-runtime
-node scripts/coordination/agent-coord.mjs task-create --task-id e2e-001 --host BUDDY --agent-id buddy-smoke --json '{"title":"dual-host smoke"}'
-node scripts/coordination/agent-coord.mjs task-claim --task-id e2e-001 --host JON --agent-id jon-runtime
-node scripts/coordination/agent-coord.mjs task-event --task-id e2e-001 --event-kind progress --host JON --agent-id jon-runtime --json '{"note":"claimed on JON"}'
-node scripts/coordination/agent-coord.mjs task-complete --task-id e2e-001 --host JON --agent-id jon-runtime --json '{"result":"complete"}'
-node scripts/coordination/agent-coord.mjs task-watch --task-id e2e-001 --count 2 --timeout-ms 10000 --host BUDDY --agent-id buddy-smoke
-node scripts/coordination/agent-coord.mjs outbox-flush --host BUDDY --agent-id buddy-smoke
+node tools/coordination/agent-coord.mjs status --host JON --agent-id jon-runtime
+node tools/coordination/agent-coord.mjs broker-probe --host JON --agent-id jon-runtime
+node tools/coordination/agent-coord.mjs presence-heartbeat --host JON --agent-id jon-runtime
+node tools/coordination/agent-coord.mjs task-create --task-id e2e-001 --host BUDDY --agent-id buddy-smoke --json '{"title":"dual-host smoke"}'
+node tools/coordination/agent-coord.mjs task-claim --task-id e2e-001 --host JON --agent-id jon-runtime
+node tools/coordination/agent-coord.mjs task-event --task-id e2e-001 --event-kind progress --host JON --agent-id jon-runtime --json '{"note":"claimed on JON"}'
+node tools/coordination/agent-coord.mjs task-complete --task-id e2e-001 --host JON --agent-id jon-runtime --json '{"result":"complete"}'
+node tools/coordination/agent-coord.mjs task-watch --task-id e2e-001 --count 2 --timeout-ms 10000 --host BUDDY --agent-id buddy-smoke
+node tools/coordination/agent-coord.mjs outbox-flush --host BUDDY --agent-id buddy-smoke
 ```
 
 ### Broker Contract Smoke
@@ -195,13 +195,13 @@ $env:COORDINATION_RUNTIME_ROOT = 'E:\writing-system\.codex-tmp\coordination-runt
 ### 3. Create The Task On BUDDY
 
 ```powershell
-node scripts/coordination/agent-coord.mjs task-create --task-id e2e-001 --host BUDDY --agent-id buddy-smoke --json '{"title":"dual-host smoke","owner":"BUDDY"}'
+node tools/coordination/agent-coord.mjs task-create --task-id e2e-001 --host BUDDY --agent-id buddy-smoke --json '{"title":"dual-host smoke","owner":"BUDDY"}'
 ```
 
 ### 4. Start A Watcher On BUDDY
 
 ```powershell
-node scripts/coordination/agent-coord.mjs task-watch --task-id e2e-001 --count 2 --timeout-ms 10000 --host BUDDY --agent-id buddy-smoke
+node tools/coordination/agent-coord.mjs task-watch --task-id e2e-001 --count 2 --timeout-ms 10000 --host BUDDY --agent-id buddy-smoke
 ```
 
 Leave this running while JON publishes the next events.
@@ -209,9 +209,9 @@ Leave this running while JON publishes the next events.
 ### 5. Claim And Publish On JON
 
 ```powershell
-node scripts/coordination/agent-coord.mjs task-claim --task-id e2e-001 --host JON --agent-id jon-runtime
-node scripts/coordination/agent-coord.mjs task-event --task-id e2e-001 --event-kind progress --host JON --agent-id jon-runtime --json '{"note":"claimed on JON"}'
-node scripts/coordination/agent-coord.mjs task-complete --task-id e2e-001 --host JON --agent-id jon-runtime --json '{"result":"complete"}'
+node tools/coordination/agent-coord.mjs task-claim --task-id e2e-001 --host JON --agent-id jon-runtime
+node tools/coordination/agent-coord.mjs task-event --task-id e2e-001 --event-kind progress --host JON --agent-id jon-runtime --json '{"note":"claimed on JON"}'
+node tools/coordination/agent-coord.mjs task-complete --task-id e2e-001 --host JON --agent-id jon-runtime --json '{"result":"complete"}'
 ```
 
 Expected result:
@@ -264,13 +264,13 @@ powershell -ExecutionPolicy Bypass -File scripts\nats\verify-smoke.ps1
 2. On the affected host, inspect backlog:
 
 ```powershell
-node scripts/coordination/agent-coord.mjs status --host BUDDY --agent-id buddy-smoke
+node tools/coordination/agent-coord.mjs status --host BUDDY --agent-id buddy-smoke
 ```
 
 3. Flush buffered events:
 
 ```powershell
-node scripts/coordination/agent-coord.mjs outbox-flush --host BUDDY --agent-id buddy-smoke
+node tools/coordination/agent-coord.mjs outbox-flush --host BUDDY --agent-id buddy-smoke
 ```
 
 4. Re-run the watcher or status command to confirm the backlog is reduced.

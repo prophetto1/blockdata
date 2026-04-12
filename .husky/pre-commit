@@ -1,0 +1,2 @@
+#!/usr/bin/env sh
+node scripts/husky/hook-runner.mjs pre-commit "$@"

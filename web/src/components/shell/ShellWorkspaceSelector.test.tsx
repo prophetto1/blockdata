@@ -227,7 +227,7 @@ describe('ShellWorkspaceSelector', () => {
 
   it('falls back to a visible workspace when the current admin route is forbidden', () => {
     render(
-      <MemoryRouter initialEntries={['/app/blockdata-admin/instance-config']}>
+      <MemoryRouter initialEntries={['/app/blockdata-admin/parsers-docling']}>
         <ShellWorkspaceSelector />
       </MemoryRouter>,
     );
@@ -263,7 +263,7 @@ describe('ShellWorkspaceSelector', () => {
     fireEvent.click(await screen.findByRole('option', { name: /blockdata admin/i }));
 
     await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith('/app/blockdata-admin');
+      expect(navigateMock).toHaveBeenCalledWith('/app/blockdata-admin/parsers-docling');
     });
   });
 

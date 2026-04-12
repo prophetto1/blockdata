@@ -59,10 +59,12 @@ function superuserToolsPlugin() {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const projectRoot = path.resolve(__dirname, '..')
+  const env = loadEnv(mode, projectRoot, 'VITE_')
 
   return {
-    plugins: [react(), tailwindcss(), superuserToolsPlugin(), platformApiDevControlPlugin({ projectRoot: path.resolve(__dirname, '..') })],
+    envDir: projectRoot,
+    plugins: [react(), tailwindcss(), superuserToolsPlugin(), platformApiDevControlPlugin({ projectRoot })],
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {

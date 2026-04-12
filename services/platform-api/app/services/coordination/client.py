@@ -3,8 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from time import perf_counter
+from datetime import datetime, timezone
+from time import perf_counter, time_ns
 from typing import Any, Awaitable, Callable
+from uuid import uuid4
 
 from opentelemetry import metrics, trace
 
@@ -63,6 +65,49 @@ def _normalize_event(subject: str, payload: dict) -> dict:
         "occurred_at": payload.get("occurredAt"),
         "payload": payload.get("payload"),
     }
+
+
+def _derive_family(identity: str | None, payload: dict) -> str | None:
+    explicit_family = payload.get("family")
+    if explicit_family:
+        return str(explicit_family)
+    if not identity:
+        return None
+    return str(identity).rstrip("0123456789") or str(identity)
+
+
+def _parse_iso(value: Any) -> datetime | None:
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _next_task_event_id(host: str) -> str:
+    return f"{host}-{COORDINATION_RUNTIME_AGENT_ID}-{time_ns()}-{uuid4().hex[:8]}"
+
+
+def _identity_is_stale(payload: dict) -> bool:
+    if payload.get("status") == "released":
+        return True
+    expires_at = _parse_iso(payload.get("expiresAt"))
+    if expires_at is None:
+        return False
+    return expires_at <= datetime.now(timezone.utc)
+
+
+def _snake_participants(participants: list[dict] | None) -> list[dict]:
+    normalized: list[dict] = []
+    for participant in participants or []:
+        normalized.append(
+            {
+                "host": participant.get("host"),
+                "agent_id": participant.get("agentId"),
+            }
+        )
+    return normalized
 
 
 class CoordinationClient:
@@ -151,16 +196,31 @@ class CoordinationClient:
         await self.connect()
         return self._js, self._jsm
 
+    async def _open_kv_bucket(self, bucket_name: str):
+        js, _ = await self._ensure_connected()
+        return await js.key_value(bucket_name)
+
+    async def _list_kv_entries(self, bucket_name: str) -> list[tuple[str, Any]]:
+        bucket = await self._open_kv_bucket(bucket_name)
+        keys = await bucket.keys()
+        entries: list[tuple[str, Any]] = []
+        for key in keys:
+            try:
+                entries.append((key, await bucket.get(key)))
+            except Exception:
+                continue
+        return entries
+
     async def get_runtime_snapshot(self) -> dict:
         _, jsm = await self._ensure_connected()
         stream_info = await jsm.stream_info(COORDINATION_STREAM_NAME)
         bucket_summaries: dict[str, dict] = {}
-        active_agents = 0
         for bucket_name in [
             "COORD_TASK_STATE",
             "COORD_TASK_PARTICIPANTS",
             "COORD_AGENT_PRESENCE",
             "COORD_TASK_CLAIMS",
+            "COORD_DISCUSSION_STATE",
         ]:
             info = await jsm.stream_info(f"KV_{bucket_name}")
             summary = {
@@ -171,8 +231,9 @@ class CoordinationClient:
                 "active_keys": getattr(info.state, "num_subjects", 0),
             }
             bucket_summaries[bucket_name] = summary
-            if bucket_name == "COORD_AGENT_PRESENCE":
-                active_agents = int(summary["active_keys"] or 0)
+
+        identity_summary = (await self.get_identities(include_stale=True))["summary"]
+        discussion_summary = (await self.get_discussions(status="all", limit=50))["summary"]
 
         return {
             "broker": {
@@ -189,7 +250,17 @@ class CoordinationClient:
                 }
             },
             "kv_buckets": bucket_summaries,
-            "presence_summary": {"active_agents": active_agents},
+            "presence_summary": {"active_agents": identity_summary["active_count"]},
+            "identity_summary": identity_summary,
+            "discussion_summary": discussion_summary,
+            "hook_audit_summary": {
+                "state": "not_configured",
+                "record_count": 0,
+                "allow_count": 0,
+                "warn_count": 0,
+                "block_count": 0,
+                "error_count": 0,
+            },
         }
 
     async def _get_last_json_message(self, stream_name: str, subject: str) -> dict | None:
@@ -213,9 +284,117 @@ class CoordinationClient:
             "participants": participants.get("participants") if isinstance(participants, dict) else [],
         }
 
+    async def get_identities(
+        self,
+        *,
+        host: str | None = None,
+        family: str | None = None,
+        include_stale: bool = False,
+    ) -> dict:
+        entries = await self._list_kv_entries("COORD_AGENT_PRESENCE")
+        identities: list[dict] = []
+        family_counts: dict[str, int] = {}
+        hosts: set[str] = set()
+        active_count = 0
+        stale_count = 0
+
+        for _, entry in entries:
+            payload = _decode_json(getattr(entry, "value", None)) or {}
+            identity = payload.get("identity") or payload.get("agentId")
+            derived_family = _derive_family(identity, payload)
+            stale = _identity_is_stale(payload)
+            entry_host = payload.get("host")
+
+            if host and entry_host != host:
+                continue
+            if family and derived_family != family:
+                continue
+            if stale and not include_stale:
+                continue
+
+            hosts.add(entry_host)
+            if derived_family:
+                family_counts[derived_family] = family_counts.get(derived_family, 0) + 1
+
+            if stale:
+                stale_count += 1
+            else:
+                active_count += 1
+
+            identities.append(
+                {
+                    "identity": identity,
+                    "host": entry_host,
+                    "family": derived_family,
+                    "session_agent_id": payload.get("sessionAgentId"),
+                    "claimed_at": payload.get("claimedAt"),
+                    "last_heartbeat_at": payload.get("lastHeartbeatAt"),
+                    "expires_at": payload.get("expiresAt"),
+                    "stale": stale,
+                    "revision": getattr(entry, "revision", None),
+                }
+            )
+
+        identities.sort(key=lambda item: (str(item.get("host") or ""), str(item.get("identity") or "")))
+        return {
+            "summary": {
+                "active_count": active_count,
+                "stale_count": stale_count,
+                "host_count": len(hosts),
+                "family_counts": family_counts,
+            },
+            "identities": identities,
+        }
+
+    async def get_discussions(
+        self,
+        *,
+        task_id: str | None = None,
+        workspace_path: str | None = None,
+        status: str = "all",
+        limit: int = 50,
+    ) -> dict:
+        entries = await self._list_kv_entries("COORD_DISCUSSION_STATE")
+        discussions: list[dict] = []
+
+        for _, entry in entries:
+            payload = _decode_json(getattr(entry, "value", None)) or {}
+            normalized = {
+                "task_id": payload.get("taskId"),
+                "workspace_type": payload.get("workspaceType"),
+                "workspace_path": payload.get("workspacePath"),
+                "directional_doc": payload.get("directionalDoc"),
+                "participants": _snake_participants(payload.get("participants")),
+                "pending_recipients": _snake_participants(payload.get("pendingRecipients")),
+                "last_event_kind": payload.get("lastEventKind"),
+                "status": payload.get("status"),
+                "updated_at": payload.get("updatedAt"),
+            }
+            if task_id and normalized["task_id"] != task_id:
+                continue
+            if workspace_path and normalized["workspace_path"] != workspace_path:
+                continue
+            if status != "all" and normalized["status"] != status:
+                continue
+            discussions.append(normalized)
+
+        discussions.sort(key=lambda item: str(item.get("updated_at") or ""), reverse=True)
+        if limit >= 0:
+            discussions = discussions[:limit]
+
+        return {
+            "summary": {
+                "thread_count": len(discussions),
+                "pending_count": len([item for item in discussions if item.get("status") == "pending"]),
+                "stale_count": len([item for item in discussions if item.get("status") == "stale"]),
+                "workspace_bound_count": len([item for item in discussions if item.get("workspace_path")]),
+            },
+            "discussions": discussions,
+        }
+
     async def publish_task_event(self, *, task_id: str, event_kind: str, note: str | None) -> dict:
         js, _ = await self._ensure_connected()
-        event_id = f"{self.settings.host}-{COORDINATION_RUNTIME_AGENT_ID}-{int(perf_counter() * 1000)}"
+        event_id = _next_task_event_id(self.settings.host)
         payload = {
             "eventId": event_id,
             "taskId": task_id,

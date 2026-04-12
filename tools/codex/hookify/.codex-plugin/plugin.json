@@ -1,0 +1,39 @@
+{
+  "name": "hookify",
+  "version": "0.1.0",
+  "description": "Codex-compatible hookify runner that preserves hookify markdown rules through a CLI and skill.",
+  "author": {
+    "name": "OpenAI-compatible repo adaptation",
+    "email": "support@openai.com",
+    "url": "https://openai.com/"
+  },
+  "homepage": "https://openai.com/",
+  "repository": "https://github.com/anthropics/claude-code/tree/main/plugins/hookify",
+  "license": "MIT",
+  "keywords": [
+    "hookify",
+    "codex",
+    "guardrails",
+    "rules",
+    "hooks",
+    "compatibility"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Hookify",
+    "shortDescription": "Reuse hookify markdown rules from Codex through a CLI and skill",
+    "longDescription": "Hookify for Codex preserves the existing hookify rule format and evaluates those rules through a repo-local CLI. It cannot inject native Codex hooks, but it does let you keep one markdown rule set across Claude and Codex-oriented workflows.",
+    "developerName": "OpenAI-compatible repo adaptation",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://openai.com/",
+    "privacyPolicyURL": "https://openai.com/policies/privacy-policy/",
+    "termsOfServiceURL": "https://openai.com/policies/terms-of-use/",
+    "defaultPrompt": "Create or refine hookify rules and show how to run them from Codex-compatible workflows",
+    "brandColor": "#111111",
+    "screenshots": []
+  }
+}

@@ -61,6 +61,52 @@ async def get_coordination_status(
             set_span_attributes(span, {"coord.duration_ms": (perf_counter() - started) * 1000.0})
 
 
+@router.get("/identities", openapi_extra={"x-required-role": "platform_admin"})
+async def get_coordination_identities(
+    request: Request,
+    host: str | None = Query(default=None),
+    family: str | None = Query(default=None),
+    include_stale: bool = Query(default=False),
+    _auth: AuthPrincipal = Depends(require_superuser),
+):
+    service = _status_service(request)
+    try:
+        return await service.get_identities(host=host, family=family, include_stale=include_stale)
+    except CoordinationRuntimeDisabledError:
+        raise HTTPException(status_code=503, detail=disabled_error_payload())
+    except CoordinationUnavailableError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "coordination_unavailable", "message": str(exc)},
+        ) from exc
+
+
+@router.get("/discussions", openapi_extra={"x-required-role": "platform_admin"})
+async def get_coordination_discussions(
+    request: Request,
+    task_id: str | None = Query(default=None),
+    workspace_path: str | None = Query(default=None),
+    status: str = Query(default="all", pattern="^(pending|acknowledged|stale|all)$"),
+    limit: int = Query(default=50, ge=0, le=250),
+    _auth: AuthPrincipal = Depends(require_superuser),
+):
+    service = _status_service(request)
+    try:
+        return await service.get_discussions(
+            task_id=task_id,
+            workspace_path=workspace_path,
+            status=status,
+            limit=limit,
+        )
+    except CoordinationRuntimeDisabledError:
+        raise HTTPException(status_code=503, detail=disabled_error_payload())
+    except CoordinationUnavailableError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "coordination_unavailable", "message": str(exc)},
+        ) from exc
+
+
 @router.get("/tasks/{task_id}", openapi_extra={"x-required-role": "platform_admin"})
 async def get_coordination_task_snapshot(
     task_id: str,

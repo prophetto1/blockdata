@@ -7,8 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { cn } from '@/lib/utils';
 import { edgeFetch } from '@/lib/edge';
-import { InstanceConfigPanel } from './InstanceConfigPanel';
-import { WorkerConfigPanel } from './WorkerConfigPanel';
 import { CATEGORY_IDS, type CategoryId } from './settings-tabs';
 
 type AuditRow = {
@@ -32,8 +30,6 @@ type Category = {
 };
 
 const CATEGORIES: Category[] = [
-  { id: 'instance-config', label: 'Instance Config' },
-  { id: 'worker-config', label: 'Worker Config' },
   { id: 'audit', label: 'Audit History' },
 ];
 
@@ -199,7 +195,7 @@ export default function SettingsAdmin() {
   }, [selectedCategory]);
 
   if (!selectedCategory) {
-    return <Navigate to="/app/settings/admin/instance-config" replace />;
+    return <Navigate to="/app/settings/admin/audit" replace />;
   }
 
   return (
@@ -237,15 +233,7 @@ export default function SettingsAdmin() {
 
         {!loading && !error && selectedCategoryDef && (
           <>
-            {selectedCategory === 'instance-config' ? (
-              <div className="h-full overflow-hidden">
-                <InstanceConfigPanel />
-              </div>
-            ) : selectedCategory === 'worker-config' ? (
-              <div className="h-full overflow-hidden">
-                <WorkerConfigPanel />
-              </div>
-            ) : selectedCategory === 'audit' ? (
+            {selectedCategory === 'audit' ? (
               <ScrollArea className="h-full" contentClass="p-3 md:p-4">
                 <div className="space-y-4">
                   <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_220px_130px_auto]">

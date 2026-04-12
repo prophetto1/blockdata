@@ -23,6 +23,7 @@ KV_BUCKETS = {
     "participants": "COORD_TASK_PARTICIPANTS",
     "presence": "COORD_AGENT_PRESENCE",
     "claims": "COORD_TASK_CLAIMS",
+    "discussion": "COORD_DISCUSSION_STATE",
 }
 
 

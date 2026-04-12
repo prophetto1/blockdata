@@ -19,7 +19,7 @@ const BASE_WORKSPACE_OPTIONS: WorkspaceOption[] = [
 ];
 
 const ADMIN_WORKSPACE_OPTIONS: WorkspaceOption[] = [
-  { label: 'Blockdata Admin', value: 'blockdata-admin', path: '/app/blockdata-admin', adminKey: 'blockdataAdmin' },
+  { label: 'Blockdata Admin', value: 'blockdata-admin', path: '/app/blockdata-admin/parsers-docling', adminKey: 'blockdataAdmin' },
   { label: 'AGChain Admin', value: 'agchain-admin', path: '/app/agchain-admin', adminKey: 'agchainAdmin' },
   { label: 'Superuser', value: 'superuser', path: '/app/superuser', adminKey: 'superuser' },
 ];

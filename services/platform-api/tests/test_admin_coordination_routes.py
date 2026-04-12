@@ -57,6 +57,9 @@ class _FakeStatusService:
             "streams": {"COORD_EVENTS": {"messages": 3}},
             "kv_buckets": {"COORD_AGENT_PRESENCE": {"active_keys": 2}},
             "presence_summary": {"active_agents": 2},
+            "identity_summary": {"active_count": 2, "stale_count": 0, "host_count": 1, "family_counts": {"cdx": 2}},
+            "discussion_summary": {"thread_count": 1, "pending_count": 1, "stale_count": 0, "workspace_bound_count": 1},
+            "hook_audit_summary": {"state": "not_configured", "record_count": 0, "allow_count": 0, "warn_count": 0, "block_count": 0, "error_count": 0},
             "local_host_outbox_backlog": {"files": 0, "events": 0, "bytes": 0},
             "app_runtime": {"runtime_enabled": True, "host": "JON", "runtime_root": "E:/tmp"},
             "stream_bridge": {"state": "connected", "client_count": 1, "last_error": None},
@@ -146,11 +149,17 @@ def test_get_coordination_status_returns_locked_shape(superuser_client):
         "streams",
         "kv_buckets",
         "presence_summary",
+        "identity_summary",
+        "discussion_summary",
+        "hook_audit_summary",
         "local_host_outbox_backlog",
         "app_runtime",
         "stream_bridge",
     }
     assert body["broker"]["state"] == "available"
+    assert body["identity_summary"]["active_count"] == 2
+    assert body["discussion_summary"]["pending_count"] == 1
+    assert body["hook_audit_summary"]["state"] == "not_configured"
     assert body["stream_bridge"]["state"] == "connected"
 
 

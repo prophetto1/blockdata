@@ -45,6 +45,26 @@ class _FakeClient:
             "streams": {"COORD_EVENTS": {"messages": 3}},
             "kv_buckets": {"COORD_AGENT_PRESENCE": {"active_keys": 2}},
             "presence_summary": {"active_agents": 2},
+            "identity_summary": {
+                "active_count": 2,
+                "stale_count": 0,
+                "host_count": 1,
+                "family_counts": {"cdx": 2},
+            },
+            "discussion_summary": {
+                "thread_count": 1,
+                "pending_count": 1,
+                "stale_count": 0,
+                "workspace_bound_count": 1,
+            },
+            "hook_audit_summary": {
+                "state": "not_configured",
+                "record_count": 0,
+                "allow_count": 0,
+                "warn_count": 0,
+                "block_count": 0,
+                "error_count": 0,
+            },
         }
 
     async def get_task_snapshot(self, _task_id: str) -> dict:
@@ -112,12 +132,35 @@ async def test_get_status_returns_locked_shape(tmp_path):
         "streams",
         "kv_buckets",
         "presence_summary",
+        "identity_summary",
+        "discussion_summary",
+        "hook_audit_summary",
         "local_host_outbox_backlog",
         "app_runtime",
         "stream_bridge",
     }
     assert result["broker"]["state"] == "available"
     assert result["presence_summary"] == {"active_agents": 2}
+    assert result["identity_summary"] == {
+        "active_count": 2,
+        "stale_count": 0,
+        "host_count": 1,
+        "family_counts": {"cdx": 2},
+    }
+    assert result["discussion_summary"] == {
+        "thread_count": 1,
+        "pending_count": 1,
+        "stale_count": 0,
+        "workspace_bound_count": 1,
+    }
+    assert result["hook_audit_summary"] == {
+        "state": "not_configured",
+        "record_count": 0,
+        "allow_count": 0,
+        "warn_count": 0,
+        "block_count": 0,
+        "error_count": 0,
+    }
     assert result["local_host_outbox_backlog"]["files"] == 1
     assert result["local_host_outbox_backlog"]["events"] == 1
     assert result["local_host_outbox_backlog"]["bytes"] >= len(json.dumps(buffered_event).encode("utf-8"))
@@ -141,6 +184,26 @@ async def test_get_status_returns_degraded_shape_when_broker_read_fails(tmp_path
     assert result["streams"] == {}
     assert result["kv_buckets"] == {}
     assert result["presence_summary"] == {"active_agents": 0}
+    assert result["identity_summary"] == {
+        "active_count": 0,
+        "stale_count": 0,
+        "host_count": 0,
+        "family_counts": {},
+    }
+    assert result["discussion_summary"] == {
+        "thread_count": 0,
+        "pending_count": 0,
+        "stale_count": 0,
+        "workspace_bound_count": 0,
+    }
+    assert result["hook_audit_summary"] == {
+        "state": "not_configured",
+        "record_count": 0,
+        "allow_count": 0,
+        "warn_count": 0,
+        "block_count": 0,
+        "error_count": 0,
+    }
     assert result["stream_bridge"]["state"] == "degraded"
 
 
@@ -162,7 +225,9 @@ async def test_get_task_snapshot_reads_recent_events_and_latest_audit_file(tmp_p
     assert result["claim"]["claimed_by"] == "buddy"
     assert result["participants"] == [{"agent_id": "buddy"}]
     assert result["recent_events"] == [_event("task-1", "created")]
-    assert result["local_host_audit_file"].endswith("2026-04-09.ndjson")
+    assert result["local_host_audit_file"].endswith(".ndjson")
+    assert "coordination-audit" in result["local_host_audit_file"]
+    assert "platform-api" in result["local_host_audit_file"]
 
 
 @pytest.mark.asyncio

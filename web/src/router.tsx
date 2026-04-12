@@ -78,15 +78,16 @@ function LegacyToTransform() {
 
 function LegacySettingsAdminRedirect() {
   const { category } = useParams<{ category?: string }>();
+  const fallbackPath = '/app/blockdata-admin/parsers-docling';
   const targetByCategory: Record<string, string> = {
-    'instance-config': '/app/blockdata-admin/instance-config',
-    'worker-config': '/app/blockdata-admin/worker-config',
+    'instance-config': fallbackPath,
+    'worker-config': fallbackPath,
     audit: '/app/blockdata-admin/audit',
     'parsers-docling': '/app/blockdata-admin/parsers-docling',
-    'platform-config': '/app/blockdata-admin/instance-config',
+    'platform-config': fallbackPath,
   };
 
-  return <Navigate to={targetByCategory[category ?? ''] ?? '/app/blockdata-admin/instance-config'} replace />;
+  return <Navigate to={targetByCategory[category ?? ''] ?? fallbackPath} replace />;
 }
 
 function LegacyPipelineServicesRedirect() {
@@ -283,7 +284,7 @@ export const router = createBrowserRouter([
               { path: 'mcp', element: <Navigate to="/app/blockdata-admin/mcp" replace /> },
               { path: 'connections', element: <Navigate to="/app/blockdata-admin/connections" replace /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
-              { path: 'admin', element: <Navigate to="/app/blockdata-admin/instance-config" replace /> },
+              { path: 'admin', element: <Navigate to="/app/blockdata-admin/parsers-docling" replace /> },
               { path: 'admin/:category', element: <LegacySettingsAdminRedirect /> },
             ],
           },
@@ -351,11 +352,11 @@ export const router = createBrowserRouter([
       },
       {
         path: '/app/superuser/instance-config',
-        element: <Navigate to="/app/blockdata-admin/instance-config" replace />,
+        element: <Navigate to="/app/blockdata-admin/parsers-docling" replace />,
       },
       {
         path: '/app/superuser/worker-config',
-        element: <Navigate to="/app/blockdata-admin/worker-config" replace />,
+        element: <Navigate to="/app/blockdata-admin/parsers-docling" replace />,
       },
       {
         path: '/app/superuser/audit',
@@ -396,10 +397,8 @@ export const router = createBrowserRouter([
           {
             element: <AdminShellLayout />,
             children: [
-              { index: true, lazy: () => import('@/pages/superuser/SuperuserWorkspace') },
+              { index: true, element: <Navigate to="/app/blockdata-admin/parsers-docling" replace /> },
               { path: 'parsers-docling', lazy: () => import('@/pages/settings/DoclingConfigPanel') },
-              { path: 'instance-config', lazy: () => import('@/pages/superuser/SuperuserInstanceConfig') },
-              { path: 'worker-config', lazy: () => import('@/pages/superuser/SuperuserWorkerConfig') },
               { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
               { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
               { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },

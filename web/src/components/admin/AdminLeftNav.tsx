@@ -31,8 +31,6 @@ export const BLOCKDATA_ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
     label: 'CONFIG',
     items: [
-      { label: 'Instance', icon: IconServer, path: '/app/blockdata-admin/instance-config' },
-      { label: 'Workers', icon: IconServer, path: '/app/blockdata-admin/worker-config' },
       { label: 'Docling', icon: IconSettings, path: '/app/blockdata-admin/parsers-docling' },
     ],
   },
@@ -110,41 +108,10 @@ export function resolveAdminShellBreadcrumbSegments(pathname: string): string[] 
   return primaryLabel ? [surfaceLabel, primaryLabel] : [surfaceLabel];
 }
 
-/* ------------------------------------------------------------------ */
-/*  Per-page secondary rail menus (former third rails)                 */
-/* ------------------------------------------------------------------ */
-
 type SecondaryItem = { label: string; href: string };
 type SecondarySection = { label: string; items: SecondaryItem[] };
 
-const INSTANCE_SECTIONS: SecondarySection[] = [
-  {
-    label: 'INSTANCE',
-    items: [
-      { label: 'Jobs', href: '#jobs' },
-      { label: 'Workers', href: '#workers' },
-      { label: 'Registries', href: '#registries' },
-      { label: 'Alerts', href: '#alerts' },
-      { label: 'Observability', href: '#observability' },
-      { label: 'Secret Storage', href: '#secret-storage' },
-    ],
-  },
-];
-
-const WORKER_SECTIONS: SecondarySection[] = [
-  {
-    label: 'WORKER',
-    items: [
-      { label: 'Batching', href: '#batching' },
-      { label: 'Queue Claims', href: '#queue' },
-      { label: 'General', href: '#general' },
-    ],
-  },
-];
-
-export function getSecondaryNav(pathname: string): SecondarySection[] {
-  if (pathname.startsWith('/app/blockdata-admin/instance-config')) return INSTANCE_SECTIONS;
-  if (pathname.startsWith('/app/blockdata-admin/worker-config')) return WORKER_SECTIONS;
+export function getSecondaryNav(_pathname: string): SecondarySection[] {
   return [];
 }
 
