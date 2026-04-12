@@ -11,6 +11,59 @@ type CoordinationErrorResponse = {
   detail?: CoordinationErrorDetail | string;
 };
 
+export type CoordinationSessionTypeKey =
+  | 'vscode.cc.cli'
+  | 'vscode.cdx.cli'
+  | 'vscode.cc.ide-panel'
+  | 'vscode.cdx.ide-panel'
+  | 'claude-desktop.cc'
+  | 'codex-app-win.cdx'
+  | 'terminal.cc'
+  | 'terminal.cdx'
+  | 'unknown';
+
+export type CoordinationClassificationProvenance =
+  | 'launch_stamped'
+  | 'runtime_observed'
+  | 'configured'
+  | 'inferred'
+  | 'unknown';
+
+export type CoordinationSessionClassification = {
+  key: CoordinationSessionTypeKey;
+  display_label: string;
+  container_host: 'vscode' | 'claude-desktop' | 'codex-app-win' | 'terminal' | 'unknown';
+  interaction_surface: 'cli' | 'ide-panel' | 'desktop-app' | 'unknown';
+  runtime_product: 'cc' | 'cdx' | 'unknown';
+  classified: boolean;
+  registry_version: 1;
+  reason: string | null;
+  provenance: {
+    key: CoordinationClassificationProvenance;
+    container_host: CoordinationClassificationProvenance;
+    interaction_surface: CoordinationClassificationProvenance;
+    runtime_product: CoordinationClassificationProvenance;
+    display_label: 'derived';
+  };
+};
+
+export type CoordinationSessionClassificationSummary = {
+  classified_count: number;
+  unknown_count: number;
+  counts_by_type: Record<CoordinationSessionTypeKey, number>;
+  counts_by_provenance: Record<CoordinationClassificationProvenance, number>;
+};
+
+export type CoordinationIdentitySummary = {
+  active_count: number;
+  stale_count: number;
+  host_count: number;
+  family_counts: Record<string, number>;
+  session_classification_counts: Record<CoordinationSessionTypeKey, number>;
+  session_classification_unknown_count: number;
+  session_classification_provenance_counts: Record<CoordinationClassificationProvenance, number>;
+};
+
 export type CoordinationStatusResponse = {
   broker: {
     state: string;
@@ -35,6 +88,7 @@ export type CoordinationStatusResponse = {
     stale_count: number;
     workspace_bound_count: number;
   };
+  session_classification_summary: CoordinationSessionClassificationSummary;
   hook_audit_summary: {
     state: string;
     record_count: number;
@@ -69,7 +123,8 @@ export type CoordinationTaskSnapshotResponse = {
 };
 
 export type CoordinationIdentity = {
-  identity: string;
+  lease_identity: string;
+  identity?: string;
   host: string | null;
   family: string | null;
   session_agent_id: string | null;
@@ -78,10 +133,11 @@ export type CoordinationIdentity = {
   expires_at: string | null;
   stale: boolean;
   revision: number | null;
+  session_classification: CoordinationSessionClassification;
 };
 
 export type CoordinationIdentityResponse = {
-  summary: CoordinationStatusResponse['identity_summary'];
+  summary: CoordinationIdentitySummary;
   identities: CoordinationIdentity[];
 };
 

@@ -25,6 +25,7 @@ import {
   releaseTask,
   watchTaskEvents,
 } from './lib/agent.mjs';
+import { classifyLaunchSession } from './lib/session-classification.mjs';
 
 function parseArgs(argv) {
   const parsed = { _: [] };
@@ -75,6 +76,22 @@ function identityFromArgs(args) {
   return {
     host: String(args.host ?? process.env.COMPUTERNAME ?? process.env.HOSTNAME ?? 'UNKNOWN_HOST'),
     agentId: String(args['agent-id'] ?? process.env.COORDINATION_AGENT_ID ?? process.env.USERNAME ?? process.env.USER ?? 'codex'),
+  };
+}
+
+function sessionClassificationFromArgs(args) {
+  return classifyLaunchSession({
+    containerHost: args['container-host'] ?? process.env.COORD_SESSION_CONTAINER_HOST,
+    interactionSurface: args['interaction-surface'] ?? process.env.COORD_SESSION_INTERACTION_SURFACE,
+    runtimeProduct: args['runtime-product'] ?? process.env.COORD_SESSION_RUNTIME_PRODUCT,
+  });
+}
+
+function claimDetailsFromArgs(args) {
+  const details = parseJson(args.json, {});
+  return {
+    ...details,
+    sessionClassification: sessionClassificationFromArgs(args),
   };
 }
 
@@ -199,6 +216,7 @@ async function runPresenceHeartbeat(args) {
 
 async function runIdentityClaim(args) {
   const identity = identityFromArgs(args);
+  const details = claimDetailsFromArgs(args);
 
   const result = await withBus(args, async (bus) => {
     const { presenceBucket } = await openCoordinationBuckets({ bus });
@@ -207,6 +225,7 @@ async function runIdentityClaim(args) {
       host: identity.host,
       family: String(args.family ?? 'cdx'),
       sessionAgentId: identity.agentId,
+      details,
       ttlSeconds: Number.parseInt(String(args['ttl-seconds'] ?? '120'), 10) || 120,
     });
   });

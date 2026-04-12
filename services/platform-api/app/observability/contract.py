@@ -136,4 +136,11 @@ COORDINATION_KV_CLAIM_UPSERT_SPAN_NAME: str = "coordination.kv.claim.upsert"
 COORDINATION_KV_STATE_PATCH_SPAN_NAME: str = "coordination.kv.state.patch"
 COORDINATION_OUTBOX_FLUSH_SPAN_NAME: str = "coordination.outbox.flush"
 COORDINATION_API_STATUS_READ_SPAN_NAME: str = "coordination.api.status.read"
+COORDINATION_API_IDENTITIES_READ_SPAN_NAME: str = "coordination.api.identities.read"
 COORDINATION_API_STREAM_OPEN_SPAN_NAME: str = "coordination.api.stream.open"
+COORDINATION_SESSION_CLASSIFICATION_RESOLVE_COUNTER_NAME: str = (
+    "platform.coordination.session_classification.resolve.count"
+)
+COORDINATION_SESSION_CLASSIFICATION_UNKNOWN_COUNTER_NAME: str = (
+    "platform.coordination.session_classification.unknown.count"
+)

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const AGENT_MODULE_PATH = new URL('../../tools/coordination/lib/agent.mjs', import.meta.url);
+const CLASSIFICATION_MODULE_PATH = new URL('../../tools/coordination/lib/session-classification.mjs', import.meta.url);
 
 class InMemoryKvBucket {
   constructor() {
@@ -54,6 +55,10 @@ class InMemoryKvBucket {
 
 async function loadAgentModule() {
   return import(`${AGENT_MODULE_PATH.href}?t=${Date.now()}-${Math.random()}`);
+}
+
+async function loadClassificationModule() {
+  return import(`${CLASSIFICATION_MODULE_PATH.href}?t=${Date.now()}-${Math.random()}`);
 }
 
 function createPresenceRecord({
@@ -231,6 +236,72 @@ test('claimAgentIdentity fails after exhausting the configured suffix range', as
     }),
     (error) => error?.code === 'identity_claim_exhausted',
   );
+});
+
+test('claimAgentIdentity keeps lease identity separate from session classification metadata', async () => {
+  const { claimAgentIdentity } = await loadAgentModule();
+  const { classifyLaunchSession } = await loadClassificationModule();
+  const presenceBucket = new InMemoryKvBucket();
+  const now = new Date('2026-04-11T12:00:00.000Z');
+
+  const sessionClassification = classifyLaunchSession({
+    containerHost: 'vscode',
+    interactionSurface: 'cli',
+    runtimeProduct: 'cc',
+  });
+
+  const result = await claimAgentIdentity({
+    presenceBucket,
+    host: 'JON',
+    family: 'cdx',
+    now,
+    ttlSeconds: 120,
+    details: {
+      sessionClassification,
+    },
+  });
+
+  assert.equal(result.identity, 'cdx');
+  const stored = await presenceBucket.get('agent.JON.cdx');
+  const decoded = JSON.parse(new TextDecoder().decode(stored.value));
+
+  assert.equal(decoded.identity, 'cdx');
+  assert.equal(decoded.family, 'cdx');
+  assert.equal(decoded.details.sessionClassification.key, 'vscode.cc.cli');
+  assert.equal(decoded.details.sessionClassification.classified, true);
+  assert.equal(decoded.details.sessionClassification.containerHost, 'vscode');
+});
+
+test('claimAgentIdentity accepts partial-known unknown classification metadata without throwing', async () => {
+  const { claimAgentIdentity } = await loadAgentModule();
+  const { classifyLaunchSession } = await loadClassificationModule();
+  const presenceBucket = new InMemoryKvBucket();
+  const now = new Date('2026-04-11T12:00:00.000Z');
+
+  const sessionClassification = classifyLaunchSession({
+    containerHost: 'vscode',
+  });
+
+  const result = await claimAgentIdentity({
+    presenceBucket,
+    host: 'JON',
+    family: 'cdx',
+    now,
+    ttlSeconds: 120,
+    details: {
+      sessionClassification,
+    },
+  });
+
+  assert.equal(result.identity, 'cdx');
+  const stored = await presenceBucket.get('agent.JON.cdx');
+  const decoded = JSON.parse(new TextDecoder().decode(stored.value));
+
+  assert.equal(decoded.details.sessionClassification.key, 'unknown');
+  assert.equal(decoded.details.sessionClassification.classified, false);
+  assert.equal(decoded.details.sessionClassification.containerHost, 'vscode');
+  assert.equal(decoded.details.sessionClassification.interactionSurface, 'unknown');
+  assert.equal(decoded.details.sessionClassification.runtimeProduct, 'unknown');
 });
 
 test('releaseAgentIdentity marks a claimed identity as released', async () => {

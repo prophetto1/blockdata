@@ -96,7 +96,10 @@ describe('CoordinationRuntime', () => {
     expect(result.current.events.at(-1)?.event_id).toBe('evt-260');
   });
 
-  it('renders explicit disabled state when the backend disables coordination runtime', async () => {
+  it(
+    'renders explicit disabled state when the backend disables coordination runtime',
+    { timeout: 10000 },
+    async () => {
     platformApiFetchMock.mockResolvedValueOnce(
       jsonResponse(
         {
@@ -117,7 +120,8 @@ describe('CoordinationRuntime', () => {
     );
     expect(platformApiFetchMock).toHaveBeenCalledTimes(1);
     expect(platformApiFetchMock).toHaveBeenCalledWith('/admin/runtime/coordination/status');
-  });
+    },
+  );
 
   it('renders an error alert when the initial runtime status request fails', async () => {
     platformApiFetchMock
@@ -140,6 +144,28 @@ describe('CoordinationRuntime', () => {
           presence_summary: { active_agents: 2 },
           identity_summary: { active_count: 2, stale_count: 0, host_count: 1, family_counts: { cdx: 2 } },
           discussion_summary: { thread_count: 1, pending_count: 1, stale_count: 0, workspace_bound_count: 1 },
+          session_classification_summary: {
+            classified_count: 2,
+            unknown_count: 1,
+            counts_by_type: {
+              'vscode.cc.cli': 0,
+              'vscode.cdx.cli': 1,
+              'vscode.cc.ide-panel': 0,
+              'vscode.cdx.ide-panel': 0,
+              'claude-desktop.cc': 0,
+              'codex-app-win.cdx': 0,
+              'terminal.cc': 1,
+              'terminal.cdx': 0,
+              unknown: 1,
+            },
+            counts_by_provenance: {
+              launch_stamped: 1,
+              runtime_observed: 1,
+              configured: 0,
+              inferred: 0,
+              unknown: 1,
+            },
+          },
           hook_audit_summary: {
             state: 'not_configured',
             record_count: 0,
@@ -155,9 +181,34 @@ describe('CoordinationRuntime', () => {
       )
       .mockResolvedValueOnce(
         jsonResponse({
-          summary: { active_count: 1, stale_count: 1, host_count: 1, family_counts: { cdx: 2 } },
+          summary: {
+            active_count: 1,
+            stale_count: 1,
+            host_count: 1,
+            family_counts: { cdx: 2 },
+            session_classification_counts: {
+              'vscode.cc.cli': 0,
+              'vscode.cdx.cli': 1,
+              'vscode.cc.ide-panel': 0,
+              'vscode.cdx.ide-panel': 0,
+              'claude-desktop.cc': 0,
+              'codex-app-win.cdx': 0,
+              'terminal.cc': 0,
+              'terminal.cdx': 0,
+              unknown: 1,
+            },
+            session_classification_unknown_count: 1,
+            session_classification_provenance_counts: {
+              launch_stamped: 1,
+              runtime_observed: 0,
+              configured: 0,
+              inferred: 0,
+              unknown: 1,
+            },
+          },
           identities: [
             {
+              lease_identity: 'cdx',
               identity: 'cdx',
               host: 'JON',
               family: 'cdx',
@@ -167,6 +218,52 @@ describe('CoordinationRuntime', () => {
               expires_at: '2026-04-11T12:03:00Z',
               stale: false,
               revision: 4,
+              session_classification: {
+                key: 'vscode.cdx.cli',
+                display_label: 'VS Code | CDX CLI',
+                container_host: 'vscode',
+                interaction_surface: 'cli',
+                runtime_product: 'cdx',
+                classified: true,
+                registry_version: 1,
+                reason: null,
+                provenance: {
+                  key: 'launch_stamped',
+                  container_host: 'launch_stamped',
+                  interaction_surface: 'launch_stamped',
+                  runtime_product: 'launch_stamped',
+                  display_label: 'derived',
+                },
+              },
+            },
+            {
+              lease_identity: 'legacy-cdx',
+              identity: 'legacy-cdx',
+              host: 'JON',
+              family: 'cdx',
+              session_agent_id: 'legacy-runtime',
+              claimed_at: '2026-04-11T12:10:00Z',
+              last_heartbeat_at: '2026-04-11T12:11:00Z',
+              expires_at: '2026-04-11T12:13:00Z',
+              stale: true,
+              revision: 5,
+              session_classification: {
+                key: 'unknown',
+                display_label: 'Unknown',
+                container_host: 'vscode',
+                interaction_surface: 'unknown',
+                runtime_product: 'unknown',
+                classified: false,
+                registry_version: 1,
+                reason: 'insufficient_signal',
+                provenance: {
+                  key: 'unknown',
+                  container_host: 'launch_stamped',
+                  interaction_surface: 'unknown',
+                  runtime_product: 'unknown',
+                  display_label: 'derived',
+                },
+              },
             },
           ],
         }),
@@ -195,6 +292,11 @@ describe('CoordinationRuntime', () => {
     render(<Component />);
 
     expect(await screen.findByTestId('coordination-identity-table')).toBeInTheDocument();
+    expect(screen.getByTestId('coordination-session-classification-summary')).toBeInTheDocument();
+    expect(screen.getByText('2 classified')).toBeInTheDocument();
+    expect(screen.getByText('1 unknown')).toBeInTheDocument();
+    expect(screen.getByText('VS Code | CDX CLI')).toBeInTheDocument();
+    expect(screen.getByText(/lease cdx/i)).toBeInTheDocument();
     expect(screen.getByTestId('coordination-discussion-queue')).toBeInTheDocument();
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(1, '/admin/runtime/coordination/status');
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(

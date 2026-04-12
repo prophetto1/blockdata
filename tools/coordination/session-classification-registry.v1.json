@@ -1,0 +1,59 @@
+{
+  "registry_version": 1,
+  "session_types": {
+    "vscode.cc.cli": {
+      "container_host": "vscode",
+      "interaction_surface": "cli",
+      "runtime_product": "cc",
+      "display_label": "VS Code | CC CLI"
+    },
+    "vscode.cdx.cli": {
+      "container_host": "vscode",
+      "interaction_surface": "cli",
+      "runtime_product": "cdx",
+      "display_label": "VS Code | CDX CLI"
+    },
+    "vscode.cc.ide-panel": {
+      "container_host": "vscode",
+      "interaction_surface": "ide-panel",
+      "runtime_product": "cc",
+      "display_label": "VS Code | CC IDE"
+    },
+    "vscode.cdx.ide-panel": {
+      "container_host": "vscode",
+      "interaction_surface": "ide-panel",
+      "runtime_product": "cdx",
+      "display_label": "VS Code | CDX IDE"
+    },
+    "claude-desktop.cc": {
+      "container_host": "claude-desktop",
+      "interaction_surface": "desktop-app",
+      "runtime_product": "cc",
+      "display_label": "Claude Desktop | CC"
+    },
+    "codex-app-win.cdx": {
+      "container_host": "codex-app-win",
+      "interaction_surface": "desktop-app",
+      "runtime_product": "cdx",
+      "display_label": "Codex App (Win) | CDX"
+    },
+    "terminal.cc": {
+      "container_host": "terminal",
+      "interaction_surface": "cli",
+      "runtime_product": "cc",
+      "display_label": "Terminal | CC"
+    },
+    "terminal.cdx": {
+      "container_host": "terminal",
+      "interaction_surface": "cli",
+      "runtime_product": "cdx",
+      "display_label": "Terminal | CDX"
+    },
+    "unknown": {
+      "container_host": "unknown",
+      "interaction_surface": "unknown",
+      "runtime_product": "unknown",
+      "display_label": "Unknown"
+    }
+  }
+}

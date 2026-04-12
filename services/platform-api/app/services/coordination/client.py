@@ -11,12 +11,15 @@ from uuid import uuid4
 from opentelemetry import metrics, trace
 
 from app.observability.contract import (
+    COORDINATION_API_IDENTITIES_READ_SPAN_NAME,
     COORDINATION_CONNECTION_STATE_CHANGE_LOG_EVENT,
     COORDINATION_JETSTREAM_PUBLISH_SPAN_NAME,
     COORDINATION_METER_NAME,
     COORDINATION_NATS_CONNECT_SPAN_NAME,
     COORDINATION_PUBLISH_COUNTER_NAME,
     COORDINATION_PUBLISH_DURATION_MS_HISTOGRAM_NAME,
+    COORDINATION_SESSION_CLASSIFICATION_RESOLVE_COUNTER_NAME,
+    COORDINATION_SESSION_CLASSIFICATION_UNKNOWN_COUNTER_NAME,
     COORDINATION_TASK_EVENT_LOG_EVENT,
     COORDINATION_TRACER_NAME,
     safe_attributes,
@@ -32,12 +35,22 @@ from .contracts import (
     CoordinationSettings,
     utc_now_iso,
 )
+from .session_classification import (
+    build_session_classification_summary,
+    serialize_session_classification,
+)
 
 logger = logging.getLogger("platform-api.coordination-client")
 tracer = trace.get_tracer(COORDINATION_TRACER_NAME)
 meter = metrics.get_meter(COORDINATION_METER_NAME)
 publish_counter = meter.create_counter(COORDINATION_PUBLISH_COUNTER_NAME)
 publish_duration_ms = meter.create_histogram(COORDINATION_PUBLISH_DURATION_MS_HISTOGRAM_NAME)
+session_classification_resolve_counter = meter.create_counter(
+    COORDINATION_SESSION_CLASSIFICATION_RESOLVE_COUNTER_NAME
+)
+session_classification_unknown_counter = meter.create_counter(
+    COORDINATION_SESSION_CLASSIFICATION_UNKNOWN_COUNTER_NAME
+)
 
 
 def _load_nats() -> tuple[Any, Any, Any, Any]:
@@ -108,6 +121,24 @@ def _snake_participants(participants: list[dict] | None) -> list[dict]:
             }
         )
     return normalized
+
+
+def _record_session_classification_metric(classification: dict[str, Any]) -> None:
+    attrs = safe_attributes(
+        {
+            "coord.container_host": classification.get("container_host"),
+            "coord.interaction_surface": classification.get("interaction_surface"),
+            "coord.runtime_product": classification.get("runtime_product"),
+            "coord.session_type_key": classification.get("key"),
+            "coord.classified": classification.get("classified"),
+            "coord.provenance": (classification.get("provenance") or {}).get("key"),
+            "coord.result": "classified" if classification.get("classified") else "unknown",
+        }
+    )
+    if classification.get("classified"):
+        session_classification_resolve_counter.add(1, attrs)
+        return
+    session_classification_unknown_counter.add(1, attrs)
 
 
 class CoordinationClient:
@@ -232,8 +263,21 @@ class CoordinationClient:
             }
             bucket_summaries[bucket_name] = summary
 
-        identity_summary = (await self.get_identities(include_stale=True))["summary"]
+        identity_result = await self.get_identities(include_stale=True)
+        identity_summary = identity_result["summary"]
         discussion_summary = (await self.get_discussions(status="all", limit=50))["summary"]
+        session_classification_summary = {
+            "classified_count": sum(
+                count
+                for key, count in identity_summary["session_classification_counts"].items()
+                if key != "unknown"
+            ),
+            "unknown_count": identity_summary["session_classification_unknown_count"],
+            "counts_by_type": dict(identity_summary["session_classification_counts"]),
+            "counts_by_provenance": dict(
+                identity_summary["session_classification_provenance_counts"]
+            ),
+        }
 
         return {
             "broker": {
@@ -253,6 +297,7 @@ class CoordinationClient:
             "presence_summary": {"active_agents": identity_summary["active_count"]},
             "identity_summary": identity_summary,
             "discussion_summary": discussion_summary,
+            "session_classification_summary": session_classification_summary,
             "hook_audit_summary": {
                 "state": "not_configured",
                 "record_count": 0,
@@ -293,6 +338,7 @@ class CoordinationClient:
     ) -> dict:
         entries = await self._list_kv_entries("COORD_AGENT_PRESENCE")
         identities: list[dict] = []
+        classifications: list[dict[str, Any]] = []
         family_counts: dict[str, int] = {}
         hosts: set[str] = set()
         active_count = 0
@@ -321,8 +367,12 @@ class CoordinationClient:
             else:
                 active_count += 1
 
+            classification = serialize_session_classification(payload)
+            classifications.append(classification)
+            _record_session_classification_metric(classification)
             identities.append(
                 {
+                    "lease_identity": identity,
                     "identity": identity,
                     "host": entry_host,
                     "family": derived_family,
@@ -332,16 +382,23 @@ class CoordinationClient:
                     "expires_at": payload.get("expiresAt"),
                     "stale": stale,
                     "revision": getattr(entry, "revision", None),
+                    "session_classification": classification,
                 }
             )
 
         identities.sort(key=lambda item: (str(item.get("host") or ""), str(item.get("identity") or "")))
+        session_classification_summary = build_session_classification_summary(classifications)
         return {
             "summary": {
                 "active_count": active_count,
                 "stale_count": stale_count,
                 "host_count": len(hosts),
                 "family_counts": family_counts,
+                "session_classification_counts": session_classification_summary["counts_by_type"],
+                "session_classification_unknown_count": session_classification_summary["unknown_count"],
+                "session_classification_provenance_counts": session_classification_summary[
+                    "counts_by_provenance"
+                ],
             },
             "identities": identities,
         }

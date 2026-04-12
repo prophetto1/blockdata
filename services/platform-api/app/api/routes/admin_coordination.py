@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from app.auth.dependencies import require_superuser
 from app.auth.principals import AuthPrincipal
 from app.observability.contract import (
+    COORDINATION_API_IDENTITIES_READ_SPAN_NAME,
     COORDINATION_API_STATUS_READ_SPAN_NAME,
     COORDINATION_API_STREAM_OPEN_SPAN_NAME,
     COORDINATION_TRACER_NAME,
@@ -70,15 +71,31 @@ async def get_coordination_identities(
     _auth: AuthPrincipal = Depends(require_superuser),
 ):
     service = _status_service(request)
-    try:
-        return await service.get_identities(host=host, family=family, include_stale=include_stale)
-    except CoordinationRuntimeDisabledError:
-        raise HTTPException(status_code=503, detail=disabled_error_payload())
-    except CoordinationUnavailableError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail={"code": "coordination_unavailable", "message": str(exc)},
-        ) from exc
+    with tracer.start_as_current_span(COORDINATION_API_IDENTITIES_READ_SPAN_NAME) as span:
+        started = perf_counter()
+        try:
+            payload = await service.get_identities(host=host, family=family, include_stale=include_stale)
+            summary = payload.get("summary") or {}
+            set_span_attributes(
+                span,
+                {
+                    "coord.result": "ok",
+                    "coord.unknown_count": summary.get("session_classification_unknown_count"),
+                    "http.status_code": 200,
+                },
+            )
+            return payload
+        except CoordinationRuntimeDisabledError:
+            set_span_attributes(span, {"coord.result": "disabled", "http.status_code": 503})
+            raise HTTPException(status_code=503, detail=disabled_error_payload())
+        except CoordinationUnavailableError as exc:
+            set_span_attributes(span, {"coord.result": "unavailable", "http.status_code": 503})
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "coordination_unavailable", "message": str(exc)},
+            ) from exc
+        finally:
+            set_span_attributes(span, {"coord.duration_ms": (perf_counter() - started) * 1000.0})
 
 
 @router.get("/discussions", openapi_extra={"x-required-role": "platform_admin"})

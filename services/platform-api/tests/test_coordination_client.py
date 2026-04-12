@@ -54,6 +54,12 @@ class _FakeJetStream:
         return _FakePublishAck()
 
 
+class _FakeKvEntry:
+    def __init__(self, payload: dict, *, revision: int | None = None) -> None:
+        self.value = json.dumps(payload).encode("utf-8")
+        self.revision = revision
+
+
 @pytest.mark.asyncio
 async def test_connect_uses_jsm_api(monkeypatch, tmp_path):
     settings = CoordinationSettings(
@@ -115,3 +121,230 @@ async def test_publish_task_event_generates_unique_message_ids(monkeypatch, tmp_
     assert fake_js.calls[1]["headers"]["Nats-Msg-Id"] == second["event_id"]
     assert fake_js.calls[0]["payload"]["eventId"] == first["event_id"]
     assert fake_js.calls[1]["payload"]["eventId"] == second["event_id"]
+
+
+@pytest.mark.asyncio
+async def test_get_identities_serializes_lease_identity_and_session_classification(monkeypatch, tmp_path):
+    settings = CoordinationSettings(
+        enabled=True,
+        nats_url="nats://127.0.0.1:4222",
+        runtime_root=tmp_path,
+        host="JON",
+        agent_id="platform-api",
+    )
+    client = CoordinationClient(settings)
+
+    async def fake_list_kv_entries(_bucket_name: str):
+        return [
+            (
+                "presence.cc",
+                _FakeKvEntry(
+                    {
+                        "identity": "cc",
+                        "host": "JON",
+                        "family": "cc",
+                        "sessionAgentId": "jon-cc-runtime",
+                        "claimedAt": "2026-04-11T12:00:00Z",
+                        "lastHeartbeatAt": "2026-04-11T12:01:00Z",
+                        "expiresAt": "2030-04-11T12:03:00Z",
+                        "details": {
+                            "sessionClassification": {
+                                "key": "vscode.cc.cli",
+                                "containerHost": "vscode",
+                                "interactionSurface": "cli",
+                                "runtimeProduct": "cc",
+                                "classified": True,
+                                "registryVersion": 1,
+                                "reason": None,
+                                "provenance": {
+                                    "key": "launch_stamped",
+                                    "containerHost": "launch_stamped",
+                                    "interactionSurface": "launch_stamped",
+                                    "runtimeProduct": "launch_stamped",
+                                },
+                            }
+                        },
+                    },
+                    revision=7,
+                ),
+            ),
+            (
+                "presence.cc2",
+                _FakeKvEntry(
+                    {
+                        "identity": "cc2",
+                        "host": "JON",
+                        "family": "cc",
+                        "sessionAgentId": "jon-cc-unknown-runtime",
+                        "claimedAt": "2026-04-11T12:02:00Z",
+                        "lastHeartbeatAt": "2026-04-11T12:03:00Z",
+                        "expiresAt": "2030-04-11T12:05:00Z",
+                        "details": {
+                            "sessionClassification": {
+                                "key": "unknown",
+                                "containerHost": "vscode",
+                                "interactionSurface": "unknown",
+                                "runtimeProduct": "unknown",
+                                "classified": False,
+                                "registryVersion": 1,
+                                "reason": "insufficient_signal",
+                                "provenance": {
+                                    "key": "unknown",
+                                    "containerHost": "launch_stamped",
+                                    "interactionSurface": "unknown",
+                                    "runtimeProduct": "unknown",
+                                },
+                            }
+                        },
+                    },
+                    revision=8,
+                ),
+            ),
+        ]
+
+    monkeypatch.setattr(client, "_list_kv_entries", fake_list_kv_entries)
+
+    result = await client.get_identities(include_stale=True)
+
+    assert result["summary"] == {
+        "active_count": 2,
+        "stale_count": 0,
+        "host_count": 1,
+        "family_counts": {"cc": 2},
+        "session_classification_counts": {
+            "vscode.cc.cli": 1,
+            "vscode.cdx.cli": 0,
+            "vscode.cc.ide-panel": 0,
+            "vscode.cdx.ide-panel": 0,
+            "claude-desktop.cc": 0,
+            "codex-app-win.cdx": 0,
+            "terminal.cc": 0,
+            "terminal.cdx": 0,
+            "unknown": 1,
+        },
+        "session_classification_unknown_count": 1,
+        "session_classification_provenance_counts": {
+            "launch_stamped": 1,
+            "runtime_observed": 0,
+            "configured": 0,
+            "inferred": 0,
+            "unknown": 1,
+        },
+    }
+    assert result["identities"] == [
+        {
+            "lease_identity": "cc",
+            "identity": "cc",
+            "host": "JON",
+            "family": "cc",
+            "session_agent_id": "jon-cc-runtime",
+            "claimed_at": "2026-04-11T12:00:00Z",
+            "last_heartbeat_at": "2026-04-11T12:01:00Z",
+            "expires_at": "2030-04-11T12:03:00Z",
+            "stale": False,
+            "revision": 7,
+            "session_classification": {
+                "key": "vscode.cc.cli",
+                "display_label": "VS Code | CC CLI",
+                "container_host": "vscode",
+                "interaction_surface": "cli",
+                "runtime_product": "cc",
+                "classified": True,
+                "registry_version": 1,
+                "reason": None,
+                "provenance": {
+                    "key": "launch_stamped",
+                    "container_host": "launch_stamped",
+                    "interaction_surface": "launch_stamped",
+                    "runtime_product": "launch_stamped",
+                    "display_label": "derived",
+                },
+            },
+        },
+        {
+            "lease_identity": "cc2",
+            "identity": "cc2",
+            "host": "JON",
+            "family": "cc",
+            "session_agent_id": "jon-cc-unknown-runtime",
+            "claimed_at": "2026-04-11T12:02:00Z",
+            "last_heartbeat_at": "2026-04-11T12:03:00Z",
+            "expires_at": "2030-04-11T12:05:00Z",
+            "stale": False,
+            "revision": 8,
+            "session_classification": {
+                "key": "unknown",
+                "display_label": "Unknown",
+                "container_host": "vscode",
+                "interaction_surface": "unknown",
+                "runtime_product": "unknown",
+                "classified": False,
+                "registry_version": 1,
+                "reason": "insufficient_signal",
+                "provenance": {
+                    "key": "unknown",
+                    "container_host": "launch_stamped",
+                    "interaction_surface": "unknown",
+                    "runtime_product": "unknown",
+                    "display_label": "derived",
+                },
+            },
+        },
+    ]
+
+
+@pytest.mark.asyncio
+async def test_get_identities_maps_legacy_records_without_classification_to_unknown(monkeypatch, tmp_path):
+    settings = CoordinationSettings(
+        enabled=True,
+        nats_url="nats://127.0.0.1:4222",
+        runtime_root=tmp_path,
+        host="JON",
+        agent_id="platform-api",
+    )
+    client = CoordinationClient(settings)
+
+    async def fake_list_kv_entries(_bucket_name: str):
+        return [
+            (
+                "presence.legacy-cdx",
+                _FakeKvEntry(
+                    {
+                        "identity": "legacy-cdx",
+                        "host": "JON",
+                        "family": "cdx",
+                        "sessionAgentId": "jon-legacy-runtime",
+                        "claimedAt": "2026-04-11T12:10:00Z",
+                        "lastHeartbeatAt": "2026-04-11T12:11:00Z",
+                        "expiresAt": "2030-04-11T12:13:00Z",
+                    },
+                    revision=11,
+                ),
+            )
+        ]
+
+    monkeypatch.setattr(client, "_list_kv_entries", fake_list_kv_entries)
+
+    result = await client.get_identities(include_stale=True)
+
+    assert result["summary"]["session_classification_counts"]["unknown"] == 1
+    assert result["summary"]["session_classification_unknown_count"] == 1
+    assert result["summary"]["session_classification_provenance_counts"]["unknown"] == 1
+    assert result["identities"][0]["lease_identity"] == "legacy-cdx"
+    assert result["identities"][0]["session_classification"] == {
+        "key": "unknown",
+        "display_label": "Unknown",
+        "container_host": "unknown",
+        "interaction_surface": "unknown",
+        "runtime_product": "unknown",
+        "classified": False,
+        "registry_version": 1,
+        "reason": None,
+        "provenance": {
+            "key": "unknown",
+            "container_host": "unknown",
+            "interaction_surface": "unknown",
+            "runtime_product": "unknown",
+            "display_label": "derived",
+        },
+    }

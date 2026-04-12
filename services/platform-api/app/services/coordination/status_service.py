@@ -24,6 +24,7 @@ from .contracts import (
     CoordinationSettings,
     utc_now_iso,
 )
+from .session_classification import empty_session_classification_summary
 
 logger = logging.getLogger("platform-api.coordination-status")
 meter = metrics.get_meter(COORDINATION_METER_NAME)
@@ -94,6 +95,7 @@ class CoordinationStatusService:
                     "stale_count": 0,
                     "workspace_bound_count": 0,
                 },
+                "session_classification_summary": empty_session_classification_summary(),
                 "hook_audit_summary": {
                     "state": "not_configured",
                     "record_count": 0,
@@ -105,6 +107,9 @@ class CoordinationStatusService:
             }
 
         _active_agents["value"] = int((broker_snapshot.get("presence_summary") or {}).get("active_agents") or 0)
+        session_classification_summary = broker_snapshot.get("session_classification_summary")
+        if not isinstance(session_classification_summary, dict):
+            session_classification_summary = empty_session_classification_summary()
 
         return {
             "broker": broker_snapshot["broker"],
@@ -113,6 +118,7 @@ class CoordinationStatusService:
             "presence_summary": broker_snapshot["presence_summary"],
             "identity_summary": broker_snapshot["identity_summary"],
             "discussion_summary": broker_snapshot["discussion_summary"],
+            "session_classification_summary": session_classification_summary,
             "hook_audit_summary": broker_snapshot["hook_audit_summary"],
             "local_host_outbox_backlog": backlog,
             "app_runtime": {

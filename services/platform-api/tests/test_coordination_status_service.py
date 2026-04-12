@@ -57,6 +57,28 @@ class _FakeClient:
                 "stale_count": 0,
                 "workspace_bound_count": 1,
             },
+            "session_classification_summary": {
+                "classified_count": 2,
+                "unknown_count": 0,
+                "counts_by_type": {
+                    "vscode.cc.cli": 1,
+                    "vscode.cdx.cli": 1,
+                    "vscode.cc.ide-panel": 0,
+                    "vscode.cdx.ide-panel": 0,
+                    "claude-desktop.cc": 0,
+                    "codex-app-win.cdx": 0,
+                    "terminal.cc": 0,
+                    "terminal.cdx": 0,
+                    "unknown": 0,
+                },
+                "counts_by_provenance": {
+                    "launch_stamped": 2,
+                    "runtime_observed": 0,
+                    "configured": 0,
+                    "inferred": 0,
+                    "unknown": 0,
+                },
+            },
             "hook_audit_summary": {
                 "state": "not_configured",
                 "record_count": 0,
@@ -134,6 +156,7 @@ async def test_get_status_returns_locked_shape(tmp_path):
         "presence_summary",
         "identity_summary",
         "discussion_summary",
+        "session_classification_summary",
         "hook_audit_summary",
         "local_host_outbox_backlog",
         "app_runtime",
@@ -152,6 +175,28 @@ async def test_get_status_returns_locked_shape(tmp_path):
         "pending_count": 1,
         "stale_count": 0,
         "workspace_bound_count": 1,
+    }
+    assert result["session_classification_summary"] == {
+        "classified_count": 2,
+        "unknown_count": 0,
+        "counts_by_type": {
+            "vscode.cc.cli": 1,
+            "vscode.cdx.cli": 1,
+            "vscode.cc.ide-panel": 0,
+            "vscode.cdx.ide-panel": 0,
+            "claude-desktop.cc": 0,
+            "codex-app-win.cdx": 0,
+            "terminal.cc": 0,
+            "terminal.cdx": 0,
+            "unknown": 0,
+        },
+        "counts_by_provenance": {
+            "launch_stamped": 2,
+            "runtime_observed": 0,
+            "configured": 0,
+            "inferred": 0,
+            "unknown": 0,
+        },
     }
     assert result["hook_audit_summary"] == {
         "state": "not_configured",
@@ -195,6 +240,28 @@ async def test_get_status_returns_degraded_shape_when_broker_read_fails(tmp_path
         "pending_count": 0,
         "stale_count": 0,
         "workspace_bound_count": 0,
+    }
+    assert result["session_classification_summary"] == {
+        "classified_count": 0,
+        "unknown_count": 0,
+        "counts_by_type": {
+            "vscode.cc.cli": 0,
+            "vscode.cdx.cli": 0,
+            "vscode.cc.ide-panel": 0,
+            "vscode.cdx.ide-panel": 0,
+            "claude-desktop.cc": 0,
+            "codex-app-win.cdx": 0,
+            "terminal.cc": 0,
+            "terminal.cdx": 0,
+            "unknown": 0,
+        },
+        "counts_by_provenance": {
+            "launch_stamped": 0,
+            "runtime_observed": 0,
+            "configured": 0,
+            "inferred": 0,
+            "unknown": 0,
+        },
     }
     assert result["hook_audit_summary"] == {
         "state": "not_configured",
@@ -255,9 +322,19 @@ async def test_publish_probe_task_event_buffers_when_broker_publish_fails(tmp_pa
 
 
 def test_coordination_observability_contract_names_are_frozen():
+    import app.observability.contract as contract
+
     assert COORDINATION_PUBLISH_COUNTER_NAME == "platform.coordination.publish.count"
     assert COORDINATION_BUFFERED_COUNTER_NAME == "platform.coordination.buffered.count"
     assert COORDINATION_STREAM_BRIDGE_CLIENTS_GAUGE_NAME == "platform.coordination.stream.bridge.clients"
     assert COORDINATION_TASK_EVENT_LOG_EVENT == "coordination.task.event"
     assert COORDINATION_CONNECTION_STATE_CHANGE_LOG_EVENT == "coordination.connection.state_change"
     assert COORDINATION_API_STATUS_READ_SPAN_NAME == "coordination.api.status.read"
+    assert (
+        contract.COORDINATION_SESSION_CLASSIFICATION_RESOLVE_COUNTER_NAME
+        == "platform.coordination.session_classification.resolve.count"
+    )
+    assert (
+        contract.COORDINATION_SESSION_CLASSIFICATION_UNKNOWN_COUNTER_NAME
+        == "platform.coordination.session_classification.unknown.count"
+    )

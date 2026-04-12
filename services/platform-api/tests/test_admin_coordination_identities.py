@@ -69,9 +69,29 @@ class _FakeStatusService:
                 "stale_count": 1,
                 "host_count": 1,
                 "family_counts": {"cdx": 2},
+                "session_classification_counts": {
+                    "vscode.cc.cli": 0,
+                    "vscode.cdx.cli": 1,
+                    "vscode.cc.ide-panel": 0,
+                    "vscode.cdx.ide-panel": 0,
+                    "claude-desktop.cc": 0,
+                    "codex-app-win.cdx": 0,
+                    "terminal.cc": 0,
+                    "terminal.cdx": 0,
+                    "unknown": 0,
+                },
+                "session_classification_unknown_count": 0,
+                "session_classification_provenance_counts": {
+                    "launch_stamped": 1,
+                    "runtime_observed": 0,
+                    "configured": 0,
+                    "inferred": 0,
+                    "unknown": 0,
+                },
             },
             "identities": [
                 {
+                    "lease_identity": "cdx",
                     "identity": "cdx",
                     "host": "JON",
                     "family": "cdx",
@@ -81,6 +101,23 @@ class _FakeStatusService:
                     "expires_at": "2026-04-11T12:03:00Z",
                     "stale": False,
                     "revision": 4,
+                    "session_classification": {
+                        "key": "vscode.cdx.cli",
+                        "display_label": "VS Code | CDX CLI",
+                        "container_host": "vscode",
+                        "interaction_surface": "cli",
+                        "runtime_product": "cdx",
+                        "classified": True,
+                        "registry_version": 1,
+                        "reason": None,
+                        "provenance": {
+                            "key": "launch_stamped",
+                            "container_host": "launch_stamped",
+                            "interaction_surface": "launch_stamped",
+                            "runtime_product": "launch_stamped",
+                            "display_label": "derived",
+                        },
+                    },
                 }
             ],
         }
@@ -114,8 +151,28 @@ def test_get_coordination_identities_returns_locked_shape(superuser_app):
         "stale_count": 1,
         "host_count": 1,
         "family_counts": {"cdx": 2},
+        "session_classification_counts": {
+            "vscode.cc.cli": 0,
+            "vscode.cdx.cli": 1,
+            "vscode.cc.ide-panel": 0,
+            "vscode.cdx.ide-panel": 0,
+            "claude-desktop.cc": 0,
+            "codex-app-win.cdx": 0,
+            "terminal.cc": 0,
+            "terminal.cdx": 0,
+            "unknown": 0,
+        },
+        "session_classification_unknown_count": 0,
+        "session_classification_provenance_counts": {
+            "launch_stamped": 1,
+            "runtime_observed": 0,
+            "configured": 0,
+            "inferred": 0,
+            "unknown": 0,
+        },
     }
     assert body["identities"][0] == {
+        "lease_identity": "cdx",
         "identity": "cdx",
         "host": "JON",
         "family": "cdx",
@@ -125,6 +182,23 @@ def test_get_coordination_identities_returns_locked_shape(superuser_app):
         "expires_at": "2026-04-11T12:03:00Z",
         "stale": False,
         "revision": 4,
+        "session_classification": {
+            "key": "vscode.cdx.cli",
+            "display_label": "VS Code | CDX CLI",
+            "container_host": "vscode",
+            "interaction_surface": "cli",
+            "runtime_product": "cdx",
+            "classified": True,
+            "registry_version": 1,
+            "reason": None,
+            "provenance": {
+                "key": "launch_stamped",
+                "container_host": "launch_stamped",
+                "interaction_surface": "launch_stamped",
+                "runtime_product": "launch_stamped",
+                "display_label": "derived",
+            },
+        },
     }
     assert service.calls == [
         {

@@ -40,6 +40,23 @@ function asIsoString(value = new Date()) {
   return normalizeNow(value).toISOString();
 }
 
+function cloneIdentityLeaseDetails(details = {}) {
+  const normalized = { ...details };
+
+  if (details?.sessionClassification && typeof details.sessionClassification === 'object') {
+    normalized.sessionClassification = {
+      ...details.sessionClassification,
+      provenance:
+        details.sessionClassification?.provenance
+        && typeof details.sessionClassification.provenance === 'object'
+          ? { ...details.sessionClassification.provenance }
+          : details.sessionClassification.provenance,
+    };
+  }
+
+  return normalized;
+}
+
 function createClaimValue({ taskId, host, agentId, now, ttlSeconds }) {
   const claimedAt = asIsoString(now);
   const expiresAt = new Date(normalizeNow(now).getTime() + ttlSeconds * 1000).toISOString();
@@ -73,7 +90,7 @@ function createIdentityLeaseValue({
     family,
     sessionAgentId,
     status,
-    details,
+    details: cloneIdentityLeaseDetails(details),
     claimedAt,
     lastHeartbeatAt: claimedAt,
     expiresAt,

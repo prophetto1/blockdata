@@ -1,4 +1,5 @@
 import type { CoordinationIdentityResponse } from '@/lib/coordinationApi';
+import { getCoordinationSessionClassificationLabel } from '@/lib/coordinationSessionClassification';
 
 type CoordinationIdentityTableProps = {
   data: CoordinationIdentityResponse | null;
@@ -8,6 +9,11 @@ type CoordinationIdentityTableProps = {
 function renderValue(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === '') return '--';
   return String(value);
+}
+
+function renderParts(parts: Array<string | null | undefined>) {
+  const values = parts.filter((part) => typeof part === 'string' && part.trim().length > 0);
+  return values.length > 0 ? values.join(' · ') : '--';
 }
 
 export function CoordinationIdentityTable({
@@ -27,7 +33,7 @@ export function CoordinationIdentityTable({
           <div>
             <h2 className="text-sm font-semibold text-foreground">Claimed Identities</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Lease-backed worker identities read from `COORD_AGENT_PRESENCE`.
+              Server-owned session classification over lease-backed worker identities.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
@@ -53,30 +59,45 @@ export function CoordinationIdentityTable({
           <table className="min-w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-border/70 text-left text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                <th className="pb-2 pr-4 font-medium">Identity</th>
+                <th className="pb-2 pr-4 font-medium">Session Type</th>
                 <th className="pb-2 pr-4 font-medium">Session</th>
                 <th className="pb-2 pr-4 font-medium">Lease</th>
                 <th className="pb-2 pr-4 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
-              {identities.map((identity) => (
+              {identities.map((identity) => {
+                const primaryLabel = getCoordinationSessionClassificationLabel(identity.session_classification);
+                const legacyIdentity =
+                  identity.identity && identity.identity !== identity.lease_identity
+                    ? `legacy ${identity.identity}`
+                    : null;
+
+                return (
                 <tr
-                  key={`${identity.host}-${identity.identity}`}
+                  key={`${identity.host ?? 'unknown'}-${identity.lease_identity}`}
                   data-testid="coordination-identity-row"
                   className="border-b border-border/50 align-top last:border-b-0"
                 >
                   <td className="py-3 pr-4">
-                    <p className="font-medium text-foreground">{identity.identity}</p>
+                    <p className="font-medium text-foreground">{primaryLabel}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {renderValue(identity.host)}
-                      {identity.family ? ` · family ${identity.family}` : ''}
+                      {renderParts([
+                        `lease ${identity.lease_identity}`,
+                        legacyIdentity,
+                        identity.family ? `family ${identity.family}` : null,
+                      ])}
                     </p>
                   </td>
                   <td className="py-3 pr-4">
                     <p className="break-all text-foreground">{renderValue(identity.session_agent_id)}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      rev {renderValue(identity.revision)}
+                      {renderParts([
+                        identity.host,
+                        identity.revision !== null && identity.revision !== undefined
+                          ? `rev ${identity.revision}`
+                          : null,
+                      ])}
                     </p>
                   </td>
                   <td className="py-3 pr-4">
@@ -86,6 +107,9 @@ export function CoordinationIdentityTable({
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       exp {renderValue(identity.expires_at)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {identity.session_classification.key}
                     </p>
                   </td>
                   <td className="py-3 pr-4">
@@ -98,9 +122,18 @@ export function CoordinationIdentityTable({
                     >
                       {identity.stale ? 'stale' : 'active'}
                     </span>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {identity.session_classification.provenance.key}
+                    </p>
+                    {identity.session_classification.reason ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {identity.session_classification.reason}
+                      </p>
+                    ) : null}
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         )}

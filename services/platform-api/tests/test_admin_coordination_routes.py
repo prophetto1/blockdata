@@ -59,6 +59,28 @@ class _FakeStatusService:
             "presence_summary": {"active_agents": 2},
             "identity_summary": {"active_count": 2, "stale_count": 0, "host_count": 1, "family_counts": {"cdx": 2}},
             "discussion_summary": {"thread_count": 1, "pending_count": 1, "stale_count": 0, "workspace_bound_count": 1},
+            "session_classification_summary": {
+                "classified_count": 2,
+                "unknown_count": 0,
+                "counts_by_type": {
+                    "vscode.cc.cli": 1,
+                    "vscode.cdx.cli": 1,
+                    "vscode.cc.ide-panel": 0,
+                    "vscode.cdx.ide-panel": 0,
+                    "claude-desktop.cc": 0,
+                    "codex-app-win.cdx": 0,
+                    "terminal.cc": 0,
+                    "terminal.cdx": 0,
+                    "unknown": 0,
+                },
+                "counts_by_provenance": {
+                    "launch_stamped": 2,
+                    "runtime_observed": 0,
+                    "configured": 0,
+                    "inferred": 0,
+                    "unknown": 0,
+                },
+            },
             "hook_audit_summary": {"state": "not_configured", "record_count": 0, "allow_count": 0, "warn_count": 0, "block_count": 0, "error_count": 0},
             "local_host_outbox_backlog": {"files": 0, "events": 0, "bytes": 0},
             "app_runtime": {"runtime_enabled": True, "host": "JON", "runtime_root": "E:/tmp"},
@@ -151,6 +173,7 @@ def test_get_coordination_status_returns_locked_shape(superuser_client):
         "presence_summary",
         "identity_summary",
         "discussion_summary",
+        "session_classification_summary",
         "hook_audit_summary",
         "local_host_outbox_backlog",
         "app_runtime",
@@ -210,3 +233,18 @@ def test_post_coordination_probe_returns_202_when_buffered(superuser_client):
     body = response.json()
     assert body["buffered"] is True
     assert body["stream_name"] == "COORD_EVENTS"
+
+
+def test_coordination_observability_contract_names_are_frozen():
+    import app.observability.contract as contract
+
+    assert contract.COORDINATION_API_STATUS_READ_SPAN_NAME == "coordination.api.status.read"
+    assert contract.COORDINATION_API_IDENTITIES_READ_SPAN_NAME == "coordination.api.identities.read"
+    assert (
+        contract.COORDINATION_SESSION_CLASSIFICATION_RESOLVE_COUNTER_NAME
+        == "platform.coordination.session_classification.resolve.count"
+    )
+    assert (
+        contract.COORDINATION_SESSION_CLASSIFICATION_UNKNOWN_COUNTER_NAME
+        == "platform.coordination.session_classification.unknown.count"
+    )
