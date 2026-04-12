@@ -12,6 +12,8 @@ import {
   IconRoute,
   IconDatabase,
   IconPlugConnected,
+  IconTable,
+  IconLayoutGrid,
   type Icon,
 } from '@tabler/icons-react';
 
@@ -62,6 +64,8 @@ export const SUPERUSER_NAV_SECTIONS: AdminNavSection[] = [
       { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
       { label: 'Skill-Driven Dev', icon: IconRoute, path: '/app/superuser/skill-driven-dev' },
       { label: 'Plan Tracker', icon: IconClipboardList, path: '/app/superuser/plan-tracker' },
+      { label: 'Agchain Benchmarks (demo)', icon: IconTable, path: '/app/superuser/agchain-benchmarks-demo' },
+      { label: 'Block Viewer Grid (demo)', icon: IconLayoutGrid, path: '/app/superuser/block-viewer-grid-demo' },
     ],
   },
 ];

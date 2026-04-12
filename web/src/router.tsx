@@ -448,6 +448,8 @@ export const router = createBrowserRouter([
               { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
               { path: 'skill-driven-dev', lazy: () => import('@/pages/superuser/SkillDrivenDev') },
               { path: 'plan-tracker', lazy: () => import('@/pages/superuser/PlanTracker') },
+              { path: 'agchain-benchmarks-demo', lazy: () => import('@/pages/superuser/AgchainBenchmarksDemo') },
+              { path: 'block-viewer-grid-demo', lazy: () => import('@/pages/superuser/BlockViewerGridDemo') },
             ],
           },
         ],
