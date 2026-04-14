@@ -12,6 +12,7 @@ type ControlTowerV2PageFrameProps = {
   title: string;
   description?: ReactNode;
   actions?: ReactNode;
+  hideHeader?: boolean;
   children: ReactNode;
   className?: string;
   contentClassName?: string;
@@ -24,6 +25,7 @@ export function ControlTowerV2PageFrame({
   title,
   description,
   actions,
+  hideHeader = false,
   children,
   className,
   contentClassName,
@@ -37,40 +39,42 @@ export function ControlTowerV2PageFrame({
         className,
       )}
     >
-      <header className="border-b border-border/70 bg-background/95 px-3 py-3 md:px-4">
-        {backToHref ? (
-          <div className="mb-2">
-            <Link
-              to={backToHref}
-              className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
-            >
-              <IconArrowLeft size={14} stroke={1.8} />
-              <span>{backToLabel ?? 'Back'}</span>
-            </Link>
-          </div>
-        ) : null}
-
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="min-w-0 space-y-1">
-            {eyebrow ? (
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                {eyebrow}
-              </p>
-            ) : null}
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">
-              {title}
-            </h1>
-            {description ? (
-              <div className="max-w-4xl text-xs leading-5 text-muted-foreground">
-                {description}
-              </div>
-            ) : null}
-          </div>
-          {actions ? (
-            <div className="flex shrink-0 items-center gap-2">{actions}</div>
+      {!hideHeader ? (
+        <header className="border-b border-border/70 bg-background/95 px-3 py-3 md:px-4">
+          {backToHref ? (
+            <div className="mb-2">
+              <Link
+                to={backToHref}
+                className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
+              >
+                <IconArrowLeft size={14} stroke={1.8} />
+                <span>{backToLabel ?? 'Back'}</span>
+              </Link>
+            </div>
           ) : null}
-        </div>
-      </header>
+
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="min-w-0 space-y-1">
+              {eyebrow ? (
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                  {eyebrow}
+                </p>
+              ) : null}
+              <h1 className="text-lg font-semibold tracking-tight text-foreground">
+                {title}
+              </h1>
+              {description ? (
+                <div className="max-w-4xl text-xs leading-5 text-muted-foreground">
+                  {description}
+                </div>
+              ) : null}
+            </div>
+            {actions ? (
+              <div className="flex shrink-0 items-center gap-2">{actions}</div>
+            ) : null}
+          </div>
+        </header>
+      ) : null}
 
       <div
         className={cn(

@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Link, useLocation } from 'react-router-dom';
 import {
-  IconServer,
   IconSettings,
   IconClipboardList,
   IconCode,
@@ -58,9 +57,8 @@ export const SUPERUSER_NAV_SECTIONS: AdminNavSection[] = [
     label: 'DEV ONLY',
     items: [
       { label: 'Control Tower', icon: IconLayoutGrid, path: '/app/superuser' },
-      { label: 'Control Tower v2', icon: IconLayoutGrid, path: '/app/superuser/control-tower-v2' },
-      { label: 'Operational Readiness', icon: IconServer, path: '/app/superuser/operational-readiness' },
       { label: 'Coordination Runtime', icon: IconPlugConnected, path: '/app/superuser/coordination-runtime' },
+      { label: 'Coordination Runtime Mock', icon: IconLayoutGrid, path: '/app/superuser/coordination-runtime-mock' },
       { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
       { label: 'Skill-Driven Dev', icon: IconRoute, path: '/app/superuser/skill-driven-dev' },
       { label: 'Plan Tracker', icon: IconClipboardList, path: '/app/superuser/plan-tracker' },

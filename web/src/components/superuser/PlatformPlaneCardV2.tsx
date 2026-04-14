@@ -27,8 +27,11 @@ type PlatformPlaneCardV2Props = {
   tone: PlaneFacetTone;
   icon: Icon;
   facets: PlaneFacet[];
-  drillLabel: string;
-  drillPath: string;
+  drillLabel?: string;
+  drillPath?: string;
+  selected?: boolean;
+  selectLabel?: string;
+  onSelect?: () => void;
 };
 
 export function PlatformPlaneCardV2({
@@ -39,9 +42,18 @@ export function PlatformPlaneCardV2({
   facets,
   drillLabel,
   drillPath,
+  selected = false,
+  selectLabel,
+  onSelect,
 }: PlatformPlaneCardV2Props) {
-  return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-sm">
+  const baseClassName = cn(
+    'flex min-w-0 flex-col gap-3 rounded-xl border border-border/70 bg-card p-3 text-left shadow-sm transition-colors',
+    selected && 'border-primary/35 bg-primary/[0.05] shadow-[0_0_0_1px_rgba(59,130,246,0.15)]',
+    onSelect && !drillLabel && !drillPath && 'cursor-pointer hover:border-primary/30 hover:bg-primary/[0.04]',
+  );
+
+  const content = (
+    <>
       <div className="flex items-start gap-2">
         <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
           <IconGlyph size={16} stroke={1.8} />
@@ -77,12 +89,36 @@ export function PlatformPlaneCardV2({
         ))}
       </dl>
 
-      <Link
-        to={drillPath}
-        className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive, 'self-start')}
+      {drillLabel && drillPath ? (
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={drillPath}
+            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive, 'self-start')}
+          >
+            <span>{drillLabel}</span>
+          </Link>
+        </div>
+      ) : null}
+    </>
+  );
+
+  if (onSelect && !drillLabel && !drillPath) {
+    return (
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-label={selectLabel ?? `Select ${label}`}
+        aria-pressed={selected}
+        className={baseClassName}
       >
-        <span>{drillLabel}</span>
-      </Link>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <article className={baseClassName}>
+      {content}
     </article>
   );
 }

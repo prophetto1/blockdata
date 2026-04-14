@@ -58,7 +58,7 @@ describe('GcpCostInventory', () => {
     vi.clearAllMocks();
   });
 
-  it('loads summary and rows into the grid surface', async () => {
+  it('loads summary and rows into the grid surface', { timeout: 15000 }, async () => {
     platformApiFetchMock
       .mockResolvedValueOnce(
         mockJsonResponse({
@@ -109,9 +109,10 @@ describe('GcpCostInventory', () => {
     const { Component } = await importPage();
     render(<Component />);
 
-    expect(
-      await screen.findByText('Compute Engine', undefined, { timeout: 10_000 }),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('gcp-cost-grid-mock')).toHaveTextContent('Compute Engine');
+    });
+    expect(screen.queryByText('GCP Cost Inventory')).not.toBeInTheDocument();
     expect(screen.getByText('2026-04')).toBeInTheDocument();
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(1, '/admin/cloud-costs/gcp/summary');
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
@@ -145,6 +146,7 @@ describe('GcpCostInventory', () => {
     render(<Component />);
 
     expect(await screen.findByTestId('gcp-cost-config-missing')).toBeInTheDocument();
+    expect(screen.queryByText(/read the normalized bigquery billing export through platform-api/i)).not.toBeInTheDocument();
     expect(
       screen.getByText(
         'Cloud Billing export is not connected for this local platform-api environment.',

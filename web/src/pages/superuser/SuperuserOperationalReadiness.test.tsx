@@ -223,7 +223,7 @@ describe('SuperuserOperationalReadiness', () => {
   it('renders the operator dashboard with the dev recovery panel, summary runtime identity, surfaces, and client panel', () => {
     render(<SuperuserOperationalReadiness />);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Operational Readiness' })).toBeInTheDocument();
+    expect(screen.queryByText(/backend-owned control plane/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Refresh Status' })).toBeInTheDocument();
 
     expect(screen.getByRole('heading', { level: 2, name: 'Platform API launch hygiene' })).toBeInTheDocument();

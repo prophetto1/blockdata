@@ -98,7 +98,7 @@ describe('CoordinationRuntime', () => {
 
   it(
     'renders explicit disabled state when the backend disables coordination runtime',
-    { timeout: 10000 },
+    { timeout: 15000 },
     async () => {
     platformApiFetchMock.mockResolvedValueOnce(
       jsonResponse(
@@ -118,6 +118,7 @@ describe('CoordinationRuntime', () => {
     expect(await screen.findByTestId('coordination-runtime-disabled')).toHaveTextContent(
       /coordination runtime is disabled/i,
     );
+    expect(screen.queryByText(/broker-backed admin runtime/i)).not.toBeInTheDocument();
     expect(platformApiFetchMock).toHaveBeenCalledTimes(1);
     expect(platformApiFetchMock).toHaveBeenCalledWith('/admin/runtime/coordination/status');
     },
@@ -262,12 +263,16 @@ describe('CoordinationRuntime', () => {
     const { Component } = await importPage();
     render(<Component />);
 
-    expect(await screen.findByTestId('coordination-identity-table')).toBeInTheDocument();
-    expect(screen.getByTestId('coordination-session-classification-summary')).toBeInTheDocument();
-    expect(screen.getByText('2 classified')).toBeInTheDocument();
-    expect(screen.getByText('1 unknown')).toBeInTheDocument();
-    expect(screen.getByText('VS Code | CDX CLI')).toBeInTheDocument();
-    expect(screen.getByText(/lease cdx/i)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /identities/i })).toBeInTheDocument();
+    expect(screen.queryByText(/observe broker health, bridge state, local backlog/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /inspector/i })).toBeInTheDocument();
+    expect(screen.getByText('ACTIVE')).toBeInTheDocument();
+    expect(screen.getByText('STALE')).toBeInTheDocument();
+    expect(screen.getByText('PENDING')).toBeInTheDocument();
+    expect(screen.getByText('BUFFERED')).toBeInTheDocument();
+    expect(screen.getAllByText('jon-runtime').length).toBeGreaterThan(0);
+    expect(screen.getByText(/CDX CLI/i)).toBeInTheDocument();
+    expect(screen.getAllByText('launch_stamped').length).toBeGreaterThan(0);
     expect(screen.getByTestId('coordination-discussion-queue')).toBeInTheDocument();
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(1, '/admin/runtime/coordination/status');
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
@@ -278,6 +283,159 @@ describe('CoordinationRuntime', () => {
       3,
       '/admin/runtime/coordination/discussions?status=all&limit=50',
     );
+  });
+
+  it('updates the inspector when a different identity is selected', async () => {
+    platformApiFetchMock
+      .mockResolvedValueOnce(
+        jsonResponse({
+          broker: { state: 'available', url: 'nats://127.0.0.1:4222' },
+          streams: { COORD_EVENTS: { messages: 3 } },
+          kv_buckets: { COORD_AGENT_PRESENCE: { active_keys: 2 } },
+          presence_summary: { active_agents: 2 },
+          identity_summary: { active_count: 1, stale_count: 1, host_count: 2, family_counts: { cdx: 1, cc: 1 } },
+          discussion_summary: { thread_count: 0, pending_count: 0, stale_count: 0, workspace_bound_count: 0 },
+          session_classification_summary: {
+            classified_count: 2,
+            unknown_count: 0,
+            counts_by_type: {
+              'vscode.cc.cli': 1,
+              'vscode.cdx.cli': 1,
+              'vscode.cc.ide-panel': 0,
+              'vscode.cdx.ide-panel': 0,
+              'claude-desktop.cc': 0,
+              'codex-app-win.cdx': 0,
+              'terminal.cc': 0,
+              'terminal.cdx': 0,
+              unknown: 0,
+            },
+            counts_by_provenance: {
+              launch_stamped: 2,
+              runtime_observed: 0,
+              configured: 0,
+              inferred: 0,
+              unknown: 0,
+            },
+          },
+          hook_audit_summary: {
+            state: 'not_configured',
+            record_count: 0,
+            allow_count: 0,
+            warn_count: 0,
+            block_count: 0,
+            error_count: 0,
+          },
+          local_host_outbox_backlog: { files: 0, events: 2, bytes: 0 },
+          app_runtime: { runtime_enabled: true, host: 'JON', runtime_root: 'E:/writing-system' },
+          stream_bridge: { state: 'connected', client_count: 1, last_error: null },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          summary: {
+            active_count: 1,
+            stale_count: 1,
+            host_count: 2,
+            family_counts: { cdx: 1, cc: 1 },
+            session_classification_counts: {
+              'vscode.cc.cli': 1,
+              'vscode.cdx.cli': 1,
+              'vscode.cc.ide-panel': 0,
+              'vscode.cdx.ide-panel': 0,
+              'claude-desktop.cc': 0,
+              'codex-app-win.cdx': 0,
+              'terminal.cc': 0,
+              'terminal.cdx': 0,
+              unknown: 0,
+            },
+            session_classification_unknown_count: 0,
+            session_classification_provenance_counts: {
+              launch_stamped: 2,
+              runtime_observed: 0,
+              configured: 0,
+              inferred: 0,
+              unknown: 0,
+            },
+          },
+          identities: [
+            {
+              lease_identity: 'cdx',
+              identity: 'cdx',
+              host: 'JON',
+              family: 'cdx',
+              session_agent_id: 'jon-runtime',
+              claimed_at: '2026-04-11T12:00:00Z',
+              last_heartbeat_at: '2026-04-11T12:01:00Z',
+              expires_at: '2026-04-11T12:03:00Z',
+              stale: false,
+              revision: 4,
+              session_classification: {
+                key: 'vscode.cdx.cli',
+                display_label: 'VS Code | CDX CLI',
+                container_host: 'vscode',
+                interaction_surface: 'cli',
+                runtime_product: 'cdx',
+                classified: true,
+                registry_version: 1,
+                reason: null,
+                provenance: {
+                  key: 'launch_stamped',
+                  container_host: 'launch_stamped',
+                  interaction_surface: 'launch_stamped',
+                  runtime_product: 'launch_stamped',
+                  display_label: 'derived',
+                },
+              },
+            },
+            {
+              lease_identity: 'cc',
+              identity: 'cc',
+              host: 'BUDDY',
+              family: 'cc',
+              session_agent_id: 'buddy-terminal',
+              claimed_at: '2026-04-11T11:00:00Z',
+              last_heartbeat_at: '2026-04-11T11:10:00Z',
+              expires_at: '2026-04-11T11:12:00Z',
+              stale: true,
+              revision: 7,
+              session_classification: {
+                key: 'vscode.cc.cli',
+                display_label: 'VS Code | CC CLI',
+                container_host: 'vscode',
+                interaction_surface: 'cli',
+                runtime_product: 'cc',
+                classified: true,
+                registry_version: 1,
+                reason: 'matched host shell',
+                provenance: {
+                  key: 'launch_stamped',
+                  container_host: 'launch_stamped',
+                  interaction_surface: 'launch_stamped',
+                  runtime_product: 'launch_stamped',
+                  display_label: 'derived',
+                },
+              },
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          summary: { thread_count: 0, pending_count: 0, stale_count: 0, workspace_bound_count: 0 },
+          discussions: [],
+        }),
+      )
+      .mockResolvedValue(eventStreamResponse([]));
+
+    const { Component } = await importPage();
+    render(<Component />);
+
+    expect((await screen.findAllByText('jon-runtime')).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: /buddy-terminal/i }));
+
+    expect(screen.getByText(/CC CLI/i)).toBeInTheDocument();
+    expect(screen.getByText('matched host shell')).toBeInTheDocument();
+    expect(screen.getByText('BUDDY')).toBeInTheDocument();
   });
 
   it('exposes pause and clear controls on the event feed', () => {

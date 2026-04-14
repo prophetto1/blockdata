@@ -55,9 +55,6 @@ describe('AdminLeftNav', () => {
     const controlTower = SUPERUSER_NAV_SECTIONS
       .flatMap((section) => section.items)
       .find((item) => item.path === '/app/superuser');
-    const operationalReadiness = SUPERUSER_NAV_SECTIONS
-      .flatMap((section) => section.items)
-      .find((item) => item.path === '/app/superuser/operational-readiness');
     const coordinationRuntime = SUPERUSER_NAV_SECTIONS
       .flatMap((section) => section.items)
       .find((item) => item.path === '/app/superuser/coordination-runtime');
@@ -74,16 +71,13 @@ describe('AdminLeftNav', () => {
       label: 'Layout Captures',
       path: '/app/superuser/design-layout-captures',
     });
-    expect(operationalReadiness).toMatchObject({
-      label: 'Operational Readiness',
-      path: '/app/superuser/operational-readiness',
-    });
     expect(coordinationRuntime).toMatchObject({
       label: 'Coordination Runtime',
       path: '/app/superuser/coordination-runtime',
     });
+    expect(devOnlySection?.items.map((item) => item.path)).not.toContain('/app/superuser/control-tower-v2');
     expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser');
-    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/operational-readiness');
+    expect(devOnlySection?.items.map((item) => item.path)).not.toContain('/app/superuser/operational-readiness');
     expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/coordination-runtime');
     expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/gcp-cost-inventory');
     expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/agchain-benchmarks-demo');

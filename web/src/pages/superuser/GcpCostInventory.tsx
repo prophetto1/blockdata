@@ -245,6 +245,7 @@ export function Component() {
       title="GCP Cost Inventory"
       description="Read the normalized BigQuery billing export through platform-api and inspect one invoice-month slice in a single operator table."
       headerVariant="admin"
+      hideHeader
       toolbar={(
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex min-w-[140px] flex-col gap-1 text-xs font-medium text-muted-foreground">

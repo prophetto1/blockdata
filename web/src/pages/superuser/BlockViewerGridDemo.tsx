@@ -48,6 +48,7 @@ export function Component() {
       eyebrow="DEMO"
       title="Block Viewer Grid (demo)"
       description="Wired demo surface for BlockViewerGridRDG. Paste a conversation UID, then pick a run."
+      hideHeader
     >
       <div className="flex flex-col gap-4 p-4">
         <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/70 bg-card/50 p-4">

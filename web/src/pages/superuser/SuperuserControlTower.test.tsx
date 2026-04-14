@@ -1,19 +1,19 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UseQueryResult } from '@tanstack/react-query';
 import routerSource from '@/router.tsx?raw';
-import { createAppQueryClient } from '@/lib/queryClient';
-import { superuserKeys } from '@/lib/queryKeys/superuserKeys';
-import { renderWithQueryClient } from '@/test/renderWithQueryClient';
 import { resetSuperuserControlTowerStore } from '@/stores/useSuperuserControlTowerStore';
-import { Component as SuperuserControlTower } from './SuperuserControlTower';
 
 const useOperationalReadinessSnapshotQueryMock = vi.fn();
 const useCoordinationStatusQueryMock = vi.fn();
 const useCoordinationIdentitiesQueryMock = vi.fn();
 const useCoordinationDiscussionsQueryMock = vi.fn();
 const useCoordinationStreamMock = vi.fn();
+const useOperationalReadinessMock = vi.fn();
+const usePlatformApiDevRecoveryMock = vi.fn();
+const useQueryClientMock = vi.fn();
+const useIsFetchingMock = vi.fn();
 
 vi.mock('@/components/common/useShellHeaderTitle', () => ({
   useShellHeaderTitle: vi.fn(),
@@ -38,6 +38,23 @@ vi.mock('@/hooks/query/useCoordinationDiscussionsQuery', () => ({
 vi.mock('@/hooks/useCoordinationStream', () => ({
   useCoordinationStream: (...args: unknown[]) => useCoordinationStreamMock(...args),
 }));
+
+vi.mock('@/hooks/useOperationalReadiness', () => ({
+  useOperationalReadiness: (...args: unknown[]) => useOperationalReadinessMock(...args),
+}));
+
+vi.mock('@/hooks/usePlatformApiDevRecovery', () => ({
+  usePlatformApiDevRecovery: (...args: unknown[]) => usePlatformApiDevRecoveryMock(...args),
+}));
+
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
+  return {
+    ...actual,
+    useQueryClient: (...args: unknown[]) => useQueryClientMock(...args),
+    useIsFetching: (...args: unknown[]) => useIsFetchingMock(...args),
+  };
+});
 
 function asQueryResult<T>(overrides: Partial<UseQueryResult<T>>): UseQueryResult<T> {
   return {
@@ -210,7 +227,7 @@ const coordinationDiscussionsData = {
       task_id: 'task-1',
       workspace_type: 'research',
       workspace_path: 'E:/writing-system/_research/20260411--07--zustand-tanstack-and-FR-architecture',
-      directional_doc: 'E:/writing-system/_research/20260411--07--zustand-tanstack-and-FR-architecture/0412--zustand-tanstack-superuser-control-tower-implementation-plan--CDX.md',
+      directional_doc: 'E:/writing-system/_research/20260411--07--zustand-tanstack-and-FR-architecture/phase-2/0412--03--zustand-tanstack-superuser-control-tower-implementation-plan--CDX.md',
       participants: [{ host: 'JON', agent_id: 'codex' }],
       pending_recipients: [{ host: 'JON', agent_id: 'buddy' }],
       last_event_kind: 'response_requested',
@@ -220,18 +237,49 @@ const coordinationDiscussionsData = {
   ],
 };
 
-function renderPage() {
-  const queryClient = createAppQueryClient({ testMode: true });
-  queryClient.setQueryData(superuserKeys.operationalReadinessSnapshot(), readinessData);
-  queryClient.setQueryData(superuserKeys.coordinationStatus(), coordinationStatusData);
-  queryClient.setQueryData(superuserKeys.coordinationIdentities({ includeStale: true }), coordinationIdentitiesData);
-  queryClient.setQueryData(superuserKeys.coordinationDiscussions({ status: 'all', limit: 50 }), coordinationDiscussionsData);
+const operationalReadinessPanelData = {
+  loading: false,
+  refreshing: false,
+  error: null,
+  refreshedAt: '2026-04-14T12:00:00Z',
+  bootstrap: {
+    diagnosis_kind: 'ready',
+    diagnosis_title: 'Ready',
+    diagnosis_summary: 'Bootstrap checks passed and the readiness snapshot is authoritative.',
+    snapshot_available: true,
+    base_mode: 'relative_proxy',
+    frontend_origin: 'http://localhost:5374',
+    platform_api_target: '/platform-api',
+    probes: [],
+  },
+  summary: { ok: 7, warn: 1, fail: 0, unknown: 0 },
+  surfaces: [],
+  clientDiagnostics: [],
+  actionStates: {},
+  checkDetails: {},
+  executeAction: vi.fn(),
+  loadCheckDetail: vi.fn(),
+  verifyCheck: vi.fn(),
+  refresh: vi.fn(),
+};
 
-  return renderWithQueryClient(
+const platformApiDevRecoveryData = {
+  enabled: false,
+  loading: false,
+  recovering: false,
+  error: null,
+  status: null,
+  lastRecovery: null,
+  refreshStatus: vi.fn(),
+  recover: vi.fn(),
+};
+
+async function renderPage() {
+  const { Component: SuperuserControlTower } = await import('./SuperuserControlTower');
+  return render(
     <MemoryRouter initialEntries={['/app/superuser']}>
       <SuperuserControlTower />
     </MemoryRouter>,
-    { queryClient },
   );
 }
 
@@ -262,6 +310,15 @@ beforeEach(() => {
     togglePaused: vi.fn(),
     clear: vi.fn(),
   });
+  useOperationalReadinessMock.mockReturnValue(operationalReadinessPanelData);
+  usePlatformApiDevRecoveryMock.mockReturnValue(platformApiDevRecoveryData);
+  useQueryClientMock.mockReturnValue({
+    invalidateQueries: vi.fn(),
+    getQueryCache: () => ({
+      findAll: () => [{ isStale: () => false }, { isStale: () => true }],
+    }),
+  });
+  useIsFetchingMock.mockReturnValue(0);
 });
 
 afterEach(() => {
@@ -271,38 +328,54 @@ afterEach(() => {
 });
 
 describe('SuperuserControlTower', () => {
-  it('renders the five planes, the three operator rows, and registers the superuser homepage route', () => {
-    renderPage();
+  it('renders the promoted dense control tower and keeps it on the superuser homepage route', async () => {
+    await renderPage();
 
+    expect(screen.queryByText('Operator Console')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        'Five coordination state cards up top. Select Browser State to pull down the full operational-readiness surface without leaving the superuser homepage.',
+      ),
+    ).not.toBeInTheDocument();
     expect(screen.getAllByText('Browser State').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Coordination State').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Identity + Routing').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Policy + Hooks').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Repo-time Enforcement').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('State + Query Health').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Coordination + Routing').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Hook Policy + Audit').length).toBeGreaterThan(0);
+    expect(screen.queryByText('State + Query Health')).not.toBeInTheDocument();
+    expect(screen.queryByText('Coordination + Routing')).not.toBeInTheDocument();
+    expect(screen.queryByText('Hook Policy + Audit')).not.toBeInTheDocument();
     expect(routerSource).toContain("import('@/pages/superuser/SuperuserControlTower')");
+    expect(routerSource).not.toContain('control-tower-v2');
+    expect(screen.queryByText(/control tower v2/i)).not.toBeInTheDocument();
   });
 
-  it('switches the focused-plane explainer when another plane is selected', () => {
-    renderPage();
+  it('lets the first card pull down the live operational readiness section', async () => {
+    await renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Focus Identity + Routing' }));
+    expect(screen.queryByRole('button', { name: /pull down readiness/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /open readiness/i })).not.toBeInTheDocument();
+    expect(screen.getByText('pull out panel')).toBeInTheDocument();
 
-    expect(
-      screen.getByText(
-        /Identity \+ Routing connects active agents, workspace-bound discussions, and ownership clues/i,
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/current routing detail comes from identities and discussions/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText((_, element) =>
-        element?.tagName.toLowerCase() === 'section'
-        && (element.textContent?.includes('Current view state: focused on identity routing') ?? false),
-      ),
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /select browser state/i }));
+
+    expect(screen.queryByText(/backend-owned control plane/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/snapshot loaded/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open runtime' })).toHaveAttribute(
+      'href',
+      '/app/superuser/coordination-runtime',
+    );
+    expect(screen.getByRole('link', { name: 'Inspect routing' })).toHaveAttribute(
+      'href',
+      '/app/superuser/coordination-runtime',
+    );
+    expect(screen.getByRole('link', { name: 'Open runtime summary' })).toHaveAttribute(
+      'href',
+      '/app/superuser/coordination-runtime',
+    );
+    expect(screen.getByRole('link', { name: 'Open plan tracker' })).toHaveAttribute(
+      'href',
+      '/app/superuser/plan-tracker',
+    );
   });
 });

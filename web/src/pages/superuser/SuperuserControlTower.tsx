@@ -1,118 +1,298 @@
-import { useMemo, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import {
-  IconChevronDown,
   IconClipboardList,
   IconCode,
-  IconPlugConnected,
-  IconRefresh,
   IconRoute,
   IconServer,
 } from '@tabler/icons-react';
-import { useIsFetching, useQueryClient } from '@tanstack/react-query';
-import { ErrorAlert } from '@/components/common/ErrorAlert';
-import { WorkbenchPage } from '@/components/common/WorkbenchPage';
+import type { Icon } from '@tabler/icons-react';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
-import { ControlTowerCoordinationPanel } from '@/components/superuser/ControlTowerCoordinationPanel';
-import { ControlTowerHookPolicyPanel } from '@/components/superuser/ControlTowerHookPolicyPanel';
-import { ControlTowerRepoTimePanel } from '@/components/superuser/ControlTowerRepoTimePanel';
-import { ControlTowerStateQueryPanel } from '@/components/superuser/ControlTowerStateQueryPanel';
+import { CollapsibleSurface } from '@/components/superuser/CollapsibleSurface';
+import { OperationalReadinessBootstrapPanel } from '@/components/superuser/OperationalReadinessBootstrapPanel';
+import { OperationalReadinessCheckGrid } from '@/components/superuser/OperationalReadinessCheckGrid';
+import { OperationalReadinessClientPanel } from '@/components/superuser/OperationalReadinessClientPanel';
+import { OperationalReadinessLocalRecoveryPanel } from '@/components/superuser/OperationalReadinessLocalRecoveryPanel';
+import { OperationalReadinessSummary } from '@/components/superuser/OperationalReadinessSummary';
+import type { OperationalReadinessSurface } from '@/lib/operationalReadiness';
+import { ControlTowerV2PageFrame } from '@/components/superuser/ControlTowerV2PageFrame';
 import {
-  PlatformPlanesStrip,
-  type PlatformPlaneDescriptor,
-} from '@/components/superuser/PlatformPlanesStrip';
-import {
-  TOOLBAR_BUTTON_BASE,
-  TOOLBAR_BUTTON_STATES,
-} from '@/lib/toolbar-contract';
-import { cn } from '@/lib/utils';
-import { useCoordinationDiscussionsQuery } from '@/hooks/query/useCoordinationDiscussionsQuery';
-import { useCoordinationIdentitiesQuery } from '@/hooks/query/useCoordinationIdentitiesQuery';
-import { useCoordinationStatusQuery } from '@/hooks/query/useCoordinationStatusQuery';
-import { useOperationalReadinessSnapshotQuery } from '@/hooks/query/useOperationalReadinessSnapshotQuery';
-import { useCoordinationStream } from '@/hooks/useCoordinationStream';
-import { superuserKeys } from '@/lib/queryKeys/superuserKeys';
-import {
-  resetSuperuserControlTowerStore,
-  useSuperuserControlTowerStore,
-  type SuperuserControlTowerGroup,
-  type SuperuserControlTowerPlane,
-} from '@/stores/useSuperuserControlTowerStore';
+  PlatformPlaneCardV2,
+  type PlaneFacet,
+  type PlaneFacetTone,
+} from '@/components/superuser/PlatformPlaneCardV2';
+import { useOperationalReadiness } from '@/hooks/useOperationalReadiness';
+import { usePlatformApiDevRecovery } from '@/hooks/usePlatformApiDevRecovery';
 
-type PlaneDescriptor = PlatformPlaneDescriptor & {
-  explainerTitle: string;
-  explainerBody: string;
-  futureSource: string;
+type PlaneCard = {
+  key: string;
+  label: string;
+  role: string;
+  tone: PlaneFacetTone;
+  icon: Icon;
+  facets: PlaneFacet[];
+  drillLabel?: string;
+  drillPath?: string;
 };
 
-type SectionFrameProps = {
-  eyebrow: string;
-  title: string;
-  description: string;
-  collapsed: boolean;
-  onToggleCollapsed: () => void;
-  actions?: ReactNode;
-  children: ReactNode;
-};
-
-function sectionActionLabel(collapsed: boolean) {
-  return collapsed ? 'Expand section' : 'Collapse section';
+function getEvidenceString(evidence: Record<string, unknown>, key: string): string | null {
+  const value = evidence[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value : null;
 }
 
-function ControlTowerSectionFrame({
-  eyebrow,
-  title,
-  description,
-  collapsed,
-  onToggleCollapsed,
-  actions,
-  children,
-}: SectionFrameProps) {
-  return (
-    <section className="rounded-[28px] border border-border/70 bg-card/80 p-4 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="max-w-3xl">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            {eyebrow}
-          </p>
-          <h2 className="mt-1 text-base font-semibold tracking-tight text-foreground">{title}</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-1">
-          {actions}
-          <button
-            type="button"
-            aria-expanded={!collapsed}
-            aria-label={sectionActionLabel(collapsed)}
-            onClick={onToggleCollapsed}
-            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
-          >
-            <IconChevronDown
-              size={14}
-              stroke={1.8}
-              className={cn('transition-transform', collapsed && '-rotate-90')}
-            />
-            <span>{collapsed ? 'Expand' : 'Collapse'}</span>
-          </button>
-        </div>
-      </div>
+const HOME_PLANES: PlaneCard[] = [
+  {
+    key: 'browser-state',
+    label: 'Browser State',
+    role: 'Boot handshake, readiness, cache',
+    tone: 'healthy',
+    icon: IconServer,
+    facets: [
+      { label: 'Readiness', tone: 'healthy', value: 'pull out panel' },
+      { label: 'Bootstrap', tone: 'muted', value: 'load on select' },
+      { label: 'Queries', tone: 'muted', value: 'no eager fetch' },
+    ],
+  },
+  {
+    key: 'coordination-state',
+    label: 'Coordination State',
+    role: 'Broker, stream bridge, events',
+    tone: 'muted',
+    icon: IconCode,
+    facets: [
+      { label: 'Connection', tone: 'muted', value: 'open runtime' },
+      { label: 'Events', tone: 'muted', value: 'live feed there' },
+      { label: 'Latest', tone: 'muted', value: 'lazy loaded' },
+    ],
+    drillLabel: 'Open runtime',
+    drillPath: '/app/superuser/coordination-runtime',
+  },
+  {
+    key: 'identity-routing',
+    label: 'Identity + Routing',
+    role: 'Agents, discussions, ownership',
+    tone: 'muted',
+    icon: IconRoute,
+    facets: [
+      { label: 'Identities', tone: 'muted', value: 'open runtime' },
+      { label: 'Discussions', tone: 'muted', value: 'routing queue' },
+      { label: 'Routing', tone: 'muted', value: 'inspect there' },
+    ],
+    drillLabel: 'Inspect routing',
+    drillPath: '/app/superuser/coordination-runtime',
+  },
+  {
+    key: 'policy-hooks',
+    label: 'Policy + Hooks',
+    role: 'Hook audit outcomes',
+    tone: 'muted',
+    icon: IconCode,
+    facets: [
+      { label: 'Policy', tone: 'muted', value: 'runtime summary' },
+      { label: 'Hooks', tone: 'muted', value: 'open runtime' },
+      { label: 'Audit', tone: 'muted', value: 'lazy loaded' },
+    ],
+    drillLabel: 'Open runtime summary',
+    drillPath: '/app/superuser/coordination-runtime',
+  },
+  {
+    key: 'repo-time',
+    label: 'Repo-time Enforcement',
+    role: 'Contract + future telemetry',
+    tone: 'muted',
+    icon: IconClipboardList,
+    facets: [
+      { label: 'Status', tone: 'muted', value: 'contract visible' },
+      { label: 'Source', tone: 'muted', value: 'HOOK_AUDIT (tbd)' },
+    ],
+    drillLabel: 'Open plan tracker',
+    drillPath: '/app/superuser/plan-tracker',
+  },
+];
 
-      {!collapsed ? <div className="mt-4">{children}</div> : null}
+const DEFAULT_BROWSER_STATE = {
+  tone: 'healthy' as PlaneFacetTone,
+  facets: [
+    { label: 'Readiness', tone: 'healthy' as PlaneFacetTone, value: 'pull out panel' },
+    { label: 'Bootstrap', tone: 'muted' as PlaneFacetTone, value: 'load on select' },
+    { label: 'Queries', tone: 'muted' as PlaneFacetTone, value: 'no eager fetch' },
+  ],
+};
+
+type SurfaceHeader = {
+  summary: string;
+  tone: 'healthy' | 'watch' | 'alert' | 'muted';
+  worstChild: { label: string; hint?: string; tone: 'watch' | 'alert' } | null;
+  defaultOpen: boolean;
+};
+
+function deriveSurfaceHeader(surface: OperationalReadinessSurface): SurfaceHeader {
+  const { ok, warn, fail, unknown } = surface.summary;
+  const total = ok + warn + fail + unknown;
+
+  const tone: SurfaceHeader['tone'] =
+    fail > 0 ? 'alert' : warn > 0 || unknown > 0 ? 'watch' : total > 0 ? 'healthy' : 'muted';
+
+  const summary =
+    warn === 0 && fail === 0 && unknown === 0
+      ? `${ok}/${total} ok`
+      : [
+          `${total} check${total === 1 ? '' : 's'}`,
+          warn > 0 ? `${warn} warn` : null,
+          fail > 0 ? `${fail} fail` : null,
+          unknown > 0 ? `${unknown} unknown` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ');
+
+  const failing = surface.checks.find((check) => check.status === 'fail');
+  const warning = surface.checks.find((check) => check.status === 'warn');
+  const worstCheck = failing ?? warning ?? null;
+  const worstChild = worstCheck
+    ? {
+        label: worstCheck.label,
+        hint: worstCheck.remediation ? `→ ${worstCheck.remediation}` : undefined,
+        tone: (failing ? 'alert' : 'watch') as 'watch' | 'alert',
+      }
+    : null;
+
+  return {
+    summary,
+    tone,
+    worstChild,
+    defaultOpen: Boolean(failing),
+  };
+}
+
+function EmbeddedOperationalReadinessSection({
+  onBrowserStateChange,
+}: {
+  onBrowserStateChange: (state: { tone: PlaneFacetTone; facets: PlaneFacet[] }) => void;
+}) {
+  const {
+    error,
+    refreshedAt,
+    bootstrap,
+    summary,
+    surfaces,
+    clientDiagnostics,
+    actionStates,
+    checkDetails,
+    executeAction,
+    loadCheckDetail,
+    verifyCheck,
+    refresh,
+  } = useOperationalReadiness();
+  const devRecovery = usePlatformApiDevRecovery({
+    onRecovered: refresh,
+  });
+
+  const runtimeIdentityCheck = surfaces
+    .find((surface) => surface.id === 'shared')
+    ?.checks.find((check) => check.check_id === 'shared.platform_api.ready');
+  const runtimeIdentityEvidence =
+    runtimeIdentityCheck && typeof runtimeIdentityCheck.evidence === 'object' && runtimeIdentityCheck.evidence !== null
+      ? runtimeIdentityCheck.evidence
+      : {};
+  const runtimeIdentity = {
+    runtimeEnvironment: getEvidenceString(runtimeIdentityEvidence, 'runtime_environment'),
+    serviceName: getEvidenceString(runtimeIdentityEvidence, 'service_name'),
+    revisionName: getEvidenceString(runtimeIdentityEvidence, 'revision_name'),
+    configurationName: getEvidenceString(runtimeIdentityEvidence, 'configuration_name'),
+    serviceAccountEmail: getEvidenceString(runtimeIdentityEvidence, 'service_account_email'),
+  };
+
+  useEffect(() => {
+    const failCount = summary?.fail ?? 0;
+    const warnCount = summary?.warn ?? 0;
+    const unknownCount = summary?.unknown ?? 0;
+    const nextTone: PlaneFacetTone =
+      error || failCount > 0
+        ? 'alert'
+        : warnCount > 0 || unknownCount > 0 || !bootstrap.snapshot_available
+          ? 'watch'
+          : 'healthy';
+
+    onBrowserStateChange({
+      tone: nextTone,
+      facets: [
+        {
+          label: 'Readiness',
+          tone: bootstrap.snapshot_available ? 'healthy' : nextTone,
+          value: bootstrap.snapshot_available ? 'snapshot loaded' : bootstrap.diagnosis_title,
+        },
+        {
+          label: 'Bootstrap',
+          tone: bootstrap.snapshot_available ? 'healthy' : nextTone,
+          value: bootstrap.diagnosis_title,
+        },
+        {
+          label: 'Queries',
+          tone: summary ? nextTone : 'muted',
+          value: summary
+            ? `${summary.ok} ok - ${summary.warn} warn - ${summary.fail} fail`
+            : 'loading...',
+        },
+      ],
+    });
+  }, [bootstrap.diagnosis_title, bootstrap.snapshot_available, error, onBrowserStateChange, summary]);
+
+  return (
+    <section className="rounded-[28px] border border-border/70 bg-card/75 shadow-sm">
+      <div className="space-y-5 px-4 py-5 md:px-6">
+        {!bootstrap.snapshot_available || error ? (
+          <OperationalReadinessBootstrapPanel bootstrap={bootstrap} error={error} />
+        ) : null}
+
+        {devRecovery.enabled ? (
+          <OperationalReadinessLocalRecoveryPanel
+            loading={devRecovery.loading}
+            recovering={devRecovery.recovering}
+            error={devRecovery.error}
+            status={devRecovery.status}
+            lastRecovery={devRecovery.lastRecovery}
+            onRecover={devRecovery.recover}
+          />
+        ) : null}
+
+        {bootstrap.snapshot_available && summary ? (
+          <>
+            <OperationalReadinessSummary
+              summary={summary}
+              refreshedAt={refreshedAt}
+              runtimeIdentity={runtimeIdentity}
+            />
+
+            <div className="space-y-2">
+              {surfaces.map((surface) => {
+                const header = deriveSurfaceHeader(surface);
+                return (
+                  <CollapsibleSurface
+                    key={surface.id}
+                    title={surface.label}
+                    summary={header.summary}
+                    tone={header.tone}
+                    worstChild={header.worstChild}
+                    defaultOpen={header.defaultOpen}
+                  >
+                    <OperationalReadinessCheckGrid
+                      surface={surface}
+                      actionStates={actionStates}
+                      detailStates={checkDetails}
+                      onExecuteAction={executeAction}
+                      onLoadCheckDetail={loadCheckDetail}
+                      onVerifyCheck={verifyCheck}
+                    />
+                  </CollapsibleSurface>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
+
+        <OperationalReadinessClientPanel diagnostics={clientDiagnostics} />
+      </div>
     </section>
   );
-}
-
-function toneFromReadiness(
-  failCount: number,
-  warnCount: number,
-): PlaneDescriptor['statusTone'] {
-  if (failCount > 0) return 'alert';
-  if (warnCount > 0) return 'watch';
-  return 'healthy';
-}
-
-function formatSelectedPlaneLabel(value: SuperuserControlTowerPlane) {
-  return value.replace(/-/g, ' ');
 }
 
 export function Component() {
@@ -121,348 +301,55 @@ export function Component() {
     breadcrumbs: ['Superuser', 'Control Tower'],
   });
 
-  const queryClient = useQueryClient();
-  const selectedPlane = useSuperuserControlTowerStore((state) => state.selectedPlane);
-  const setSelectedPlane = useSuperuserControlTowerStore((state) => state.setSelectedPlane);
-  const collapsedGroups = useSuperuserControlTowerStore((state) => state.collapsedGroups);
-  const toggleGroupCollapsed = useSuperuserControlTowerStore((state) => state.toggleGroupCollapsed);
-  const panelPreferences = useSuperuserControlTowerStore((state) => state.panelPreferences);
-  const setPanelPreference = useSuperuserControlTowerStore((state) => state.setPanelPreference);
-
-  const readinessQuery = useOperationalReadinessSnapshotQuery();
-  const coordinationStatusQuery = useCoordinationStatusQuery();
-  const coordinationIdentitiesQuery = useCoordinationIdentitiesQuery({ includeStale: true });
-  const coordinationDiscussionsQuery = useCoordinationDiscussionsQuery({ status: 'all', limit: 50 });
-  const fetchingCount = useIsFetching({ queryKey: superuserKeys.all });
-  const coordinationStream = useCoordinationStream({ limit: 12 });
-
-  const readinessSummary = readinessQuery.data?.snapshot?.summary;
-  const hookAudit = coordinationStatusQuery.data?.hook_audit_summary;
-  const superuserQueries = queryClient.getQueryCache().findAll({ queryKey: superuserKeys.all });
-  const staleQueries = superuserQueries.filter((query) => query.isStale()).length;
-
-  const planeDescriptors = useMemo<PlaneDescriptor[]>(() => {
-    const readinessFail = readinessSummary?.fail ?? 0;
-    const readinessWarn = readinessSummary?.warn ?? 0;
-    const readinessTone = readinessQuery.isError
-      ? 'alert'
-      : readinessSummary
-        ? toneFromReadiness(readinessFail, readinessWarn)
-        : readinessQuery.isLoading
-          ? 'muted'
-          : 'watch';
-
-    return [
-      {
-        planeId: 'browser-state',
-        label: 'Browser State',
-        role: 'Query bootstrap and browser-owned runtime targeting',
-        status: readinessQuery.isLoading ? 'loading' : readinessQuery.isError ? 'error' : readinessQuery.data?.bootstrap.diagnosis_title ?? 'ready',
-        statusTone: readinessTone,
-        datumLabel: 'Latest datum',
-        datumValue: readinessQuery.data?.bootstrap.diagnosis_summary ?? 'Waiting for readiness bootstrap to settle.',
-        drillLabel: 'Open readiness',
-        drillPath: '/app/superuser/operational-readiness',
-        icon: IconServer,
-        explainerTitle: 'Browser State is where the control tower proves the frontend is talking to the right backend seam.',
-        explainerBody:
-          'This plane combines the readiness bootstrap diagnosis, the authoritative snapshot, and the slice-scoped query family so the operator can tell whether the browser is aligned before reading anything deeper.',
-        futureSource: 'Future detail continues to come from readiness checks and the shared query family, not from mirrored client state.',
-      },
-      {
-        planeId: 'coordination-state',
-        label: 'Coordination State',
-        role: 'Broker health, stream bridge posture, and current event flow',
-        status: coordinationStatusQuery.isLoading ? 'loading' : coordinationStream.connectionState,
-        statusTone: coordinationStream.connectionState === 'connected'
-          ? 'healthy'
-          : coordinationStream.connectionState === 'error'
-            ? 'alert'
-            : coordinationStream.connectionState === 'degraded'
-              ? 'watch'
-              : 'muted',
-        datumLabel: 'Latest datum',
-        datumValue: coordinationStream.error ?? `Stream bridge ${coordinationStream.connectionState}`,
-        drillLabel: 'Open runtime',
-        drillPath: '/app/superuser/coordination-runtime',
-        icon: IconPlugConnected,
-        explainerTitle: 'Coordination State keeps the live runtime substrate visible without forcing it into a polling abstraction.',
-        explainerBody:
-          'The control tower treats the coordination bridge as a live seam: status and counts come from TanStack Query, while the event line remains an SSE surface through useCoordinationStream.',
-        futureSource: 'Future richness here comes from additional event metadata, not from collapsing the stream into query snapshots.',
-      },
-      {
-        planeId: 'identity-routing',
-        label: 'Identity + Routing',
-        role: 'Who is present, who owns work, and where discussion routes land',
-        status: coordinationIdentitiesQuery.isLoading ? 'loading' : 'live',
-        statusTone: coordinationIdentitiesQuery.isError || coordinationDiscussionsQuery.isError
-          ? 'alert'
-          : 'healthy',
-        datumLabel: 'Latest datum',
-        datumValue: `${coordinationIdentitiesQuery.data?.summary.active_count ?? 0} identities / ${coordinationDiscussionsQuery.data?.summary.thread_count ?? 0} discussions`,
-        drillLabel: 'Inspect routing',
-        drillPath: '/app/superuser/coordination-runtime',
-        icon: IconRoute,
-        explainerTitle: 'Identity + Routing connects active agents, workspace-bound discussions, and ownership clues into one legible operator surface.',
-        explainerBody:
-          'This plane answers the “who is here, where is work flowing, and what path currently owns the conversation?” question without making the operator leave the homepage first.',
-        futureSource: 'The current routing detail comes from identities and discussions; richer ownership timelines can arrive later from the same coordination substrate.',
-      },
-      {
-        planeId: 'policy-hooks',
-        label: 'Policy + Hooks',
-        role: 'Hook audit summary, current policy posture, and explicit instrumentation limits',
-        status: coordinationStatusQuery.isLoading ? 'loading' : hookAudit?.state ?? 'not yet instrumented',
-        statusTone: hookAudit?.error_count ? 'alert' : hookAudit?.warn_count ? 'watch' : 'muted',
-        datumLabel: 'Latest datum',
-        datumValue: hookAudit
-          ? `${hookAudit.allow_count} allow / ${hookAudit.warn_count} warn / ${hookAudit.block_count} block`
-          : 'Hook rows are not yet instrumented on this homepage.',
-        drillLabel: 'Open runtime summary',
-        drillPath: '/app/superuser/coordination-runtime',
-        icon: IconCode,
-        explainerTitle: 'Policy + Hooks is intentionally honest about the line between summary data and missing detail.',
-        explainerBody:
-          'The plane surfaces current hook-audit counts when they exist, but it does not pretend the homepage has record-level hook detail before that telemetry actually lands.',
-        futureSource: 'This plane becomes richer when hook audit rows and outcomes are published beyond the current summary contract.',
-      },
-      {
-        planeId: 'repo-time-enforcement',
-        label: 'Repo-time Enforcement',
-        role: 'Visible contract boundary for repo-side checks and future enforcement telemetry',
-        status: 'contract visible',
-        statusTone: 'muted',
-        datumLabel: 'Latest datum',
-        datumValue: 'Not yet instrumented; future live source is the HOOK_AUDIT stream.',
-        drillLabel: 'Open plan tracker',
-        drillPath: '/app/superuser/plan-tracker',
-        icon: IconClipboardList,
-        explainerTitle: 'Repo-time Enforcement stays visible on day one so the operator sees the boundary before the runtime signal exists.',
-        explainerBody:
-          'This plane is contract-oriented for now. It tells the truth about where enforcement currently lives and what telemetry source will turn the plane into a live operational surface later.',
-        futureSource: 'Future live evidence should come from repo-time checks emitting into HOOKS.CHECK and HOOK_AUDIT on the coordination substrate.',
-      },
-    ];
-  }, [
-    coordinationDiscussionsQuery.data?.summary.thread_count,
-    coordinationDiscussionsQuery.isError,
-    coordinationIdentitiesQuery.data?.summary.active_count,
-    coordinationIdentitiesQuery.isError,
-    coordinationStatusQuery.data?.hook_audit_summary,
-    coordinationStatusQuery.isLoading,
-    coordinationStream.connectionState,
-    coordinationStream.error,
-    hookAudit,
-    readinessQuery.data,
-    readinessQuery.isError,
-    readinessQuery.isLoading,
-    readinessSummary,
-  ]);
-
-  const selectedPlaneDescriptor =
-    planeDescriptors.find((plane) => plane.planeId === selectedPlane) ?? planeDescriptors[0];
-
-  const querySummary = {
-    total: superuserQueries.length,
-    fetching: fetchingCount,
-    stale: staleQueries,
-    fresh: Math.max(superuserQueries.length - staleQueries, 0),
-  };
-
-  const storeSummary = {
-    selectedPlane,
-    expandedGroups: (Object.values(collapsedGroups) as boolean[]).filter((value) => !value).length,
-    enabledPanels: (Object.values(panelPreferences) as boolean[]).filter(Boolean).length,
-  };
-
-  const primaryErrorMessage = [
-    readinessQuery.error,
-    coordinationStatusQuery.error,
-    coordinationIdentitiesQuery.error,
-    coordinationDiscussionsQuery.error,
-  ]
-    .find(Boolean);
-
-  const isRefreshing = fetchingCount > 0;
+  const [expandedPanel, setExpandedPanel] = useState<'operational-readiness' | null>(null);
+  const [browserState, setBrowserState] = useState(DEFAULT_BROWSER_STATE);
+  const planes = HOME_PLANES.map((plane) =>
+    plane.key === 'browser-state'
+      ? {
+          ...plane,
+          tone: browserState.tone,
+          facets: browserState.facets,
+        }
+      : plane,
+  );
 
   return (
-    <WorkbenchPage
-      eyebrow="Warm Operator Atlas"
-      title="Superuser Control Tower"
-      description="A dedicated superuser homepage for learning the platform in the same order every visit: browser state first, coordination and routing second, policy and repo-time boundaries always visible."
-      actions={(
-        <>
-          <button
-            type="button"
-            onClick={() => {
-              void queryClient.invalidateQueries({ queryKey: superuserKeys.all });
-            }}
-            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
-          >
-            <IconRefresh
-              size={14}
-              stroke={1.8}
-              className={cn(isRefreshing && 'animate-spin')}
-            />
-            <span>{isRefreshing ? 'Refreshing' : 'Refresh state'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => resetSuperuserControlTowerStore()}
-            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
-          >
-            <span>Reset view state</span>
-          </button>
-        </>
-      )}
+    <ControlTowerV2PageFrame
+      eyebrow="Operator Console"
+      title="Control Tower"
+      description="Five coordination state cards up top. Select Browser State to pull down the full operational-readiness surface without leaving the superuser homepage."
+      hideHeader
       contentClassName="min-h-full bg-background pb-8"
     >
-      {primaryErrorMessage ? <ErrorAlert message={primaryErrorMessage.message} /> : null}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {planes.map((plane) => {
+          const readinessSelected = plane.key === 'browser-state' && expandedPanel === 'operational-readiness';
 
-      <PlatformPlanesStrip
-        planes={planeDescriptors}
-        selectedPlane={selectedPlane}
-        onSelectPlane={setSelectedPlane}
-        connectionLabels={['reads runtime', 'routes work', 'governs hooks', 'enforced in repo']}
-      />
+          return (
+            <PlatformPlaneCardV2
+              key={plane.key}
+              label={plane.label}
+              role={plane.role}
+              tone={plane.tone}
+              icon={plane.icon}
+              facets={plane.facets}
+              drillLabel={plane.drillLabel}
+              drillPath={plane.drillPath}
+              selected={readinessSelected}
+              onSelect={
+                plane.key === 'browser-state'
+                  ? () => setExpandedPanel('operational-readiness')
+                  : undefined
+              }
+              selectLabel={plane.key === 'browser-state' ? 'Select Browser State' : undefined}
+            />
+          );
+        })}
+      </div>
 
-      {panelPreferences.showPlaneExplainer ? (
-        <section className="rounded-[26px] border border-border/70 bg-card/80 p-4 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="max-w-3xl">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                Focused Plane Explainer
-              </p>
-              <h2 className="mt-1 text-base font-semibold tracking-tight text-foreground">
-                {selectedPlaneDescriptor.label}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {selectedPlaneDescriptor.explainerTitle}
-              </p>
-            </div>
-            <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {selectedPlaneDescriptor.status}
-            </span>
-          </div>
-
-          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-            <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
-              <p className="text-sm leading-6 text-foreground">{selectedPlaneDescriptor.explainerBody}</p>
-            </div>
-            <div className="space-y-3">
-              <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                  Future live source
-                </p>
-                <p className="mt-2 text-sm text-foreground">{selectedPlaneDescriptor.futureSource}</p>
-              </div>
-              <Link
-                to={selectedPlaneDescriptor.drillPath}
-                className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive, 'self-start')}
-              >
-                <span>{selectedPlaneDescriptor.drillLabel}</span>
-              </Link>
-            </div>
-          </div>
-        </section>
+      {expandedPanel === 'operational-readiness' ? (
+        <EmbeddedOperationalReadinessSection onBrowserStateChange={setBrowserState} />
       ) : null}
-
-      <ControlTowerSectionFrame
-        eyebrow="Row 1"
-        title="State + Query Health"
-        description="This row stays closest to browser/application state: readiness, query cache posture, and the thin Zustand slice that controls the operator view."
-        collapsed={collapsedGroups['state-query-health']}
-        onToggleCollapsed={() => toggleGroupCollapsed('state-query-health')}
-        actions={(
-          <button
-            type="button"
-            aria-pressed={panelPreferences.showQueryDetails}
-            onClick={() => setPanelPreference('showQueryDetails', !panelPreferences.showQueryDetails)}
-            className={cn(
-              TOOLBAR_BUTTON_BASE,
-              panelPreferences.showQueryDetails ? TOOLBAR_BUTTON_STATES.active : TOOLBAR_BUTTON_STATES.inactive,
-            )}
-          >
-            <span>Query detail</span>
-          </button>
-        )}
-      >
-        <ControlTowerStateQueryPanel
-          loading={readinessQuery.isLoading}
-          refreshing={isRefreshing}
-          readiness={readinessQuery.data}
-          errorMessage={readinessQuery.error?.message ?? null}
-          querySummary={querySummary}
-          storeSummary={storeSummary}
-          showQueryDetails={panelPreferences.showQueryDetails}
-        />
-      </ControlTowerSectionFrame>
-
-      <ControlTowerSectionFrame
-        eyebrow="Row 2"
-        title="Coordination + Routing"
-        description="The infrastructural row: live bridge posture, identities, discussions, and current routing ownership without hiding the quiet periods."
-        collapsed={collapsedGroups['coordination-routing']}
-        onToggleCollapsed={() => toggleGroupCollapsed('coordination-routing')}
-        actions={(
-          <button
-            type="button"
-            aria-pressed={panelPreferences.showCoordinationTimeline}
-            onClick={() => setPanelPreference('showCoordinationTimeline', !panelPreferences.showCoordinationTimeline)}
-            className={cn(
-              TOOLBAR_BUTTON_BASE,
-              panelPreferences.showCoordinationTimeline ? TOOLBAR_BUTTON_STATES.active : TOOLBAR_BUTTON_STATES.inactive,
-            )}
-          >
-            <span>Timeline</span>
-          </button>
-        )}
-      >
-        <ControlTowerCoordinationPanel
-          loading={coordinationStatusQuery.isLoading || coordinationIdentitiesQuery.isLoading || coordinationDiscussionsQuery.isLoading}
-          status={coordinationStatusQuery.data ?? null}
-          identities={coordinationIdentitiesQuery.data ?? null}
-          discussions={coordinationDiscussionsQuery.data ?? null}
-          connectionState={coordinationStream.connectionState}
-          streamError={coordinationStream.error ?? coordinationStream.disabledReason}
-          showTimeline={panelPreferences.showCoordinationTimeline}
-          events={coordinationStream.events}
-        />
-      </ControlTowerSectionFrame>
-
-      <ControlTowerSectionFrame
-        eyebrow="Row 3"
-        title="Hook Policy + Audit"
-        description="The final row stays explicit about partial instrumentation. Hook summary and repo-time enforcement remain visible, but they never fake detail that does not exist yet."
-        collapsed={collapsedGroups['hook-policy-audit']}
-        onToggleCollapsed={() => toggleGroupCollapsed('hook-policy-audit')}
-        actions={(
-          <button
-            type="button"
-            aria-pressed={panelPreferences.showRepoTimeNotes}
-            onClick={() => setPanelPreference('showRepoTimeNotes', !panelPreferences.showRepoTimeNotes)}
-            className={cn(
-              TOOLBAR_BUTTON_BASE,
-              panelPreferences.showRepoTimeNotes ? TOOLBAR_BUTTON_STATES.active : TOOLBAR_BUTTON_STATES.inactive,
-            )}
-          >
-            <span>Repo-time notes</span>
-          </button>
-        )}
-      >
-        <div className="grid gap-4 xl:grid-cols-2">
-          <ControlTowerHookPolicyPanel
-            loading={coordinationStatusQuery.isLoading}
-            status={coordinationStatusQuery.data ?? null}
-          />
-          <ControlTowerRepoTimePanel showNotes={panelPreferences.showRepoTimeNotes} />
-        </div>
-      </ControlTowerSectionFrame>
-
-      <section className="rounded-[24px] border border-dashed border-border/70 bg-card/70 px-4 py-3 text-sm text-muted-foreground">
-        Current view state: focused on <span className="font-medium capitalize text-foreground">{formatSelectedPlaneLabel(selectedPlane)}</span>, with {(Object.keys(collapsedGroups) as SuperuserControlTowerGroup[]).filter((group) => !collapsedGroups[group]).length} open rows and {querySummary.fetching} active fetches.
-      </section>
-    </WorkbenchPage>
+    </ControlTowerV2PageFrame>
   );
 }

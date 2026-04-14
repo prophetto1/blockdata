@@ -31,6 +31,7 @@ type SettingsPageFrameProps = {
   description?: string;
   headerAction?: ReactNode;
   toolbar?: ReactNode;
+  hideHeader?: boolean;
   children: ReactNode;
   bodyClassName?: string;
   headerVariant?: 'default' | 'admin';
@@ -41,6 +42,7 @@ export function SettingsPageFrame({
   description,
   headerAction,
   toolbar,
+  hideHeader = false,
   children,
   bodyClassName,
   headerVariant = 'default',
@@ -49,34 +51,36 @@ export function SettingsPageFrame({
 
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-background">
-      <header
-        className={cn(
-          'flex justify-between gap-3 border-b border-border bg-muted/30',
-          isAdminVariant ? 'min-h-[4.75rem] items-center px-5 py-3' : 'items-start px-4 py-2',
-        )}
-      >
-        <div className="min-w-0">
-          <h2
-            className={cn(
-              'truncate font-semibold text-foreground',
-              isAdminVariant ? 'text-base leading-6' : 'text-sm',
-            )}
-          >
-            {title}
-          </h2>
-          {description && (
-            <p
+      {!hideHeader ? (
+        <header
+          className={cn(
+            'flex justify-between gap-3 border-b border-border bg-muted/30',
+            isAdminVariant ? 'min-h-[4.75rem] items-center px-5 py-3' : 'items-start px-4 py-2',
+          )}
+        >
+          <div className="min-w-0">
+            <h2
               className={cn(
-                'text-muted-foreground',
-                isAdminVariant ? 'mt-1 text-sm leading-5' : 'mt-0.5 text-xs',
+                'truncate font-semibold text-foreground',
+                isAdminVariant ? 'text-base leading-6' : 'text-sm',
               )}
             >
-              {description}
-            </p>
-          )}
-        </div>
-        {headerAction}
-      </header>
+              {title}
+            </h2>
+            {description && (
+              <p
+                className={cn(
+                  'text-muted-foreground',
+                  isAdminVariant ? 'mt-1 text-sm leading-5' : 'mt-0.5 text-xs',
+                )}
+              >
+                {description}
+              </p>
+            )}
+          </div>
+          {headerAction}
+        </header>
+      ) : null}
 
       <div className={cn('min-h-0 flex-1 overflow-y-auto bg-background p-3 md:p-4', bodyClassName)}>
         {toolbar && (

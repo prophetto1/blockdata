@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const repoRoot = path.resolve(import.meta.dirname, "..", "..");
-const composePath = path.join(repoRoot, "scripts", "openmemory-local.compose.yaml");
+const composePath = path.join(repoRoot, "docker", "openmemory", "openmemory-local.compose.yaml");
 const ensureScriptPath = path.join(repoRoot, "scripts", "openmemory-local-ensure.ps1");
 
 function readText(filePath) {
