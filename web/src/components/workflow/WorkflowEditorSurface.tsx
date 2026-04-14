@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { addEdge, type Connection, type Edge, type Node, useEdgesState, useNodesState } from '@xyflow/react';
-import { IconRefresh } from '@tabler/icons-react';
+import { MarkerType, addEdge, type Connection, type Edge, type Node, useEdgesState, useNodesState } from '@xyflow/react';
 import FlowCanvas, { type FlowNodeData } from '@/components/flows/FlowCanvas';
+import { WorkflowNodePalette } from '@/components/workflow/WorkflowNodePalette';
+import { WorkflowNodeInspector } from '@/components/workflow/WorkflowNodeInspector';
 
 type WorkflowNodeKind = NonNullable<FlowNodeData['kind']>;
 
@@ -30,22 +31,21 @@ const KIND_CONFIG: Record<WorkflowNodeKind, { title: string; body: string }> = {
   },
 };
 
-function createNode(kind: WorkflowNodeKind, index: number): Node<FlowNodeData> {
-  const config = KIND_CONFIG[kind];
-  const sequence = index + 1;
+function makeNodeId(kind: WorkflowNodeKind): string {
+  return `${kind}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
 
+function createNodeAt(kind: WorkflowNodeKind, position: { x: number; y: number }, variant: 'start' | 'default' = 'default'): Node<FlowNodeData> {
+  const config = KIND_CONFIG[kind];
   return {
-    id: `${kind}-${Date.now()}-${sequence}`,
+    id: makeNodeId(kind),
     type: 'pmNode',
-    position: {
-      x: 140 + (index % 3) * 260,
-      y: 140 + Math.floor(index / 3) * 190,
-    },
+    position,
     data: {
-      title: `${config.title} ${sequence}`,
+      title: config.title,
       body: config.body,
       kind,
-      variant: index === 0 ? 'start' : 'default',
+      variant,
       status: 'default',
     },
   };
@@ -53,24 +53,21 @@ function createNode(kind: WorkflowNodeKind, index: number): Node<FlowNodeData> {
 
 function createDefaultSnapshot(): WorkflowSnapshot {
   const nodes = [
-    createNode('object', 0),
-    createNode('skill', 1),
-    createNode('prompt', 2),
+    createNodeAt('object', { x: 140, y: 140 }, 'start'),
+    createNodeAt('skill',  { x: 400, y: 140 }),
+    createNodeAt('prompt', { x: 660, y: 140 }),
   ];
+
+  const edgeBase = {
+    type: 'smoothstep',
+    markerEnd: { type: MarkerType.ArrowClosed },
+  } as const;
 
   return {
     nodes,
     edges: [
-      {
-        id: `edge-${nodes[1]?.id}-${nodes[0]?.id}`,
-        source: nodes[1]?.id ?? 'skill',
-        target: nodes[0]?.id ?? 'object',
-      },
-      {
-        id: `edge-${nodes[2]?.id}-${nodes[0]?.id}`,
-        source: nodes[2]?.id ?? 'prompt',
-        target: nodes[0]?.id ?? 'object',
-      },
+      { id: `edge-${nodes[1].id}-${nodes[0].id}`, source: nodes[1].id, target: nodes[0].id, ...edgeBase },
+      { id: `edge-${nodes[2].id}-${nodes[0].id}`, source: nodes[2].id, target: nodes[0].id, ...edgeBase },
     ],
   };
 }
@@ -82,9 +79,7 @@ function readSnapshot(storageKey: string): WorkflowSnapshot {
 
   try {
     const raw = window.localStorage.getItem(storageKey);
-    if (!raw) {
-      return createDefaultSnapshot();
-    }
+    if (!raw) return createDefaultSnapshot();
 
     const parsed = JSON.parse(raw) as Partial<WorkflowSnapshot>;
     if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges) || parsed.nodes.length === 0) {
@@ -98,27 +93,6 @@ function readSnapshot(storageKey: string): WorkflowSnapshot {
   } catch {
     return createDefaultSnapshot();
   }
-}
-
-type CanvasActionButtonProps = {
-  ariaLabel: string;
-  title: string;
-  text: string;
-  onClick: () => void;
-};
-
-function CanvasActionButton({ ariaLabel, title, text, onClick }: CanvasActionButtonProps) {
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      title={title}
-      onClick={onClick}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card/95 text-[11px] font-semibold text-foreground shadow-sm transition hover:bg-accent hover:text-accent-foreground"
-    >
-      <span aria-hidden>{text}</span>
-    </button>
-  );
 }
 
 export function WorkflowEditorSurface({
@@ -147,28 +121,34 @@ export function WorkflowEditorSurface({
     [nodes, selectedNodeId],
   );
 
+  const selectedConnectionCount = useMemo(() => {
+    if (!selectedNodeId) return 0;
+    return edges.filter((edge) => edge.source === selectedNodeId || edge.target === selectedNodeId).length;
+  }, [edges, selectedNodeId]);
+
   const handleConnect = useCallback((connection: Connection) => {
     setEdges((existingEdges) => addEdge(connection, existingEdges));
   }, [setEdges]);
 
-  const handleAddNode = useCallback((kind: WorkflowNodeKind) => {
-    setNodes((existingNodes) => {
-      const nextNode = createNode(kind, existingNodes.length);
-      setSelectedNodeId(nextNode.id);
-      return [...existingNodes, nextNode];
-    });
+  const insertNode = useCallback((kind: WorkflowNodeKind, position: { x: number; y: number }) => {
+    const next = createNodeAt(kind, position);
+    setNodes((existingNodes) => [...existingNodes, next]);
+    setSelectedNodeId(next.id);
   }, [setNodes]);
 
-  const handleResetCanvas = useCallback(() => {
-    const nextSnapshot = createDefaultSnapshot();
-    setNodes(nextSnapshot.nodes);
-    setEdges(nextSnapshot.edges);
-    setSelectedNodeId(nextSnapshot.nodes[0]?.id ?? null);
-  }, [setEdges, setNodes]);
+  const handleAddNode = useCallback((kind: WorkflowNodeKind) => {
+    // Click-to-add: drop near the middle of the visible range based on current graph bounds.
+    const offset = nodes.length * 24;
+    insertNode(kind, { x: 220 + (offset % 480), y: 200 + (offset % 260) });
+  }, [insertNode, nodes.length]);
+
+  const handleNodeDrop = useCallback((kind: string, position: { x: number; y: number }) => {
+    if (kind !== 'object' && kind !== 'skill' && kind !== 'prompt') return;
+    insertNode(kind, position);
+  }, [insertNode]);
 
   const handleDeleteSelectedNode = useCallback(() => {
     if (!selectedNodeId) return;
-
     setNodes((existingNodes) => existingNodes.filter((node) => node.id !== selectedNodeId));
     setEdges((existingEdges) =>
       existingEdges.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId));
@@ -177,16 +157,9 @@ export function WorkflowEditorSurface({
 
   const updateSelectedNode = useCallback((patch: Partial<FlowNodeData>) => {
     if (!selectedNodeId) return;
-
     setNodes((existingNodes) => existingNodes.map((node) =>
       node.id === selectedNodeId
-        ? {
-            ...node,
-            data: {
-              ...node.data,
-              ...patch,
-            },
-          }
+        ? { ...node, data: { ...node.data, ...patch } }
         : node));
   }, [selectedNodeId, setNodes]);
 
@@ -199,64 +172,49 @@ export function WorkflowEditorSurface({
     });
   }, [selectedNode, updateSelectedNode]);
 
-  const renderedNodes = useMemo(() => nodes.map((node) => {
-    const isExpanded = node.id === selectedNodeId;
-    const connectionCount = edges.filter((edge) => edge.source === node.id || edge.target === node.id).length;
-
-    return {
-      ...node,
-      data: {
-        ...node.data,
-        expanded: isExpanded,
-        connectionCount,
-        onTitleChange: isExpanded ? (value: string) => updateSelectedNode({ title: value }) : undefined,
-        onBodyChange: isExpanded ? (value: string) => updateSelectedNode({ body: value }) : undefined,
-        onKindChange: isExpanded ? handleKindChange : undefined,
-        onDelete: isExpanded ? handleDeleteSelectedNode : undefined,
-        onCollapse: isExpanded ? () => setSelectedNodeId(null) : undefined,
-      },
-    };
-  }), [edges, handleDeleteSelectedNode, handleKindChange, nodes, selectedNodeId, updateSelectedNode]);
+  const renderedNodes = useMemo(() => nodes.map((node) => ({
+    ...node,
+    data: {
+      ...node.data,
+      expanded: false,
+      onDelete: node.id === selectedNodeId ? handleDeleteSelectedNode : undefined,
+    },
+  })), [handleDeleteSelectedNode, nodes, selectedNodeId]);
 
   return (
-    <div className="relative h-full min-h-[560px] overflow-hidden rounded-md border border-border bg-card">
-      <div className="h-full min-h-0" data-testid={canvasTestId}>
-        <FlowCanvas
-          nodes={renderedNodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={handleConnect}
-          onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-          onPaneClick={() => setSelectedNodeId(null)}
-          interactiveControls
+    <div className="flex h-full min-h-[560px] flex-col overflow-hidden rounded-md border border-border bg-card">
+      <div className="flex items-center gap-2 border-b border-border bg-card/80 px-3 py-1.5 text-[11px] text-muted-foreground">
+        <span className="font-medium text-foreground">{nodes.length}</span>
+        <span>{nodes.length === 1 ? 'node' : 'nodes'}</span>
+        <span className="text-border">/</span>
+        <span>{selectedNode ? 'node selected' : 'canvas idle'}</span>
+      </div>
+
+      <div className="flex min-h-0 flex-1">
+        <WorkflowNodePalette onAddNode={handleAddNode} />
+
+        <div className="relative min-w-0 flex-1" data-testid={canvasTestId}>
+          <FlowCanvas
+            nodes={renderedNodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={handleConnect}
+            onNodeDrop={handleNodeDrop}
+            onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+            onPaneClick={() => setSelectedNodeId(null)}
+            interactiveControls
+          />
+        </div>
+
+        <WorkflowNodeInspector
+          node={selectedNode}
+          connectionCount={selectedConnectionCount}
+          onTitleChange={(value) => updateSelectedNode({ title: value })}
+          onBodyChange={(value) => updateSelectedNode({ body: value })}
+          onKindChange={handleKindChange}
+          onDelete={handleDeleteSelectedNode}
         />
-      </div>
-
-      <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex items-start justify-between px-3">
-        <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border bg-card/95 px-3 py-1.5 text-[11px] text-muted-foreground shadow-sm">
-          <span className="font-medium text-foreground">{nodes.length}</span>
-          <span>{nodes.length === 1 ? 'node' : 'nodes'}</span>
-          <span className="text-border">/</span>
-          <span>{selectedNode ? 'node editor open' : 'canvas idle'}</span>
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute left-3 top-14 z-10">
-        <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-xl border border-border bg-card/95 p-1 shadow-sm">
-          <CanvasActionButton ariaLabel="Add Object" title="Add Object" text="O" onClick={() => handleAddNode('object')} />
-          <CanvasActionButton ariaLabel="Add Skill" title="Add Skill" text="S" onClick={() => handleAddNode('skill')} />
-          <CanvasActionButton ariaLabel="Add Prompt" title="Add Prompt" text="P" onClick={() => handleAddNode('prompt')} />
-          <button
-            type="button"
-            aria-label="Reset Sample Graph"
-            title="Reset Sample Graph"
-            onClick={handleResetCanvas}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card/95 text-foreground shadow-sm transition hover:bg-accent hover:text-accent-foreground"
-          >
-            <IconRefresh size={15} />
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CoordinationIdentityTable } from './CoordinationIdentityTable';
 import type { CoordinationIdentityResponse } from '@/lib/coordinationApi';
 
@@ -162,6 +162,60 @@ describe('CoordinationIdentityTable', () => {
     expect(screen.getByText('Operator Label')).toBeInTheDocument();
     expect(screen.queryByText('VS Code | CDX CLI')).not.toBeInTheDocument();
     expect(screen.getByText('Terminal | CC')).toBeInTheDocument();
+  });
+
+  it('renders legacy identities even when session classification metadata is missing', () => {
+    const legacyPayload = {
+      summary: payload.summary,
+      identities: [
+        {
+          ...payload.identities[0],
+          lease_identity: 'legacy-cdx',
+          identity: 'legacy-cdx',
+          session_classification: undefined,
+        },
+      ],
+    } as unknown as CoordinationIdentityResponse;
+
+    render(<CoordinationIdentityTable data={legacyPayload} loading={false} />);
+
+    expect(screen.getByText('Unknown')).toBeInTheDocument();
+    expect(screen.getAllByText(/^unknown$/i)).toHaveLength(3);
+    expect(screen.getByText(/legacy-cdx/i)).toBeInTheDocument();
+  });
+
+  it('does not emit duplicate-key warnings when lease identities are missing', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const missingLeasePayload = {
+      summary: payload.summary,
+      identities: [
+        {
+          ...payload.identities[0],
+          lease_identity: undefined,
+          identity: undefined,
+          session_agent_id: 'agent-a',
+          claimed_at: '2026-04-11T12:00:00Z',
+          revision: null,
+        },
+        {
+          ...payload.identities[0],
+          lease_identity: undefined,
+          identity: undefined,
+          session_agent_id: 'agent-b',
+          claimed_at: '2026-04-11T12:00:10Z',
+          revision: null,
+        },
+      ],
+    } as unknown as CoordinationIdentityResponse;
+
+    render(<CoordinationIdentityTable data={missingLeasePayload} loading={false} />);
+
+    expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('Encountered two children with the same key'),
+      expect.anything(),
+    );
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('renders an explicit empty state when no identities are present', () => {

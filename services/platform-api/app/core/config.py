@@ -79,6 +79,10 @@ class Settings:
     log_level: str = "INFO"
     gcs_user_storage_bucket: Optional[str] = None
     gcs_signing_service_account: Optional[str] = None
+    gcp_billing_bigquery_project_id: Optional[str] = None
+    gcp_billing_bigquery_dataset: Optional[str] = None
+    gcp_billing_bigquery_table: Optional[str] = None
+    gcp_billing_default_invoice_month: Optional[str] = None
     user_storage_max_file_bytes: int = 1073741824  # 1 GB
     storage_cleanup_interval_seconds: int = 300
     auth_redirect_origins: tuple[str, ...] = ()
@@ -117,6 +121,10 @@ class Settings:
             log_level=os.environ.get("LOG_LEVEL", "INFO"),
             gcs_user_storage_bucket=_env_or_none("GCS_USER_STORAGE_BUCKET"),
             gcs_signing_service_account=_env_or_none("GCS_SIGNING_SERVICE_ACCOUNT"),
+            gcp_billing_bigquery_project_id=_env_or_none("GCP_BILLING_BIGQUERY_PROJECT_ID"),
+            gcp_billing_bigquery_dataset=_env_or_none("GCP_BILLING_BIGQUERY_DATASET"),
+            gcp_billing_bigquery_table=_env_or_none("GCP_BILLING_BIGQUERY_TABLE"),
+            gcp_billing_default_invoice_month=_env_or_none("GCP_BILLING_DEFAULT_INVOICE_MONTH"),
             user_storage_max_file_bytes=int(os.environ.get("USER_STORAGE_MAX_FILE_BYTES", "1073741824")),
             storage_cleanup_interval_seconds=int(os.environ.get("STORAGE_CLEANUP_INTERVAL_SECONDS", "300")),
             auth_redirect_origins=_env_csv("AUTH_REDIRECT_ORIGINS"),

@@ -1,21 +1,21 @@
 # Component Inventory
 
-Generated: 2026-04-09T19:39:56.289Z
+Generated: 2026-04-14T08:29:08.992Z
 Scope: auth
 
-Pages scanned: 55
-Unique component usages: 450
+Pages scanned: 53
+Unique component usages: 443
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
 | ark-ui | 138 |
-| external-package | 23 |
+| external-package | 22 |
 | in-file component | 21 |
-| local-components | 167 |
+| local-components | 166 |
 | local-pages | 2 |
-| relative-local | 25 |
+| relative-local | 20 |
 | tabler-icons | 74 |
 
 ## src/pages/AgentOnboarding.tsx
@@ -453,25 +453,6 @@ Component usages: 1
 | --- | --- | --- | --- |
 | `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
 
-## src/pages/settings/ConnectionsPanel.test.tsx
-
-Component usages: 3
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `ConnectionsPanel` | `./ConnectionsPanel` | relative-local | ConnectionsPanel comes from ./ConnectionsPanel (default import of default) |
-| `HeaderCenterProvider` | `@/components/shell/HeaderCenterContext` | local-components | HeaderCenterProvider comes from @/components/shell/HeaderCenterContext (named import of HeaderCenterProvider) |
-| `MemoryRouter` | `react-router-dom` | external-package | MemoryRouter comes from react-router-dom (named import of MemoryRouter) |
-
-## src/pages/settings/ConnectionsPanel.tsx
-
-Component usages: 2
-
-| Used As | Source | Category | Definition |
-| --- | --- | --- | --- |
-| `SettingsPageFrame` | `./SettingsPageHeader` | relative-local | SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame) |
-| `SettingsSection` | `./SettingsPageHeader` | relative-local | SettingsSection comes from ./SettingsPageHeader (named import of SettingsSection) |
-
 ## src/pages/settings/DoclingConfigPanel.tsx
 
 Component usages: 39
@@ -659,7 +640,7 @@ Component usages: 14
 
 ## src/pages/settings/SettingsAdmin.tsx
 
-Component usages: 8
+Component usages: 6
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
@@ -667,10 +648,8 @@ Component usages: 8
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
 | `Field.Input` | `@ark-ui/react/field` | ark-ui | Field.Input comes from @ark-ui/react/field (named import of Field) |
 | `Field.Root` | `@ark-ui/react/field` | ark-ui | Field.Root comes from @ark-ui/react/field (named import of Field) |
-| `InstanceConfigPanel` | `./InstanceConfigPanel` | relative-local | InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel) |
 | `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
 | `ScrollArea` | `@/components/ui/scroll-area` | local-components | ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea) |
-| `WorkerConfigPanel` | `./WorkerConfigPanel` | relative-local | WorkerConfigPanel comes from ./WorkerConfigPanel (named import of WorkerConfigPanel) |
 
 ## src/pages/settings/SettingsAiOverview.tsx
 

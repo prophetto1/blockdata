@@ -95,3 +95,13 @@ def test_root_package_json_exposes_platform_api_dev_script() -> None:
     assert "platform-api:dev" in package.get("scripts", {})
     assert "start-platform-api.ps1" in package["scripts"]["platform-api:dev"]
     assert "-NoReload" in package["scripts"]["platform-api:dev"]
+
+
+def test_web_package_json_predev_scripts_ensure_platform_api() -> None:
+    package_json = Path(__file__).resolve().parents[3] / "web" / "package.json"
+    package = json.loads(package_json.read_text(encoding="utf-8"))
+
+    assert "predev" in package.get("scripts", {})
+    assert "platform-api:ensure" in package["scripts"]["predev"]
+    assert "predev:alt" in package["scripts"]
+    assert "platform-api:ensure" in package["scripts"]["predev:alt"]

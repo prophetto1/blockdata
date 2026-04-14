@@ -29,7 +29,6 @@ import AgentOnboardingAuth from '@/pages/AgentOnboardingAuth';
 import AgentOnboardingConnect from '@/pages/AgentOnboardingConnect';
 import AgentOnboardingSelect from '@/pages/AgentOnboardingSelect';
 import McpServers from '@/pages/settings/McpServers';
-import ConnectionsPanel from '@/pages/settings/ConnectionsPanel';
 import { ScalarApiPlaygroundPage } from '@/pages/settings/ScalarApiPlaygroundPage';
 import Commands from '@/pages/Commands';
 import { LegacyAiProvidersRedirect } from '@/components/navigation/LegacyAiProvidersRedirect';
@@ -282,7 +281,6 @@ export const router = createBrowserRouter([
               { path: 'ai/:providerId', element: <LegacyAiProvidersRedirect /> },
               { path: 'model-roles', element: <Navigate to="/app/blockdata-admin/model-roles" replace /> },
               { path: 'mcp', element: <Navigate to="/app/blockdata-admin/mcp" replace /> },
-              { path: 'connections', element: <Navigate to="/app/blockdata-admin/connections" replace /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
               { path: 'admin', element: <Navigate to="/app/blockdata-admin/parsers-docling" replace /> },
               { path: 'admin/:category', element: <LegacySettingsAdminRedirect /> },
@@ -383,10 +381,6 @@ export const router = createBrowserRouter([
         element: <Navigate to="/app/blockdata-admin/model-roles" replace />,
       },
       {
-        path: '/app/superuser/connections',
-        element: <Navigate to="/app/blockdata-admin/connections" replace />,
-      },
-      {
         path: '/app/superuser/mcp',
         element: <Navigate to="/app/blockdata-admin/mcp" replace />,
       },
@@ -405,7 +399,6 @@ export const router = createBrowserRouter([
               { path: 'ai-providers', element: <SettingsAiOverview /> },
               { path: 'ai-providers/:providerId', element: <SettingsProviderForm /> },
               { path: 'model-roles', element: <SettingsModelRoles /> },
-              { path: 'connections', element: <ConnectionsPanel /> },
               { path: 'mcp', element: <McpServers /> },
             ],
           },
@@ -448,6 +441,7 @@ export const router = createBrowserRouter([
               { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
               { path: 'skill-driven-dev', lazy: () => import('@/pages/superuser/SkillDrivenDev') },
               { path: 'plan-tracker', lazy: () => import('@/pages/superuser/PlanTracker') },
+              { path: 'gcp-cost-inventory', lazy: () => import('@/pages/superuser/GcpCostInventory') },
               { path: 'agchain-benchmarks-demo', lazy: () => import('@/pages/superuser/AgchainBenchmarksDemo') },
               { path: 'block-viewer-grid-demo', lazy: () => import('@/pages/superuser/BlockViewerGridDemo') },
             ],

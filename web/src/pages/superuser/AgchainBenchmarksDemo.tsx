@@ -7,7 +7,7 @@ import {
   type AgchainBenchmarkRegistryRow,
 } from '@/lib/agchainBenchmarks';
 
-export default function AgchainBenchmarksDemo() {
+export function Component() {
   const [items, setItems] = useState<AgchainBenchmarkRegistryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -71,8 +71,8 @@ describe('AdminShellLayout', () => {
   });
 
   it('renders the exact Blockdata Admin breadcrumb from the primary rail label', () => {
-    renderWithRouter('/app/blockdata-admin/connections');
-    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('Blockdata Admin / Connections');
+    renderWithRouter('/app/blockdata-admin/model-roles');
+    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('Blockdata Admin / Model Roles');
   });
 
   it('renders the exact AGChain Admin breadcrumb from the primary rail label', () => {

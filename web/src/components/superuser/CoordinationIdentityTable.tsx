@@ -16,6 +16,18 @@ function renderParts(parts: Array<string | null | undefined>) {
   return values.length > 0 ? values.join(' · ') : '--';
 }
 
+function getIdentityRowKey(
+  identity: CoordinationIdentityResponse['identities'][number],
+  index: number,
+) {
+  return [
+    identity.host ?? 'unknown-host',
+    identity.lease_identity ?? identity.identity ?? identity.session_agent_id ?? 'unknown-identity',
+    identity.revision ?? identity.claimed_at ?? `row-${index}`,
+    index,
+  ].join('-');
+}
+
 export function CoordinationIdentityTable({
   data,
   loading,
@@ -66,8 +78,21 @@ export function CoordinationIdentityTable({
               </tr>
             </thead>
             <tbody>
-              {identities.map((identity) => {
+              {identities.map((identity, index) => {
                 const primaryLabel = getCoordinationSessionClassificationLabel(identity.session_classification);
+                const classificationKey =
+                  typeof identity.session_classification?.key === 'string'
+                    ? identity.session_classification.key
+                    : 'unknown';
+                const classificationProvenanceKey =
+                  typeof identity.session_classification?.provenance?.key === 'string'
+                    ? identity.session_classification.provenance.key
+                    : 'unknown';
+                const classificationReason =
+                  typeof identity.session_classification?.reason === 'string' &&
+                  identity.session_classification.reason.trim().length > 0
+                    ? identity.session_classification.reason
+                    : null;
                 const legacyIdentity =
                   identity.identity && identity.identity !== identity.lease_identity
                     ? `legacy ${identity.identity}`
@@ -75,7 +100,7 @@ export function CoordinationIdentityTable({
 
                 return (
                 <tr
-                  key={`${identity.host ?? 'unknown'}-${identity.lease_identity}`}
+                  key={getIdentityRowKey(identity, index)}
                   data-testid="coordination-identity-row"
                   className="border-b border-border/50 align-top last:border-b-0"
                 >
@@ -109,7 +134,7 @@ export function CoordinationIdentityTable({
                       exp {renderValue(identity.expires_at)}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {identity.session_classification.key}
+                      {classificationKey}
                     </p>
                   </td>
                   <td className="py-3 pr-4">
@@ -123,11 +148,11 @@ export function CoordinationIdentityTable({
                       {identity.stale ? 'stale' : 'active'}
                     </span>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      {identity.session_classification.provenance.key}
+                      {classificationProvenanceKey}
                     </p>
-                    {identity.session_classification.reason ? (
+                    {classificationReason ? (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {identity.session_classification.reason}
+                        {classificationReason}
                       </p>
                     ) : null}
                   </td>

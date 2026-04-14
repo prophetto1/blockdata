@@ -10,7 +10,6 @@ import {
   IconKey,
   IconWand,
   IconRoute,
-  IconDatabase,
   IconPlugConnected,
   IconTable,
   IconLayoutGrid,
@@ -41,7 +40,6 @@ export const BLOCKDATA_ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     items: [
       { label: 'AI Providers', icon: IconKey, path: '/app/blockdata-admin/ai-providers' },
       { label: 'Model Roles', icon: IconWand, path: '/app/blockdata-admin/model-roles' },
-      { label: 'Connections', icon: IconDatabase, path: '/app/blockdata-admin/connections' },
       { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/blockdata-admin/mcp' },
     ],
   },
@@ -64,6 +62,7 @@ export const SUPERUSER_NAV_SECTIONS: AdminNavSection[] = [
       { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
       { label: 'Skill-Driven Dev', icon: IconRoute, path: '/app/superuser/skill-driven-dev' },
       { label: 'Plan Tracker', icon: IconClipboardList, path: '/app/superuser/plan-tracker' },
+      { label: 'GCP Cost Inventory', icon: IconTable, path: '/app/superuser/gcp-cost-inventory' },
       { label: 'Agchain Benchmarks (demo)', icon: IconTable, path: '/app/superuser/agchain-benchmarks-demo' },
       { label: 'Block Viewer Grid (demo)', icon: IconLayoutGrid, path: '/app/superuser/block-viewer-grid-demo' },
     ],

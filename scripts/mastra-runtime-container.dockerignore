@@ -1,0 +1,8 @@
+node_modules
+.mastra
+.env
+pnpm-install.log
+vector.db
+*.duckdb
+*.duckdb-shm
+*.duckdb-wal

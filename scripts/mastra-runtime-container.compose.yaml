@@ -1,0 +1,19 @@
+services:
+  mastra-runtime:
+    container_name: mastra-runtime
+    build:
+      context: ${MASTRA_RUNTIME_ROOT}
+      dockerfile: Dockerfile
+    working_dir: /app
+    env_file:
+      - ${MASTRA_RUNTIME_ROOT}/.env
+    environment:
+      HOST: 0.0.0.0
+      MASTRA_HOST: 0.0.0.0
+      PORT: ${MASTRA_STUDIO_PORT:-4111}
+    ports:
+      - "${MASTRA_STUDIO_PORT:-4111}:${MASTRA_STUDIO_PORT:-4111}"
+    depends_on:
+      - db
+      - qdrant
+      - redis

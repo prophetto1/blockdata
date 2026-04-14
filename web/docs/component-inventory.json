@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-09T19:39:56.280Z",
+  "generatedAt": "2026-04-14T08:29:08.986Z",
   "scope": "auth",
   "pages": [
     {
@@ -2370,71 +2370,6 @@
       ]
     },
     {
-      "page": "src/pages/settings/ConnectionsPanel.test.tsx",
-      "componentCount": 3,
-      "categoryCounts": {
-        "relative-local": 1,
-        "local-components": 1,
-        "external-package": 1
-      },
-      "components": [
-        {
-          "component": "ConnectionsPanel",
-          "usedAs": "ConnectionsPanel",
-          "source": "./ConnectionsPanel",
-          "importKind": "default",
-          "importedAs": "default",
-          "category": "relative-local",
-          "definition": "ConnectionsPanel comes from ./ConnectionsPanel (default import of default)"
-        },
-        {
-          "component": "HeaderCenterProvider",
-          "usedAs": "HeaderCenterProvider",
-          "source": "@/components/shell/HeaderCenterContext",
-          "importKind": "named",
-          "importedAs": "HeaderCenterProvider",
-          "category": "local-components",
-          "definition": "HeaderCenterProvider comes from @/components/shell/HeaderCenterContext (named import of HeaderCenterProvider)"
-        },
-        {
-          "component": "MemoryRouter",
-          "usedAs": "MemoryRouter",
-          "source": "react-router-dom",
-          "importKind": "named",
-          "importedAs": "MemoryRouter",
-          "category": "external-package",
-          "definition": "MemoryRouter comes from react-router-dom (named import of MemoryRouter)"
-        }
-      ]
-    },
-    {
-      "page": "src/pages/settings/ConnectionsPanel.tsx",
-      "componentCount": 2,
-      "categoryCounts": {
-        "relative-local": 2
-      },
-      "components": [
-        {
-          "component": "SettingsPageFrame",
-          "usedAs": "SettingsPageFrame",
-          "source": "./SettingsPageHeader",
-          "importKind": "named",
-          "importedAs": "SettingsPageFrame",
-          "category": "relative-local",
-          "definition": "SettingsPageFrame comes from ./SettingsPageHeader (named import of SettingsPageFrame)"
-        },
-        {
-          "component": "SettingsSection",
-          "usedAs": "SettingsSection",
-          "source": "./SettingsPageHeader",
-          "importKind": "named",
-          "importedAs": "SettingsSection",
-          "category": "relative-local",
-          "definition": "SettingsSection comes from ./SettingsPageHeader (named import of SettingsSection)"
-        }
-      ]
-    },
-    {
       "page": "src/pages/settings/DoclingConfigPanel.tsx",
       "componentCount": 39,
       "categoryCounts": {
@@ -3575,11 +3510,10 @@
     },
     {
       "page": "src/pages/settings/SettingsAdmin.tsx",
-      "componentCount": 8,
+      "componentCount": 6,
       "categoryCounts": {
         "local-components": 3,
         "ark-ui": 2,
-        "relative-local": 2,
         "external-package": 1
       },
       "components": [
@@ -3620,15 +3554,6 @@
           "definition": "Field.Root comes from @ark-ui/react/field (named import of Field)"
         },
         {
-          "component": "InstanceConfigPanel",
-          "usedAs": "InstanceConfigPanel",
-          "source": "./InstanceConfigPanel",
-          "importKind": "named",
-          "importedAs": "InstanceConfigPanel",
-          "category": "relative-local",
-          "definition": "InstanceConfigPanel comes from ./InstanceConfigPanel (named import of InstanceConfigPanel)"
-        },
-        {
           "component": "Navigate",
           "usedAs": "Navigate",
           "source": "react-router-dom",
@@ -3645,15 +3570,6 @@
           "importedAs": "ScrollArea",
           "category": "local-components",
           "definition": "ScrollArea comes from @/components/ui/scroll-area (named import of ScrollArea)"
-        },
-        {
-          "component": "WorkerConfigPanel",
-          "usedAs": "WorkerConfigPanel",
-          "source": "./WorkerConfigPanel",
-          "importKind": "named",
-          "importedAs": "WorkerConfigPanel",
-          "category": "relative-local",
-          "definition": "WorkerConfigPanel comes from ./WorkerConfigPanel (named import of WorkerConfigPanel)"
         }
       ]
     },
@@ -4596,14 +4512,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 450,
+  "totalComponentUsages": 443,
   "categoryTotals": {
     "local-pages": 2,
-    "local-components": 167,
+    "local-components": 166,
     "tabler-icons": 74,
     "in-file component": 21,
     "ark-ui": 138,
-    "external-package": 23,
-    "relative-local": 25
+    "external-package": 22,
+    "relative-local": 20
   }
 }

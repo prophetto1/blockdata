@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "pdfjs-express:assets:refresh": "node ./src/scripts/syncPdfjsExpressAssets.mjs",
+    "predev": "npm --prefix .. run platform-api:ensure",
     "dev": "vite --host 0.0.0.0 --port 5374",
+    "predev:alt": "npm --prefix .. run platform-api:ensure",
     "dev:alt": "vite --host 0.0.0.0 --port 5375",
     "inventory:refresh": "node ./scripts/generate-component-inventory.mjs",
     "build": "npm run inventory:refresh && tsc -b && vite build",

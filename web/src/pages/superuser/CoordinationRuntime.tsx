@@ -13,8 +13,10 @@ import {
   getCoordinationIdentities,
   CoordinationRuntimeDisabledError,
   getCoordinationStatus,
+  type CoordinationClassificationProvenance,
   type CoordinationDiscussionResponse,
   type CoordinationIdentityResponse,
+  type CoordinationSessionTypeKey,
   type CoordinationStatusResponse,
 } from '@/lib/coordinationApi';
 import {
@@ -23,6 +25,24 @@ import {
 } from '@/lib/coordinationSessionClassification';
 
 const PROVENANCE_ORDER = ['launch_stamped', 'runtime_observed', 'configured', 'inferred', 'unknown'] as const;
+const EMPTY_COUNTS_BY_TYPE: Record<CoordinationSessionTypeKey, number> = {
+  'vscode.cc.cli': 0,
+  'vscode.cdx.cli': 0,
+  'vscode.cc.ide-panel': 0,
+  'vscode.cdx.ide-panel': 0,
+  'claude-desktop.cc': 0,
+  'codex-app-win.cdx': 0,
+  'terminal.cc': 0,
+  'terminal.cdx': 0,
+  unknown: 0,
+};
+const EMPTY_COUNTS_BY_PROVENANCE: Record<CoordinationClassificationProvenance, number> = {
+  launch_stamped: 0,
+  runtime_observed: 0,
+  configured: 0,
+  inferred: 0,
+  unknown: 0,
+};
 
 function CoordinationSessionClassificationSummary({
   status,
@@ -32,8 +52,8 @@ function CoordinationSessionClassificationSummary({
   loading: boolean;
 }) {
   const summary = status?.session_classification_summary;
-  const countsByType = summary?.counts_by_type ?? {};
-  const countsByProvenance = summary?.counts_by_provenance ?? {};
+  const countsByType = summary?.counts_by_type ?? EMPTY_COUNTS_BY_TYPE;
+  const countsByProvenance = summary?.counts_by_provenance ?? EMPTY_COUNTS_BY_PROVENANCE;
 
   const activeTypeCounts = COORDINATION_SESSION_CLASSIFICATION_TYPE_ORDER.filter(
     (key) => (countsByType[key] ?? 0) > 0,

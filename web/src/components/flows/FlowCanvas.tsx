@@ -1,23 +1,37 @@
-import { memo, useCallback, useEffect, useMemo, type ChangeEventHandler, type MouseEventHandler } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  type ChangeEventHandler,
+  type DragEvent as ReactDragEvent,
+  type MouseEventHandler,
+  type ReactNode,
+} from 'react';
 import {
   Background,
   BackgroundVariant,
+  ConnectionLineType,
   Controls,
   Handle,
+  MarkerType,
   MiniMap,
+  NodeToolbar,
   Position,
   ReactFlow,
+  ReactFlowProvider,
   addEdge,
+  useReactFlow,
   type Connection,
   type Edge,
+  type IsValidConnection,
   type Node,
   type NodeMouseHandler,
   type NodeProps,
   type OnEdgesChange,
   type OnNodesChange,
-  useEdgesState,
-  useNodesState,
 } from '@xyflow/react';
+import { useEdgesState, useNodesState } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { cn } from '@/lib/utils';
 import type { FlowTask } from './nocode/flow-document';
@@ -62,6 +76,17 @@ const FlowNode = memo(({ data, selected, dragging }: NodeProps<Node<FlowNodeData
       data-variant={data.variant ?? 'default'}
       data-status={data.status ?? 'default'}
     >
+      {data.onDelete ? (
+        <NodeToolbar isVisible={selected} position={Position.Top} offset={8}>
+          <button
+            type="button"
+            onClick={data.onDelete}
+            className="pm-flow-node__toolbar-button pm-flow-node__toolbar-button--danger"
+          >
+            Delete
+          </button>
+        </NodeToolbar>
+      ) : null}
       <Handle type="target" position={Position.Left} id="in" />
       <div className="pm-flow-node__header">
         <div className="pm-flow-node__title">{data.title}</div>
@@ -170,10 +195,20 @@ function deriveEdgesFromTasks(tasks: FlowTask[]): Edge[] {
       id: `e-${tasks[i].id}-${tasks[i + 1].id}`,
       source: tasks[i].id,
       target: tasks[i + 1].id,
+      type: 'smoothstep',
+      markerEnd: { type: MarkerType.ArrowClosed },
     });
   }
   return edges;
 }
+
+const defaultEdgeOptions = {
+  type: 'smoothstep',
+  markerEnd: { type: MarkerType.ArrowClosed },
+} as const;
+
+const isValidConnection: IsValidConnection = (connection) =>
+  connection.source !== connection.target;
 
 const fallbackNodes: Node<FlowNodeData>[] = [
   {
@@ -191,6 +226,8 @@ const fallbackNodes: Node<FlowNodeData>[] = [
 
 const fallbackEdges: Edge[] = [];
 
+export const FLOW_NODE_KIND_MIME = 'application/x-flow-node-kind';
+
 type FlowCanvasProps = {
   tasks?: FlowTask[];
   nodes?: Node<FlowNodeData>[];
@@ -200,12 +237,14 @@ type FlowCanvasProps = {
   onConnect?: (connection: Connection) => void;
   onNodeClick?: NodeMouseHandler<Node<FlowNodeData>>;
   onPaneClick?: MouseEventHandler<Element>;
+  onNodeDrop?: (kind: string, position: { x: number; y: number }) => void;
   interactiveControls?: boolean;
+  children?: ReactNode;
 };
 
 const nodeTypes = { pmNode: FlowNode };
 
-export default function FlowCanvas({
+function FlowCanvasInner({
   tasks,
   nodes,
   edges,
@@ -214,8 +253,11 @@ export default function FlowCanvas({
   onConnect,
   onNodeClick,
   onPaneClick,
+  onNodeDrop,
   interactiveControls = false,
+  children,
 }: FlowCanvasProps) {
+  const { screenToFlowPosition } = useReactFlow();
   const hasTasks = tasks && tasks.length > 0;
 
   const derivedNodes = useMemo(
@@ -248,49 +290,81 @@ export default function FlowCanvas({
 
   const handleConnect = useCallback(
     (connection: Connection) => {
+      if (connection.source === connection.target) return;
+
       if (onConnect) {
         onConnect(connection);
         return;
       }
 
-      setInternalEdges((existingEdges) => addEdge(connection, existingEdges));
+      setInternalEdges((existingEdges) =>
+        addEdge({ ...connection, ...defaultEdgeOptions }, existingEdges),
+      );
     },
     [onConnect, setInternalEdges],
   );
 
+  const handleDragOver = useCallback((event: ReactDragEvent<HTMLDivElement>) => {
+    if (!onNodeDrop) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, [onNodeDrop]);
+
+  const handleDrop = useCallback((event: ReactDragEvent<HTMLDivElement>) => {
+    if (!onNodeDrop) return;
+    event.preventDefault();
+    const kind = event.dataTransfer.getData(FLOW_NODE_KIND_MIME);
+    if (!kind) return;
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    onNodeDrop(kind, position);
+  }, [onNodeDrop, screenToFlowPosition]);
+
   return (
-    <div className="pm-reactflow-wrap">
-      <ReactFlow
-        nodes={resolvedNodes}
-        edges={resolvedEdges}
-        onNodesChange={resolvedOnNodesChange}
-        onEdgesChange={resolvedOnEdgesChange}
-        onConnect={handleConnect}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        nodeTypes={nodeTypes}
-        fitView
-        snapToGrid
-        snapGrid={[16, 16]}
-        nodeDragThreshold={3}
-        connectionDragThreshold={3}
-        paneClickDistance={3}
-        panOnDrag
-        zoomOnScroll
-        zoomOnPinch
-        zoomOnDoubleClick={false}
-        nodesConnectable
-        nodesFocusable
-        nodesDraggable
-        deleteKeyCode="Delete"
-        selectionKeyCode="Shift"
-        multiSelectionKeyCode="Shift"
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-        <Controls showInteractive={interactiveControls} />
-        <MiniMap pannable zoomable nodeColor="var(--card)" maskColor="rgba(0, 0, 0, 0.3)" />
-      </ReactFlow>
-    </div>
+    <div className="pm-reactflow-wrap" onDragOver={handleDragOver} onDrop={handleDrop}>
+        <ReactFlow
+          nodes={resolvedNodes}
+          edges={resolvedEdges}
+          onNodesChange={resolvedOnNodesChange}
+          onEdgesChange={resolvedOnEdgesChange}
+          onConnect={handleConnect}
+          isValidConnection={isValidConnection}
+          onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
+          nodeTypes={nodeTypes}
+          colorMode="system"
+          defaultEdgeOptions={defaultEdgeOptions}
+          connectionLineType={ConnectionLineType.SmoothStep}
+          fitView
+          snapToGrid
+          snapGrid={[16, 16]}
+          nodeDragThreshold={3}
+          connectionDragThreshold={3}
+          paneClickDistance={3}
+          panOnDrag
+          zoomOnScroll
+          zoomOnPinch
+          zoomOnDoubleClick={false}
+          nodesConnectable
+          nodesFocusable
+          nodesDraggable
+          deleteKeyCode="Delete"
+          selectionKeyCode="Shift"
+          multiSelectionKeyCode="Shift"
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+          <Controls showInteractive={interactiveControls} />
+          <MiniMap pannable zoomable nodeColor="var(--card)" maskColor="rgba(0, 0, 0, 0.3)" />
+          {children}
+        </ReactFlow>
+      </div>
+  );
+}
+
+export default function FlowCanvas(props: FlowCanvasProps) {
+  return (
+    <ReactFlowProvider>
+      <FlowCanvasInner {...props} />
+    </ReactFlowProvider>
   );
 }

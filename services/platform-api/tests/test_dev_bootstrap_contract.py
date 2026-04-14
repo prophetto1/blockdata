@@ -44,6 +44,15 @@ def test_root_package_json_exposes_platform_api_recover_script() -> None:
     assert "recover" in package["scripts"]["platform-api:recover"]
 
 
+def test_root_package_json_exposes_platform_api_ensure_and_dev_scripts() -> None:
+    package = json.loads(PACKAGE_JSON.read_text(encoding="utf-8"))
+
+    assert "platform-api:ensure" in package.get("scripts", {})
+    assert "ensure-platform-api.ps1" in package["scripts"]["platform-api:ensure"]
+    assert "dev" in package["scripts"]
+    assert "npm --workspace web run dev" == package["scripts"]["dev"]
+
+
 def test_platform_api_dev_control_script_declares_fixed_status_and_recover_actions() -> None:
     script_text = CONTROL_SCRIPT.read_text(encoding="utf-8")
 
@@ -62,6 +71,18 @@ def test_platform_api_dev_control_script_reuses_bootstrap_script_without_generic
     assert "/health" in script_text
     assert "/health/ready" in script_text
     assert "Invoke-Expression" not in script_text
+
+
+def test_platform_api_ensure_script_checks_status_before_recovering() -> None:
+    ensure_script = REPO_ROOT / "scripts" / "ensure-platform-api.ps1"
+    script_text = ensure_script.read_text(encoding="utf-8")
+
+    assert ensure_script.exists(), "One-command dev startup should have a dedicated ensure script"
+    assert "platform-api-dev-control.ps1" in script_text
+    assert "-Action status" in script_text
+    assert "-Action recover" in script_text
+    assert "ConvertFrom-Json" in script_text
+    assert "-join [Environment]::NewLine" in script_text
 
 
 def test_get_stop_target_ids_handles_single_listener_pid_without_method_errors() -> None:

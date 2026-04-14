@@ -3,16 +3,16 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 import pytest
 
-from app.auth.dependencies import require_superuser
+from app.auth.dependencies import require_blockdata_admin
 from app.auth.principals import AuthPrincipal
 from app.main import create_app
 
 
-def _superuser_principal() -> AuthPrincipal:
+def _blockdata_admin_principal() -> AuthPrincipal:
     return AuthPrincipal(
         subject_type="user",
         subject_id="admin-user",
-        roles=frozenset({"authenticated", "platform_admin"}),
+        roles=frozenset({"authenticated", "blockdata_admin"}),
         auth_source="test",
         email="admin@example.com",
     )
@@ -34,7 +34,7 @@ def client(monkeypatch):
 
 
 @pytest.fixture
-def superuser_client(monkeypatch):
+def blockdata_admin_client(monkeypatch):
     monkeypatch.setenv("CONVERSION_SERVICE_KEY", "test-key")
     monkeypatch.setenv("SUPABASE_URL", "http://localhost:54321")
     monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "fake-key")
@@ -43,19 +43,19 @@ def superuser_client(monkeypatch):
 
     get_settings.cache_clear()
     app = create_app()
-    app.dependency_overrides[require_superuser] = _superuser_principal
+    app.dependency_overrides[require_blockdata_admin] = _blockdata_admin_principal
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
     get_settings.cache_clear()
 
 
-def test_get_docling_config_requires_superuser(client):
+def test_get_docling_config_requires_blockdata_admin(client):
     response = client.get("/admin/config/docling")
     assert response.status_code in (401, 403)
 
 
-def test_get_docling_config_returns_default(superuser_client, monkeypatch):
+def test_get_docling_config_returns_default(blockdata_admin_client, monkeypatch):
     recorded: list[dict] = []
 
     monkeypatch.setattr(
@@ -67,7 +67,7 @@ def test_get_docling_config_returns_default(superuser_client, monkeypatch):
         lambda **kwargs: recorded.append(kwargs),
     )
 
-    response = superuser_client.get("/admin/config/docling")
+    response = blockdata_admin_client.get("/admin/config/docling")
 
     assert response.status_code == 200
     assert response.json()["docling_blocks_mode"] == "raw_docling"
@@ -75,7 +75,7 @@ def test_get_docling_config_returns_default(superuser_client, monkeypatch):
     assert recorded[0]["result"] == "ok"
 
 
-def test_patch_docling_config_updates_value(superuser_client, monkeypatch):
+def test_patch_docling_config_updates_value(blockdata_admin_client, monkeypatch):
     recorded: list[dict] = []
 
     monkeypatch.setattr(
@@ -91,7 +91,7 @@ def test_patch_docling_config_updates_value(superuser_client, monkeypatch):
         lambda **kwargs: recorded.append(kwargs),
     )
 
-    response = superuser_client.patch(
+    response = blockdata_admin_client.patch(
         "/admin/config/docling",
         json={
             "docling_blocks_mode": "raw_docling",
@@ -106,13 +106,13 @@ def test_patch_docling_config_updates_value(superuser_client, monkeypatch):
     assert recorded[0]["docling_blocks_mode"] == "raw_docling"
 
 
-def test_patch_docling_config_rejects_invalid_mode(superuser_client, monkeypatch):
+def test_patch_docling_config_rejects_invalid_mode(blockdata_admin_client, monkeypatch):
     monkeypatch.setattr(
         "app.api.routes.admin_config_docling.record_admin_config_docling_update",
         lambda **kwargs: None,
     )
 
-    response = superuser_client.patch(
+    response = blockdata_admin_client.patch(
         "/admin/config/docling",
         json={
             "docling_blocks_mode": "invalid_mode",
@@ -123,7 +123,7 @@ def test_patch_docling_config_rejects_invalid_mode(superuser_client, monkeypatch
     assert response.status_code == 422
 
 
-def test_patch_docling_config_requires_superuser(client):
+def test_patch_docling_config_requires_blockdata_admin(client):
     response = client.patch(
         "/admin/config/docling",
         json={

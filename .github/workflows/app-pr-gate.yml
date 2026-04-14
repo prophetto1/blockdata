@@ -1,0 +1,46 @@
+name: App PR Gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  repo-contracts:
+    name: repo-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run ci:contracts
+
+  frontend-build:
+    name: frontend-build
+    needs: repo-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run ci:frontend
+
+  platform-api-pytest:
+    name: platform-api-pytest
+    needs: repo-contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r services/platform-api/requirements.txt
+      - run: npm run ci:platform-api

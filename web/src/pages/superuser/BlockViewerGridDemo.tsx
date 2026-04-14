@@ -3,17 +3,44 @@ import { WorkbenchPage } from '@/components/common/WorkbenchPage';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import { BlockViewerGridRDG } from '@/components/blocks/BlockViewerGridRDG';
 import { useRuns } from '@/hooks/useRuns';
+import type { RunWithSchema } from '@/lib/types';
 
-export default function BlockViewerGridDemo() {
+// ============================================================================
+// DEMO MOCK - DELETE-ME-BLOCK-START
+// Delete this block (+ the "Load demo mock" button below) to remove mock mode.
+// ============================================================================
+const DEMO_MOCK_CONV_UID = '__demo_mock_conv__';
+const DEMO_MOCK_RUN: RunWithSchema = {
+  run_id: '__demo_mock_run__',
+  owner_id: '__demo_mock_owner__',
+  conv_uid: DEMO_MOCK_CONV_UID,
+  schema_id: '__demo_mock_schema__',
+  status: 'complete',
+  total_blocks: 0,
+  completed_blocks: 0,
+  failed_blocks: 0,
+  started_at: new Date().toISOString(),
+  completed_at: new Date().toISOString(),
+  model_config: null,
+  schemas: {
+    schema_ref: 'demo/mock',
+    schema_uid: '__demo_mock_schema_uid__',
+    schema_jsonb: { fields: [] },
+  },
+};
+// DEMO MOCK - DELETE-ME-BLOCK-END =============================================
+
+export function Component() {
   const [convInput, setConvInput] = useState('');
   const [convUid, setConvUid] = useState('');
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [mockRun, setMockRun] = useState<RunWithSchema | null>(null); // DEMO MOCK
 
   const { runs, loading, error } = useRuns(convUid || null);
 
   const selectedRun = useMemo(
-    () => runs.find((r) => r.run_id === selectedRunId) ?? null,
-    [runs, selectedRunId],
+    () => mockRun ?? runs.find((r) => r.run_id === selectedRunId) ?? null,
+    [mockRun, runs, selectedRunId],
   );
 
   return (
@@ -36,11 +63,25 @@ export default function BlockViewerGridDemo() {
           </label>
           <button
             type="button"
-            onClick={() => { setConvUid(convInput.trim()); setSelectedRunId(null); }}
+            onClick={() => { setConvUid(convInput.trim()); setSelectedRunId(null); setMockRun(null); }}
             className="rounded-md border border-border/70 bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
           >
             Load runs
           </button>
+          {/* DEMO MOCK - DELETE-ME-BUTTON-START */}
+          <button
+            type="button"
+            onClick={() => {
+              setConvInput(DEMO_MOCK_CONV_UID);
+              setConvUid(DEMO_MOCK_CONV_UID);
+              setSelectedRunId(DEMO_MOCK_RUN.run_id);
+              setMockRun(DEMO_MOCK_RUN);
+            }}
+            className="rounded-md border border-dashed border-amber-500/70 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-600 hover:bg-amber-500/20"
+          >
+            Load demo mock
+          </button>
+          {/* DEMO MOCK - DELETE-ME-BUTTON-END */}
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             <span className="font-medium uppercase tracking-[0.16em]">Run</span>
             <select

@@ -166,6 +166,8 @@ def create_app() -> FastAPI:
     app.include_router(admin_config_docling_router)
     from app.api.routes.admin_coordination import router as admin_coordination_router
     app.include_router(admin_coordination_router)
+    from app.api.routes.admin_cloud_costs import router as admin_cloud_costs_router
+    app.include_router(admin_cloud_costs_router)
 
     # 4. Future /api/v1/* routes (stubs)
     from app.api.routes.crews import router as crews_router
