@@ -300,6 +300,22 @@
   --admin-config-status-error-fg: #b91c1c;
 }
 
+:root[data-shell-font='inter'] {
+  --app-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-shell-font='ibm-plex-sans'] {
+  --app-font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-shell-font='dm-sans'] {
+  --app-font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root[data-shell-font='plus-jakarta-sans'] {
+  --app-font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
 @theme inline {
   --font-sans: var(--app-font-sans);
   --font-mono: var(--app-font-mono);

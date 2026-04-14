@@ -6,6 +6,7 @@ import path from 'node:path';
 
 import {
   auditHardcodedPaths,
+  loadLocalPathNormalizerConfig,
   renderHardcodedPathAuditMarkdown,
   rewriteHardcodedPathsInText,
 } from '../normalize-hardcoded-paths.mjs';
@@ -53,6 +54,23 @@ test('rewriteHardcodedPathsInText converts alias-root JSON paths into canonical 
   );
   assert.equal(result.matches.length, 1);
   assert.equal(result.matches[0].kind, 'repo-absolute');
+});
+
+test('loadLocalPathNormalizerConfig reads ignored local alias config files', () => {
+  const root = makeTempDir();
+  writeFile(path.join(root, '.codex', 'path-normalizer.local.json'), JSON.stringify({
+    aliasRoots: ['P:/writing-system', 'E:/writing-system'],
+    rootMaps: [{ from: 'Q:/Users/jwchu/.codex', to: 'machine/jon-codex' }],
+  }, null, 2));
+
+  const config = loadLocalPathNormalizerConfig({ repoRoot: root });
+
+  assert.deepEqual(config.aliasRoots, ['P:/writing-system', 'E:/writing-system']);
+  assert.deepEqual(config.rootMaps, [{ from: 'Q:/Users/jwchu/.codex', to: 'machine/jon-codex' }]);
+  assert.deepEqual(
+    config.sources.map((sourcePath) => path.relative(root, sourcePath).replace(/\\/g, '/')),
+    ['.codex/path-normalizer.local.json'],
+  );
 });
 
 test('rewriteHardcodedPathsInText can map alternate absolute prefixes into repo subtrees', () => {
@@ -181,6 +199,36 @@ test('auditHardcodedPaths rewrites matching files when write mode is enabled', (
   );
   assert.equal(report.changedFileCount, 1);
   assert.equal(report.fixableMatchCount, 2);
+  assert.equal(report.unresolvedMatchCount, 0);
+});
+
+test('auditHardcodedPaths automatically applies local alias roots from ignored config', () => {
+  const root = makeTempDir();
+  writeFile(path.join(root, 'docs', '.keep'), '');
+  writeFile(
+    path.join(root, '.codex', 'path-normalizer.local.json'),
+    JSON.stringify({ aliasRoots: ['P:/writing-system'] }, null, 2),
+  );
+  writeFile(
+    path.join(root, 'notes.md'),
+    'Mirror: P:\\writing-system\\docs\\sessions\\0407\\ai-tool-directory-inventory.md\n',
+  );
+
+  const report = auditHardcodedPaths({
+    cwd: root,
+    targets: ['notes.md'],
+    write: true,
+  });
+
+  const rewritten = fs.readFileSync(path.join(root, 'notes.md'), 'utf8');
+
+  assert.equal(
+    rewritten,
+    'Mirror: docs/sessions/0407/ai-tool-directory-inventory.md\n',
+  );
+  assert.deepEqual(report.localConfigSources, ['.codex/path-normalizer.local.json']);
+  assert.equal(report.changedFileCount, 1);
+  assert.equal(report.fixableMatchCount, 1);
   assert.equal(report.unresolvedMatchCount, 0);
 });
 

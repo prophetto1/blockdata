@@ -139,6 +139,8 @@ The current tracked operational docs in the policy are:
 <!-- husky-path-policy-docs:start -->
 - `__start-here/2026-04-07-dual-pc-setup-internal-readme.md`
 - `docs/sessions/0407/ai-tool-directory-inventory.md`
+- `scripts/tests/docs-perspective-audit.test.mjs`
+- `scripts/tests/hardcoded-path-audit.test.mjs`
 <!-- husky-path-policy-docs:end -->
 
 Those files are listed explicitly because they are known operational docs, but they still follow the same review-only documentation policy as every other `.md`, `.mdx`, and `.txt` file.

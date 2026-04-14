@@ -21,7 +21,7 @@
     "platform-api:dev": "powershell -ExecutionPolicy Bypass -File scripts/start-platform-api.ps1 -NoReload",
     "platform-api:ensure": "powershell -ExecutionPolicy Bypass -File scripts/ensure-platform-api.ps1",
     "platform-api:recover": "powershell -ExecutionPolicy Bypass -File scripts/platform-api-dev-control.ps1 -Action recover",
-    "prepare": "[ -z \"$VERCEL\" ] && [ -z \"$CI\" ] && husky && git config core.hooksPath .husky || true",
+    "prepare": "node -e \"const { execSync } = require('node:child_process'); if (!process.env.VERCEL && !process.env.CI) { execSync('husky', { stdio: 'inherit', shell: true }); execSync('git config core.hooksPath .husky', { stdio: 'inherit', shell: true }); }\"",
     "test:app-pr-gate-workflow": "node --test scripts/tests/app-pr-gate-workflow.test.mjs",
     "test:hardcoded-path-audit": "node --test scripts/tests/hardcoded-path-audit.test.mjs",
     "test:mastra-local-bootstrap-contract": "node --test scripts/tests/mastra-local-bootstrap-contract.test.mjs",

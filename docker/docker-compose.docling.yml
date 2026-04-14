@@ -1,9 +1,0 @@
-services:
-  docling:
-    container_name: docling
-    image: quay.io/docling-project/docling-serve:latest
-    restart: unless-stopped
-    environment:
-      DOCLING_SERVE_ENABLE_UI: "true"
-    ports:
-      - "5001:5001"

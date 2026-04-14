@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 async function loadModules() {
@@ -25,6 +27,8 @@ test('classifies blocking-scope code files and review-only exception docs', asyn
   assert.deepEqual(DOC_EXCEPTION_FILES, [
     '__start-here/2026-04-07-dual-pc-setup-internal-readme.md',
     'docs/sessions/0407/ai-tool-directory-inventory.md',
+    'scripts/tests/docs-perspective-audit.test.mjs',
+    'scripts/tests/hardcoded-path-audit.test.mjs',
   ]);
   assert.equal(classifyPathPolicyScope('services/platform-api/app/main.py'), 'block');
   assert.equal(classifyPathPolicyScope('__start-here/2026-04-07-dual-pc-setup-internal-readme.md'), 'review');
@@ -103,4 +107,32 @@ test('keeps explicit operational doc exceptions non-blocking', async () => {
   assert.equal(result.exitCode, 0);
   assert.equal(result.blockingIssues.length, 0);
   assert.equal(result.reviewIssues.length, 1);
+});
+
+test('uses ignored local alias roots to rewrite mapped repo paths during blocking checks', async () => {
+  const { checkHardcodedPaths } = await loadModules();
+  assert.equal(typeof checkHardcodedPaths, 'function', 'checkHardcodedPaths must be exported');
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'husky-hardcoded-paths-'));
+  fs.mkdirSync(path.join(root, '.codex'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'services', 'platform-api', 'app'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, '.codex', 'path-normalizer.local.json'),
+    JSON.stringify({ aliasRoots: ['P:/writing-system'] }, null, 2),
+    'utf8',
+  );
+  fs.writeFileSync(
+    path.join(root, 'services', 'platform-api', 'app', 'main.py'),
+    'SOURCE = "P:\\\\writing-system\\\\services\\\\platform-api\\\\app\\\\main.py"\n',
+    'utf8',
+  );
+
+  const result = checkHardcodedPaths({
+    cwd: root,
+    stagedFiles: ['services/platform-api/app/main.py'],
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.blockingIssues.length, 1);
+  assert.equal(result.blockingIssues[0].replacement, 'services/platform-api/app/main.py');
 });

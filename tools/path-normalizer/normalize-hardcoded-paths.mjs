@@ -46,6 +46,11 @@ const DEFAULT_IGNORED_BASENAMES = new Set([
   'desktop.ini',
 ]);
 
+const DEFAULT_LOCAL_CONFIG_RELATIVE_PATHS = [
+  '.codex/path-normalizer.local.json',
+  '.claude/path-normalizer.local.json',
+];
+
 const ABSOLUTE_WINDOWS_PATH_START_PATTERN = /(?<![A-Za-z0-9_])[A-Za-z]:(?:\\+|\/)/g;
 
 function escapeRegex(value) {
@@ -59,6 +64,27 @@ function normalizeSlashes(value) {
 function normalizeAbsoluteRoot(rootPath) {
   const resolved = path.resolve(rootPath);
   return normalizeSlashes(resolved).replace(/\/+$/, '');
+}
+
+function dedupeStrings(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function dedupeRootMaps(rootMaps = []) {
+  const unique = new Map();
+
+  for (const mapping of rootMaps) {
+    if (!mapping || typeof mapping.from !== 'string' || typeof mapping.to !== 'string') {
+      continue;
+    }
+
+    const key = `${mapping.from}=>${mapping.to}`;
+    if (!unique.has(key)) {
+      unique.set(key, mapping);
+    }
+  }
+
+  return [...unique.values()];
 }
 
 function canonicalizeRelativePath(candidate) {
@@ -91,6 +117,73 @@ function buildRootMappings({ repoRoot, aliasRoots = [], rootMaps = [] }) {
   return [...unique.values()].sort(
     (left, right) => right.from.length - left.from.length || left.from.localeCompare(right.from),
   );
+}
+
+function normalizeLoadedLocalConfig(rawConfig, sourcePath) {
+  if (!rawConfig || typeof rawConfig !== 'object' || Array.isArray(rawConfig)) {
+    throw new Error(`Local path normalizer config must be a JSON object: ${sourcePath}`);
+  }
+
+  const aliasRoots = rawConfig.aliasRoots ?? [];
+  const rootMaps = rawConfig.rootMaps ?? [];
+
+  if (!Array.isArray(aliasRoots) || !aliasRoots.every((value) => typeof value === 'string')) {
+    throw new Error(`aliasRoots must be an array of strings: ${sourcePath}`);
+  }
+
+  if (
+    !Array.isArray(rootMaps)
+    || !rootMaps.every(
+      (mapping) => mapping && typeof mapping === 'object'
+        && !Array.isArray(mapping)
+        && typeof mapping.from === 'string'
+        && typeof mapping.to === 'string',
+    )
+  ) {
+    throw new Error(`rootMaps must be an array of { from, to } objects: ${sourcePath}`);
+  }
+
+  return {
+    aliasRoots: dedupeStrings(aliasRoots),
+    rootMaps: dedupeRootMaps(rootMaps),
+  };
+}
+
+export function loadLocalPathNormalizerConfig({
+  repoRoot = process.cwd(),
+  relativePaths = DEFAULT_LOCAL_CONFIG_RELATIVE_PATHS,
+} = {}) {
+  const resolvedRepoRoot = path.resolve(repoRoot);
+  const loaded = {
+    aliasRoots: [],
+    rootMaps: [],
+    sources: [],
+  };
+
+  for (const relativePath of relativePaths) {
+    const absolutePath = path.resolve(resolvedRepoRoot, relativePath);
+    if (!fs.existsSync(absolutePath)) {
+      continue;
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
+    } catch (error) {
+      throw new Error(`Invalid local path normalizer config at ${absolutePath}: ${error.message}`);
+    }
+
+    const normalized = normalizeLoadedLocalConfig(parsed, absolutePath);
+    loaded.aliasRoots.push(...normalized.aliasRoots);
+    loaded.rootMaps.push(...normalized.rootMaps);
+    loaded.sources.push(absolutePath);
+  }
+
+  return {
+    aliasRoots: dedupeStrings(loaded.aliasRoots),
+    rootMaps: dedupeRootMaps(loaded.rootMaps),
+    sources: loaded.sources,
+  };
 }
 
 function getRepoEntries(repoRoot) {
@@ -706,6 +799,9 @@ export function auditHardcodedPaths({
   write = false,
 } = {}) {
   const repoRoot = path.resolve(cwd);
+  const localConfig = loadLocalPathNormalizerConfig({ repoRoot });
+  const effectiveAliasRoots = dedupeStrings([...aliasRoots, ...localConfig.aliasRoots]);
+  const effectiveRootMaps = dedupeRootMaps([...rootMaps, ...localConfig.rootMaps]);
   const repoEntries = getRepoEntries(repoRoot);
   const resolvedReportPath = reportPath ? path.resolve(repoRoot, reportPath) : null;
   const files = collectTargetFiles(repoRoot, targets).filter((filePath) => {
@@ -727,8 +823,8 @@ export function auditHardcodedPaths({
     correctPathCount += countCorrectPathsInText(content, repoEntries);
     const result = rewriteHardcodedPathsInText(content, {
       repoRoot,
-      aliasRoots,
-      rootMaps,
+      aliasRoots: effectiveAliasRoots,
+      rootMaps: effectiveRootMaps,
       repoEntries,
     });
 
@@ -765,8 +861,10 @@ export function auditHardcodedPaths({
 
   const report = {
     repoRoot,
-    aliasRoots: aliasRoots.map((rootPath) => normalizeAbsoluteRoot(rootPath)),
-    rootMaps: buildRootMappings({ repoRoot, aliasRoots, rootMaps }).filter((mapping) => mapping.to !== '.'),
+    aliasRoots: effectiveAliasRoots.map((rootPath) => normalizeAbsoluteRoot(rootPath)),
+    rootMaps: buildRootMappings({ repoRoot, aliasRoots: effectiveAliasRoots, rootMaps: effectiveRootMaps })
+      .filter((mapping) => mapping.to !== '.'),
+    localConfigSources: localConfig.sources.map((sourcePath) => path.relative(repoRoot, sourcePath).replace(/\\/g, '/')),
     scannedFileCount: files.length,
     totalPathCount: correctPathCount + issues.length,
     correctPathCount,
@@ -858,6 +956,10 @@ Options:
   --all                 Allow repo-wide writes when --write is set without --target.
   --json                Print the full report as JSON.
   --help                Show this help message
+
+Local alias roots and root maps are auto-loaded from:
+  .codex/path-normalizer.local.json
+  .claude/path-normalizer.local.json
 `);
 }
 
