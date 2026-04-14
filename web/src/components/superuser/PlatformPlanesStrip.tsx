@@ -29,17 +29,17 @@ export function PlatformPlanesStrip({
   connectionLabels,
 }: PlatformPlanesStripProps) {
   return (
-    <section className="rounded-[20px] border border-stone-300/90 bg-[#f0eeeb] p-3 shadow-sm">
+    <section className="rounded-[20px] border border-border/70 bg-card/80 p-3 shadow-sm">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
             Five Connected Planes
           </p>
-          <h2 className="mt-1 text-base font-semibold tracking-tight text-stone-950">
+          <h2 className="mt-1 text-base font-semibold tracking-tight text-foreground">
             The control line from browser state to repo-time enforcement
           </h2>
         </div>
-        <p className="max-w-2xl text-xs leading-5 text-stone-600">
+        <p className="max-w-2xl text-xs leading-5 text-muted-foreground">
           Every plane stays visible, even when instrumentation is partial, so the operator learns the platform in the same order every visit.
         </p>
       </div>
@@ -57,8 +57,8 @@ export function PlatformPlanesStrip({
 
             {index < connectionLabels.length ? (
               <div className="hidden min-w-[88px] xl:flex xl:flex-col xl:items-center xl:justify-center">
-                <div className="h-px w-full bg-[#d8d1ca]" />
-                <span className="mt-2 text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+                <div className="h-px w-full bg-border" />
+                <span className="mt-2 text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                   {connectionLabels[index]}
                 </span>
               </div>

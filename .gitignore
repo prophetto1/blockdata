@@ -128,3 +128,10 @@ tmp-*
 jon-work/
 jon/
 t/
+
+# Repo-root verification/build artifact logs
+/verify-ci-*.log
+/verify-npm-ci.log
+/restore-npm-install.log
+/ag-grid-ls.txt
+/web/build-check.txt

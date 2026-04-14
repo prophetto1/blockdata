@@ -5,11 +5,11 @@ import path from 'node:path';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const packageJsonPath = path.join(repoRoot, 'package.json');
-const statusScriptPath = path.join(repoRoot, 'scripts', 'mastra-local-status.ps1');
-const ensureScriptPath = path.join(repoRoot, 'scripts', 'mastra-local-ensure.ps1');
-const runtimeDockerfileTemplatePath = path.join(repoRoot, 'scripts', 'mastra-runtime-container.Dockerfile');
-const runtimeDockerignoreTemplatePath = path.join(repoRoot, 'scripts', 'mastra-runtime-container.dockerignore');
-const runtimeComposeTemplatePath = path.join(repoRoot, 'scripts', 'mastra-runtime-container.compose.yaml');
+const statusScriptPath = path.join(repoRoot, 'docker', 'mastra', 'mastra-local-status.ps1');
+const ensureScriptPath = path.join(repoRoot, 'docker', 'mastra', 'mastra-local-ensure.ps1');
+const runtimeDockerfileTemplatePath = path.join(repoRoot, 'docker', 'mastra', 'mastra-runtime-container.Dockerfile');
+const runtimeDockerignoreTemplatePath = path.join(repoRoot, 'docker', 'mastra', 'mastra-runtime-container.dockerignore');
+const runtimeComposeTemplatePath = path.join(repoRoot, 'docker', 'mastra', 'mastra-runtime-container.compose.yaml');
 const resetDocPath = path.join(repoRoot, 'docs', 'infra', 'mastra-local-bootstrap-reset-2026-04-12.md');
 
 function readText(filePath) {
@@ -22,11 +22,11 @@ test('root package exposes local mastra bootstrap scripts', () => {
 
   assert.equal(
     scripts['mastra-local:status'],
-    'powershell -ExecutionPolicy Bypass -File scripts/mastra-local-status.ps1',
+    'powershell -ExecutionPolicy Bypass -File docker/mastra/mastra-local-status.ps1',
   );
   assert.equal(
     scripts['mastra-local:ensure'],
-    'powershell -ExecutionPolicy Bypass -File scripts/mastra-local-ensure.ps1',
+    'powershell -ExecutionPolicy Bypass -File docker/mastra/mastra-local-ensure.ps1',
   );
 });
 

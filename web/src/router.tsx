@@ -444,6 +444,7 @@ export const router = createBrowserRouter([
               { path: 'gcp-cost-inventory', lazy: () => import('@/pages/superuser/GcpCostInventory') },
               { path: 'agchain-benchmarks-demo', lazy: () => import('@/pages/superuser/AgchainBenchmarksDemo') },
               { path: 'block-viewer-grid-demo', lazy: () => import('@/pages/superuser/BlockViewerGridDemo') },
+              { path: 'control-tower-v2', lazy: () => import('@/pages/superuser/SuperuserControlTowerV2') },
             ],
           },
         ],

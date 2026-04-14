@@ -8,8 +8,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Split-Path -Parent $scriptDir
+$repoRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
 $statusScriptPath = Join-Path $scriptDir "mastra-local-status.ps1"
+$dockerAssetRoot = $scriptDir
 $stateDir = Join-Path $repoRoot ".codex-tmp\mastra-runtime"
 $statePath = Join-Path $stateDir "state.json"
 
@@ -18,9 +19,9 @@ if (-not $SourceEnvPath) {
 }
 
 $composeFile = Join-Path $MastraRepoRoot ".dev\docker-compose.yaml"
-$runtimeComposeTemplatePath = Join-Path $scriptDir "mastra-runtime-container.compose.yaml"
-$runtimeDockerfileTemplatePath = Join-Path $scriptDir "mastra-runtime-container.Dockerfile"
-$runtimeDockerignoreTemplatePath = Join-Path $scriptDir "mastra-runtime-container.dockerignore"
+$runtimeComposeTemplatePath = Join-Path $dockerAssetRoot "mastra-runtime-container.compose.yaml"
+$runtimeDockerfileTemplatePath = Join-Path $dockerAssetRoot "mastra-runtime-container.Dockerfile"
+$runtimeDockerignoreTemplatePath = Join-Path $dockerAssetRoot "mastra-runtime-container.dockerignore"
 $sourceExampleDir = Join-Path $MastraRepoRoot "examples\agent"
 $runtimePackageJsonPath = Join-Path $RuntimeRoot "package.json"
 $runtimeLockfilePath = Join-Path $RuntimeRoot "pnpm-lock.yaml"

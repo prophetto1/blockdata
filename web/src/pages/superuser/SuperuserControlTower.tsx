@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  IconChevronDown,
   IconClipboardList,
   IconCode,
   IconPlugConnected,
@@ -20,7 +21,11 @@ import {
   PlatformPlanesStrip,
   type PlatformPlaneDescriptor,
 } from '@/components/superuser/PlatformPlanesStrip';
-import { Button } from '@/components/ui/button';
+import {
+  TOOLBAR_BUTTON_BASE,
+  TOOLBAR_BUTTON_STATES,
+} from '@/lib/toolbar-contract';
+import { cn } from '@/lib/utils';
 import { useCoordinationDiscussionsQuery } from '@/hooks/query/useCoordinationDiscussionsQuery';
 import { useCoordinationIdentitiesQuery } from '@/hooks/query/useCoordinationIdentitiesQuery';
 import { useCoordinationStatusQuery } from '@/hooks/query/useCoordinationStatusQuery';
@@ -64,26 +69,31 @@ function ControlTowerSectionFrame({
   children,
 }: SectionFrameProps) {
   return (
-    <section className="rounded-[28px] border border-stone-300/90 bg-[#f5f1ed] p-4 shadow-sm">
+    <section className="rounded-[28px] border border-border/70 bg-card/80 p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
             {eyebrow}
           </p>
-          <h2 className="mt-1 text-base font-semibold tracking-tight text-stone-950">{title}</h2>
-          <p className="mt-2 text-sm leading-6 text-stone-600">{description}</p>
+          <h2 className="mt-1 text-base font-semibold tracking-tight text-foreground">{title}</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1">
           {actions}
-          <Button
+          <button
             type="button"
-            size="sm"
-            variant="outline"
-            className="border-stone-300 bg-white text-stone-700 active:scale-95"
+            aria-expanded={!collapsed}
+            aria-label={sectionActionLabel(collapsed)}
             onClick={onToggleCollapsed}
+            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
           >
-            {sectionActionLabel(collapsed)}
-          </Button>
+            <IconChevronDown
+              size={14}
+              stroke={1.8}
+              className={cn('transition-transform', collapsed && '-rotate-90')}
+            />
+            <span>{collapsed ? 'Expand' : 'Collapse'}</span>
+          </button>
         </div>
       </div>
 
@@ -283,30 +293,30 @@ export function Component() {
       description="A dedicated superuser homepage for learning the platform in the same order every visit: browser state first, coordination and routing second, policy and repo-time boundaries always visible."
       actions={(
         <>
-          <Button
+          <button
             type="button"
-            size="sm"
-            variant="outline"
-            className="border-stone-300 bg-white text-stone-700 active:scale-95"
             onClick={() => {
               void queryClient.invalidateQueries({ queryKey: superuserKeys.all });
             }}
+            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
           >
-            <IconRefresh size={15} stroke={1.7} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh state'}
-          </Button>
-          <Button
+            <IconRefresh
+              size={14}
+              stroke={1.8}
+              className={cn(isRefreshing && 'animate-spin')}
+            />
+            <span>{isRefreshing ? 'Refreshing' : 'Refresh state'}</span>
+          </button>
+          <button
             type="button"
-            size="sm"
-            variant="outline"
-            className="border-stone-300 bg-white text-stone-700 active:scale-95"
             onClick={() => resetSuperuserControlTowerStore()}
+            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive)}
           >
-            Reset view state
-          </Button>
+            <span>Reset view state</span>
+          </button>
         </>
       )}
-      className="bg-[#faf9f7]"
+      contentClassName="min-h-full bg-background pb-8"
     >
       {primaryErrorMessage ? <ErrorAlert message={primaryErrorMessage.message} /> : null}
 
@@ -318,40 +328,40 @@ export function Component() {
       />
 
       {panelPreferences.showPlaneExplainer ? (
-        <section className="rounded-[26px] border border-stone-300 bg-white p-4 shadow-sm">
+        <section className="rounded-[26px] border border-border/70 bg-card/80 p-4 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="max-w-3xl">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                 Focused Plane Explainer
               </p>
-              <h2 className="mt-1 text-base font-semibold tracking-tight text-stone-950">
+              <h2 className="mt-1 text-base font-semibold tracking-tight text-foreground">
                 {selectedPlaneDescriptor.label}
               </h2>
-              <p className="mt-2 text-sm leading-6 text-stone-600">
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 {selectedPlaneDescriptor.explainerTitle}
               </p>
             </div>
-            <span className="rounded-full bg-[#f3ece7] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-600">
+            <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {selectedPlaneDescriptor.status}
             </span>
           </div>
 
           <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-            <div className="rounded-xl border border-stone-200 bg-[#faf7f3] px-4 py-3">
-              <p className="text-sm leading-6 text-stone-700">{selectedPlaneDescriptor.explainerBody}</p>
+            <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+              <p className="text-sm leading-6 text-foreground">{selectedPlaneDescriptor.explainerBody}</p>
             </div>
             <div className="space-y-3">
-              <div className="rounded-xl border border-stone-200 bg-[#faf7f3] px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-stone-500">
+              <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                   Future live source
                 </p>
-                <p className="mt-2 text-sm text-stone-700">{selectedPlaneDescriptor.futureSource}</p>
+                <p className="mt-2 text-sm text-foreground">{selectedPlaneDescriptor.futureSource}</p>
               </div>
               <Link
                 to={selectedPlaneDescriptor.drillPath}
-                className="inline-flex rounded-full border border-stone-300 bg-white px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-[#eb5e41]/35 hover:text-[#a5432f] active:scale-95"
+                className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive, 'self-start')}
               >
-                {selectedPlaneDescriptor.drillLabel}
+                <span>{selectedPlaneDescriptor.drillLabel}</span>
               </Link>
             </div>
           </div>
@@ -365,15 +375,17 @@ export function Component() {
         collapsed={collapsedGroups['state-query-health']}
         onToggleCollapsed={() => toggleGroupCollapsed('state-query-health')}
         actions={(
-          <Button
+          <button
             type="button"
-            size="sm"
-            variant="outline"
-            className="border-stone-300 bg-white text-stone-700 active:scale-95"
+            aria-pressed={panelPreferences.showQueryDetails}
             onClick={() => setPanelPreference('showQueryDetails', !panelPreferences.showQueryDetails)}
+            className={cn(
+              TOOLBAR_BUTTON_BASE,
+              panelPreferences.showQueryDetails ? TOOLBAR_BUTTON_STATES.active : TOOLBAR_BUTTON_STATES.inactive,
+            )}
           >
-            {panelPreferences.showQueryDetails ? 'Hide query detail' : 'Show query detail'}
-          </Button>
+            <span>Query detail</span>
+          </button>
         )}
       >
         <ControlTowerStateQueryPanel
@@ -394,15 +406,17 @@ export function Component() {
         collapsed={collapsedGroups['coordination-routing']}
         onToggleCollapsed={() => toggleGroupCollapsed('coordination-routing')}
         actions={(
-          <Button
+          <button
             type="button"
-            size="sm"
-            variant="outline"
-            className="border-stone-300 bg-white text-stone-700 active:scale-95"
+            aria-pressed={panelPreferences.showCoordinationTimeline}
             onClick={() => setPanelPreference('showCoordinationTimeline', !panelPreferences.showCoordinationTimeline)}
+            className={cn(
+              TOOLBAR_BUTTON_BASE,
+              panelPreferences.showCoordinationTimeline ? TOOLBAR_BUTTON_STATES.active : TOOLBAR_BUTTON_STATES.inactive,
+            )}
           >
-            {panelPreferences.showCoordinationTimeline ? 'Hide timeline' : 'Show timeline'}
-          </Button>
+            <span>Timeline</span>
+          </button>
         )}
       >
         <ControlTowerCoordinationPanel
@@ -424,15 +438,17 @@ export function Component() {
         collapsed={collapsedGroups['hook-policy-audit']}
         onToggleCollapsed={() => toggleGroupCollapsed('hook-policy-audit')}
         actions={(
-          <Button
+          <button
             type="button"
-            size="sm"
-            variant="outline"
-            className="border-stone-300 bg-white text-stone-700 active:scale-95"
+            aria-pressed={panelPreferences.showRepoTimeNotes}
             onClick={() => setPanelPreference('showRepoTimeNotes', !panelPreferences.showRepoTimeNotes)}
+            className={cn(
+              TOOLBAR_BUTTON_BASE,
+              panelPreferences.showRepoTimeNotes ? TOOLBAR_BUTTON_STATES.active : TOOLBAR_BUTTON_STATES.inactive,
+            )}
           >
-            {panelPreferences.showRepoTimeNotes ? 'Hide repo-time notes' : 'Show repo-time notes'}
-          </Button>
+            <span>Repo-time notes</span>
+          </button>
         )}
       >
         <div className="grid gap-4 xl:grid-cols-2">
@@ -444,8 +460,8 @@ export function Component() {
         </div>
       </ControlTowerSectionFrame>
 
-      <section className="rounded-[24px] border border-dashed border-stone-300 bg-white/80 px-4 py-3 text-sm text-stone-600">
-        Current view state: focused on <span className="font-medium capitalize text-stone-900">{formatSelectedPlaneLabel(selectedPlane)}</span>, with {(Object.keys(collapsedGroups) as SuperuserControlTowerGroup[]).filter((group) => !collapsedGroups[group]).length} open rows and {querySummary.fetching} active fetches.
+      <section className="rounded-[24px] border border-dashed border-border/70 bg-card/70 px-4 py-3 text-sm text-muted-foreground">
+        Current view state: focused on <span className="font-medium capitalize text-foreground">{formatSelectedPlaneLabel(selectedPlane)}</span>, with {(Object.keys(collapsedGroups) as SuperuserControlTowerGroup[]).filter((group) => !collapsedGroups[group]).length} open rows and {querySummary.fetching} active fetches.
       </section>
     </WorkbenchPage>
   );

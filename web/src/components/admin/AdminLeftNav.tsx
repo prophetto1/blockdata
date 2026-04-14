@@ -58,6 +58,7 @@ export const SUPERUSER_NAV_SECTIONS: AdminNavSection[] = [
     label: 'DEV ONLY',
     items: [
       { label: 'Control Tower', icon: IconLayoutGrid, path: '/app/superuser' },
+      { label: 'Control Tower v2', icon: IconLayoutGrid, path: '/app/superuser/control-tower-v2' },
       { label: 'Operational Readiness', icon: IconServer, path: '/app/superuser/operational-readiness' },
       { label: 'Coordination Runtime', icon: IconPlugConnected, path: '/app/superuser/coordination-runtime' },
       { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },

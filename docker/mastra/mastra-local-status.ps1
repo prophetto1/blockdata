@@ -8,7 +8,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = Split-Path -Parent $scriptDir
+$repoRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
+$dockerAssetRoot = $scriptDir
 
 if (-not $SourceEnvPath) {
   $SourceEnvPath = Join-Path $repoRoot ".env"
@@ -21,7 +22,7 @@ $runtimeLockfilePath = Join-Path $RuntimeRoot "pnpm-lock.yaml"
 $runtimeEnvPath = Join-Path $RuntimeRoot ".env"
 $runtimeDockerfilePath = Join-Path $RuntimeRoot "Dockerfile"
 $runtimeDockerignorePath = Join-Path $RuntimeRoot ".dockerignore"
-$runtimeComposeTemplatePath = Join-Path $scriptDir "mastra-runtime-container.compose.yaml"
+$runtimeComposeTemplatePath = Join-Path $dockerAssetRoot "mastra-runtime-container.compose.yaml"
 $runtimeContainerName = "mastra-runtime"
 $stateDir = Join-Path $repoRoot ".codex-tmp\mastra-runtime"
 $statePath = Join-Path $stateDir "state.json"
