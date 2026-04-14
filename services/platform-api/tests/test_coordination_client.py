@@ -348,3 +348,85 @@ async def test_get_identities_maps_legacy_records_without_classification_to_unkn
             "display_label": "derived",
         },
     }
+
+
+@pytest.mark.asyncio
+async def test_get_identities_ignores_non_lease_presence_records(monkeypatch, tmp_path):
+    settings = CoordinationSettings(
+        enabled=True,
+        nats_url="nats://127.0.0.1:4222",
+        runtime_root=tmp_path,
+        host="JON",
+        agent_id="platform-api",
+    )
+    client = CoordinationClient(settings)
+
+    async def fake_list_kv_entries(_bucket_name: str):
+        return [
+            (
+                "presence.codex-heartbeat",
+                _FakeKvEntry(
+                    {
+                        "agentId": "codex",
+                        "host": "JON",
+                        "status": "online",
+                        "lastHeartbeatAt": "2026-04-09T21:09:57.184Z",
+                    },
+                    revision=2,
+                ),
+            ),
+            (
+                "presence.legacy-cdx",
+                _FakeKvEntry(
+                    {
+                        "identity": "legacy-cdx",
+                        "host": "JON",
+                        "family": "cdx",
+                        "sessionAgentId": "jon-legacy-runtime",
+                        "claimedAt": "2026-04-11T12:10:00Z",
+                        "lastHeartbeatAt": "2026-04-11T12:11:00Z",
+                        "expiresAt": "2030-04-11T12:13:00Z",
+                    },
+                    revision=11,
+                ),
+            ),
+        ]
+
+    monkeypatch.setattr(client, "_list_kv_entries", fake_list_kv_entries)
+
+    result = await client.get_identities(include_stale=True)
+
+    assert result["summary"]["active_count"] == 1
+    assert result["summary"]["stale_count"] == 0
+    assert result["summary"]["host_count"] == 1
+    assert result["identities"] == [
+        {
+            "lease_identity": "legacy-cdx",
+            "identity": "legacy-cdx",
+            "host": "JON",
+            "family": "cdx",
+            "session_agent_id": "jon-legacy-runtime",
+            "claimed_at": "2026-04-11T12:10:00Z",
+            "last_heartbeat_at": "2026-04-11T12:11:00Z",
+            "expires_at": "2030-04-11T12:13:00Z",
+            "stale": False,
+            "revision": 11,
+            "session_classification": {
+                "key": "unknown",
+                "display_label": "Unknown",
+                "container_host": "unknown",
+                "interaction_surface": "unknown",
+                "runtime_product": "unknown",
+                "classified": False,
+                "registry_version": 1,
+                "reason": None,
+                "provenance": {
+                    "key": "unknown",
+                    "container_host": "unknown",
+                    "interaction_surface": "unknown",
+                    "runtime_product": "unknown",
+                    "display_label": "derived",
+                },
+            },
+        }
+    ]

@@ -172,7 +172,7 @@ export function Component() {
     try {
       const nextStatus = await getCoordinationStatus();
       const [nextIdentities, nextDiscussions] = await Promise.all([
-        getCoordinationIdentities({ includeStale: true }),
+        getCoordinationIdentities(),
         getCoordinationDiscussions({ status: 'all', limit: 50 }),
       ]);
       setStatus(nextStatus);

@@ -89,6 +89,28 @@ def _derive_family(identity: str | None, payload: dict) -> str | None:
     return str(identity).rstrip("0123456789") or str(identity)
 
 
+def _identity_value(payload: dict) -> str | None:
+    identity = payload.get("identity")
+    if isinstance(identity, str) and identity.strip():
+        return identity
+    agent_id = payload.get("agentId")
+    if isinstance(agent_id, str) and agent_id.strip():
+        return agent_id
+    return None
+
+
+def _is_lease_backed_identity(payload: dict) -> bool:
+    if _identity_value(payload) is None:
+        return False
+
+    for field in ("claimedAt", "expiresAt", "releasedAt"):
+        value = payload.get(field)
+        if isinstance(value, str) and value.strip():
+            return True
+
+    return False
+
+
 def _parse_iso(value: Any) -> datetime | None:
     if not value or not isinstance(value, str):
         return None
@@ -103,6 +125,8 @@ def _next_task_event_id(host: str) -> str:
 
 
 def _identity_is_stale(payload: dict) -> bool:
+    if not _is_lease_backed_identity(payload):
+        return True
     if payload.get("status") == "released":
         return True
     expires_at = _parse_iso(payload.get("expiresAt"))
@@ -263,7 +287,7 @@ class CoordinationClient:
             }
             bucket_summaries[bucket_name] = summary
 
-        identity_result = await self.get_identities(include_stale=True)
+        identity_result = await self.get_identities(include_stale=False)
         identity_summary = identity_result["summary"]
         discussion_summary = (await self.get_discussions(status="all", limit=50))["summary"]
         session_classification_summary = {
@@ -346,7 +370,10 @@ class CoordinationClient:
 
         for _, entry in entries:
             payload = _decode_json(getattr(entry, "value", None)) or {}
-            identity = payload.get("identity") or payload.get("agentId")
+            if not _is_lease_backed_identity(payload):
+                continue
+
+            identity = _identity_value(payload)
             derived_family = _derive_family(identity, payload)
             stale = _identity_is_stale(payload)
             entry_host = payload.get("host")

@@ -365,3 +365,34 @@ test('heartbeatAgentIdentity extends the lease for a claimed identity', async ()
   assert.equal(decoded.lastHeartbeatAt, '2026-04-11T12:01:00.000Z');
   assert.equal(decoded.expiresAt, '2026-04-11T12:06:00.000Z');
 });
+
+test('claimAgentIdentity reuses a heartbeat-only presence key instead of taking a suffixed lease id', async () => {
+  const { claimAgentIdentity } = await loadAgentModule();
+  const presenceBucket = new InMemoryKvBucket();
+  const now = new Date('2026-04-11T12:00:00.000Z');
+
+  await presenceBucket.create(
+    'agent.JON.codex',
+    new TextEncoder().encode(JSON.stringify({
+      host: 'JON',
+      agentId: 'codex',
+      status: 'online',
+      lastHeartbeatAt: '2026-04-09T21:09:57.184Z',
+    })),
+  );
+
+  const result = await claimAgentIdentity({
+    presenceBucket,
+    host: 'JON',
+    family: 'codex',
+    now,
+    ttlSeconds: 120,
+  });
+
+  assert.equal(result.identity, 'codex');
+  const stored = await presenceBucket.get('agent.JON.codex');
+  const decoded = JSON.parse(new TextDecoder().decode(stored.value));
+  assert.equal(decoded.identity, 'codex');
+  assert.equal(decoded.claimedAt, '2026-04-11T12:00:00.000Z');
+  assert.equal(decoded.expiresAt, '2026-04-11T12:02:00.000Z');
+});

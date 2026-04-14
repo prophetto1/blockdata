@@ -22,7 +22,7 @@ function renderNav(pathname = '/app/superuser') {
 describe('AdminLeftNav', () => {
   it('renders a nav with the secondary rail label', () => {
     renderNav();
-    expect(screen.getByRole('navigation', { name: /admin secondary navigation/i })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: /admin secondary navigation/i })).toBeTruthy();
   });
 
   it('renders no secondary links on the blockdata admin index page', () => {
@@ -36,6 +36,7 @@ describe('AdminLeftNav', () => {
     expect(getSecondaryNav('/app/blockdata-admin/worker-config')).toHaveLength(0);
     expect(getSecondaryNav('/app/blockdata-admin/audit')).toHaveLength(0);
     expect(getSecondaryNav('/app/blockdata-admin/parsers-docling')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser')).toHaveLength(0);
     expect(getSecondaryNav('/app/superuser/operational-readiness')).toHaveLength(0);
     expect(getSecondaryNav('/app/blockdata-admin/ai-providers')).toHaveLength(0);
   });
@@ -51,6 +52,9 @@ describe('AdminLeftNav', () => {
 
   it('keeps DEV ONLY inside Superuser', () => {
     const devOnlySection = SUPERUSER_NAV_SECTIONS.find((section) => section.label === 'DEV ONLY');
+    const controlTower = SUPERUSER_NAV_SECTIONS
+      .flatMap((section) => section.items)
+      .find((item) => item.path === '/app/superuser');
     const operationalReadiness = SUPERUSER_NAV_SECTIONS
       .flatMap((section) => section.items)
       .find((item) => item.path === '/app/superuser/operational-readiness');
@@ -62,6 +66,10 @@ describe('AdminLeftNav', () => {
     );
 
     expect(devOnlySection).toBeDefined();
+    expect(controlTower).toMatchObject({
+      label: 'Control Tower',
+      path: '/app/superuser',
+    });
     expect(layoutCaptures).toMatchObject({
       label: 'Layout Captures',
       path: '/app/superuser/design-layout-captures',
@@ -74,8 +82,12 @@ describe('AdminLeftNav', () => {
       label: 'Coordination Runtime',
       path: '/app/superuser/coordination-runtime',
     });
+    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser');
     expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/operational-readiness');
     expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/coordination-runtime');
+    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/gcp-cost-inventory');
+    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/agchain-benchmarks-demo');
+    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/block-viewer-grid-demo');
   });
 
   it('boots AGChain Admin with Models and Tools menu items', () => {

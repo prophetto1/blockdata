@@ -435,7 +435,7 @@ export const router = createBrowserRouter([
           {
             element: <AdminShellLayout />,
             children: [
-              { index: true, element: <Navigate to="/app/superuser/operational-readiness" replace /> },
+              { index: true, lazy: () => import('@/pages/superuser/SuperuserControlTower') },
               { path: 'operational-readiness', lazy: () => import('@/pages/superuser/SuperuserOperationalReadiness') },
               { path: 'coordination-runtime', lazy: () => import('@/pages/superuser/CoordinationRuntime') },
               { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },

@@ -183,9 +183,9 @@ describe('CoordinationRuntime', () => {
         jsonResponse({
           summary: {
             active_count: 1,
-            stale_count: 1,
+            stale_count: 0,
             host_count: 1,
-            family_counts: { cdx: 2 },
+            family_counts: { cdx: 1 },
             session_classification_counts: {
               'vscode.cc.cli': 0,
               'vscode.cdx.cli': 1,
@@ -236,35 +236,6 @@ describe('CoordinationRuntime', () => {
                 },
               },
             },
-            {
-              lease_identity: 'legacy-cdx',
-              identity: 'legacy-cdx',
-              host: 'JON',
-              family: 'cdx',
-              session_agent_id: 'legacy-runtime',
-              claimed_at: '2026-04-11T12:10:00Z',
-              last_heartbeat_at: '2026-04-11T12:11:00Z',
-              expires_at: '2026-04-11T12:13:00Z',
-              stale: true,
-              revision: 5,
-              session_classification: {
-                key: 'unknown',
-                display_label: 'Unknown',
-                container_host: 'vscode',
-                interaction_surface: 'unknown',
-                runtime_product: 'unknown',
-                classified: false,
-                registry_version: 1,
-                reason: 'insufficient_signal',
-                provenance: {
-                  key: 'unknown',
-                  container_host: 'launch_stamped',
-                  interaction_surface: 'unknown',
-                  runtime_product: 'unknown',
-                  display_label: 'derived',
-                },
-              },
-            },
           ],
         }),
       )
@@ -301,7 +272,7 @@ describe('CoordinationRuntime', () => {
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(1, '/admin/runtime/coordination/status');
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
       2,
-      '/admin/runtime/coordination/identities?include_stale=true',
+      '/admin/runtime/coordination/identities',
     );
     expect(platformApiFetchMock).toHaveBeenNthCalledWith(
       3,

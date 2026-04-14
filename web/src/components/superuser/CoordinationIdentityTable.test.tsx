@@ -164,6 +164,46 @@ describe('CoordinationIdentityTable', () => {
     expect(screen.getByText('Terminal | CC')).toBeInTheDocument();
   });
 
+  it('uses shared-registry fallback labels exactly when server display_label is absent', () => {
+    const registryFallbackPayload = {
+      summary: payload.summary,
+      identities: [
+        {
+          ...payload.identities[0],
+          lease_identity: 'ide-cdx',
+          identity: 'ide-cdx',
+          session_classification: {
+            ...payload.identities[0].session_classification,
+            key: 'vscode.cdx.ide-panel',
+            display_label: undefined,
+            interaction_surface: 'ide-panel',
+            runtime_product: 'cdx',
+          },
+        },
+        {
+          ...payload.identities[1],
+          lease_identity: 'codex-app',
+          identity: 'codex-app',
+          session_classification: {
+            ...payload.identities[1].session_classification,
+            key: 'codex-app-win.cdx',
+            display_label: undefined,
+            container_host: 'codex-app-win',
+            interaction_surface: 'desktop-app',
+            runtime_product: 'cdx',
+            classified: true,
+            reason: null,
+          },
+        },
+      ],
+    } as unknown as CoordinationIdentityResponse;
+
+    render(<CoordinationIdentityTable data={registryFallbackPayload} loading={false} />);
+
+    expect(screen.getByText('VS Code | CDX IDE')).toBeInTheDocument();
+    expect(screen.getByText('Codex App (Win) | CDX')).toBeInTheDocument();
+  });
+
   it('renders legacy identities even when session classification metadata is missing', () => {
     const legacyPayload = {
       summary: payload.summary,

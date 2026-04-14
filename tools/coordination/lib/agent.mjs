@@ -110,8 +110,20 @@ function hasExpiredLease(expiresAt, now) {
   return expiresAtMs <= normalizeNow(now).getTime();
 }
 
+function isLeaseBackedIdentityRecord(value) {
+  const identity = String(value?.identity ?? value?.agentId ?? '');
+  if (!identity) {
+    return false;
+  }
+
+  return ['claimedAt', 'expiresAt', 'releasedAt'].some((field) => {
+    const fieldValue = value?.[field];
+    return typeof fieldValue === 'string' && fieldValue.trim().length > 0;
+  });
+}
+
 function isIdentityLeaseActive(value, now) {
-  if (!value || value.status === 'released') {
+  if (!value || !isLeaseBackedIdentityRecord(value) || value.status === 'released') {
     return false;
   }
 
@@ -403,6 +415,10 @@ export async function listAgentIdentities({
   for (const key of filteredKeys) {
     const record = await getRecord(presenceBucket, key);
     if (!record?.value) {
+      continue;
+    }
+
+    if (!isLeaseBackedIdentityRecord(record.value)) {
       continue;
     }
 

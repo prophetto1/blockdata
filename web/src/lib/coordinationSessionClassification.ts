@@ -3,10 +3,10 @@ import type { CoordinationSessionClassification, CoordinationSessionTypeKey } fr
 export const COORDINATION_SESSION_CLASSIFICATION_LABELS: Record<CoordinationSessionTypeKey, string> = {
   'vscode.cc.cli': 'VS Code | CC CLI',
   'vscode.cdx.cli': 'VS Code | CDX CLI',
-  'vscode.cc.ide-panel': 'VS Code | CC IDE Panel',
-  'vscode.cdx.ide-panel': 'VS Code | CDX IDE Panel',
+  'vscode.cc.ide-panel': 'VS Code | CC IDE',
+  'vscode.cdx.ide-panel': 'VS Code | CDX IDE',
   'claude-desktop.cc': 'Claude Desktop | CC',
-  'codex-app-win.cdx': 'Codex App Win | CDX',
+  'codex-app-win.cdx': 'Codex App (Win) | CDX',
   'terminal.cc': 'Terminal | CC',
   'terminal.cdx': 'Terminal | CDX',
   unknown: 'Unknown',
