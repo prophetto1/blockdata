@@ -67,7 +67,12 @@ def test_parse_rejects_unknown_source():
 
 def test_parse_tree_sitter_java():
     """Full flow: lookup doc -> download -> parse -> upload -> DB write -> 200."""
-    captured: dict[str, dict] = {}
+    captured: dict[str, list[dict] | dict[str, MagicMock]] = {
+        "conversion_parsing": [],
+        "conversion_representations": [],
+        "source_documents_updates": [],
+        "delete_counts": {"conversion_representations": 0, "conversion_parsing": 0},
+    }
 
     def table_side_effect(name):
         t = MagicMock()
@@ -78,18 +83,32 @@ def test_parse_tree_sitter_java():
             t.select.return_value.eq.return_value.maybe_single.return_value = chain
             write_chain = MagicMock()
             write_chain.execute.return_value = MagicMock(data=[])
+            def capture_update(row):
+                captured["source_documents_updates"].append(dict(row))
+                return t.update.return_value
+            t.update.side_effect = capture_update
             t.update.return_value.eq.return_value = write_chain
         elif name == "parsing_profiles":
             chain = MagicMock()
             chain.execute.return_value = MagicMock(data=None)
             t.select.return_value.eq.return_value.maybe_single.return_value = chain
-        else:
+        elif name in {"conversion_representations", "conversion_parsing"}:
             write_chain = MagicMock()
             write_chain.execute.return_value = MagicMock(data=[])
             def capture_upsert(row, *args, **kwargs):
-                captured[name] = row
+                captured[name].append(dict(row))
                 return write_chain
             t.upsert.side_effect = capture_upsert
+            delete_chain = MagicMock()
+            delete_chain.eq.return_value = delete_chain
+            def capture_delete_execute():
+                captured["delete_counts"][name] += 1
+                return MagicMock(data=[])
+            delete_chain.execute.side_effect = capture_delete_execute
+            t.delete.return_value = delete_chain
+        else:
+            write_chain = MagicMock()
+            write_chain.execute.return_value = MagicMock(data=[])
             t.update.return_value.eq.return_value = write_chain
         return t
 
@@ -110,8 +129,17 @@ def test_parse_tree_sitter_java():
     assert body.get("ok") is True
     assert body.get("track") == "tree_sitter"
     assert mock_upload.call_count == 2
-    assert len(captured["conversion_parsing"]["conv_uid"]) == 64
-    assert captured["conversion_parsing"]["conv_locator"] == "converted/uid-1/uid-1.ast.json"
+    assert len(captured["conversion_parsing"]) == 1
+    assert len(captured["conversion_representations"]) == 2
+    parsing_row = captured["conversion_parsing"][0]
+    representation_conv_uids = {row["conv_uid"] for row in captured["conversion_representations"]}
+    assert len(parsing_row["conv_uid"]) == 64
+    assert parsing_row["conv_locator"] == "converted/uid-1/uid-1.ast.json"
+    assert representation_conv_uids == {parsing_row["conv_uid"]}
+    assert captured["delete_counts"]["conversion_representations"] == 1
+    assert captured["delete_counts"]["conversion_parsing"] == 1
+    assert captured["source_documents_updates"][0]["status"] == "converting"
+    assert captured["source_documents_updates"][-1]["status"] == "parsed"
 
 
 def test_parse_rejects_docling_source_type():
@@ -131,3 +159,70 @@ def test_parse_rejects_docling_source_type():
 
     assert resp.status_code == 400
     assert "trigger-parse" in resp.json()["detail"]
+
+
+def test_parse_tree_sitter_cleans_partial_rows_on_failure():
+    captured: dict[str, list[dict] | dict[str, MagicMock]] = {
+        "conversion_parsing": [],
+        "conversion_representations": [],
+        "source_documents_updates": [],
+        "delete_counts": {"conversion_representations": 0, "conversion_parsing": 0},
+    }
+
+    def table_side_effect(name):
+        t = MagicMock()
+        if name == "source_documents":
+            doc_row = {"source_uid": "uid-1", "source_type": "java", "source_locator": "uploads/uid-1/Foo.java"}
+            chain = MagicMock()
+            chain.execute.return_value = MagicMock(data=doc_row)
+            t.select.return_value.eq.return_value.maybe_single.return_value = chain
+            write_chain = MagicMock()
+            write_chain.execute.return_value = MagicMock(data=[])
+            def capture_update(row):
+                captured["source_documents_updates"].append(dict(row))
+                return t.update.return_value
+            t.update.side_effect = capture_update
+            t.update.return_value.eq.return_value = write_chain
+        elif name == "parsing_profiles":
+            chain = MagicMock()
+            chain.execute.return_value = MagicMock(data=None)
+            t.select.return_value.eq.return_value.maybe_single.return_value = chain
+        elif name in {"conversion_representations", "conversion_parsing"}:
+            write_chain = MagicMock()
+            write_chain.execute.return_value = MagicMock(data=[])
+            def capture_upsert(row, *args, **kwargs):
+                captured[name].append(dict(row))
+                return write_chain
+            t.upsert.side_effect = capture_upsert
+            delete_chain = MagicMock()
+            delete_chain.eq.return_value = delete_chain
+            def capture_delete_execute():
+                captured["delete_counts"][name] += 1
+                return MagicMock(data=[])
+            delete_chain.execute.side_effect = capture_delete_execute
+            t.delete.return_value = delete_chain
+        else:
+            write_chain = MagicMock()
+            write_chain.execute.return_value = MagicMock(data=[])
+            t.update.return_value.eq.return_value = write_chain
+        return t
+
+    sb = _make_sb_mock(table_side_effect)
+
+    with patch("app.api.routes.parse.get_supabase_admin", return_value=sb), \
+         patch("app.domain.conversion.repository.get_supabase_admin", return_value=sb), \
+         patch("app.api.routes.parse.download_from_storage", new_callable=AsyncMock) as mock_download, \
+         patch("app.api.routes.parse.upsert_to_storage", new_callable=AsyncMock) as mock_upload:
+
+        mock_download.return_value = b"package demo; public class Foo { public String getName() { return null; } }"
+        mock_upload.side_effect = ["https://storage/ast", RuntimeError("upload boom")]
+
+        resp = client.post("/parse", json={"source_uid": "uid-1"}, headers=AUTH_HEADERS)
+
+    assert resp.status_code == 500
+    assert "upload boom" in resp.json()["detail"]
+    assert len(captured["conversion_representations"]) == 1
+    assert captured["delete_counts"]["conversion_representations"] == 2
+    assert captured["delete_counts"]["conversion_parsing"] == 2
+    assert captured["source_documents_updates"][0]["status"] == "converting"
+    assert captured["source_documents_updates"][-1]["status"] == "conversion_failed"

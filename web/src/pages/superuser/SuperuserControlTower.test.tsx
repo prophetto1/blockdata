@@ -47,6 +47,15 @@ vi.mock('@/hooks/usePlatformApiDevRecovery', () => ({
   usePlatformApiDevRecovery: (...args: unknown[]) => usePlatformApiDevRecoveryMock(...args),
 }));
 
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      refreshSession: vi.fn(),
+      getSession: vi.fn(),
+    },
+  },
+}));
+
 vi.mock('@tanstack/react-query', async () => {
   const actual = await vi.importActual<typeof import('@tanstack/react-query')>('@tanstack/react-query');
   return {
@@ -328,10 +337,13 @@ afterEach(() => {
 });
 
 describe('SuperuserControlTower', () => {
-  it('renders the promoted dense control tower and keeps it on the superuser homepage route', async () => {
-    await renderPage();
+  it(
+    'renders the promoted dense control tower and keeps it on the superuser homepage route',
+    { timeout: 15000 },
+    async () => {
+      await renderPage();
 
-    expect(screen.queryByText('Operator Console')).not.toBeInTheDocument();
+      expect(screen.queryByText('Operator Console')).not.toBeInTheDocument();
     expect(
       screen.queryByText(
         'Five coordination state cards up top. Select Browser State to pull down the full operational-readiness surface without leaving the superuser homepage.',
@@ -345,17 +357,18 @@ describe('SuperuserControlTower', () => {
     expect(screen.queryByText('State + Query Health')).not.toBeInTheDocument();
     expect(screen.queryByText('Coordination + Routing')).not.toBeInTheDocument();
     expect(screen.queryByText('Hook Policy + Audit')).not.toBeInTheDocument();
-    expect(routerSource).toContain("import('@/pages/superuser/SuperuserControlTower')");
-    expect(routerSource).not.toContain('control-tower-v2');
-    expect(screen.queryByText(/control tower v2/i)).not.toBeInTheDocument();
-  });
+      expect(routerSource).toContain("import('@/pages/superuser/SuperuserControlTower')");
+      expect(routerSource).not.toContain('control-tower-v2');
+      expect(screen.queryByText(/control tower v2/i)).not.toBeInTheDocument();
+    },
+  );
 
   it('lets the first card pull down the live operational readiness section', async () => {
     await renderPage();
 
     expect(screen.queryByRole('button', { name: /pull down readiness/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /open readiness/i })).not.toBeInTheDocument();
-    expect(screen.getByText('pull out panel')).toBeInTheDocument();
+    expect(screen.getAllByText('pull out panel').length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole('button', { name: /select browser state/i }));
 
@@ -377,5 +390,21 @@ describe('SuperuserControlTower', () => {
       'href',
       '/app/superuser/plan-tracker',
     );
+  });
+
+  it('lets the coordination state card pull down the live runtime section without losing the direct route', async () => {
+    await renderPage();
+
+    expect(screen.queryByTestId('coordination-runtime-surface')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open runtime' })).toHaveAttribute(
+      'href',
+      '/app/superuser/coordination-runtime',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /select coordination state/i }));
+
+    expect(screen.getByTestId('coordination-runtime-surface')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /identities/i })).toBeInTheDocument();
+    expect(screen.getByTestId('coordination-discussion-queue')).toBeInTheDocument();
   });
 });

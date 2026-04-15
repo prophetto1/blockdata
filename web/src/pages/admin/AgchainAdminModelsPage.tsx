@@ -457,25 +457,25 @@ export default function AgchainAdminModelsPage() {
         headerVariant="admin"
         bodyClassName="min-h-0 overflow-hidden p-0 md:p-0"
       >
-        <div className="flex h-full min-h-0 flex-col gap-3 p-2">
+        <div className="flex h-full min-h-0 flex-col gap-4 p-4">
           {error ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           ) : null}
 
           {message ? (
-            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
               {message}
             </div>
           ) : null}
 
-          <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
-            <div className="grid border-b border-border lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[430px_minmax(0,1fr)]">
+          <section className="flex min-h-0 flex-1 flex-col rounded-[24px] border border-border/70 bg-card/60 shadow-sm">
+            <div className="grid border-b border-border/70 bg-background/40 lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[430px_minmax(0,1fr)]">
               <div
                 role="group"
                 aria-label="Provider registry controls"
-                className="flex flex-wrap items-center gap-2 px-3 py-2 lg:border-r lg:border-border"
+                className="flex flex-wrap items-center gap-2 px-4 py-3 lg:border-r lg:border-border/70"
               >
                 <label className="relative min-w-0 max-w-sm flex-1">
                   <span className="sr-only">Search providers</span>
@@ -521,7 +521,7 @@ export default function AgchainAdminModelsPage() {
               <div
                 role="group"
                 aria-label="Model targets controls"
-                className="flex flex-wrap items-center gap-2 border-t border-border px-3 py-2 lg:border-t-0"
+                className="flex flex-wrap items-center gap-2 border-t border-border/70 px-4 py-3 lg:border-t-0"
               >
                 <label className="relative min-w-0 max-w-sm flex-1">
                   <span className="sr-only">Search models</span>
@@ -562,10 +562,10 @@ export default function AgchainAdminModelsPage() {
             </div>
 
             <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[430px_minmax(0,1fr)]">
-              <section className="min-h-0 overflow-auto border-b border-border lg:border-b-0 lg:border-r">
+              <section className="min-h-0 overflow-auto border-b border-border/70 lg:border-b-0 lg:border-r">
                 <table className="w-full text-left" aria-label="Provider registry">
-                  <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
-                    <tr className="border-b border-border">
+                  <thead className="sticky top-0 z-10 bg-card/80 text-xs text-muted-foreground">
+                    <tr className="border-b border-border/70">
                       <th className="py-2 pl-5 pr-3 font-medium">Provider</th>
                       <th className="px-3 py-2 font-medium">Status</th>
                       <th className="py-2 pl-3 pr-5 text-right font-medium">Action</th>
@@ -593,7 +593,7 @@ export default function AgchainAdminModelsPage() {
                               }
                             }}
                             className={cn(
-                              'cursor-pointer border-b border-border/60 hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+                              'cursor-pointer border-b border-border/60 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                               isSelected && 'hover:bg-transparent',
                             )}
                             style={isSelected ? selectedSurfaceRowStyle : undefined}
@@ -639,8 +639,8 @@ export default function AgchainAdminModelsPage() {
 
               <section className="min-h-0 overflow-auto">
                 <table className="w-full text-left" aria-label="Model targets">
-                  <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
-                    <tr className="border-b border-border">
+                  <thead className="sticky top-0 z-10 bg-card/80 text-xs text-muted-foreground">
+                    <tr className="border-b border-border/70">
                       <th className="py-2 pl-5 pr-3 font-medium">Model</th>
                       <th className="px-3 py-2 font-medium">Compatibility</th>
                       <th className="px-3 py-2 font-medium">Status</th>
@@ -657,7 +657,7 @@ export default function AgchainAdminModelsPage() {
                       </tr>
                     ) : (
                       filteredModels.map((model) => (
-                        <tr key={model.model_target_id} className="border-b border-border/60 hover:bg-accent/50">
+                        <tr key={model.model_target_id} className="border-b border-border/60 hover:bg-accent/30">
                           <td className="py-2 pl-5 pr-3 align-middle">
                             <div className="min-w-0">
                               <div className="truncate text-sm font-medium text-foreground">{model.label}</div>

@@ -159,6 +159,52 @@ function Sync-RuntimeSource {
   }
 }
 
+function Ensure-StudioPublicHostConfig {
+  param(
+    [string]$MastraIndexPath,
+    [string]$BindHost = "0.0.0.0",
+    [string]$StudioHost = "127.0.0.1",
+    [string]$StudioProtocol = "http",
+    [int]$StudioPort = 4111
+  )
+
+  if (-not (Test-Path $MastraIndexPath)) {
+    throw "Mastra runtime index not found at $MastraIndexPath."
+  }
+
+  $content = Get-Content -Path $MastraIndexPath -Raw
+
+  if ($content.Contains("studioHost: '$StudioHost'") -and $content.Contains("studioProtocol: '$StudioProtocol'")) {
+    return $false
+  }
+
+  $pattern = "  server:\s*\{\s*auth:\s*mastraAuth,\s*rbac:\s*rbacProvider,\s*\},"
+  $replacement = @"
+  server: {
+    host: '$BindHost',
+    studioHost: '$StudioHost',
+    studioProtocol: '$StudioProtocol',
+    studioPort: $StudioPort,
+    auth: mastraAuth,
+    rbac: rbacProvider,
+  },
+"@
+
+  $updated = [regex]::Replace(
+    $content,
+    $pattern,
+    [System.Text.RegularExpressions.MatchEvaluator]{ param($match) $replacement },
+    1
+  )
+
+  if ($updated -eq $content) {
+    throw "Failed to inject Studio public-host config into $MastraIndexPath."
+  }
+
+  Write-Utf8NoBom -Path $MastraIndexPath -Content $updated
+  return $true
+}
+
 function Remove-PnpmOverrides {
   param([string]$PackageJsonPath)
 
@@ -384,6 +430,18 @@ $steps += [ordered]@{
   step = "sync_runtime"
   ok = $true
   detail = "Synced examples\\agent into the standalone runtime directory."
+}
+
+$runtimeMastraIndexPath = Join-Path $RuntimeRoot "src\\mastra\\index.ts"
+$patchedStudioHost = Ensure-StudioPublicHostConfig -MastraIndexPath $runtimeMastraIndexPath -StudioPort $StudioPort
+$steps += [ordered]@{
+  step = "normalize_runtime_server"
+  ok = $true
+  detail = if ($patchedStudioHost) {
+    "Injected Studio public-host config into the standalone runtime source."
+  } else {
+    "Standalone runtime source already had the Studio public-host config."
+  }
 }
 
 $hadOverrides = Remove-PnpmOverrides -PackageJsonPath $runtimePackageJsonPath

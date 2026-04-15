@@ -8,6 +8,10 @@ import {
 import type { Icon } from '@tabler/icons-react';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { CollapsibleSurface } from '@/components/superuser/CollapsibleSurface';
+import {
+  CoordinationRuntimeSurface,
+  DEFAULT_COORDINATION_RUNTIME_CARD_STATE,
+} from '@/components/superuser/CoordinationRuntimeSurface';
 import { OperationalReadinessBootstrapPanel } from '@/components/superuser/OperationalReadinessBootstrapPanel';
 import { OperationalReadinessCheckGrid } from '@/components/superuser/OperationalReadinessCheckGrid';
 import { OperationalReadinessClientPanel } from '@/components/superuser/OperationalReadinessClientPanel';
@@ -56,13 +60,9 @@ const HOME_PLANES: PlaneCard[] = [
     key: 'coordination-state',
     label: 'Coordination State',
     role: 'Broker, stream bridge, events',
-    tone: 'muted',
+    tone: DEFAULT_COORDINATION_RUNTIME_CARD_STATE.tone,
     icon: IconCode,
-    facets: [
-      { label: 'Connection', tone: 'muted', value: 'open runtime' },
-      { label: 'Events', tone: 'muted', value: 'live feed there' },
-      { label: 'Latest', tone: 'muted', value: 'lazy loaded' },
-    ],
+    facets: DEFAULT_COORDINATION_RUNTIME_CARD_STATE.facets,
     drillLabel: 'Open runtime',
     drillPath: '/app/superuser/coordination-runtime',
   },
@@ -301,29 +301,41 @@ export function Component() {
     breadcrumbs: ['Superuser', 'Control Tower'],
   });
 
-  const [expandedPanel, setExpandedPanel] = useState<'operational-readiness' | null>(null);
+  const [expandedPanel, setExpandedPanel] = useState<'operational-readiness' | 'coordination-runtime' | null>(null);
   const [browserState, setBrowserState] = useState(DEFAULT_BROWSER_STATE);
-  const planes = HOME_PLANES.map((plane) =>
-    plane.key === 'browser-state'
-      ? {
-          ...plane,
-          tone: browserState.tone,
-          facets: browserState.facets,
-        }
-      : plane,
-  );
+  const [coordinationState, setCoordinationState] = useState(DEFAULT_COORDINATION_RUNTIME_CARD_STATE);
+  const planes = HOME_PLANES.map((plane) => {
+    if (plane.key === 'browser-state') {
+      return {
+        ...plane,
+        tone: browserState.tone,
+        facets: browserState.facets,
+      };
+    }
+
+    if (plane.key === 'coordination-state') {
+      return {
+        ...plane,
+        tone: coordinationState.tone,
+        facets: coordinationState.facets,
+      };
+    }
+
+    return plane;
+  });
 
   return (
     <ControlTowerV2PageFrame
       eyebrow="Operator Console"
       title="Control Tower"
-      description="Five coordination state cards up top. Select Browser State to pull down the full operational-readiness surface without leaving the superuser homepage."
+      description="Five coordination state cards up top. Select Browser State or Coordination State to pull down the live runtime surfaces without leaving the superuser homepage."
       hideHeader
       contentClassName="min-h-full bg-background pb-8"
     >
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {planes.map((plane) => {
           const readinessSelected = plane.key === 'browser-state' && expandedPanel === 'operational-readiness';
+          const coordinationSelected = plane.key === 'coordination-state' && expandedPanel === 'coordination-runtime';
 
           return (
             <PlatformPlaneCardV2
@@ -335,13 +347,21 @@ export function Component() {
               facets={plane.facets}
               drillLabel={plane.drillLabel}
               drillPath={plane.drillPath}
-              selected={readinessSelected}
+              selected={readinessSelected || coordinationSelected}
               onSelect={
                 plane.key === 'browser-state'
                   ? () => setExpandedPanel('operational-readiness')
+                  : plane.key === 'coordination-state'
+                    ? () => setExpandedPanel('coordination-runtime')
                   : undefined
               }
-              selectLabel={plane.key === 'browser-state' ? 'Select Browser State' : undefined}
+              selectLabel={
+                plane.key === 'browser-state'
+                  ? 'Select Browser State'
+                  : plane.key === 'coordination-state'
+                    ? 'Select Coordination State'
+                    : undefined
+              }
             />
           );
         })}
@@ -349,6 +369,8 @@ export function Component() {
 
       {expandedPanel === 'operational-readiness' ? (
         <EmbeddedOperationalReadinessSection onBrowserStateChange={setBrowserState} />
+      ) : expandedPanel === 'coordination-runtime' ? (
+        <CoordinationRuntimeSurface onStateChange={setCoordinationState} />
       ) : null}
     </ControlTowerV2PageFrame>
   );

@@ -50,38 +50,44 @@ describe('AdminLeftNav', () => {
     expect(paths).toContain('/app/blockdata-admin/test-integrations');
   });
 
-  it('keeps DEV ONLY inside Superuser', () => {
+  it('groups Superuser navigation into Control Tower, Dev Tools, and Dev Only', () => {
+    const sectionLabels = SUPERUSER_NAV_SECTIONS.map((section) => section.label);
+    const controlTowerSection = SUPERUSER_NAV_SECTIONS.find((section) => section.label === 'CONTROL TOWER');
+    const devToolsSection = SUPERUSER_NAV_SECTIONS.find((section) => section.label === 'DEV TOOLS');
     const devOnlySection = SUPERUSER_NAV_SECTIONS.find((section) => section.label === 'DEV ONLY');
-    const controlTower = SUPERUSER_NAV_SECTIONS
-      .flatMap((section) => section.items)
-      .find((item) => item.path === '/app/superuser');
-    const coordinationRuntime = SUPERUSER_NAV_SECTIONS
-      .flatMap((section) => section.items)
-      .find((item) => item.path === '/app/superuser/coordination-runtime');
-    const layoutCaptures = devOnlySection?.items.find(
-      (item) => item.path === '/app/superuser/design-layout-captures',
-    );
 
-    expect(devOnlySection).toBeDefined();
-    expect(controlTower).toMatchObject({
-      label: 'Control Tower',
-      path: '/app/superuser',
-    });
-    expect(layoutCaptures).toMatchObject({
-      label: 'Layout Captures',
-      path: '/app/superuser/design-layout-captures',
-    });
-    expect(coordinationRuntime).toMatchObject({
-      label: 'Coordination Runtime',
-      path: '/app/superuser/coordination-runtime',
-    });
-    expect(devOnlySection?.items.map((item) => item.path)).not.toContain('/app/superuser/control-tower-v2');
-    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser');
-    expect(devOnlySection?.items.map((item) => item.path)).not.toContain('/app/superuser/operational-readiness');
-    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/coordination-runtime');
-    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/gcp-cost-inventory');
-    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/agchain-benchmarks-demo');
-    expect(devOnlySection?.items.map((item) => item.path)).toContain('/app/superuser/block-viewer-grid-demo');
+    expect(sectionLabels).toEqual(['CONTROL TOWER', 'DEV TOOLS', 'DEV ONLY']);
+    expect(controlTowerSection?.items).toEqual([
+      expect.objectContaining({ label: 'Control Tower', path: '/app/superuser' }),
+      expect.objectContaining({ label: 'Essential Links', path: '/app/superuser/essential-links' }),
+      expect.objectContaining({ label: 'Secrets & ENV', path: '/app/superuser/secrets-env' }),
+      expect.objectContaining({ label: 'Coordination Runtime', path: '/app/superuser/coordination-runtime' }),
+      expect.objectContaining({ label: 'Githooks & Hooks', path: '/app/superuser/husky-ci-cd' }),
+      expect.objectContaining({ label: 'State Management', path: '/app/superuser/zustand-react-query' }),
+      expect.objectContaining({ label: 'CI/CD', path: '/app/superuser/hook-system' }),
+      expect.objectContaining({ label: 'Open Telemetry', path: '/app/superuser/open-telemetry' }),
+      expect.objectContaining({ label: 'OpenAPI & FastAPI', path: '/app/superuser/openapi-fastapi' }),
+      expect.objectContaining({ label: 'Databases', path: '/app/superuser/databases' }),
+      expect.objectContaining({ label: 'Frontend Contracts', path: '/app/superuser/frontend-contracts' }),
+      expect.objectContaining({ label: 'Dependencies', path: '/app/superuser/dependencies' }),
+      expect.objectContaining({ label: 'Inventory & Cost Management', path: '/app/superuser/inventory-cost-management' }),
+    ]);
+    expect(devToolsSection?.items).toEqual([
+      expect.objectContaining({ label: 'Layout Capture', path: '/app/superuser/design-layout-captures' }),
+      expect.objectContaining({ label: 'Plan Tracker', path: '/app/superuser/plan-tracker' }),
+    ]);
+    expect(devOnlySection?.items).toEqual([
+      expect.objectContaining({ label: 'Agchain Benchmarks (demo)', path: '/app/superuser/agchain-benchmarks-demo' }),
+      expect.objectContaining({ label: 'Block Viewer Grid (demo)', path: '/app/superuser/block-viewer-grid-demo' }),
+    ]);
+
+    const allPaths = SUPERUSER_NAV_SECTIONS.flatMap((section) => section.items).map((item) => item.path);
+    expect(allPaths).not.toContain('/app/superuser/control-tower-v2');
+    expect(allPaths).not.toContain('/app/superuser/operational-readiness');
+    expect(allPaths).not.toContain('/app/superuser/coordination-runtime-mock');
+    expect(allPaths).not.toContain('/app/superuser/skill-driven-dev');
+    expect(allPaths).not.toContain('/app/superuser/telemetry-logs');
+    expect(allPaths).not.toContain('/app/superuser/gcp-cost-inventory');
   });
 
   it('boots AGChain Admin with Models and Tools menu items', () => {

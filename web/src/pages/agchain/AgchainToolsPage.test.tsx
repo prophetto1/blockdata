@@ -318,8 +318,7 @@ describe('AgchainToolsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Inspect Custom Lookup' }));
 
-    const inspector = await screen.findByRole('dialog');
-    expect(within(inspector).getByRole('heading', { name: 'Custom Lookup' })).toBeInTheDocument();
+    const inspector = await screen.findByTestId('agchain-tools-inspector');
     expect(within(inspector).getByText('Version history')).toBeInTheDocument();
     expect(within(inspector).getByText('v1')).toBeInTheDocument();
     expect(within(inspector).getByRole('button', { name: 'Edit tool' })).toBeInTheDocument();

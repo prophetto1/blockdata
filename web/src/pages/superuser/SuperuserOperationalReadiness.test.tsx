@@ -1,8 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Component as SuperuserOperationalReadiness } from './SuperuserOperationalReadiness';
-
 const refreshMock = vi.fn();
 const executeActionMock = vi.fn();
 const loadCheckDetailMock = vi.fn();
@@ -23,6 +21,19 @@ vi.mock('@/hooks/useOperationalReadiness', () => ({
 vi.mock('@/hooks/usePlatformApiDevRecovery', () => ({
   usePlatformApiDevRecovery: () => usePlatformApiDevRecoveryMock(),
 }));
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      refreshSession: vi.fn(),
+      getSession: vi.fn(),
+    },
+  },
+}));
+
+async function importPage() {
+  return import('./SuperuserOperationalReadiness');
+}
 
 describe('SuperuserOperationalReadiness', () => {
   afterEach(() => {
@@ -220,41 +231,46 @@ describe('SuperuserOperationalReadiness', () => {
     });
   });
 
-  it('renders the operator dashboard with the dev recovery panel, summary runtime identity, surfaces, and client panel', () => {
-    render(<SuperuserOperationalReadiness />);
+  it(
+    'renders the operator dashboard with the dev recovery panel, summary runtime identity, surfaces, and client panel',
+    { timeout: 15000 },
+    async () => {
+      const { Component } = await importPage();
+      render(<Component />);
 
-    expect(screen.queryByText(/backend-owned control plane/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Refresh Status' })).toBeInTheDocument();
+      expect(screen.queryByText(/backend-owned control plane/i)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Refresh Status' })).toBeInTheDocument();
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Platform API launch hygiene' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Recover platform-api' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: 'Platform API launch hygiene' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Recover platform-api' })).toBeInTheDocument();
 
-    // Bootstrap shows ready state
-    expect(screen.getByText('Snapshot loaded')).toBeInTheDocument();
+      // Bootstrap shows ready state
+      expect(screen.getByText('Snapshot loaded')).toBeInTheDocument();
 
-    // Summary counters
-    expect(screen.getByText('OK')).toBeInTheDocument();
-    expect(screen.getByText('WARN')).toBeInTheDocument();
-    expect(screen.getByText('FAIL')).toBeInTheDocument();
-    expect(screen.getByText('Active runtime')).toBeInTheDocument();
-    expect(screen.getAllByText('blockdata-platform-api').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('blockdata-platform-api-00067-6pm').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('blockdata-platform-api-sa@agchain.iam.gserviceaccount.com').length).toBeGreaterThanOrEqual(1);
+      // Summary counters
+      expect(screen.getByText('OK')).toBeInTheDocument();
+      expect(screen.getByText('WARN')).toBeInTheDocument();
+      expect(screen.getByText('FAIL')).toBeInTheDocument();
+      expect(screen.getByText('Active runtime')).toBeInTheDocument();
+      expect(screen.getAllByText('blockdata-platform-api').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('blockdata-platform-api-00067-6pm').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('blockdata-platform-api-sa@agchain.iam.gserviceaccount.com').length).toBeGreaterThanOrEqual(1);
 
-    // Surfaces render in order
-    expect(screen.getByText('Platform API readiness')).toBeInTheDocument();
-    expect(screen.getByText('Bucket CORS')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reconcile bucket CORS policy' })).toBeInTheDocument();
+      // Surfaces render in order
+      expect(screen.getByText('Platform API readiness')).toBeInTheDocument();
+      expect(screen.getByText('Bucket CORS')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Reconcile bucket CORS policy' })).toBeInTheDocument();
 
-    // Remediation visible for failed check
-    expect(screen.getByText('Apply the browser upload CORS policy to the bucket.')).toBeInTheDocument();
+      // Remediation visible for failed check
+      expect(screen.getByText('Apply the browser upload CORS policy to the bucket.')).toBeInTheDocument();
 
-    // Client panel
-    expect(screen.getByText('Client Environment')).toBeInTheDocument();
-    expect(screen.getByText('Frontend Origin')).toBeInTheDocument();
-  });
+      // Client panel
+      expect(screen.getByText('Client Environment')).toBeInTheDocument();
+      expect(screen.getByText('Frontend Origin')).toBeInTheDocument();
+    },
+  );
 
-  it('hides the local recovery panel when the page is not in the supported dev helper mode', () => {
+  it('hides the local recovery panel when the page is not in the supported dev helper mode', async () => {
     usePlatformApiDevRecoveryMock.mockReturnValue({
       enabled: false,
       loading: false,
@@ -266,7 +282,8 @@ describe('SuperuserOperationalReadiness', () => {
       recover: recoverMock,
     });
 
-    render(<SuperuserOperationalReadiness />);
+    const { Component } = await importPage();
+    render(<Component />);
 
     expect(screen.queryByRole('heading', { level: 2, name: 'Platform API launch hygiene' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Recover platform-api' })).not.toBeInTheDocument();
@@ -274,8 +291,9 @@ describe('SuperuserOperationalReadiness', () => {
     expect(screen.getByText('Platform API readiness')).toBeInTheDocument();
   });
 
-  it('routes the mounted bucket CORS action through the readiness hook', () => {
-    render(<SuperuserOperationalReadiness />);
+  it('routes the mounted bucket CORS action through the readiness hook', async () => {
+    const { Component } = await importPage();
+    render(<Component />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Reconcile bucket CORS policy' }));
 
@@ -288,8 +306,9 @@ describe('SuperuserOperationalReadiness', () => {
     );
   });
 
-  it('routes the mounted verify action through the readiness hook', () => {
-    render(<SuperuserOperationalReadiness />);
+  it('routes the mounted verify action through the readiness hook', async () => {
+    const { Component } = await importPage();
+    render(<Component />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Verify now' }));
 

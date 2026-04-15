@@ -25,6 +25,7 @@ def _build_conv_uid(parsing_tool: str, representation_type: str, artifact_bytes:
 
 def insert_representation(
     source_uid: str,
+    conv_uid: str,
     parsing_tool: str,
     representation_type: str,
     artifact_locator: str,
@@ -38,7 +39,7 @@ def insert_representation(
             "source_uid": source_uid,
             "parsing_tool": parsing_tool,
             "representation_type": representation_type,
-            "conv_uid": _build_conv_uid(parsing_tool, representation_type, artifact_bytes),
+            "conv_uid": conv_uid,
             "artifact_locator": artifact_locator,
             "artifact_hash": _sha256_hex(artifact_bytes),
             "artifact_size_bytes": len(artifact_bytes),
@@ -62,6 +63,24 @@ def mark_source_status(
     if conversion_job_id is not None:
         update["conversion_job_id"] = conversion_job_id
     sb.table("source_documents").update(update).eq("source_uid", source_uid).execute()
+
+
+def clear_conversion_state_for_source(
+    source_uid: str,
+    *,
+    parsing_tool: Optional[str] = None,
+) -> None:
+    """Delete conversion rows for a source so a reparse starts from one current run."""
+    sb = get_supabase_admin()
+
+    representations_delete = sb.table("conversion_representations").delete().eq(
+        "source_uid", source_uid
+    )
+    if parsing_tool:
+        representations_delete = representations_delete.eq("parsing_tool", parsing_tool)
+    representations_delete.execute()
+
+    sb.table("conversion_parsing").delete().eq("source_uid", source_uid).execute()
 
 
 def upsert_conversion_parsing(

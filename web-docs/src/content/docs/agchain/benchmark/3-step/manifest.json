@@ -1,0 +1,2142 @@
+{
+  "database": {
+    "db_path": "E:\\agchain\\legal-10\\datasets\\legal10-updates.duckdb",
+    "db_size_bytes": 738734080,
+    "duckdb_version": "v1.4.3",
+    "export_id": "2026-02-05_095022_duckdb_export",
+    "export_time_utc": "2026-02-05T09:50:23+00:00"
+  },
+  "export": {
+    "out_dir": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export",
+    "compression": "ZSTD",
+    "include_views": true,
+    "with_row_counts": true,
+    "fail_fast": false,
+    "only_filters": []
+  },
+  "objects": [
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "cap_cases_meta",
+      "fqn": "main.cap_cases_meta",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.cap_cases_meta.parquet",
+      "status": "success",
+      "row_count": 855215,
+      "file_size_bytes": 64264530,
+      "columns": [
+        {
+          "column_name": "cap_source",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cap_id",
+          "column_index": 2,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decision_date_raw",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decision_year",
+          "column_index": 4,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "court_slug",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "court_name",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "docket_number",
+          "column_index": 7,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "name",
+          "column_index": 8,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "name_abbreviation",
+          "column_index": 9,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "official_cite",
+          "column_index": 10,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cite_key",
+          "column_index": 11,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "cap_text_stats",
+      "fqn": "main.cap_text_stats",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.cap_text_stats.parquet",
+      "status": "success",
+      "row_count": 43043,
+      "file_size_bytes": 832488,
+      "columns": [
+        {
+          "column_name": "cap_id",
+          "column_index": 1,
+          "data_type": "BIGINT",
+          "is_nullable": false,
+          "column_default": null
+        },
+        {
+          "column_name": "cap_source",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "official_cite",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "opinion_chars",
+          "column_index": 4,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "pagerank_percentile",
+          "column_index": 5,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "head_matter_chars",
+          "column_index": 6,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "cl_crosswalk",
+      "fqn": "main.cl_crosswalk",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.cl_crosswalk.parquet",
+      "status": "success",
+      "row_count": 866618,
+      "file_size_bytes": 7221691,
+      "columns": [
+        {
+          "column_name": "lexis_cite",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "fed_cite",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cluster_id",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "fowler_scores",
+      "fqn": "main.fowler_scores",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.fowler_scores.parquet",
+      "status": "success",
+      "row_count": 27846,
+      "file_size_bytes": 369114,
+      "columns": [
+        {
+          "column_name": "snapshot_year",
+          "column_index": 1,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "auth_score",
+          "column_index": 2,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "pauth_score",
+          "column_index": 3,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lexis_cite",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "justice_lookup",
+      "fqn": "main.justice_lookup",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.justice_lookup.parquet",
+      "status": "success",
+      "row_count": 40,
+      "file_size_bytes": 1877,
+      "columns": [
+        {
+          "column_name": "scdb_justice_id",
+          "column_index": 1,
+          "data_type": "INTEGER",
+          "is_nullable": false,
+          "column_default": null
+        },
+        {
+          "column_name": "mq_code",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "justice_name",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "start_term",
+          "column_index": 4,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "end_term",
+          "column_index": 5,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "martin_quinn_scores",
+      "fqn": "main.martin_quinn_scores",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.martin_quinn_scores.parquet",
+      "status": "success",
+      "row_count": 800,
+      "file_size_bytes": 8147,
+      "columns": [
+        {
+          "column_name": "scdb_justice_id",
+          "column_index": 1,
+          "data_type": "INTEGER",
+          "is_nullable": false,
+          "column_default": null
+        },
+        {
+          "column_name": "term",
+          "column_index": 2,
+          "data_type": "INTEGER",
+          "is_nullable": false,
+          "column_default": null
+        },
+        {
+          "column_name": "post_mn",
+          "column_index": 3,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "post_sd",
+          "column_index": 4,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "justice_name",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "oyez_cases",
+      "fqn": "main.oyez_cases",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.oyez_cases.parquet",
+      "status": "success",
+      "row_count": 8393,
+      "file_size_bytes": 346002,
+      "columns": [
+        {
+          "column_name": "oyez_id",
+          "column_index": 1,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "term",
+          "column_index": 2,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "docket_norm",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "case_name",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "first_party",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "second_party",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "winning_party",
+          "column_index": 7,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decision_date",
+          "column_index": 8,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "transcript_count",
+          "column_index": 9,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "oyez_scdb_map",
+      "fqn": "main.oyez_scdb_map",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.oyez_scdb_map.parquet",
+      "status": "success",
+      "row_count": 7824,
+      "file_size_bytes": 192326,
+      "columns": [
+        {
+          "column_name": "oyez_id",
+          "column_index": 1,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "scdb_caseId",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "term",
+          "column_index": 3,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "oyez_docket",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "scdb_docket",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "case_name",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "transcript_count",
+          "column_index": 7,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "match_confidence",
+          "column_index": 8,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "oyez_transcript_turns",
+      "fqn": "main.oyez_transcript_turns",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.oyez_transcript_turns.parquet",
+      "status": "success",
+      "row_count": 0,
+      "file_size_bytes": 242,
+      "columns": [
+        {
+          "column_name": "oyez_id",
+          "column_index": 1,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "transcript_idx",
+          "column_index": 2,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "section_idx",
+          "column_index": 3,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "turn_idx",
+          "column_index": 4,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "speaker",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "speaker_role",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "start_time",
+          "column_index": 7,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "stop_time",
+          "column_index": 8,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "text",
+          "column_index": 9,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "scdb_cases",
+      "fqn": "main.scdb_cases",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.scdb_cases.parquet",
+      "status": "success",
+      "row_count": 29021,
+      "file_size_bytes": 1398384,
+      "columns": [
+        {
+          "column_name": "caseId",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "docketId",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseIssuesId",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "voteId",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "dateDecision",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decisionType",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "usCite",
+          "column_index": 7,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "sctCite",
+          "column_index": 8,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "ledCite",
+          "column_index": 9,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lexisCite",
+          "column_index": 10,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "term",
+          "column_index": 11,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "naturalCourt",
+          "column_index": 12,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "chief",
+          "column_index": 13,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "docket",
+          "column_index": 14,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseName",
+          "column_index": 15,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "dateArgument",
+          "column_index": 16,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "dateRearg",
+          "column_index": 17,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "petitioner",
+          "column_index": 18,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "petitionerState",
+          "column_index": 19,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "respondent",
+          "column_index": 20,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "respondentState",
+          "column_index": 21,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "jurisdiction",
+          "column_index": 22,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "adminAction",
+          "column_index": 23,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "adminActionState",
+          "column_index": 24,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "threeJudgeFdc",
+          "column_index": 25,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseOrigin",
+          "column_index": 26,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseOriginState",
+          "column_index": 27,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseSource",
+          "column_index": 28,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseSourceState",
+          "column_index": 29,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lcDisagreement",
+          "column_index": 30,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "certReason",
+          "column_index": 31,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lcDisposition",
+          "column_index": 32,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lcDispositionDirection",
+          "column_index": 33,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "declarationUncon",
+          "column_index": 34,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseDisposition",
+          "column_index": 35,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseDispositionUnusual",
+          "column_index": 36,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "partyWinning",
+          "column_index": 37,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "precedentAlteration",
+          "column_index": 38,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "voteUnclear",
+          "column_index": 39,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "issue",
+          "column_index": 40,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "issueArea",
+          "column_index": 41,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decisionDirection",
+          "column_index": 42,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decisionDirectionDissent",
+          "column_index": 43,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "authorityDecision1",
+          "column_index": 44,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "authorityDecision2",
+          "column_index": 45,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lawType",
+          "column_index": 46,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lawSupp",
+          "column_index": 47,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lawMinor",
+          "column_index": 48,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "majOpinWriter",
+          "column_index": 49,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "majOpinAssigner",
+          "column_index": 50,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "splitVote",
+          "column_index": 51,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "majVotes",
+          "column_index": 52,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "minVotes",
+          "column_index": 53,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "has_opinion_text",
+          "column_index": 54,
+          "data_type": "BOOLEAN",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "missing_text_reason",
+          "column_index": 55,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "scotus_text_stats",
+      "fqn": "main.scotus_text_stats",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.scotus_text_stats.parquet",
+      "status": "success",
+      "row_count": 27733,
+      "file_size_bytes": 304231,
+      "columns": [
+        {
+          "column_name": "caseId",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": false,
+          "column_default": null
+        },
+        {
+          "column_name": "usCite",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "opinion_chars",
+          "column_index": 3,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "opinion_file_bytes",
+          "column_index": 4,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "syllabus_chars",
+          "column_index": 5,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "has_syllabus",
+          "column_index": 6,
+          "data_type": "BOOLEAN",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "shepards_edges",
+      "fqn": "main.shepards_edges",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.shepards_edges.parquet",
+      "status": "success",
+      "row_count": 5711699,
+      "file_size_bytes": 37097111,
+      "columns": [
+        {
+          "column_name": "cited_lexis",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citing_lexis",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citing_court",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citing_opinion_type",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "shepards_raw",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "shepards_raw_lc",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "year_correct",
+          "column_index": 7,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citing_year",
+          "column_index": 8,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cited_year",
+          "column_index": 9,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "appeals_court",
+          "column_index": 10,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "district_court",
+          "column_index": 11,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "misc_citing_court",
+          "column_index": 12,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "fed_specialized_ct",
+          "column_index": 13,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citing_body_not_ct",
+          "column_index": 14,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "state_court",
+          "column_index": 15,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "supreme_court",
+          "column_index": 16,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cited_usid",
+          "column_index": 17,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "treatment_norm",
+          "column_index": 18,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "agree",
+          "column_index": 19,
+          "data_type": "BOOLEAN",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "table",
+      "schema": "main",
+      "name": "songer_cases",
+      "fqn": "main.songer_cases",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\tables\\main.songer_cases.parquet",
+      "status": "success",
+      "row_count": 20355,
+      "file_size_bytes": 483934,
+      "columns": [
+        {
+          "column_name": "casenum",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "year",
+          "column_index": 2,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "vol",
+          "column_index": 3,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "beginpg",
+          "column_index": 4,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "circuit",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "treat",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citation",
+          "column_index": 7,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "case_name",
+          "column_index": 8,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cite_key",
+          "column_index": 9,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "error": null
+    },
+    {
+      "object_type": "view",
+      "schema": "main",
+      "name": "cap_citations_ranked",
+      "fqn": "main.cap_citations_ranked",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\views\\main.cap_citations_ranked.parquet",
+      "status": "success",
+      "row_count": 10928,
+      "file_size_bytes": 2559940,
+      "columns": [
+        {
+          "column_name": "anchor_caseId",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "anchor_usCite",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citations",
+          "column_index": 3,
+          "data_type": "STRUCT(rank BIGINT, cite_type VARCHAR, normalized_cite VARCHAR, cap_id BIGINT, cap_name VARCHAR, pagerank_percentile DOUBLE, occurrences BIGINT, resolved BOOLEAN)[]",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "n_citations",
+          "column_index": 4,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "create_sql": "CREATE VIEW cap_citations_ranked AS SELECT * FROM read_json_auto('C:/DEVPROJECTS/legal-10/legal-10/datasets/cap_citations_ranked.jsonl');",
+      "body_sql_rewritten": "SELECT * FROM read_json_auto('E:/agchain/legal-10/datasets/cap_citations_ranked.jsonl')",
+      "dependencies": [
+        {
+          "function": "read_json_auto",
+          "raw_path": "C:/DEVPROJECTS/legal-10/legal-10/datasets/cap_citations_ranked.jsonl",
+          "file_name": "cap_citations_ranked.jsonl",
+          "resolved_path": "E:/agchain/legal-10/datasets/cap_citations_ranked.jsonl",
+          "resolved_exists": true
+        }
+      ],
+      "view_depends_on": [],
+      "error": null
+    },
+    {
+      "object_type": "view",
+      "schema": "main",
+      "name": "cap_citations_ranked_flat",
+      "fqn": "main.cap_citations_ranked_flat",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\views\\main.cap_citations_ranked_flat.parquet",
+      "status": "success",
+      "row_count": 50364,
+      "file_size_bytes": 2727300,
+      "columns": [
+        {
+          "column_name": "anchor_caseId",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "anchor_usCite",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "rank",
+          "column_index": 3,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cite_type",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "normalized_cite",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cap_id",
+          "column_index": 6,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cap_name",
+          "column_index": 7,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "pagerank_percentile",
+          "column_index": 8,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "occurrences",
+          "column_index": 9,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "resolved",
+          "column_index": 10,
+          "data_type": "BOOLEAN",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "create_sql": "CREATE VIEW cap_citations_ranked_flat AS SELECT r.anchor_caseId, r.anchor_usCite, c.rank AS rank, c.cite_type, c.normalized_cite, c.cap_id, c.cap_name, c.pagerank_percentile, c.occurrences, c.resolved FROM cap_citations_ranked AS r , unnest(r.citations) AS t(c);",
+      "body_sql_rewritten": "SELECT r.anchor_caseId, r.anchor_usCite, c.rank AS rank, c.cite_type, c.normalized_cite, c.cap_id, c.cap_name, c.pagerank_percentile, c.occurrences, c.resolved FROM cap_citations_ranked AS r , unnest(r.citations) AS t(c)",
+      "dependencies": [],
+      "view_depends_on": [],
+      "error": null
+    },
+    {
+      "object_type": "view",
+      "schema": "main",
+      "name": "scdb_with_fowler",
+      "fqn": "main.scdb_with_fowler",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\views\\main.scdb_with_fowler.parquet",
+      "status": "success",
+      "row_count": 29021,
+      "file_size_bytes": 1743200,
+      "columns": [
+        {
+          "column_name": "caseId",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "docketId",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseIssuesId",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "voteId",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "dateDecision",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decisionType",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "usCite",
+          "column_index": 7,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "sctCite",
+          "column_index": 8,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "ledCite",
+          "column_index": 9,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lexisCite",
+          "column_index": 10,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "term",
+          "column_index": 11,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "naturalCourt",
+          "column_index": 12,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "chief",
+          "column_index": 13,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "docket",
+          "column_index": 14,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseName",
+          "column_index": 15,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "dateArgument",
+          "column_index": 16,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "dateRearg",
+          "column_index": 17,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "petitioner",
+          "column_index": 18,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "petitionerState",
+          "column_index": 19,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "respondent",
+          "column_index": 20,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "respondentState",
+          "column_index": 21,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "jurisdiction",
+          "column_index": 22,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "adminAction",
+          "column_index": 23,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "adminActionState",
+          "column_index": 24,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "threeJudgeFdc",
+          "column_index": 25,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseOrigin",
+          "column_index": 26,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseOriginState",
+          "column_index": 27,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseSource",
+          "column_index": 28,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseSourceState",
+          "column_index": 29,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lcDisagreement",
+          "column_index": 30,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "certReason",
+          "column_index": 31,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lcDisposition",
+          "column_index": 32,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lcDispositionDirection",
+          "column_index": 33,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "declarationUncon",
+          "column_index": 34,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseDisposition",
+          "column_index": 35,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseDispositionUnusual",
+          "column_index": 36,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "partyWinning",
+          "column_index": 37,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "precedentAlteration",
+          "column_index": 38,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "voteUnclear",
+          "column_index": 39,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "issue",
+          "column_index": 40,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "issueArea",
+          "column_index": 41,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decisionDirection",
+          "column_index": 42,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decisionDirectionDissent",
+          "column_index": 43,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "authorityDecision1",
+          "column_index": 44,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "authorityDecision2",
+          "column_index": 45,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lawType",
+          "column_index": 46,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lawSupp",
+          "column_index": 47,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "lawMinor",
+          "column_index": 48,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "majOpinWriter",
+          "column_index": 49,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "majOpinAssigner",
+          "column_index": 50,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "splitVote",
+          "column_index": 51,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "majVotes",
+          "column_index": 52,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "minVotes",
+          "column_index": 53,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "has_opinion_text",
+          "column_index": 54,
+          "data_type": "BOOLEAN",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "missing_text_reason",
+          "column_index": 55,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "has_fowler_score",
+          "column_index": 56,
+          "data_type": "BOOLEAN",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "fowler_auth_score",
+          "column_index": 57,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "fowler_pauth_score",
+          "column_index": 58,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "fowler_snapshot_year",
+          "column_index": 59,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "create_sql": "CREATE VIEW scdb_with_fowler AS SELECT s.*, ((f.auth_score IS NOT NULL) OR (f.pauth_score IS NOT NULL)) AS has_fowler_score, f.auth_score AS fowler_auth_score, f.pauth_score AS fowler_pauth_score, f.snapshot_year AS fowler_snapshot_year FROM scdb_cases AS s LEFT JOIN fowler_scores AS f ON ((s.lexisCite = f.lexis_cite));",
+      "body_sql_rewritten": "SELECT s.*, ((f.auth_score IS NOT NULL) OR (f.pauth_score IS NOT NULL)) AS has_fowler_score, f.auth_score AS fowler_auth_score, f.pauth_score AS fowler_pauth_score, f.snapshot_year AS fowler_snapshot_year FROM scdb_cases AS s LEFT JOIN fowler_scores AS f ON ((s.lexisCite = f.lexis_cite))",
+      "dependencies": [],
+      "view_depends_on": [],
+      "error": null
+    },
+    {
+      "object_type": "view",
+      "schema": "main",
+      "name": "scdb_with_ideology",
+      "fqn": "main.scdb_with_ideology",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\views\\main.scdb_with_ideology.parquet",
+      "status": "success",
+      "row_count": 26777,
+      "file_size_bytes": 510165,
+      "columns": [
+        {
+          "column_name": "caseId",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "caseName",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "term",
+          "column_index": 3,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "majOpinWriter",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "author_name",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "author_ideology",
+          "column_index": 6,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "ideology_uncertainty",
+          "column_index": 7,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "decisionDirection",
+          "column_index": 8,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "partyWinning",
+          "column_index": 9,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "issueArea",
+          "column_index": 10,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "create_sql": "CREATE VIEW scdb_with_ideology AS SELECT s.caseId, s.caseName, s.term, s.majOpinWriter, m.justice_name AS author_name, m.post_mn AS author_ideology, m.post_sd AS ideology_uncertainty, s.decisionDirection, s.partyWinning, s.issueArea FROM scdb_cases AS s LEFT JOIN martin_quinn_scores AS m ON (((CAST(s.majOpinWriter AS INTEGER) = m.scdb_justice_id) AND (CAST(s.term AS INTEGER) = m.term))) WHERE (s.majOpinWriter IS NOT NULL);",
+      "body_sql_rewritten": "SELECT s.caseId, s.caseName, s.term, s.majOpinWriter, m.justice_name AS author_name, m.post_mn AS author_ideology, m.post_sd AS ideology_uncertainty, s.decisionDirection, s.partyWinning, s.issueArea FROM scdb_cases AS s LEFT JOIN martin_quinn_scores AS m ON (((CAST(s.majOpinWriter AS INTEGER) = m.scdb_justice_id) AND (CAST(s.term AS INTEGER) = m.term))) WHERE (s.majOpinWriter IS NOT NULL)",
+      "dependencies": [],
+      "view_depends_on": [],
+      "error": null
+    },
+    {
+      "object_type": "view",
+      "schema": "main",
+      "name": "scotus_citations_ranked",
+      "fqn": "main.scotus_citations_ranked",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\views\\main.scotus_citations_ranked.parquet",
+      "status": "success",
+      "row_count": 21154,
+      "file_size_bytes": 4358015,
+      "columns": [
+        {
+          "column_name": "anchor_caseId",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "anchor_usCite",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citations",
+          "column_index": 3,
+          "data_type": "STRUCT(rank BIGINT, normalized_cite VARCHAR, cited_caseId VARCHAR, cited_usCite VARCHAR, cited_caseName VARCHAR, fowler_score DOUBLE, occurrences BIGINT, resolved BOOLEAN)[]",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "n_citations",
+          "column_index": 4,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "create_sql": "CREATE VIEW scotus_citations_ranked AS SELECT * FROM read_json_auto('C:/DEVPROJECTS/legal-10/legal-10/datasets/scotus_citations_ranked.jsonl');",
+      "body_sql_rewritten": "SELECT * FROM read_json_auto('E:/agchain/legal-10/datasets/scotus_citations_ranked.jsonl')",
+      "dependencies": [
+        {
+          "function": "read_json_auto",
+          "raw_path": "C:/DEVPROJECTS/legal-10/legal-10/datasets/scotus_citations_ranked.jsonl",
+          "file_name": "scotus_citations_ranked.jsonl",
+          "resolved_path": "E:/agchain/legal-10/datasets/scotus_citations_ranked.jsonl",
+          "resolved_exists": true
+        }
+      ],
+      "view_depends_on": [],
+      "error": null
+    },
+    {
+      "object_type": "view",
+      "schema": "main",
+      "name": "scotus_citations_ranked_flat",
+      "fqn": "main.scotus_citations_ranked_flat",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\views\\main.scotus_citations_ranked_flat.parquet",
+      "status": "success",
+      "row_count": 293816,
+      "file_size_bytes": 4827619,
+      "columns": [
+        {
+          "column_name": "anchor_caseId",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "anchor_usCite",
+          "column_index": 2,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "rank",
+          "column_index": 3,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "normalized_cite",
+          "column_index": 4,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cited_caseId",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cited_usCite",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cited_caseName",
+          "column_index": 7,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "fowler_score",
+          "column_index": 8,
+          "data_type": "DOUBLE",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "occurrences",
+          "column_index": 9,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "resolved",
+          "column_index": 10,
+          "data_type": "BOOLEAN",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "create_sql": "CREATE VIEW scotus_citations_ranked_flat AS SELECT r.anchor_caseId, r.anchor_usCite, c.rank AS rank, c.normalized_cite, c.cited_caseId, c.cited_usCite, c.cited_caseName, c.fowler_score, c.occurrences, c.resolved FROM scotus_citations_ranked AS r , unnest(r.citations) AS t(c);",
+      "body_sql_rewritten": "SELECT r.anchor_caseId, r.anchor_usCite, c.rank AS rank, c.normalized_cite, c.cited_caseId, c.cited_usCite, c.cited_caseName, c.fowler_score, c.occurrences, c.resolved FROM scotus_citations_ranked AS r , unnest(r.citations) AS t(c)",
+      "dependencies": [],
+      "view_depends_on": [],
+      "error": null
+    },
+    {
+      "object_type": "view",
+      "schema": "main",
+      "name": "songer_cap_matches",
+      "fqn": "main.songer_cap_matches",
+      "out_file": "E:\\agchain\\legal-10\\datasets\\parquet\\2026-02-05_095022_duckdb_export\\views\\main.songer_cap_matches.parquet",
+      "status": "success",
+      "row_count": 22082,
+      "file_size_bytes": 682525,
+      "columns": [
+        {
+          "column_name": "casenum",
+          "column_index": 1,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "year",
+          "column_index": 2,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "vol",
+          "column_index": 3,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "beginpg",
+          "column_index": 4,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "circuit",
+          "column_index": 5,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "treat",
+          "column_index": 6,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "citation",
+          "column_index": 7,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "case_name",
+          "column_index": 8,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cite_key",
+          "column_index": 9,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cap_source",
+          "column_index": 10,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cap_id",
+          "column_index": 11,
+          "data_type": "BIGINT",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cap_decision_year",
+          "column_index": 12,
+          "data_type": "INTEGER",
+          "is_nullable": true,
+          "column_default": null
+        },
+        {
+          "column_name": "cap_court_slug",
+          "column_index": 13,
+          "data_type": "VARCHAR",
+          "is_nullable": true,
+          "column_default": null
+        }
+      ],
+      "create_sql": "CREATE VIEW songer_cap_matches AS SELECT s.*, c.cap_source, c.cap_id AS cap_id, c.decision_year AS cap_decision_year, c.court_slug AS cap_court_slug FROM songer_cases AS s INNER JOIN cap_cases_meta AS c ON (((s.cite_key IS NOT NULL) AND (s.cite_key = c.cite_key)));",
+      "body_sql_rewritten": "SELECT s.*, c.cap_source, c.cap_id AS cap_id, c.decision_year AS cap_decision_year, c.court_slug AS cap_court_slug FROM songer_cases AS s INNER JOIN cap_cases_meta AS c ON (((s.cite_key IS NOT NULL) AND (s.cite_key = c.cite_key)))",
+      "dependencies": [],
+      "view_depends_on": [],
+      "error": null
+    }
+  ],
+  "summary": {
+    "tables_discovered": 13,
+    "views_discovered": 7,
+    "objects_exported": 20,
+    "objects_failed": 0
+  }
+}

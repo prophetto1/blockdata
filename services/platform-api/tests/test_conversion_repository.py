@@ -4,6 +4,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from app.domain.conversion.repository import (
+    clear_conversion_state_for_source,
     insert_representation,
     mark_source_status,
     upsert_conversion_parsing,
@@ -24,8 +25,10 @@ def mock_supabase():
 
 
 def test_insert_representation_writes_row(mock_supabase):
+    conv_uid = hashlib.sha256(b"tree_sitter\nsrc-1\njob-1").hexdigest()
     insert_representation(
         source_uid="src-1",
+        conv_uid=conv_uid,
         parsing_tool="tree_sitter",
         representation_type="tree_sitter_ast_json",
         artifact_locator="converted/src-1/Foo.ast.json",
@@ -40,7 +43,7 @@ def test_insert_representation_writes_row(mock_supabase):
     assert row["artifact_locator"] == "converted/src-1/Foo.ast.json"
     assert row["artifact_size_bytes"] == len(b'{"type":"program"}')
     assert len(row["artifact_hash"]) == 64  # SHA-256 hex
-    assert len(row["conv_uid"]) == 64
+    assert row["conv_uid"] == conv_uid
 
 
 def test_mark_source_status(mock_supabase):
@@ -87,3 +90,32 @@ def test_upsert_conversion_parsing_preserves_explicit_conv_fields(mock_supabase)
     assert row["conv_locator"] == "converted/src-1/src-1.ast.json"
     assert row["conv_total_blocks"] == 0
     assert row["conv_total_characters"] == 128
+
+
+def test_clear_conversion_state_for_source_deletes_representation_and_parsing_rows():
+    client = MagicMock()
+    delete_chains: dict[str, MagicMock] = {}
+
+    def table_side_effect(name):
+        table = MagicMock()
+        delete_chain = MagicMock()
+        delete_chain.eq.return_value = delete_chain
+        delete_chain.execute.return_value = MagicMock(data=[])
+        table.delete.return_value = delete_chain
+        delete_chains[name] = delete_chain
+        return table
+
+    client.table.side_effect = table_side_effect
+
+    with patch("app.domain.conversion.repository.get_supabase_admin", return_value=client):
+        clear_conversion_state_for_source("src-1", parsing_tool="tree_sitter")
+
+    client.table.assert_any_call("conversion_representations")
+    client.table.assert_any_call("conversion_parsing")
+
+    representation_delete = delete_chains["conversion_representations"]
+    parsing_delete = delete_chains["conversion_parsing"]
+
+    assert representation_delete.eq.call_args_list[0].args == ("source_uid", "src-1")
+    assert representation_delete.eq.call_args_list[1].args == ("parsing_tool", "tree_sitter")
+    assert parsing_delete.eq.call_args_list[0].args == ("source_uid", "src-1")

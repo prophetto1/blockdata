@@ -126,8 +126,8 @@ function formatConfigMissingMessage(error?: string) {
 
 export function Component() {
   useShellHeaderTitle({
-    title: 'GCP Cost Inventory',
-    breadcrumbs: ['Superuser', 'GCP Cost Inventory'],
+    title: 'Cost Inventory',
+    breadcrumbs: ['Superuser', 'Cost Inventory'],
   });
 
   const [draftFilters, setDraftFilters] = useState<FilterState>(EMPTY_FILTERS);
@@ -242,10 +242,10 @@ export function Component() {
 
   return (
     <SettingsPageFrame
-      title="GCP Cost Inventory"
+      title="Cost Inventory"
       description="Read the normalized BigQuery billing export through platform-api and inspect one invoice-month slice in a single operator table."
-      headerVariant="admin"
       hideHeader
+      bodyClassName="p-3 md:p-4"
       toolbar={(
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex min-w-[140px] flex-col gap-1 text-xs font-medium text-muted-foreground">

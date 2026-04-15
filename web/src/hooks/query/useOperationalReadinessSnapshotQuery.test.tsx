@@ -1,6 +1,6 @@
-import { renderHook, waitFor, cleanup } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createQueryClientWrapper } from '@/test/renderWithQueryClient';
+import { renderWithQueryClient } from '@/test/renderWithQueryClient';
 import {
   loadOperationalReadinessWithBootstrap,
   type LoadOperationalReadinessWithBootstrapResult,
@@ -21,6 +21,20 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
+
+function OperationalReadinessSnapshotProbe() {
+  const query = useOperationalReadinessSnapshotQuery();
+
+  if (query.isPending) {
+    return <span>pending</span>;
+  }
+
+  if (query.isError) {
+    return <span>{`error:${query.error instanceof Error ? query.error.message : String(query.error)}`}</span>;
+  }
+
+  return <span>{`success:${query.data?.bootstrap.diagnosis_kind ?? 'unknown'}`}</span>;
+}
 
 describe('useOperationalReadinessSnapshotQuery', () => {
   it('loads readiness data through the platform diagnostics helper', async () => {
@@ -45,12 +59,12 @@ describe('useOperationalReadinessSnapshotQuery', () => {
 
     mockedLoadOperationalReadinessWithBootstrap.mockResolvedValue(readinessFixture);
 
-    const { wrapper } = createQueryClientWrapper();
-    const { result } = renderHook(() => useOperationalReadinessSnapshotQuery(), { wrapper });
+    renderWithQueryClient(<OperationalReadinessSnapshotProbe />);
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => {
+      expect(screen.getByText('success:ready')).toBeInTheDocument();
+    });
 
     expect(mockedLoadOperationalReadinessWithBootstrap).toHaveBeenCalledTimes(1);
-    expect(result.current.data).toBe(readinessFixture);
   });
 });

@@ -1,0 +1,531 @@
+{
+  "repoName": "writing-system/web",
+  "auditDate": "2026-04-14",
+  "scope": {
+    "repoRoot": ".",
+    "capturesReviewed": [],
+    "tokenFilesReviewed": [
+      "web/src/lib/styleTokens.ts",
+      "web/src/lib/toolbar-contract.ts",
+      "web/src/theme.css",
+      "web/src/tailwind.css"
+    ],
+    "majorDirectories": [
+      "web/src/components/admin",
+      "web/src/components/layout",
+      "web/src/components/superuser",
+      "web/src/components/flows",
+      "web/src/components/blocks",
+      "web/src/hooks",
+      "web/src/hooks/query",
+      "web/src/lib",
+      "web/src/pages/superuser"
+    ],
+    "exclusions": [
+      "web/src/pages/agchain",
+      "web/src/pages/marketing",
+      "services/platform-api"
+    ],
+    "surfaceAreaEstimate": {
+      "shellFiles": 37,
+      "tokenFiles": 12,
+      "sharedComponents": 301,
+      "pageFiles": 227
+    },
+    "samplingMode": "sampled",
+    "samplingNotes": "Audit centered on the admin/superuser shell and the state/loading patterns driving reported regressions. FlowWorkbench and BlockViewerGridRDG were sampled as comparison points for existing persistence approaches instead of exhaustively auditing every route."
+  },
+  "shellOwnership": [
+    {
+      "region": "top-band",
+      "ownerFiles": [
+        "web/src/components/layout/AdminShellTopBand.tsx",
+        "web/src/components/layout/AdminShellLayout.tsx"
+      ],
+      "runtimeRole": "Shared admin and superuser top chrome with nav toggle and shell framing.",
+      "stateOwner": "web/src/components/layout/AdminShellLayout.tsx",
+      "clarityRating": "clear",
+      "notes": "Top-band height and nav-open state are centralized in the shell layout.",
+      "evidence": [
+        "web/src/components/layout/AdminShellLayout.tsx:31-106",
+        "web/src/components/layout/AdminShellTopBand.tsx"
+      ]
+    },
+    {
+      "region": "primary-left-rail",
+      "ownerFiles": [
+        "web/src/components/layout/AdminShellLayout.tsx",
+        "web/src/components/shell/LeftRailShadcn.tsx"
+      ],
+      "runtimeRole": "Primary admin and superuser navigation rail with persisted width and open/closed state.",
+      "stateOwner": "web/src/components/layout/AdminShellLayout.tsx",
+      "clarityRating": "clear",
+      "notes": "Shell width and visibility persist through localStorage keys owned by AdminShellLayout.",
+      "evidence": [
+        "web/src/components/layout/AdminShellLayout.tsx:10-29",
+        "web/src/components/layout/AdminShellLayout.tsx:45-88"
+      ]
+    },
+    {
+      "region": "secondary-left-rail",
+      "ownerFiles": [
+        "web/src/components/admin/AdminLeftNav.tsx"
+      ],
+      "runtimeRole": "Secondary navigation rail placeholder for admin and superuser subsections.",
+      "stateOwner": null,
+      "clarityRating": "clear",
+      "notes": "The secondary rail exists structurally but `getSecondaryNav()` currently returns no items.",
+      "evidence": [
+        "web/src/components/admin/AdminLeftNav.tsx:104-156"
+      ]
+    },
+    {
+      "region": "superuser-inner-page-frame",
+      "ownerFiles": [
+        "web/src/components/superuser/ControlTowerV2PageFrame.tsx",
+        "web/src/components/common/WorkbenchPage.tsx"
+      ],
+      "runtimeRole": "Page-local header, padding, and action framing inside the shared admin shell.",
+      "stateOwner": null,
+      "clarityRating": "conflicting",
+      "notes": "Superuser home uses the dense local frame while Coordination Runtime uses WorkbenchPage, so inner framing and loading posture differ by route.",
+      "evidence": [
+        "web/src/pages/superuser/SuperuserControlTower.tsx:317-353",
+        "web/src/components/superuser/ControlTowerV2PageFrame.tsx:1-68",
+        "web/src/pages/superuser/CoordinationRuntime.tsx:554-594",
+        "web/src/components/common/WorkbenchPage.tsx"
+      ]
+    }
+  ],
+  "tokenInventory": [
+    {
+      "source": "Global shell and layout tokens",
+      "files": [
+        "web/src/lib/styleTokens.ts"
+      ],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": true,
+      "lightCoverage": "partial",
+      "darkCoverage": "partial",
+      "driftNotes": "The file mixes semantic shell tokens with raw grid color hex values, so some UI layers consume semantic CSS vars while others still read hard-coded palette values.",
+      "evidence": [
+        "web/src/lib/styleTokens.ts:1-74"
+      ]
+    },
+    {
+      "source": "Theme variable layers",
+      "files": [
+        "web/src/theme.css",
+        "web/src/tailwind.css"
+      ],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": false,
+      "lightCoverage": "full",
+      "darkCoverage": "full",
+      "driftNotes": "These files define the semantic CSS-variable surface that the shell and newer superuser components are expected to use.",
+      "evidence": [
+        "web/src/theme.css",
+        "web/src/tailwind.css"
+      ]
+    },
+    {
+      "source": "Toolbar interaction contract",
+      "files": [
+        "web/src/lib/toolbar-contract.ts"
+      ],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": false,
+      "lightCoverage": "full",
+      "darkCoverage": "full",
+      "driftNotes": "Interaction styling is centralized here and reused cleanly by the integrated control tower frame.",
+      "evidence": [
+        "web/src/lib/toolbar-contract.ts:1-45",
+        "web/src/components/superuser/ControlTowerV2PageFrame.tsx:3-44"
+      ]
+    },
+    {
+      "source": "AG Grid and editor-specific theme layers",
+      "files": [
+        "web/src/lib/agGridTheme.ts",
+        "web/src/lib/codemirrorTheme.ts",
+        "web/src/hooks/useMonacoTheme.ts"
+      ],
+      "semanticTokensPresent": true,
+      "rawValuesPresent": true,
+      "lightCoverage": "partial",
+      "darkCoverage": "partial",
+      "driftNotes": "Specialized surfaces keep their own theme adapters, which increases drift risk when page components bypass shared semantic tokens.",
+      "evidence": [
+        "web/src/lib/agGridTheme.ts",
+        "web/src/lib/codemirrorTheme.ts",
+        "web/src/hooks/useMonacoTheme.ts"
+      ]
+    }
+  ],
+  "componentContracts": [
+    {
+      "role": "admin-shell-layout",
+      "canonicalCandidates": [
+        "web/src/components/layout/AdminShellLayout.tsx"
+      ],
+      "competingImplementations": [],
+      "ownerFiles": [
+        "web/src/components/layout/AdminShellLayout.tsx"
+      ],
+      "usageNotes": "Primary shell for `/app/superuser`, `/app/blockdata-admin`, and `/app/agchain-admin` routes.",
+      "visibleStateCoverage": [
+        "default",
+        "nav-collapsed",
+        "secondary-rail-present",
+        "secondary-rail-absent"
+      ],
+      "evidence": [
+        "web/src/router.tsx:431-449",
+        "web/src/components/layout/AdminShellLayout.tsx:31-156"
+      ]
+    },
+    {
+      "role": "superuser-page-frame",
+      "canonicalCandidates": [
+        "web/src/components/superuser/ControlTowerV2PageFrame.tsx"
+      ],
+      "competingImplementations": [
+        "web/src/components/common/WorkbenchPage.tsx"
+      ],
+      "ownerFiles": [
+        "web/src/pages/superuser/SuperuserControlTower.tsx",
+        "web/src/pages/superuser/CoordinationRuntime.tsx"
+      ],
+      "usageNotes": "The homepage uses the dense local control-tower frame, but runtime detail pages still use the older workbench frame.",
+      "visibleStateCoverage": [
+        "default",
+        "header-actions",
+        "dense-operator-layout",
+        "no-header"
+      ],
+      "evidence": [
+        "web/src/components/superuser/ControlTowerV2PageFrame.tsx:1-68",
+        "web/src/pages/superuser/SuperuserControlTower.tsx:317-353",
+        "web/src/pages/superuser/CoordinationRuntime.tsx:554-594",
+        "web/src/components/common/WorkbenchPage.tsx"
+      ]
+    },
+    {
+      "role": "operator-plane-card",
+      "canonicalCandidates": [
+        "web/src/components/superuser/PlatformPlaneCardV2.tsx"
+      ],
+      "competingImplementations": [
+        "web/src/components/superuser/PlatformPlaneCard.tsx"
+      ],
+      "ownerFiles": [
+        "web/src/pages/superuser/SuperuserControlTower.tsx"
+      ],
+      "usageNotes": "The integrated control tower uses V2 cards, while the earlier card and strip components still remain in the repo without live consumers.",
+      "visibleStateCoverage": [
+        "default",
+        "selected",
+        "drill-link",
+        "tone-healthy",
+        "tone-watch",
+        "tone-alert",
+        "tone-muted"
+      ],
+      "evidence": [
+        "web/src/pages/superuser/SuperuserControlTower.tsx:324-347",
+        "web/src/components/superuser/PlatformPlaneCardV2.tsx",
+        "web/src/components/superuser/PlatformPlaneCard.tsx"
+      ]
+    },
+    {
+      "role": "operational-readiness-check-surface",
+      "canonicalCandidates": [
+        "web/src/components/superuser/OperationalReadinessCheckGrid.tsx"
+      ],
+      "competingImplementations": [],
+      "ownerFiles": [
+        "web/src/pages/superuser/SuperuserOperationalReadiness.tsx",
+        "web/src/pages/superuser/SuperuserControlTower.tsx"
+      ],
+      "usageNotes": "This grid is the shared detailed readiness surface for both the dedicated page and the homepage pull-down section.",
+      "visibleStateCoverage": [
+        "default",
+        "warn",
+        "fail",
+        "detail-loading",
+        "detail-error",
+        "verify-in-flight",
+        "backend-action"
+      ],
+      "evidence": [
+        "web/src/components/superuser/OperationalReadinessCheckGrid.tsx:222-342",
+        "web/src/pages/superuser/SuperuserOperationalReadiness.tsx:81-99",
+        "web/src/pages/superuser/SuperuserControlTower.tsx:258-289"
+      ]
+    }
+  ],
+  "pagePatterns": [
+    {
+      "patternName": "operator-homepage",
+      "strongestExample": "web/src/pages/superuser/SuperuserControlTower.tsx",
+      "competingExamples": [],
+      "structureNotes": "Five dense plane cards at the top, with only the browser-state plane pulling down detailed readiness content on demand.",
+      "shellAlignmentNotes": "Aligns with the shared admin shell but overrides the inner page frame locally.",
+      "evidence": [
+        "web/src/pages/superuser/SuperuserControlTower.tsx:304-353"
+      ]
+    },
+    {
+      "patternName": "operator-detail-runtime",
+      "strongestExample": "web/src/pages/superuser/CoordinationRuntime.tsx",
+      "competingExamples": [
+        "web/src/pages/superuser/CoordinationRuntimeMock.tsx"
+      ],
+      "structureNotes": "Standalone runtime workspace with status header, identity table, inspector, discussion queue, and live event stream.",
+      "shellAlignmentNotes": "Fits inside AdminShellLayout but uses WorkbenchPage and a manual full-page bootstrap instead of the cached homepage pull-down model.",
+      "evidence": [
+        "web/src/pages/superuser/CoordinationRuntime.tsx:417-594"
+      ]
+    },
+    {
+      "patternName": "dedicated-readiness-audit-page",
+      "strongestExample": "web/src/pages/superuser/SuperuserOperationalReadiness.tsx",
+      "competingExamples": [
+        "web/src/pages/superuser/SuperuserControlTower.tsx"
+      ],
+      "structureNotes": "Dedicated page reusing the readiness grid, bootstrap panel, recovery panel, and refresh action.",
+      "shellAlignmentNotes": "Visually aligned with the admin shell, but it duplicates the same hook-driven snapshot orchestration used in the homepage pull-down.",
+      "evidence": [
+        "web/src/pages/superuser/SuperuserOperationalReadiness.tsx:17-102",
+        "web/src/hooks/useOperationalReadiness.ts:141-265"
+      ]
+    },
+    {
+      "patternName": "stateful-workbench",
+      "strongestExample": "web/src/components/flows/FlowWorkbench.tsx",
+      "competingExamples": [],
+      "structureNotes": "Multi-pane workbench with persisted pane layout, persisted virtual folders, selected-doc handoff, and nested preview loading states.",
+      "shellAlignmentNotes": "Not a superuser page, but it demonstrates a more mature persistence approach than the current runtime pages.",
+      "evidence": [
+        "web/src/components/flows/FlowWorkbench.tsx:257-466",
+        "web/src/components/flows/FlowWorkbench.tsx:605-617",
+        "web/src/components/flows/FlowWorkbench.tsx:1371-1391"
+      ]
+    },
+    {
+      "patternName": "grid-review-surface",
+      "strongestExample": "web/src/components/blocks/BlockViewerGridRDG.tsx",
+      "competingExamples": [],
+      "structureNotes": "High-state grid surface with many persisted view preferences, stable row selection, and local restoration of grid settings.",
+      "shellAlignmentNotes": "Not part of the superuser shell, but it shows that the repo already has stable client-preference patterns to borrow from.",
+      "evidence": [
+        "web/src/components/blocks/BlockViewerGridRDG.tsx:109-315",
+        "web/src/components/blocks/BlockViewerGridRDG.tsx:754-870"
+      ]
+    }
+  ],
+  "navigationStructure": {
+    "primaryOwners": [
+      "web/src/components/admin/AdminLeftNav.tsx",
+      "web/src/components/layout/AdminShellLayout.tsx",
+      "web/src/router.tsx"
+    ],
+    "secondaryOwners": [],
+    "routeMapping": "Superuser routes are lazy-loaded children of AdminShellLayout under `/app/superuser`. The homepage mounts `SuperuserControlTower`, with dedicated detail routes for readiness, coordination runtime, plan tracker, and demo surfaces.",
+    "breadcrumbConventions": "Most superuser pages use `useShellHeaderTitle` to populate shell breadcrumbs, but the integrated control tower hides the shared header and renders its own local page frame instead.",
+    "actionPlacement": "Primary actions live inside page-local headers or panel toolbars rather than in the shared shell. Control tower cards also expose drill actions inline.",
+    "evidence": [
+      "web/src/router.tsx:431-449",
+      "web/src/components/admin/AdminLeftNav.tsx:41-101",
+      "web/src/pages/superuser/SuperuserControlTower.tsx:298-353",
+      "web/src/pages/superuser/CoordinationRuntime.tsx:487-594"
+    ]
+  },
+  "statePresentation": {
+    "loading": "Loading is mostly page-local and all-or-nothing. `CoordinationRuntime` waits for status, identities, and discussions before rendering the live panel, while `useOperationalReadiness` owns its own `loading` and `refreshing` booleans and reruns bootstrap probes on mount and refresh.",
+    "empty": "Empty states are mostly inline text inside each panel, such as no identities, no discussions, or no recent events.",
+    "error": "Errors are presented through page-local components and strings: `ErrorAlert` on the runtime page, bootstrap/recovery panels on readiness surfaces, and inline error messages on detail grids.",
+    "success": "Success is shown through counts, timestamps, and status chips instead of dedicated success surfaces.",
+    "permission": "Permission is handled at the route level through `SuperuserGuard`, while readiness bootstrap diagnostics separately surface missing or rejected auth states.",
+    "async": "Long-running async behavior is split between manual refresh handlers and an SSE stream hook with reconnect logic, but the live stream is mounted only after the initial runtime page bootstrap completes.",
+    "evidence": [
+      "web/src/pages/superuser/CoordinationRuntime.tsx:493-590",
+      "web/src/hooks/useOperationalReadiness.ts:108-265",
+      "web/src/hooks/useCoordinationStream.ts:67-174",
+      "web/src/components/flows/FlowWorkbench.tsx:619-680",
+      "web/src/router.tsx:431-449",
+      "web/src/lib/platformApiDiagnostics.ts:112-201"
+    ]
+  },
+  "accessibilityNotes": [
+    "Primary navigation and runtime selection controls do use semantic state attributes such as `aria-current` and `aria-pressed`, which gives the shell a usable baseline. Evidence: `web/src/components/admin/AdminLeftNav.tsx:137-153`, `web/src/pages/superuser/CoordinationRuntime.tsx:237-245`.",
+    "Several operator surfaces still rely heavily on color-and-count combinations to communicate health. They include text labels, but the distinction between healthy/watch/alert is still visually dominant and could use a stronger non-color hierarchy. Evidence: `web/src/pages/superuser/CoordinationRuntime.tsx:19-33`, `web/src/components/superuser/PlatformPlaneCardV2.tsx`."
+  ],
+  "conflictBundles": [
+    {
+      "bundleName": "superuser-data-orchestration",
+      "roleUnderDispute": "Canonical fetch and cache contract for superuser runtime and readiness data",
+      "competingImplementations": [
+        {
+          "name": "React Query superuser family",
+          "location": "web/src/hooks/query/useOperationalReadinessSnapshotQuery.ts, web/src/hooks/query/useCoordinationStatusQuery.ts, web/src/hooks/query/useCoordinationIdentitiesQuery.ts, web/src/hooks/query/useCoordinationDiscussionsQuery.ts, web/src/lib/queryKeys/superuserKeys.ts",
+          "whatItSolves": "Shared cache keys, staleTime policy, and a route-independent query family for superuser surfaces."
+        },
+        {
+          "name": "Local hook and page orchestration",
+          "location": "web/src/hooks/useOperationalReadiness.ts, web/src/pages/superuser/CoordinationRuntime.tsx",
+          "whatItSolves": "Self-contained page bootstrap, refresh, and mutation orchestration without depending on a shared query layer."
+        }
+      ],
+      "evidence": [
+        "web/src/hooks/query/useOperationalReadinessSnapshotQuery.ts:1-39",
+        "web/src/hooks/query/useCoordinationStatusQuery.ts:1-16",
+        "web/src/hooks/query/useCoordinationIdentitiesQuery.ts:1-19",
+        "web/src/hooks/query/useCoordinationDiscussionsQuery.ts:1-23",
+        "web/src/lib/queryKeys/superuserKeys.ts:29-37",
+        "web/src/hooks/useOperationalReadiness.ts:141-265",
+        "web/src/pages/superuser/CoordinationRuntime.tsx:501-531"
+      ],
+      "whyNoSingleContract": "The repo already has a query-key namespace and dedicated React Query hooks, but the live readiness and coordination pages bypass them. As a result, cache policy, reuse, refresh behavior, and page remount costs differ by surface.",
+      "recommendedDirection": "Make the React Query family plus `superuserKeys` the single read contract for readiness and coordination summaries. Keep page-level hooks only for mutations and SSE, and let pages render partial cached data before detail fetches complete.",
+      "discussionQuestions": [
+        "Should readiness bootstrap diagnostics be folded into the main cached readiness query, or kept as a smaller preflight query that hydrates the main snapshot query?",
+        "Which superuser surfaces are allowed to block on a full multi-request bootstrap, and which must render from cached summary data first?"
+      ],
+      "effortLevel": "moderate",
+      "estimatedFiles": 8
+    },
+    {
+      "bundleName": "volatile-selection-keys",
+      "roleUnderDispute": "How runtime inspector selection survives refreshes and live updates",
+      "competingImplementations": [
+        {
+          "name": "Volatile runtime row identity",
+          "location": "web/src/pages/superuser/CoordinationRuntime.tsx",
+          "whatItSolves": "Uniqueness for rendered identity rows by combining host, identity, revision, timestamps, and index."
+        },
+        {
+          "name": "Stable context-keyed persistence",
+          "location": "web/src/components/layout/AdminShellLayout.tsx, web/src/components/flows/FlowWorkbench.tsx, web/src/components/blocks/BlockViewerGridRDG.tsx",
+          "whatItSolves": "Preferences and selections keyed to stable route or project context so state survives remounts and refreshes."
+        }
+      ],
+      "evidence": [
+        "web/src/pages/superuser/CoordinationRuntime.tsx:74-81",
+        "web/src/pages/superuser/CoordinationRuntime.tsx:533-552",
+        "web/src/components/layout/AdminShellLayout.tsx:10-29",
+        "web/src/components/flows/FlowWorkbench.tsx:257-466",
+        "web/src/components/blocks/BlockViewerGridRDG.tsx:109-315"
+      ],
+      "whyNoSingleContract": "The runtime page keys selection off volatile transport fields like revision and row index, while other complex surfaces persist state using stable storage keys tied to durable context. That makes runtime inspector state reset even when the user is still looking at the same logical identity.",
+      "recommendedDirection": "Switch runtime selection to a stable domain key such as `host + lease_identity` or `host + session_agent_id`, and persist the selected inspector target at the page composition layer so it only clears when the entity actually disappears.",
+      "discussionQuestions": [
+        "Which field is the canonical stable identity for a runtime row: `lease_identity`, `session_agent_id`, or a composite of both?",
+        "Should inspector selection persist in session storage, the URL, or a route-scoped store?"
+      ],
+      "effortLevel": "quick-win",
+      "estimatedFiles": 3
+    },
+    {
+      "bundleName": "persistence-ownership-scatter",
+      "roleUnderDispute": "Where client-only operator state should live and persist",
+      "competingImplementations": [
+        {
+          "name": "Page-local localStorage readers and writers",
+          "location": "web/src/components/layout/AdminShellLayout.tsx, web/src/components/flows/FlowWorkbench.tsx, web/src/components/blocks/BlockViewerGridRDG.tsx",
+          "whatItSolves": "Immediate persistence of UI preferences and workspace layout without shared abstractions."
+        },
+        {
+          "name": "Ephemeral page-local React state",
+          "location": "web/src/pages/superuser/SuperuserControlTower.tsx, web/src/pages/superuser/CoordinationRuntime.tsx, web/src/hooks/useOperationalReadiness.ts",
+          "whatItSolves": "Simple local control for expanded panels, browser-state cards, selections, and detail state, but resets on remount."
+        },
+        {
+          "name": "Unused central superuser UI slice",
+          "location": "web/src/stores/useSuperuserControlTowerStore.ts, web/src/components/superuser/ControlTowerStateQueryPanel.tsx, web/src/components/superuser/PlatformPlanesStrip.tsx",
+          "whatItSolves": "A centralized store for selected plane, collapsed groups, and panel visibility that the integrated live page no longer uses."
+        }
+      ],
+      "evidence": [
+        "web/src/components/layout/AdminShellLayout.tsx:10-29",
+        "web/src/components/flows/FlowWorkbench.tsx:605-617",
+        "web/src/components/flows/FlowWorkbench.tsx:1371-1391",
+        "web/src/components/blocks/BlockViewerGridRDG.tsx:754-870",
+        "web/src/pages/superuser/SuperuserControlTower.tsx:304-351",
+        "web/src/pages/superuser/CoordinationRuntime.tsx:417-419",
+        "web/src/hooks/useOperationalReadiness.ts:108-117",
+        "web/src/stores/useSuperuserControlTowerStore.ts:1-92",
+        "web/src/components/superuser/ControlTowerStateQueryPanel.tsx:1-149"
+      ],
+      "whyNoSingleContract": "The repo persists some UI state aggressively, leaves other state ephemeral, and still carries an older centralized store that is no longer the live path. Users therefore get different persistence behavior across pages even when the mental model is similar.",
+      "recommendedDirection": "Choose a thin shared policy for operator UI state at the composition layer: which state is session-scoped, which is cross-session, and which should reset. Then either remove the unused superuser slice or intentionally reinstate it behind that policy instead of mixing all three models.",
+      "discussionQuestions": [
+        "Which categories of operator state must persist only for the current session, and which should survive browser restarts?",
+        "Is Zustand still the intended home for superuser UI state, or should a smaller route-scoped persistence utility replace it?"
+      ],
+      "effortLevel": "architectural",
+      "estimatedFiles": 12
+    },
+    {
+      "bundleName": "superuser-page-frame-and-loading-contract",
+      "roleUnderDispute": "How superuser pages should frame content and stage async loading",
+      "competingImplementations": [
+        {
+          "name": "Integrated control-tower dense frame",
+          "location": "web/src/pages/superuser/SuperuserControlTower.tsx, web/src/components/superuser/ControlTowerV2PageFrame.tsx",
+          "whatItSolves": "Card-first operator homepage with pull-down detail and explicit drill links."
+        },
+        {
+          "name": "Workbench-style runtime page",
+          "location": "web/src/pages/superuser/CoordinationRuntime.tsx",
+          "whatItSolves": "Standalone workspace with identity list, inspector, discussion queue, and live stream."
+        },
+        {
+          "name": "Dedicated readiness audit page",
+          "location": "web/src/pages/superuser/SuperuserOperationalReadiness.tsx",
+          "whatItSolves": "Full-page readiness detail surface with refresh and recovery controls."
+        }
+      ],
+      "evidence": [
+        "web/src/pages/superuser/SuperuserControlTower.tsx:304-353",
+        "web/src/components/superuser/ControlTowerV2PageFrame.tsx:1-68",
+        "web/src/pages/superuser/CoordinationRuntime.tsx:493-590",
+        "web/src/pages/superuser/SuperuserOperationalReadiness.tsx:17-102",
+        "web/src/hooks/useCoordinationStream.ts:67-174"
+      ],
+      "whyNoSingleContract": "The homepage already advertises a selective, operator-first loading posture, but the standalone runtime page still boots three requests before showing the live panel and the readiness page duplicates the same snapshot hook logic. Frame choice, partial rendering rules, and refresh semantics vary by route.",
+      "recommendedDirection": "Standardize superuser operator pages on one headless data/view-model and one async contract: cached summary first, detail panes second, live stream independent of summary fetch, and page frames chosen intentionally rather than by route history.",
+      "discussionQuestions": [
+        "Should dedicated detail pages and the homepage pull-down share the same headless view-model and cache layer?",
+        "What is the explicit rule for when a live stream may mount independently of status and detail fetches?"
+      ],
+      "effortLevel": "architectural",
+      "estimatedFiles": 9
+    }
+  ],
+  "cleanAreas": [
+    {
+      "area": "Admin shell chrome persistence",
+      "summary": "Nav width and nav-open state have a single clear owner in `AdminShellLayout`, and the persistence keys are stable and bounded.",
+      "evidence": [
+        "web/src/components/layout/AdminShellLayout.tsx:10-29",
+        "web/src/components/layout/AdminShellLayout.tsx:45-88"
+      ]
+    },
+    {
+      "area": "Toolbar button contract",
+      "summary": "Toolbar interaction styling is centralized in `toolbar-contract.ts` and applied cleanly by the integrated control-tower frame instead of being redefined inline.",
+      "evidence": [
+        "web/src/lib/toolbar-contract.ts:1-45",
+        "web/src/components/superuser/ControlTowerV2PageFrame.tsx:3-44"
+      ]
+    },
+    {
+      "area": "Coordination stream isolation",
+      "summary": "Live stream connection, reconnect backoff, pause handling, and disabled-state handling are isolated in one hook instead of being spread across page components.",
+      "evidence": [
+        "web/src/hooks/useCoordinationStream.ts:1-174"
+      ]
+    }
+  ]
+}

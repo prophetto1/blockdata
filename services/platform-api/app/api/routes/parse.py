@@ -9,6 +9,7 @@ or build complex payloads. That's all handled here.
 """
 
 import os
+import hashlib
 import uuid
 from typing import Any, Optional
 
@@ -21,6 +22,7 @@ from app.auth.principals import AuthPrincipal
 from app.domain.code_parsing.language_registry import is_code_extension
 from app.domain.code_parsing.tree_sitter_service import parse_source
 from app.domain.conversion.repository import (
+    clear_conversion_state_for_source,
     insert_representation,
     mark_source_status,
     upsert_conversion_parsing,
@@ -41,6 +43,12 @@ class ParseRequest(BaseModel):
     source_uid: str
     profile_id: Optional[str] = None
     pipeline_config: Optional[dict[str, Any]] = None
+
+
+def _build_tree_sitter_run_conv_uid(source_uid: str, conversion_job_id: str) -> str:
+    digest = hashlib.sha256()
+    digest.update(f"tree_sitter\n{source_uid}\n{conversion_job_id}".encode())
+    return digest.hexdigest()
 
 
 def _resolve_profile(sb, profile_id: Optional[str]) -> Optional[dict]:
@@ -92,9 +100,14 @@ async def parse_route(
 
         # 3. Generate a job ID (matches Docling pattern where trigger-parse creates one)
         conversion_job_id = str(uuid.uuid4())
+        tree_sitter_conv_uid = _build_tree_sitter_run_conv_uid(
+            body.source_uid,
+            conversion_job_id,
+        )
 
         # 4. Tree-sitter path
         try:
+            clear_conversion_state_for_source(body.source_uid, parsing_tool="tree_sitter")
             mark_source_status(body.source_uid, "converting", conversion_job_id=conversion_job_id)
 
             # Download source from storage (service_role — no signed URL needed)
@@ -115,6 +128,7 @@ async def parse_route(
                 )
                 insert_representation(
                     source_uid=body.source_uid,
+                    conv_uid=tree_sitter_conv_uid,
                     parsing_tool="tree_sitter",
                     representation_type="tree_sitter_ast_json",
                     artifact_locator=ast_locator,
@@ -130,6 +144,7 @@ async def parse_route(
                 )
                 insert_representation(
                     source_uid=body.source_uid,
+                    conv_uid=tree_sitter_conv_uid,
                     parsing_tool="tree_sitter",
                     representation_type="tree_sitter_symbols_json",
                     artifact_locator=symbols_locator,
@@ -149,6 +164,7 @@ async def parse_route(
                     "node_count": result.node_count,
                     "source_type": result.source_type,
                 },
+                conv_uid=tree_sitter_conv_uid,
                 conv_locator=primary_locator,
             )
             mark_source_status(body.source_uid, "parsed")
@@ -156,6 +172,7 @@ async def parse_route(
         except Exception as e:
             span.record_exception(e)
             span.set_attribute("error.type", type(e).__name__)
+            clear_conversion_state_for_source(body.source_uid, parsing_tool="tree_sitter")
             mark_source_status(body.source_uid, "conversion_failed", error=str(e)[:1000])
             return JSONResponse(status_code=500, content={"detail": str(e)[:500]})
 

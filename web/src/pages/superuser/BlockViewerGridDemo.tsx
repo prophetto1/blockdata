@@ -49,9 +49,16 @@ export function Component() {
       title="Block Viewer Grid (demo)"
       description="Wired demo surface for BlockViewerGridRDG. Paste a conversation UID, then pick a run."
       hideHeader
+      contentClassName="gap-4 p-0 md:p-0"
     >
-      <div className="flex flex-col gap-4 p-4">
-        <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/70 bg-card/50 p-4">
+      <div
+        data-testid="block-viewer-grid-page-content"
+        className="flex min-h-0 flex-1 flex-col gap-4 px-4 pt-3"
+      >
+        <div
+          data-testid="block-viewer-grid-controls"
+          className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/70 bg-card/50 p-4"
+        >
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             <span className="font-medium uppercase tracking-[0.16em]">Conversation UID</span>
             <input

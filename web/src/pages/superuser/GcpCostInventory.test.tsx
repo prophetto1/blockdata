@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import pageSource from './GcpCostInventory.tsx?raw';
 
 const platformApiFetchMock = vi.fn();
 
@@ -280,16 +281,17 @@ describe('GcpCostInventory', () => {
     expect(await screen.findByTestId('gcp-cost-grid-mock')).toHaveTextContent('Compute Engine');
   });
 
-  it('registers the superuser nav item and router path', async () => {
+  it('keeps the legacy superuser route wired even though the rail now points to inventory management separately', async () => {
     const fs = await import('node:fs/promises');
-    const { SUPERUSER_NAV_SECTIONS } = await import('@/components/admin/AdminLeftNav');
     const routerSource = await fs.readFile('src/router.tsx', 'utf8');
-
-    expect(
-      SUPERUSER_NAV_SECTIONS.flatMap((section) => section.items).some(
-        (item) => item.path === '/app/superuser/gcp-cost-inventory',
-      ),
-    ).toBe(true);
     expect(routerSource.includes("{ path: 'gcp-cost-inventory'")).toBe(true);
+  });
+
+  it('keeps the containerized settings frame but aligns its body spacing with superuser pages', () => {
+    expect(pageSource).toContain('SettingsPageFrame');
+    expect(pageSource).toContain("bodyClassName=\"p-3 md:p-4\"");
+    expect(pageSource).toContain("title: 'Cost Inventory'");
+    expect(pageSource).toContain("breadcrumbs: ['Superuser', 'Cost Inventory']");
+    expect(pageSource).toContain('title="Cost Inventory"');
   });
 });

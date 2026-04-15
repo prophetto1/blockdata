@@ -8,7 +8,6 @@ import {
   IconCamera,
   IconKey,
   IconWand,
-  IconRoute,
   IconPlugConnected,
   IconTable,
   IconLayoutGrid,
@@ -54,15 +53,33 @@ export const BLOCKDATA_ADMIN_NAV_SECTIONS: AdminNavSection[] = [
 
 export const SUPERUSER_NAV_SECTIONS: AdminNavSection[] = [
   {
-    label: 'DEV ONLY',
+    label: 'CONTROL TOWER',
     items: [
       { label: 'Control Tower', icon: IconLayoutGrid, path: '/app/superuser' },
+      { label: 'Essential Links', icon: IconClipboardList, path: '/app/superuser/essential-links' },
+      { label: 'Secrets & ENV', icon: IconKey, path: '/app/superuser/secrets-env' },
       { label: 'Coordination Runtime', icon: IconPlugConnected, path: '/app/superuser/coordination-runtime' },
-      { label: 'Coordination Runtime Mock', icon: IconLayoutGrid, path: '/app/superuser/coordination-runtime-mock' },
-      { label: 'Layout Captures', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
-      { label: 'Skill-Driven Dev', icon: IconRoute, path: '/app/superuser/skill-driven-dev' },
+      { label: 'Githooks & Hooks', icon: IconCode, path: '/app/superuser/husky-ci-cd' },
+      { label: 'State Management', icon: IconWand, path: '/app/superuser/zustand-react-query' },
+      { label: 'CI/CD', icon: IconTestPipe, path: '/app/superuser/hook-system' },
+      { label: 'Open Telemetry', icon: IconClipboardList, path: '/app/superuser/open-telemetry' },
+      { label: 'OpenAPI & FastAPI', icon: IconCode, path: '/app/superuser/openapi-fastapi' },
+      { label: 'Databases', icon: IconTable, path: '/app/superuser/databases' },
+      { label: 'Frontend Contracts', icon: IconLayoutGrid, path: '/app/superuser/frontend-contracts' },
+      { label: 'Dependencies', icon: IconPlugConnected, path: '/app/superuser/dependencies' },
+      { label: 'Inventory & Cost Management', icon: IconTable, path: '/app/superuser/inventory-cost-management' },
+    ],
+  },
+  {
+    label: 'DEV TOOLS',
+    items: [
+      { label: 'Layout Capture', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
       { label: 'Plan Tracker', icon: IconClipboardList, path: '/app/superuser/plan-tracker' },
-      { label: 'GCP Cost Inventory', icon: IconTable, path: '/app/superuser/gcp-cost-inventory' },
+    ],
+  },
+  {
+    label: 'DEV ONLY',
+    items: [
       { label: 'Agchain Benchmarks (demo)', icon: IconTable, path: '/app/superuser/agchain-benchmarks-demo' },
       { label: 'Block Viewer Grid (demo)', icon: IconLayoutGrid, path: '/app/superuser/block-viewer-grid-demo' },
     ],

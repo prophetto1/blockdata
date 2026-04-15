@@ -1,7 +1,7 @@
-import { renderHook, waitFor, cleanup } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getCoordinationStatus, type CoordinationStatusResponse } from '@/lib/coordinationApi';
-import { createQueryClientWrapper } from '@/test/renderWithQueryClient';
+import { renderWithQueryClient } from '@/test/renderWithQueryClient';
 import { useCoordinationStatusQuery } from './useCoordinationStatusQuery';
 
 vi.mock('@/lib/coordinationApi', () => ({
@@ -14,6 +14,20 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
+
+function CoordinationStatusProbe() {
+  const query = useCoordinationStatusQuery();
+
+  if (query.isPending) {
+    return <span>pending</span>;
+  }
+
+  if (query.isError) {
+    return <span>{`error:${query.error instanceof Error ? query.error.message : String(query.error)}`}</span>;
+  }
+
+  return <span>{`success:${query.data?.broker.state ?? 'unknown'}`}</span>;
+}
 
 describe('useCoordinationStatusQuery', () => {
   it('loads coordination status through the existing coordination api helper', async () => {
@@ -74,12 +88,12 @@ describe('useCoordinationStatusQuery', () => {
 
     mockedGetCoordinationStatus.mockResolvedValue(statusFixture);
 
-    const { wrapper } = createQueryClientWrapper();
-    const { result } = renderHook(() => useCoordinationStatusQuery(), { wrapper });
+    renderWithQueryClient(<CoordinationStatusProbe />);
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => {
+      expect(screen.getByText('success:connected')).toBeInTheDocument();
+    });
 
     expect(mockedGetCoordinationStatus).toHaveBeenCalledTimes(1);
-    expect(result.current.data).toBe(statusFixture);
   });
 });

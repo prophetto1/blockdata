@@ -7,6 +7,8 @@ import {
 } from '@/lib/coordinationApi';
 
 const MAX_EVENTS = 250;
+const RECONNECT_BASE_DELAY_MS = 500;
+const RECONNECT_MAX_DELAY_MS = 5000;
 
 export type CoordinationConnectionState =
   | 'idle'
@@ -59,6 +61,28 @@ function parseSseFrame(frame: string): CoordinationStreamEnvelope | null {
   }
 }
 
+function waitForReconnect(delayMs: number, signal: AbortSignal) {
+  return new Promise<void>((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      signal.removeEventListener('abort', handleAbort);
+      resolve();
+    }, delayMs);
+
+    function handleAbort() {
+      window.clearTimeout(timeoutId);
+      signal.removeEventListener('abort', handleAbort);
+      resolve();
+    }
+
+    signal.addEventListener('abort', handleAbort, { once: true });
+  });
+}
+
 export function useCoordinationStream(options: UseCoordinationStreamOptions = {}): UseCoordinationStreamResult {
   const [events, setEvents] = useState<CoordinationStreamEvent[]>([]);
   const [paused, setPaused] = useState(false);
@@ -77,81 +101,99 @@ export function useCoordinationStream(options: UseCoordinationStreamOptions = {}
     let active = true;
 
     async function readStream() {
-      setConnectionState('connecting');
-      setError(null);
-      setDisabledReason(null);
+      let reconnectDelayMs = RECONNECT_BASE_DELAY_MS;
 
-      try {
-        const response = await openCoordinationEventStream(
-          {
-            taskId: options.taskId,
-            subjectPrefix: options.subjectPrefix,
-            limit: options.limit ?? MAX_EVENTS,
-          },
-          { signal: controller.signal },
-        );
-
-        if (!response.ok) {
-          const payload = await response.json().catch(() => null);
-          if (response.status === 503 && payload && typeof payload === 'object' && 'detail' in payload) {
-            const detail = (payload as { detail?: { code?: string; message?: string } }).detail;
-            if (detail?.code === 'coordination_runtime_disabled') {
-              throw new CoordinationRuntimeDisabledError(detail.message);
-            }
-          }
-          throw new Error(`Coordination stream request failed: ${response.status}`);
-        }
-
-        if (!response.body) {
-          throw new Error('Coordination stream response body is unavailable.');
-        }
-
-        const reader = response.body.getReader();
-        let buffer = '';
+      while (active && !controller.signal.aborted) {
+        setConnectionState('connecting');
+        setError(null);
+        setDisabledReason(null);
 
         try {
-          while (active && !controller.signal.aborted) {
-            const { done, value } = await reader.read();
-            if (done) break;
+          const response = await openCoordinationEventStream(
+            {
+              taskId: options.taskId,
+              subjectPrefix: options.subjectPrefix,
+              limit: options.limit ?? MAX_EVENTS,
+            },
+            { signal: controller.signal },
+          );
 
-            buffer += decoder.decode(value, { stream: true });
-            let delimiterIndex = buffer.indexOf('\n\n');
+          if (!response.ok) {
+            const payload = await response.json().catch(() => null);
+            if (response.status === 503 && payload && typeof payload === 'object' && 'detail' in payload) {
+              const detail = (payload as { detail?: { code?: string; message?: string } }).detail;
+              if (detail?.code === 'coordination_runtime_disabled') {
+                throw new CoordinationRuntimeDisabledError(detail.message);
+              }
+            }
+            throw new Error(`Coordination stream request failed: ${response.status}`);
+          }
 
-            while (delimiterIndex !== -1) {
-              const frame = buffer.slice(0, delimiterIndex);
-              buffer = buffer.slice(delimiterIndex + 2);
-              const envelope = parseSseFrame(frame);
+          if (!response.body) {
+            throw new Error('Coordination stream response body is unavailable.');
+          }
 
-              if (envelope) {
-                if (isControlEnvelope(envelope)) {
-                  setConnectionState(envelope.state === 'degraded' ? 'degraded' : 'connected');
-                  setError(envelope.state === 'degraded' ? envelope.message ?? 'Coordination bridge is degraded.' : null);
-                } else if (!pausedRef.current) {
-                  setConnectionState('connected');
-                  setEvents((current) => [...current, envelope].slice(-MAX_EVENTS));
-                }
+          reconnectDelayMs = RECONNECT_BASE_DELAY_MS;
+          const reader = response.body.getReader();
+          let buffer = '';
+          let streamClosed = false;
+
+          try {
+            while (active && !controller.signal.aborted) {
+              const { done, value } = await reader.read();
+              if (done) {
+                streamClosed = true;
+                break;
               }
 
-              delimiterIndex = buffer.indexOf('\n\n');
+              buffer += decoder.decode(value, { stream: true });
+              let delimiterIndex = buffer.indexOf('\n\n');
+
+              while (delimiterIndex !== -1) {
+                const frame = buffer.slice(0, delimiterIndex);
+                buffer = buffer.slice(delimiterIndex + 2);
+                const envelope = parseSseFrame(frame);
+
+                if (envelope) {
+                  if (isControlEnvelope(envelope)) {
+                    setConnectionState(envelope.state === 'degraded' ? 'degraded' : 'connected');
+                    setError(envelope.state === 'degraded' ? envelope.message ?? 'Coordination bridge is degraded.' : null);
+                  } else if (!pausedRef.current) {
+                    setConnectionState('connected');
+                    setEvents((current) => [...current, envelope].slice(-MAX_EVENTS));
+                  }
+                }
+
+                delimiterIndex = buffer.indexOf('\n\n');
+              }
             }
+          } finally {
+            await reader.cancel().catch(() => undefined);
           }
-        } finally {
-          await reader.cancel().catch(() => undefined);
-        }
-      } catch (nextError) {
-        if (!active || controller.signal.aborted) {
-          return;
+
+          if (!streamClosed || !active || controller.signal.aborted) {
+            return;
+          }
+
+          setConnectionState('connecting');
+        } catch (nextError) {
+          if (!active || controller.signal.aborted) {
+            return;
+          }
+
+          if (nextError instanceof CoordinationRuntimeDisabledError) {
+            setConnectionState('disabled');
+            setDisabledReason(nextError.message);
+            setError(null);
+            return;
+          }
+
+          setConnectionState('error');
+          setError(nextError instanceof Error ? nextError.message : String(nextError));
         }
 
-        if (nextError instanceof CoordinationRuntimeDisabledError) {
-          setConnectionState('disabled');
-          setDisabledReason(nextError.message);
-          setError(null);
-          return;
-        }
-
-        setConnectionState('error');
-        setError(nextError instanceof Error ? nextError.message : String(nextError));
+        await waitForReconnect(reconnectDelayMs, controller.signal);
+        reconnectDelayMs = Math.min(reconnectDelayMs * 2, RECONNECT_MAX_DELAY_MS);
       }
     }
 

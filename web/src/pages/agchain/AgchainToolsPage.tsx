@@ -145,6 +145,16 @@ export default function AgchainToolsPage() {
     }
   }
 
+  if (scopeState.kind === 'bootstrapping') {
+    return (
+      <AgchainPageFrame className="gap-6 py-6">
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-sm text-muted-foreground">Loading workspace...</p>
+        </div>
+      </AgchainPageFrame>
+    );
+  }
+
   const scopeMessage = (() => {
     if (scopeState.kind === 'error') {
       return {
@@ -183,20 +193,27 @@ export default function AgchainToolsPage() {
 
   if (scopeMessage) {
     return (
-      <AgchainPageFrame className="gap-0 p-0">
+      <AgchainPageFrame className="gap-5 py-4">
         <ShellPageHeader
           title="Tools"
           description="Manage the merged tool registry."
         />
-        <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(380px,520px)]">
-          <div className="flex min-h-0 flex-col items-center justify-center border-b border-border p-6 lg:border-b-0 lg:border-r">
-            <AgchainEmptyState title={scopeMessage.title} description={scopeMessage.description} action={scopeMessage.action} />
+        <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,480px)]">
+          <div className="flex min-h-0 flex-col">
+            <AgchainEmptyState
+              title={scopeMessage.title}
+              description={scopeMessage.description}
+              action={scopeMessage.action}
+              className="flex h-full min-h-[320px] flex-col justify-center"
+            />
           </div>
-          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-            <h2 className="text-lg font-semibold text-foreground">No tool selected</h2>
-            <p className="max-w-xs text-sm text-muted-foreground">
-              Select a tool from the table to inspect details, versions, and configuration.
-            </p>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-3xl border border-border/70 bg-card/60 px-6 py-10 text-center shadow-sm">
+              <h2 className="text-base font-semibold text-foreground">No tool selected</h2>
+              <p className="mt-2 max-w-xs text-sm text-muted-foreground">
+                Select a tool from the table to inspect details, versions, and configuration.
+              </p>
+            </div>
           </div>
         </div>
       </AgchainPageFrame>
@@ -204,7 +221,7 @@ export default function AgchainToolsPage() {
   }
 
   return (
-    <AgchainPageFrame className="gap-0 p-0">
+    <AgchainPageFrame className="gap-5 py-4">
       <ShellPageHeader
         title="Tools"
         description={scopeState.kind === 'ready'
@@ -212,9 +229,9 @@ export default function AgchainToolsPage() {
           : 'Manage the merged tool registry.'}
       />
 
-      <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_minmax(380px,520px)]">
-        <div className="flex min-h-0 flex-col border-b border-border p-1 lg:border-b-0 lg:border-r">
-            <AgchainToolsTable
+      <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,480px)]">
+        <div className="flex min-h-0 flex-col">
+          <AgchainToolsTable
             rows={filteredRows}
             loading={listLoading}
             selectedToolKey={selectedToolKey}
@@ -288,55 +305,66 @@ export default function AgchainToolsPage() {
                 </div>
               </div>
             )}
-            />
+          />
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col">
-          {selectedRow ? (
-            <div className="flex h-full flex-col">
-              <div className="flex items-start justify-between gap-3 border-b border-border/70 px-4 py-4">
-                <div className="min-w-0">
-                  <h2 className="truncate text-base font-semibold text-foreground">
-                    {selectedRow.display_name}
-                  </h2>
-                  <p className="mt-1 truncate text-sm text-muted-foreground">
-                    {selectedRow.description || 'No description has been added yet.'}
-                  </p>
+          <div
+            data-testid="agchain-tools-inspector-shell"
+            className="flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/60 shadow-sm"
+          >
+            {selectedRow ? (
+              <>
+                <div className="flex items-start justify-between gap-3 border-b border-border/70 bg-background/50 px-5 py-4">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-sm font-semibold text-foreground">
+                      {selectedRow.display_name}
+                    </h2>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">
+                      {selectedRow.description || 'No description has been added yet.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeInspector}
+                    className="shrink-0 rounded-full border border-border/70 bg-background/70 p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    aria-label="Close inspector"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={closeInspector}
-                  className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  aria-label="Close inspector"
+                <ScrollArea
+                  className="min-h-0 flex-1"
+                  viewportClass="h-full overflow-y-auto overflow-x-hidden"
+                  contentClass="px-5 py-4"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                </button>
+                  <div data-testid="agchain-tools-inspector">
+                  <AgchainToolInspectorContent
+                    row={selectedRow}
+                    detail={selectedDetail}
+                    loading={detailLoading}
+                    error={detailError}
+                    saving={mutating}
+                    onEdit={() => {
+                      setDialogError(null);
+                      setEditorMode('edit');
+                      setEditorOpen(true);
+                    }}
+                    onPublish={publishSelectedTool}
+                    onArchive={archiveSelectedTool}
+                  />
+                  </div>
+                </ScrollArea>
+              </>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+                <h2 className="text-base font-semibold text-foreground">No tool selected</h2>
+                <p className="max-w-xs text-sm text-muted-foreground">
+                  Select a tool from the table to inspect details, versions, and configuration.
+                </p>
               </div>
-              <ScrollArea className="min-h-0 flex-1" viewportClass="h-full overflow-y-auto overflow-x-hidden" contentClass="px-4 py-4">
-                <AgchainToolInspectorContent
-                  row={selectedRow}
-                  detail={selectedDetail}
-                  loading={detailLoading}
-                  error={detailError}
-                  saving={mutating}
-                  onEdit={() => {
-                    setDialogError(null);
-                    setEditorMode('edit');
-                    setEditorOpen(true);
-                  }}
-                  onPublish={publishSelectedTool}
-                  onArchive={archiveSelectedTool}
-                />
-              </ScrollArea>
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-              <h2 className="text-lg font-semibold text-foreground">No tool selected</h2>
-              <p className="max-w-xs text-sm text-muted-foreground">
-                Select a tool from the table to inspect details, versions, and configuration.
-              </p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

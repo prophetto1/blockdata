@@ -18,7 +18,7 @@ export default function AgchainAiProvidersPage() {
 
   if (scopeState.kind === 'bootstrapping') {
     return (
-      <AgchainPageFrame className="gap-6 py-8">
+      <AgchainPageFrame className="gap-6 py-6">
         <div className="flex flex-1 items-center justify-center">
           <p className="text-sm text-muted-foreground">Loading workspace...</p>
         </div>
@@ -28,7 +28,7 @@ export default function AgchainAiProvidersPage() {
 
   if (scopeState.kind === 'error') {
     return (
-      <AgchainPageFrame className="gap-6 py-8">
+      <AgchainPageFrame className="gap-6 py-6">
         <AgchainEmptyState
           title="AI Providers unavailable"
           description="Failed to load AGChain workspace context."
@@ -48,7 +48,7 @@ export default function AgchainAiProvidersPage() {
 
   if (scopeState.kind === 'no-organization') {
     return (
-      <AgchainPageFrame className="gap-6 py-8">
+      <AgchainPageFrame className="gap-6 py-6">
         <AgchainEmptyState
           title="No organization"
           description="Select or create an organization to continue."
@@ -59,7 +59,7 @@ export default function AgchainAiProvidersPage() {
 
   if (scopeState.kind === 'no-project') {
     return (
-      <AgchainPageFrame className="gap-6 py-8">
+      <AgchainPageFrame className="gap-6 py-6">
         <AgchainEmptyState
           eyebrow="Project AI Providers"
           title="Choose an AGChain project"
@@ -99,7 +99,7 @@ function ProjectProvidersReadyPage({ projectId }: { projectId: string }) {
   }
 
   return (
-    <AgchainPageFrame className="gap-6 py-8">
+    <AgchainPageFrame className="gap-5 py-4">
       <ShellPageHeader
         title="AI Providers"
         description="Configure provider credentials for the selected project. Project credentials override organization defaults."

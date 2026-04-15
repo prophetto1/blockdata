@@ -50,18 +50,18 @@ export function SettingsPageFrame({
   const isAdminVariant = headerVariant === 'admin';
 
   return (
-    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-md border border-border bg-background">
+    <section className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-border/70 bg-card/70 shadow-sm">
       {!hideHeader ? (
         <header
           className={cn(
-            'flex justify-between gap-3 border-b border-border bg-muted/30',
-            isAdminVariant ? 'min-h-[4.75rem] items-center px-5 py-3' : 'items-start px-4 py-2',
+            'flex justify-between gap-3 border-b border-border/70 bg-background/60',
+            isAdminVariant ? 'items-start px-5 py-4 md:px-6' : 'items-start px-4 py-3',
           )}
         >
           <div className="min-w-0">
             <h2
               className={cn(
-                'truncate font-semibold text-foreground',
+                'truncate font-semibold tracking-tight text-foreground',
                 isAdminVariant ? 'text-base leading-6' : 'text-sm',
               )}
             >
@@ -71,7 +71,7 @@ export function SettingsPageFrame({
               <p
                 className={cn(
                   'text-muted-foreground',
-                  isAdminVariant ? 'mt-1 text-sm leading-5' : 'mt-0.5 text-xs',
+                  isAdminVariant ? 'mt-1 max-w-3xl text-sm leading-6' : 'mt-1 text-xs leading-5',
                 )}
               >
                 {description}
@@ -82,9 +82,9 @@ export function SettingsPageFrame({
         </header>
       ) : null}
 
-      <div className={cn('min-h-0 flex-1 overflow-y-auto bg-background p-3 md:p-4', bodyClassName)}>
+      <div className={cn('min-h-0 flex-1 overflow-y-auto bg-transparent p-4', bodyClassName)}>
         {toolbar && (
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-border bg-background px-2 py-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-background/70 px-3 py-3 shadow-sm">
             {toolbar}
           </div>
         )}

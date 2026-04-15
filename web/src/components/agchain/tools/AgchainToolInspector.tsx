@@ -57,8 +57,8 @@ export function AgchainToolInspectorContent({
   onArchive,
 }: AgchainToolInspectorContentProps) {
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-border/70 bg-card/70 p-4">
+    <div className="space-y-4">
+      <section className="rounded-xl border border-border/70 bg-background/70 p-4">
         <div className="flex flex-wrap gap-2">
           <Badge variant={SOURCE_BADGE[row.source_kind] ?? 'gray'} size="sm">
             {row.source_kind}
@@ -70,11 +70,11 @@ export function AgchainToolInspectorContent({
 
         <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Runtime ref</dt>
+            <dt className="text-[11px] font-medium text-muted-foreground">Runtime ref</dt>
             <dd className="mt-1 font-mono text-foreground">{row.tool_ref ?? 'Unpublished draft'}</dd>
           </div>
           <div>
-            <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Approval mode</dt>
+            <dt className="text-[11px] font-medium text-muted-foreground">Approval mode</dt>
             <dd className="mt-1 text-foreground">{row.approval_mode}</dd>
           </div>
         </dl>
@@ -94,10 +94,8 @@ export function AgchainToolInspectorContent({
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-border/70 bg-card/70 p-4">
-        <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Version history
-        </h3>
+      <section className="rounded-xl border border-border/70 bg-background/70 p-4">
+        <h3 className="text-sm font-semibold text-foreground">Version history</h3>
 
         {row.read_only ? (
           <p className="mt-3 text-sm text-muted-foreground">
@@ -110,7 +108,7 @@ export function AgchainToolInspectorContent({
         ) : detail?.versions.length ? (
           <div className="mt-3 space-y-3">
             {detail.versions.map((version) => (
-              <article key={version.tool_version_id} className="rounded-xl border border-border/70 bg-background px-4 py-3">
+              <article key={version.tool_version_id} className="rounded-lg border border-border/70 bg-card/80 px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-foreground">{version.version_label}</p>
                   <Badge variant={STATUS_BADGE[version.status] ?? 'gray'} size="sm">
@@ -119,13 +117,13 @@ export function AgchainToolInspectorContent({
                 </div>
                 <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Parallel calls</p>
+                    <p className="text-[11px] font-medium text-muted-foreground">Parallel calls</p>
                     <p className="mt-1 text-foreground">
                       {version.parallel_calls_allowed ? 'Allowed' : 'Not allowed'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Discovery</p>
+                    <p className="text-[11px] font-medium text-muted-foreground">Discovery</p>
                     <p className="mt-1 text-foreground">
                       {version.discovered_tools?.length
                         ? `${version.discovered_tools.length} child tools`

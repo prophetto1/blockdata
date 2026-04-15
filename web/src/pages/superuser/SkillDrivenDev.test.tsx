@@ -18,7 +18,7 @@ describe('SkillDrivenDev', () => {
     cleanup();
   });
 
-  it('renders the skill-driven dev page and registers the superuser nav/route entry', () => {
+  it('renders the skill-driven dev page while leaving it off the superuser nav rail', () => {
     render(<SkillDrivenDev />);
 
     expect(screen.getByTestId('skill-driven-dev-canvas')).toBeInTheDocument();
@@ -26,8 +26,11 @@ describe('SkillDrivenDev', () => {
     expect(screen.getByRole('button', { name: 'Add Skill' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add Prompt' })).toBeInTheDocument();
 
-    const devOnlySection = SUPERUSER_NAV_SECTIONS.find((section) => section.label === 'DEV ONLY');
-    expect(devOnlySection?.items.some((item) => item.path === '/app/superuser/skill-driven-dev')).toBe(true);
+    expect(
+      SUPERUSER_NAV_SECTIONS.flatMap((section) => section.items).some(
+        (item) => item.path === '/app/superuser/skill-driven-dev',
+      ),
+    ).toBe(false);
     expect(routerSource).toContain("path: 'skill-driven-dev'");
   });
 });

@@ -59,6 +59,7 @@ class CoordinationEventStreamService:
         queue_limit: int = COORDINATION_STREAM_QUEUE_LIMIT,
         reconnect_base_seconds: float = 0.25,
         reconnect_max_seconds: float = 5.0,
+        heartbeat_interval_seconds: float = 15.0,
     ) -> None:
         self.settings = settings
         self.client = client
@@ -67,6 +68,7 @@ class CoordinationEventStreamService:
         self.queue_limit = queue_limit
         self.reconnect_base_seconds = reconnect_base_seconds
         self.reconnect_max_seconds = reconnect_max_seconds
+        self.heartbeat_interval_seconds = heartbeat_interval_seconds
         self._buffer: deque[dict] = deque(maxlen=ring_limit)
         self._subscribers: set[tuple[asyncio.Queue, str | None, str | None]] = set()
         self._task: asyncio.Task | None = None
@@ -121,15 +123,24 @@ class CoordinationEventStreamService:
                 self._enqueue(queue, envelope)
 
     async def publish_control(self, state: str, message: str | None = None) -> None:
-        envelope = {
+        envelope = self._control_envelope(state=state, message=message)
+        for queue, task_id, subject_prefix in list(self._subscribers):
+            if self._filter_match(envelope, task_id, subject_prefix):
+                self._enqueue(queue, envelope)
+
+    def _control_envelope(self, *, state: str, message: str | None = None) -> dict:
+        return {
             "type": "control",
             "state": state,
             "message": message,
             "occurred_at": utc_now_iso(),
         }
-        for queue, task_id, subject_prefix in list(self._subscribers):
-            if self._filter_match(envelope, task_id, subject_prefix):
-                self._enqueue(queue, envelope)
+
+    def _current_control_envelope(self) -> dict:
+        return self._control_envelope(
+            state="connected" if self._state == "connected" else "degraded",
+            message=self._last_error,
+        )
 
     async def _handle_client_event(self, envelope: dict) -> None:
         await self.publish_local_event(envelope)
@@ -179,12 +190,7 @@ class CoordinationEventStreamService:
         self._subscribers.add((queue, task_id, subject_prefix))
         _client_count["value"] = len(self._subscribers)
 
-        initial_control = {
-            "type": "control",
-            "state": "connected" if self._state == "connected" else "degraded",
-            "message": self._last_error,
-            "occurred_at": utc_now_iso(),
-        }
+        initial_control = self._current_control_envelope()
         self._enqueue(queue, initial_control)
         if limit > 0:
             replay = [event for event in self._buffer if self._filter_match(event, task_id, subject_prefix)][-limit:]
@@ -193,7 +199,13 @@ class CoordinationEventStreamService:
 
         try:
             while True:
-                envelope = await queue.get()
+                try:
+                    envelope = await asyncio.wait_for(
+                        queue.get(),
+                        timeout=self.heartbeat_interval_seconds,
+                    )
+                except asyncio.TimeoutError:
+                    envelope = self._current_control_envelope()
                 yield f"data: {json.dumps(envelope)}\n\n"
         finally:
             self._subscribers.discard((queue, task_id, subject_prefix))

@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
-import { platformApiFetch } from '@/lib/platformApi';
-import { loadOperationalReadinessWithBootstrap } from '@/lib/platformApiDiagnostics';
+import { useCallback, useMemo, useState } from 'react';
+import { useOperationalReadinessSnapshotQuery } from '@/hooks/query/useOperationalReadinessSnapshotQuery';
 import {
   collectClientDiagnostics,
   executeOperationalReadinessAction,
@@ -90,31 +89,30 @@ const INITIAL_BOOTSTRAP: OperationalReadinessBootstrapState = {
   ],
 };
 
-async function fetchOperationalReadinessSnapshot(platformApiTarget?: string): Promise<OperationalReadinessSnapshot> {
-  const response = await platformApiFetch(
-    '/admin/runtime/readiness?surface=all',
-    {},
-    platformApiTarget ? { platformApiTarget } : {},
-  );
-  if (!response.ok) {
-    throw new Error(`Operational readiness request failed: ${response.status}`);
-  }
-
-  const body = (await response.json()) as OperationalReadinessSnapshot;
-  return normalizeOperationalReadinessSnapshot(body);
+function formatErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
 }
 
 export function useOperationalReadiness(): UseOperationalReadinessState {
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshedAt, setRefreshedAt] = useState<string | null>(null);
-  const [bootstrap, setBootstrap] = useState<OperationalReadinessBootstrapState>(INITIAL_BOOTSTRAP);
-  const [summary, setSummary] = useState<OperationalReadinessSummary | null>(null);
-  const [surfaces, setSurfaces] = useState<OperationalReadinessSurface[]>([]);
-  const [clientDiagnostics, setClientDiagnostics] = useState<ClientDiagnostic[]>(() => collectClientDiagnostics());
+  const readinessQuery = useOperationalReadinessSnapshotQuery();
   const [actionStates, setActionStates] = useState<Record<string, OperationalReadinessActionExecutionState>>({});
   const [checkDetails, setCheckDetails] = useState<Record<string, OperationalReadinessCheckDetailState>>({});
+
+  const snapshot = useMemo<OperationalReadinessSnapshot | null>(() => {
+    if (!readinessQuery.data?.snapshot) return null;
+    return normalizeOperationalReadinessSnapshot(readinessQuery.data.snapshot);
+  }, [readinessQuery.data?.snapshot]);
+
+  const loading = readinessQuery.isPending;
+  const refreshing = readinessQuery.isFetching;
+  const error = readinessQuery.error ? formatErrorMessage(readinessQuery.error) : null;
+  const refreshedAt = snapshot?.generated_at ?? null;
+  const bootstrap = readinessQuery.data?.bootstrap ?? INITIAL_BOOTSTRAP;
+  const summary = readinessQuery.error ? null : snapshot?.summary ?? null;
+  const surfaces = readinessQuery.error ? [] : snapshot?.surfaces ?? [];
+  const clientDiagnostics = readinessQuery.error
+    ? collectClientDiagnostics()
+    : readinessQuery.data?.clientDiagnostics ?? collectClientDiagnostics();
 
   function upsertCheckDetailState(
     checkId: string,
@@ -138,33 +136,12 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
     }));
   }
 
-  async function refresh() {
-    setRefreshing(true);
-    setError(null);
-
-    try {
-      const nextState = await loadOperationalReadinessWithBootstrap({
-        loadSnapshot: fetchOperationalReadinessSnapshot,
-      });
-      const normalizedSnapshot = nextState.snapshot
-        ? normalizeOperationalReadinessSnapshot(nextState.snapshot)
-        : null;
-
-      setBootstrap(nextState.bootstrap);
-      setSummary(normalizedSnapshot?.summary ?? null);
-      setSurfaces(normalizedSnapshot?.surfaces ?? []);
-      setClientDiagnostics(nextState.clientDiagnostics);
-      setRefreshedAt(normalizedSnapshot?.generated_at ?? null);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : String(nextError));
-      setClientDiagnostics(collectClientDiagnostics());
-      setSummary(null);
-      setSurfaces([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  const refresh = useCallback(async () => {
+    const result = await readinessQuery.refetch();
+    if (result.error) {
+      throw result.error;
     }
-  }
+  }, [readinessQuery]);
 
   async function loadCheckDetail(checkId: string, options?: { force?: boolean }) {
     const currentDetailState = checkDetails[checkId];
@@ -226,7 +203,6 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
 
   async function executeAction(checkId: string, action: OperationalReadinessAvailableAction) {
     const actionKey = getOperationalReadinessActionStateKey(checkId, action.action_kind);
-    setError(null);
     setActionStates((current) => ({
       ...current,
       [actionKey]: {
@@ -260,10 +236,6 @@ export function useOperationalReadiness(): UseOperationalReadinessState {
       }));
     }
   }
-
-  useEffect(() => {
-    void refresh();
-  }, []);
 
   return {
     loading,

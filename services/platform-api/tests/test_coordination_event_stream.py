@@ -171,3 +171,27 @@ async def test_start_recovers_from_initial_connect_failure(tmp_path):
 
     await chunks.aclose()
     await service.close()
+
+
+@pytest.mark.asyncio
+async def test_stream_emits_keepalive_control_when_idle(tmp_path):
+    service = CoordinationEventStreamService(
+        _settings(tmp_path),
+        _FakeClient(),
+        CoordinationAuditWriter(tmp_path, host="JON"),
+        reconnect_base_seconds=0.01,
+        reconnect_max_seconds=0.02,
+        heartbeat_interval_seconds=0.01,
+    )
+
+    chunks = service.stream(limit=0)
+
+    control = await _read_event(chunks)
+    keepalive = await _read_event(chunks)
+
+    assert control["type"] == "control"
+    assert control["state"] == "degraded"
+    assert keepalive["type"] == "control"
+    assert keepalive["state"] == "degraded"
+
+    await chunks.aclose()

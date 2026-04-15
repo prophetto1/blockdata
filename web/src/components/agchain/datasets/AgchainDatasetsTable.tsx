@@ -51,28 +51,28 @@ export function AgchainDatasetsTable({ items, loading }: AgchainDatasetsTablePro
   const navigate = useNavigate();
 
   return (
-    <section className="flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/70 shadow-sm">
+    <section className="flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/60 shadow-sm">
       <ScrollArea className="min-h-0 flex-1">
         <table className="w-full text-left">
-          <thead className="sticky top-0 z-10 bg-card text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            <tr className="border-b border-border">
-              <th className="px-6 py-3 font-medium">Dataset</th>
-              <th className="px-6 py-3 font-medium">Current Version</th>
-              <th className="px-6 py-3 font-medium">Samples</th>
-              <th className="px-6 py-3 font-medium">Validation</th>
-              <th className="px-6 py-3 font-medium">Updated</th>
+          <thead className="sticky top-0 z-10 bg-card/80 text-xs text-muted-foreground">
+            <tr className="border-b border-border/70">
+              <th className="px-4 py-2.5 font-medium">Dataset</th>
+              <th className="px-4 py-2.5 font-medium">Current Version</th>
+              <th className="px-4 py-2.5 font-medium">Samples</th>
+              <th className="px-4 py-2.5 font-medium">Validation</th>
+              <th className="px-4 py-2.5 font-medium">Updated</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-10 text-center text-sm text-muted-foreground">
+                <td colSpan={5} className="px-4 py-12 text-center text-sm text-muted-foreground">
                   Loading datasets...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-16 text-center">
+                <td colSpan={5} className="px-4 py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <svg
                       className="h-10 w-10 text-muted-foreground/50"
@@ -98,10 +98,10 @@ export function AgchainDatasetsTable({ items, loading }: AgchainDatasetsTablePro
                   key={row.dataset_id}
                   onClick={() => navigate(`/app/agchain/datasets/${row.dataset_id}`)}
                   className={cn(
-                    'cursor-pointer border-b border-border/60 align-top hover:bg-accent/20',
+                    'cursor-pointer border-b border-border/60 align-top hover:bg-accent/30',
                   )}
                 >
-                  <td className="max-w-[16rem] px-6 py-4">
+                  <td className="max-w-[16rem] px-4 py-3">
                     <div>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -117,7 +117,7 @@ export function AgchainDatasetsTable({ items, loading }: AgchainDatasetsTablePro
                       </Tooltip>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Badge variant={SOURCE_TYPE_BADGE[row.source_type] ?? 'gray'} size="sm">
                         {row.source_type.toUpperCase()}
@@ -127,15 +127,15 @@ export function AgchainDatasetsTable({ items, loading }: AgchainDatasetsTablePro
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-foreground">
+                  <td className="px-4 py-3 text-sm text-foreground">
                     {formatSampleCount(row.sample_count)}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <Badge variant={VALIDATION_BADGE[row.validation_status] ?? 'gray'} size="sm">
                       {VALIDATION_LABEL[row.validation_status] ?? row.validation_status}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
                     {formatRelativeTime(row.updated_at)}
                   </td>
                 </tr>

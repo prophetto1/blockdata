@@ -35,7 +35,7 @@ export default function AgchainDatasetsPage() {
 
   if (scopeState.kind === 'bootstrapping') {
     return (
-      <AgchainPageFrame className="gap-8 py-10">
+      <AgchainPageFrame className="gap-6 py-6">
         <div className="flex flex-1 items-center justify-center"><p className="text-sm text-muted-foreground">Loading workspace...</p></div>
       </AgchainPageFrame>
     );
@@ -43,7 +43,7 @@ export default function AgchainDatasetsPage() {
 
   if (scopeState.kind === 'error') {
     return (
-      <AgchainPageFrame className="gap-8 py-10">
+      <AgchainPageFrame className="gap-6 py-6">
         <AgchainEmptyState
           title="AGChain datasets unavailable"
           description="Failed to load AGChain workspace context."
@@ -63,7 +63,7 @@ export default function AgchainDatasetsPage() {
 
   if (scopeState.kind === 'no-organization') {
     return (
-      <AgchainPageFrame className="gap-8 py-10">
+      <AgchainPageFrame className="gap-6 py-6">
         <AgchainEmptyState
           title="No organization"
           description="Select or create an organization to continue."
@@ -74,7 +74,7 @@ export default function AgchainDatasetsPage() {
 
   if (scopeState.kind === 'no-project') {
     return (
-      <AgchainPageFrame className="gap-8 py-10">
+      <AgchainPageFrame className="gap-6 py-6">
         <AgchainEmptyState
           eyebrow="AGChain project"
           title="Choose an AGChain project"
@@ -93,8 +93,8 @@ export default function AgchainDatasetsPage() {
   }
 
   return (
-    <AgchainPageFrame>
-      <div className="flex min-h-0 flex-1 flex-col gap-6 py-6">
+    <AgchainPageFrame className="gap-5 py-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-5">
         <ShellPageHeader
           title="Datasets"
           description={`Manage evaluation datasets for ${scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}.`}

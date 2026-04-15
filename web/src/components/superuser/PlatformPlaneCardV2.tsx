@@ -49,7 +49,7 @@ export function PlatformPlaneCardV2({
   const baseClassName = cn(
     'flex min-w-0 flex-col gap-3 rounded-xl border border-border/70 bg-card p-3 text-left shadow-sm transition-colors',
     selected && 'border-primary/35 bg-primary/[0.05] shadow-[0_0_0_1px_rgba(59,130,246,0.15)]',
-    onSelect && !drillLabel && !drillPath && 'cursor-pointer hover:border-primary/30 hover:bg-primary/[0.04]',
+    onSelect && 'hover:border-primary/30 hover:bg-primary/[0.04]',
   );
 
   const content = (
@@ -89,18 +89,19 @@ export function PlatformPlaneCardV2({
         ))}
       </dl>
 
-      {drillLabel && drillPath ? (
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to={drillPath}
-            className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive, 'self-start')}
-          >
-            <span>{drillLabel}</span>
-          </Link>
-        </div>
-      ) : null}
     </>
   );
+
+  const drillAction = drillLabel && drillPath ? (
+    <div className="flex flex-wrap gap-2">
+      <Link
+        to={drillPath}
+        className={cn(TOOLBAR_BUTTON_BASE, TOOLBAR_BUTTON_STATES.inactive, 'self-start')}
+      >
+        <span>{drillLabel}</span>
+      </Link>
+    </div>
+  ) : null;
 
   if (onSelect && !drillLabel && !drillPath) {
     return (
@@ -116,9 +117,27 @@ export function PlatformPlaneCardV2({
     );
   }
 
+  if (onSelect) {
+    return (
+      <article className={baseClassName}>
+        <button
+          type="button"
+          onClick={onSelect}
+          aria-label={selectLabel ?? `Select ${label}`}
+          aria-pressed={selected}
+          className="flex w-full min-w-0 flex-col gap-3 text-left"
+        >
+          {content}
+        </button>
+        {drillAction}
+      </article>
+    );
+  }
+
   return (
     <article className={baseClassName}>
       {content}
+      {drillAction}
     </article>
   );
 }
