@@ -10,8 +10,8 @@ import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
 import { CollapsibleSurface } from '@/components/superuser/CollapsibleSurface';
 import {
   CoordinationRuntimeSurface,
-  DEFAULT_COORDINATION_RUNTIME_CARD_STATE,
 } from '@/components/superuser/CoordinationRuntimeSurface';
+import { DEFAULT_COORDINATION_RUNTIME_CARD_STATE } from '@/components/superuser/coordinationRuntimeCardState';
 import { OperationalReadinessBootstrapPanel } from '@/components/superuser/OperationalReadinessBootstrapPanel';
 import { OperationalReadinessCheckGrid } from '@/components/superuser/OperationalReadinessCheckGrid';
 import { OperationalReadinessClientPanel } from '@/components/superuser/OperationalReadinessClientPanel';
