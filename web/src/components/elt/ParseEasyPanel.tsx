@@ -17,7 +17,7 @@ import {
   ScrollAreaThumb,
   ScrollAreaViewport,
 } from '@/components/ui/scroll-area';
-import { edgeFetch } from '@/lib/edge';
+import { platformApiFetch } from '@/lib/platformApi';
 
 type Props = {
   projectId: string | null;
@@ -99,7 +99,7 @@ function ConfigSwitch({
   );
 }
 
-export function ParseEasyPanel({ projectId: _projectId, selectedDocument = null, onParseQueued }: Props) {
+export function ParseEasyPanel({ selectedDocument = null, onParseQueued }: Props) {
   const [panelView, setPanelView] = useState<ParsePanelView>('configs');
   const [selectedTier, setSelectedTier] = useState<TierKey>('agentic');
   const [mode, setMode] = useState<ParseMode>('standard');
@@ -154,7 +154,7 @@ export function ParseEasyPanel({ projectId: _projectId, selectedDocument = null,
     setRunError(null);
     setRunInfo(null);
     try {
-      const response = await edgeFetch('trigger-parse', {
+      const response = await platformApiFetch('/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ source_uid: selectedDocument.source_uid }),

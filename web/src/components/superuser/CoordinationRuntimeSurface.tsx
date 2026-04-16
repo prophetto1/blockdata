@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
 import {
-  type PlaneFacet,
   type PlaneFacetTone,
 } from '@/components/superuser/PlatformPlaneCardV2';
+import {
+  type CoordinationRuntimeCardState,
+} from '@/components/superuser/coordinationRuntimeCardState';
 import { Button } from '@/components/ui/button';
 import { useCoordinationDiscussionsQuery } from '@/hooks/query/useCoordinationDiscussionsQuery';
 import { useCoordinationIdentitiesQuery } from '@/hooks/query/useCoordinationIdentitiesQuery';
@@ -17,20 +19,6 @@ import {
   type CoordinationStatusResponse,
 } from '@/lib/coordinationApi';
 import { cn } from '@/lib/utils';
-
-export type CoordinationRuntimeCardState = {
-  tone: PlaneFacetTone;
-  facets: PlaneFacet[];
-};
-
-export const DEFAULT_COORDINATION_RUNTIME_CARD_STATE: CoordinationRuntimeCardState = {
-  tone: 'muted',
-  facets: [
-    { label: 'Connection', tone: 'muted', value: 'open runtime' },
-    { label: 'Events', tone: 'muted', value: 'live feed there' },
-    { label: 'Latest', tone: 'muted', value: 'lazy loaded' },
-  ],
-};
 
 type CoordinationRuntimeSurfaceProps = {
   onStateChange?: (state: CoordinationRuntimeCardState) => void;
@@ -610,6 +598,7 @@ export function CoordinationRuntimeSurface({
   const statusQuery = useCoordinationStatusQuery();
   const identitiesQuery = useCoordinationIdentitiesQuery({
     enabled: statusQuery.isSuccess,
+    includeStale: false,
   });
   const discussionsQuery = useCoordinationDiscussionsQuery({
     enabled: statusQuery.isSuccess,
@@ -649,27 +638,23 @@ export function CoordinationRuntimeSurface({
     onStateChange?.(cardState);
   }, [cardState, onStateChange]);
 
-  const identityRows = identities?.identities ?? [];
-
-  useEffect(() => {
+  const identityRows = useMemo(() => identities?.identities ?? [], [identities?.identities]);
+  const effectiveSelectedIdentityKey = useMemo(() => {
     if (identityRows.length === 0) {
-      if (selectedIdentityKey !== null) {
-        setSelectedIdentityKey(null);
-      }
-      return;
+      return null;
     }
 
-    const selectedStillExists = identityRows.some((identity, index) => getIdentityKey(identity, index) === selectedIdentityKey);
-    if (!selectedStillExists) {
-      setSelectedIdentityKey(getIdentityKey(identityRows[0], 0));
-    }
+    const selectedStillExists = selectedIdentityKey !== null
+      && identityRows.some((identity, index) => getIdentityKey(identity, index) === selectedIdentityKey);
+
+    return selectedStillExists ? selectedIdentityKey : getIdentityKey(identityRows[0], 0);
   }, [identityRows, selectedIdentityKey]);
 
   const selectedIdentity = useMemo(() => {
     if (identityRows.length === 0) return null;
-    const match = identityRows.find((identity, index) => getIdentityKey(identity, index) === selectedIdentityKey);
+    const match = identityRows.find((identity, index) => getIdentityKey(identity, index) === effectiveSelectedIdentityKey);
     return match ?? identityRows[0];
-  }, [identityRows, selectedIdentityKey]);
+  }, [effectiveSelectedIdentityKey, identityRows]);
 
   return (
     <>
@@ -698,7 +683,7 @@ export function CoordinationRuntimeSurface({
               <CoordinationIdentityWorkbench
                 data={identities}
                 loading={loading}
-                selectedKey={selectedIdentityKey}
+                selectedKey={effectiveSelectedIdentityKey}
                 onSelect={setSelectedIdentityKey}
               />
               <CoordinationIdentityInspector identity={selectedIdentity} />

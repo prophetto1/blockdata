@@ -1,11 +1,14 @@
 # services/platform-api/tests/test_conversion.py
 import asyncio
 import pytest
+from unittest.mock import MagicMock, patch
 from app.domain.conversion.models import ConvertRequest, OutputTarget
+from app.domain.conversion.finalize import finalize_docling_callback
+from app.domain.conversion.models import ConversionCallbackRequest
 from app.domain.conversion.service import convert, reconstruct_from_dict
 
 
-def _build_request(track=None, source_type="txt"):
+def _build_request(track=None, source_type="txt", callback_url="https://example.test/callback"):
     output = OutputTarget(
         bucket="documents",
         key="converted/source/file.md",
@@ -19,7 +22,7 @@ def _build_request(track=None, source_type="txt"):
         source_type=source_type,
         source_download_url="https://example.test/source",
         output=output,
-        callback_url="https://example.test/callback",
+        callback_url=callback_url,
     )
 
 
@@ -27,7 +30,7 @@ def _build_request(track=None, source_type="txt"):
 
 
 def test_track_only_accepts_docling():
-    req = _build_request(track="docling", source_type="rst")
+    req = _build_request(track="docling", source_type="txt")
     assert req.track == "docling"
 
 
@@ -36,13 +39,18 @@ def test_track_defaults_to_none():
     assert req.track is None
 
 
+def test_callback_url_defaults_to_none_for_internal_callers():
+    req = _build_request(track="docling", source_type="txt", callback_url=None)
+    assert req.callback_url is None
+
+
 def test_track_rejects_pandoc():
     with pytest.raises(Exception):
         _build_request(track="pandoc", source_type="rst")
 
 
 def test_all_source_types_accepted():
-    for st in ["docx", "pdf", "pptx", "xlsx", "html", "csv", "txt", "md", "markdown", "rst", "latex", "odt", "epub", "rtf", "org"]:
+    for st in ["docx", "pdf", "pptx", "xlsx", "html", "csv", "txt", "odt", "epub"]:
         req = _build_request(track="docling", source_type=st)
         assert req.source_type == st
 
@@ -117,7 +125,7 @@ def test_convert_omits_optional_artifacts_when_not_requested(monkeypatch):
 
     monkeypatch.setattr(svc, "_build_docling_converter", lambda _cfg=None: FakeConverter())
 
-    req = _build_request(track="docling", source_type="md")
+    req = _build_request(track="docling", source_type="txt")
     result = asyncio.run(convert(req))
     assert len(result) == 5
     markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = result
@@ -128,16 +136,16 @@ def test_convert_omits_optional_artifacts_when_not_requested(monkeypatch):
     assert isinstance(blocks, list)
 
 
-def test_convert_works_for_rst_source_type(monkeypatch):
-    """rst (formerly pandoc-only) now goes through Docling."""
+def test_convert_works_for_odt_source_type(monkeypatch):
+    """Docling-only conversion still accepts document-family formats like odt."""
     import app.domain.conversion.service as svc
 
     class FakeDoc:
         def export_to_markdown(self) -> str:
-            return "# RST doc\n"
+            return "# ODT doc\n"
 
         def export_to_dict(self) -> dict:
-            return {"rst": True}
+            return {"odt": True}
 
     class FakeResult:
         document = FakeDoc()
@@ -148,7 +156,7 @@ def test_convert_works_for_rst_source_type(monkeypatch):
 
     monkeypatch.setattr(svc, "_build_docling_converter", lambda _cfg=None: FakeConverter())
 
-    req = _build_request(track="docling", source_type="rst")
+    req = _build_request(track="docling", source_type="odt")
     req.docling_output = OutputTarget(
         bucket="documents", key="k.docling.json",
         signed_upload_url="https://example.test/u", token=None,
@@ -156,7 +164,7 @@ def test_convert_works_for_rst_source_type(monkeypatch):
     result = asyncio.run(convert(req))
     assert len(result) == 5
     markdown_bytes, docling_json_bytes, html_bytes, doctags_bytes, blocks = result
-    assert markdown_bytes == b"# RST doc\n"
+    assert markdown_bytes == b"# ODT doc\n"
     assert docling_json_bytes is not None
     assert isinstance(blocks, list)
 
@@ -205,3 +213,136 @@ def test_reconstruct_from_dict():
     assert len(blocks) >= 1
     assert blocks[0]["block_content"] == "Hello world"
     assert blocks[0]["block_type"] == "paragraph"
+
+
+def test_finalize_docling_callback_persists_rows_from_callback_payload():
+    captured: dict[str, list] = {
+        "conversion_parsing": [],
+        "conversion_representations": [],
+        "blocks": [],
+        "source_updates": [],
+    }
+
+    def table_side_effect(name):
+        t = MagicMock()
+        if name == "source_documents":
+            select_chain = MagicMock()
+            select_chain.execute.return_value = MagicMock(
+                data={
+                    "source_uid": "src-1",
+                    "owner_id": "user-1",
+                    "project_id": "proj-1",
+                    "source_type": "pdf",
+                    "source_locator": "uploads/src-1/file.pdf",
+                    "conversion_job_id": "job-1",
+                    "status": "converting",
+                }
+            )
+            t.select.return_value.eq.return_value.maybe_single.return_value = select_chain
+            update_chain = MagicMock()
+            update_chain.execute.return_value = MagicMock(data=[])
+
+            def capture_update(row):
+                captured["source_updates"].append(dict(row))
+                return t.update.return_value
+
+            t.update.side_effect = capture_update
+            t.update.return_value.eq.return_value = update_chain
+        elif name == "conversion_parsing":
+            select_chain = MagicMock()
+            select_chain.execute.return_value = MagicMock(data=None)
+            t.select.return_value.eq.return_value.maybe_single.return_value = select_chain
+            upsert_chain = MagicMock()
+            upsert_chain.execute.return_value = MagicMock(data=[])
+
+            def capture_upsert(row, *args, **kwargs):
+                captured["conversion_parsing"].append(dict(row))
+                return upsert_chain
+
+            t.upsert.side_effect = capture_upsert
+            delete_chain = MagicMock()
+            delete_chain.eq.return_value = delete_chain
+            delete_chain.execute.return_value = MagicMock(data=[])
+            t.delete.return_value = delete_chain
+        elif name == "conversion_representations":
+            upsert_chain = MagicMock()
+            upsert_chain.execute.return_value = MagicMock(data=[])
+
+            def capture_upsert(row, *args, **kwargs):
+                captured["conversion_representations"].append(dict(row))
+                return upsert_chain
+
+            t.upsert.side_effect = capture_upsert
+            delete_chain = MagicMock()
+            delete_chain.eq.return_value = delete_chain
+            delete_chain.execute.return_value = MagicMock(data=[])
+            t.delete.return_value = delete_chain
+        elif name == "blocks":
+            upsert_chain = MagicMock()
+            upsert_chain.execute.return_value = MagicMock(data=[])
+
+            def capture_blocks(rows, *args, **kwargs):
+                captured["blocks"].append(list(rows))
+                return upsert_chain
+
+            t.upsert.side_effect = capture_blocks
+            delete_chain = MagicMock()
+            delete_chain.eq.return_value = delete_chain
+            delete_chain.execute.return_value = MagicMock(data=[])
+            t.delete.return_value = delete_chain
+        return t
+
+    sb = MagicMock()
+    sb.table.side_effect = table_side_effect
+
+    body = ConversionCallbackRequest(
+        source_uid="src-1",
+        conversion_job_id="job-1",
+        track="docling",
+        md_key="converted/src-1/file.md",
+        docling_key="converted/src-1/file.docling.json",
+        html_key="converted/src-1/file.html",
+        doctags_key="converted/src-1/file.doctags",
+        success=True,
+        blocks=[{
+            "block_type": "paragraph",
+            "block_content": "Parsed",
+            "pointer": "#/texts/0",
+            "parser_block_type": "paragraph",
+            "parser_path": "#/texts/0",
+            "page_no": None,
+            "page_nos": [],
+        }],
+        conv_uid="conv-123",
+        docling_artifact_size_bytes=33,
+        pipeline_config={"ocr": {"enabled": False}},
+    )
+
+    artifact_bytes = {
+        "markdown_bytes": b"# Parsed\n",
+        "html_bytes": b"<p>Parsed</p>",
+        "doctags_text": b"<doctag>Parsed</doctag>",
+    }
+
+    with patch("app.domain.conversion.repository.get_supabase_admin", return_value=sb):
+        result = asyncio.run(
+            finalize_docling_callback(
+                body,
+                sb=sb,
+                artifact_bytes_by_type=artifact_bytes,
+            )
+        )
+
+    assert result["ok"] is True
+    assert result["status"] == "parsed"
+    assert result["conv_uid"] == "conv-123"
+    assert set(result["representation_types"]) == {
+        "doclingdocument_json",
+        "markdown_bytes",
+        "html_bytes",
+        "doctags_text",
+    }
+    assert len(captured["conversion_parsing"]) == 1
+    assert len(captured["conversion_representations"]) == 4
+    assert len(captured["blocks"]) == 1
+    assert captured["source_updates"][-1]["status"] == "parsed"

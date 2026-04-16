@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 import { cn } from '@/lib/utils';
 import { useParseTab } from './ParseTabPanel';
-import { getAppliedProfileName, getDocumentParseTrack } from './parseProfileSupport';
+import { getAppliedProfileName, getDocumentParseTrack, isParseSupported } from './parseProfileSupport';
 
 type ParseConfigColumnProps = {
   docs: ProjectDocumentRow[];
@@ -89,11 +89,11 @@ export function ParseConfigColumn({
       doc.status === 'uploaded'
       || doc.status === 'conversion_failed'
       || doc.status === 'parse_failed'
-    ) && getDocumentParseTrack(doc) === batchParser)
+    ) && isParseSupported(doc) && getDocumentParseTrack(doc) === batchParser)
     .map((doc) => doc.source_uid);
 
   const selectedUids = docs
-    .filter((doc) => selected.has(doc.source_uid) && getDocumentParseTrack(doc) === batchParser)
+    .filter((doc) => selected.has(doc.source_uid) && isParseSupported(doc) && getDocumentParseTrack(doc) === batchParser)
     .map((doc) => doc.source_uid);
 
   const selectedResetableUids = docs

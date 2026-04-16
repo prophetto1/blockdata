@@ -1,12 +1,21 @@
-import { SuperuserControlTowerPlaceholderPage } from './SuperuserControlTowerPlaceholderPage';
+import { WorkbenchPage } from '@/components/common/WorkbenchPage';
+import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
+import { StateManagementOwnershipSurface } from '@/components/superuser/StateManagementOwnershipSurface';
 
 export function Component() {
+  useShellHeaderTitle({
+    title: 'State Management',
+    breadcrumbs: ['Superuser', 'State Management'],
+  });
+
   return (
-    <SuperuserControlTowerPlaceholderPage
+    <WorkbenchPage
+      eyebrow="Control Tower"
       title="State Management"
-      summary="I am not sure what is the best way to display or visually present this page. Research for reference designs required."
-      testId="superuser-zustand-react-query-placeholder"
-      textOnly
-    />
+      description="Page-first registry for superuser state ownership, visibility, and invalidation behavior."
+      contentClassName="gap-4 bg-background"
+    >
+      <StateManagementOwnershipSurface />
+    </WorkbenchPage>
   );
 }

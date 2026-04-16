@@ -23,7 +23,7 @@ These entities tell a worker how to think and act. They apply to every task.
 
 ### 1. behavioral-calibration (behavioral-rule)
 
-- Use sources in this order: `_collaborate/plans/` for intent, current implementation for what landed, external docs for validation.
+- Use sources in this order: the current task's active plan/design artifacts for intent, current implementation for what landed, external docs for validation.
 - Default to the larger implementation-driving question, not the narrowest literal reading.
 - Lead with the direct answer and current state before qualifiers.
 - If the situation is green, say so and stop.
@@ -157,7 +157,9 @@ These entities describe the services, workflows, and git conventions.
 
 ### 17. plans-convention (workflow-rule)
 
-- Plans now live in `_collaborate/`. Moved from `docs/plans/`.
+- Do not default new plan or design artifacts to `_collaborate/`.
+- Save new plan or design artifacts only to an explicitly current destination for the task.
+- If the destination is not already established in the repo or task context, ask before creating a new artifact.
 - Naming: `YYYY-MM-DD-<topic>-<type>.md`.
 - Lifecycle: draft → approved → implemented → archived.
 - Treat plan content as intended direction, not as confirmed implementation.
@@ -268,7 +270,8 @@ gcp-infrastructure --project--> agchain
 nats-coordination --runs_on--> JON
 nats-coordination --bridge_owner--> platform-api
 _agchain --supabase_ref--> dbdzzhshmigewyprahej
-plans-convention --location--> _collaborate/
+plans-convention --forbids--> defaulting new plan/design artifacts to _collaborate
+plans-convention --requires--> explicit destination before creating a new artifact
 ```
 
 ---

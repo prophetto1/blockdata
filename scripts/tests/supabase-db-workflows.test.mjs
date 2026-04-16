@@ -38,6 +38,7 @@ test('db deploy workflow auto-applies migrations on master', () => {
   assert.match(workflow, /push:/, 'workflow must run on push');
   assert.match(workflow, /branches:\s*\[master\]/, 'workflow must target master');
   assert.match(workflow, /supabase\/migrations\/\*\*/, 'workflow must watch migration changes');
+  assert.match(workflow, /actions\/setup-node@v4/, 'workflow must install Node for the repo-owned wrapper');
   assert.match(workflow, /SUPABASE_ACCESS_TOKEN:/, 'workflow must require a Supabase access token secret');
   assert.match(workflow, /SUPABASE_DB_PASSWORD:/, 'workflow must require a Supabase database password secret');
   assert.match(workflow, /SUPABASE_PROJECT_ID:/, 'workflow must require a Supabase project id secret');
@@ -46,8 +47,12 @@ test('db deploy workflow auto-applies migrations on master', () => {
     new RegExp(`version:\\s*${supabaseCliVersion.replace(/\./g, '\\.')}`),
     'workflow must pin the proven Supabase CLI version'
   );
-  assert.match(workflow, /supabase link --project-ref/, 'workflow must link the remote project');
-  assert.match(workflow, /supabase db push/, 'workflow must push migrations to the remote project');
+  assert.match(
+    workflow,
+    /npm run ci:supabase-apply-pending/,
+    'workflow must delegate remote apply to the repo-owned wrapper',
+  );
+  assert.doesNotMatch(workflow, /supabase db push/, 'workflow must not bypass the repo-owned wrapper');
 });
 
 test('migration hygiene workflow prevents rewriting existing migration history', () => {

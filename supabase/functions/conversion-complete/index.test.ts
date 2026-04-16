@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { extractDoclingBlocks } from "../_shared/docling.ts";
+import { handleConversionCompleteRequest } from "./index.ts";
 
 /**
  * Focused tests for the Arango payload assembly contracts in conversion-complete.
@@ -26,6 +27,29 @@ Deno.test("block_uid format is conv_uid:block_index", () => {
   assertEquals(blockRows.length, 3);
   for (const row of blockRows) {
     assertEquals(row.conv_uid, conv_uid);
+  }
+});
+
+Deno.test("handleConversionCompleteRequest rejects requests without service key", async () => {
+  const req = new Request("https://example.com/functions/v1/conversion-complete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+
+  const originalKey = Deno.env.get("CONVERSION_SERVICE_KEY");
+  Deno.env.set("CONVERSION_SERVICE_KEY", "expected-key");
+  try {
+    const resp = await handleConversionCompleteRequest(req);
+    const body = await resp.json();
+    assertEquals(resp.status, 401);
+    assertEquals(body.error, "Unauthorized");
+  } finally {
+    if (originalKey == null) {
+      Deno.env.delete("CONVERSION_SERVICE_KEY");
+    } else {
+      Deno.env.set("CONVERSION_SERVICE_KEY", originalKey);
+    }
   }
 });
 

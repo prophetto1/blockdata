@@ -135,6 +135,108 @@ def test_convert_returns_503_when_pool_overloaded(client, monkeypatch):
         assert resp.status_code == 503
         assert "Retry-After" in resp.headers
 
+
+def test_convert_defaults_callback_url_to_platform_api_callback(client, monkeypatch):
+    from app.api.routes import conversion as conversion_module
+
+    callback_urls: list[str] = []
+
+    async def fake_convert(_body):
+        return (
+            b"# Parsed\n",
+            b'{"schema_name":"DoclingDocument"}',
+            b"<p>Parsed</p>",
+            b"<doctag>Parsed</doctag>",
+            [{
+                "block_type": "paragraph",
+                "block_content": "Parsed",
+                "pointer": "#/texts/0",
+                "parser_block_type": "paragraph",
+                "parser_path": "#/texts/0",
+                "page_no": None,
+                "page_nos": [],
+            }],
+        )
+
+    async def fake_upload_bytes(*args, **kwargs):
+        return None
+
+    async def fake_send_callback(url, shared_secret, payload):
+        callback_urls.append(url)
+
+    monkeypatch.setenv("PLATFORM_API_URL", "http://localhost:8000")
+    monkeypatch.setattr(conversion_module, "convert", fake_convert)
+    monkeypatch.setattr(conversion_module, "upload_bytes", fake_upload_bytes)
+    monkeypatch.setattr(conversion_module, "send_conversion_callback", fake_send_callback)
+
+    resp = client.post(
+        "/convert",
+        json={
+            "source_uid": "src-1",
+            "conversion_job_id": "job-1",
+            "track": "docling",
+            "source_type": "pdf",
+            "source_download_url": "https://example.test/file.pdf",
+            "output": {
+                "bucket": "documents",
+                "key": "out/file.md",
+                "signed_upload_url": "https://example.test/upload",
+            },
+            "docling_output": {
+                "bucket": "documents",
+                "key": "out/file.docling.json",
+                "signed_upload_url": "https://example.test/upload-docling",
+            },
+        },
+        headers={"X-Conversion-Service-Key": "test-key"},
+    )
+    assert resp.status_code == 200
+    assert callback_urls == ["http://localhost:8000/conversion/callback"]
+
+
+def test_conversion_callback_route_exists(client, monkeypatch):
+    from app.api.routes import conversion as conversion_module
+
+    captured: list[tuple[str, str]] = []
+
+    async def fake_finalize(body):
+        captured.append((body.source_uid, body.docling_key or ""))
+        return {
+            "ok": True,
+            "status": "parsed",
+            "conv_uid": "conv-123",
+            "blocks_count": 1,
+            "track": "docling",
+            "representation_types": ["doclingdocument_json", "markdown_bytes"],
+        }
+
+    monkeypatch.setattr(conversion_module, "finalize_docling_callback", fake_finalize)
+
+    resp = client.post(
+        "/conversion/callback",
+        json={
+            "source_uid": "src-1",
+            "conversion_job_id": "job-1",
+            "track": "docling",
+            "md_key": "converted/src-1/file.md",
+            "docling_key": "converted/src-1/file.docling.json",
+            "success": True,
+            "blocks": [{
+                "block_type": "paragraph",
+                "block_content": "Parsed",
+                "pointer": "#/texts/0",
+                "parser_block_type": "paragraph",
+                "parser_path": "#/texts/0",
+                "page_no": None,
+                "page_nos": [],
+            }],
+        },
+        headers={"X-Conversion-Service-Key": "test-key"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["conv_uid"] == "conv-123"
+    assert captured == [("src-1", "converted/src-1/file.docling.json")]
+
 def test_api_v1_crews_stub(client):
     resp = client.get("/api/v1/crews")
     assert resp.status_code == 501

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { IconDatabase } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconDatabase, IconRefresh } from '@tabler/icons-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
 import { ErrorAlert } from '@/components/common/ErrorAlert';
@@ -212,19 +212,24 @@ export default function DatabasePlaceholder() {
             <IconDatabase size={20} strokeWidth={1.5} className="text-muted-foreground" />
             <p className="text-sm font-semibold text-foreground">Tables</p>
             <span className="ml-auto text-xs text-muted-foreground">{filteredTables.length} / {tables.length}</span>
+            <button
+              type="button"
+              aria-label="Refresh catalog"
+              title={loadingCatalog ? 'Refreshing...' : 'Refresh catalog'}
+              disabled={loadingCatalog}
+              onClick={() => void loadCatalog()}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+            >
+              <IconRefresh size={14} className={loadingCatalog ? 'animate-spin' : ''} />
+            </button>
           </div>
 
-          <div className="space-y-2">
-            <input
-              className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground"
-              placeholder="Filter schema.table..."
-              value={tableFilter}
-              onChange={(event) => setTableFilter(event.currentTarget.value)}
-            />
-            <Button size="sm" className="h-9 w-full text-[13px] font-semibold" disabled={loadingCatalog} onClick={() => void loadCatalog()}>
-              {loadingCatalog ? 'Refreshing...' : 'Refresh Catalog'}
-            </Button>
-          </div>
+          <input
+            className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs text-foreground"
+            placeholder="Filter schema.table..."
+            value={tableFilter}
+            onChange={(event) => setTableFilter(event.currentTarget.value)}
+          />
 
           {catalogError && (
             <div className="mt-3">
@@ -308,31 +313,45 @@ export default function DatabasePlaceholder() {
                       ))}
                     </select>
                   </label>
-                  <Button size="sm" className="h-9 px-2.5 text-[13px] font-semibold" disabled={loadingRows} onClick={() => void loadSelectedTableRows()}>
-                    {loadingRows ? 'Loading...' : 'Refresh'}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    disabled={loadingRows}
+                    onClick={() => void loadSelectedTableRows()}
+                    aria-label="Refresh rows"
+                    title={loadingRows ? 'Loading...' : 'Refresh rows'}
+                  >
+                    <IconRefresh size={14} className={loadingRows ? 'animate-spin' : ''} />
                   </Button>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 <Button
-                  size="sm"
-                  className="h-9 px-2.5 text-[13px] font-semibold"
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   disabled={page <= 1 || loadingRows}
                   onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  aria-label="Previous page"
+                  title="Previous page"
                 >
-                  Prev
+                  <IconChevronLeft size={14} />
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   Page {page} / {totalPages}
                 </p>
                 <Button
-                  size="sm"
-                  className="h-9 px-2.5 text-[13px] font-semibold"
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
                   disabled={page >= totalPages || loadingRows}
                   onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  aria-label="Next page"
+                  title="Next page"
                 >
-                  Next
+                  <IconChevronRight size={14} />
                 </Button>
               </div>
 

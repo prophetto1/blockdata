@@ -43,39 +43,22 @@ export default function AppHome() {
   useRightRail(rightRailContent);
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-3 sm:p-6">
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6">
-        <section className="rounded-xl border border-border bg-card px-6 py-8 shadow-sm">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              BlockData
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
-              Authenticated landing page
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              This is the shell home surface. We can add your landing cards and the right-side Help
-              rail content here next without changing the routing model again.
-            </p>
-          </div>
-        </section>
+    <div className="flex h-full min-h-0 flex-col gap-4 px-6 py-5">
+      <header className="flex flex-wrap items-center gap-3">
+        <h1 className="text-lg font-semibold text-foreground">Home</h1>
+        <span className="text-xs text-muted-foreground">Authenticated landing · placeholder until real content is wired</span>
+      </header>
 
-        <section className="grid gap-6 lg:grid-cols-2">
-          <div className="min-h-[220px] rounded-xl border border-dashed border-border bg-card/60 p-6">
-            <p className="text-sm font-medium text-foreground">Card slot 1</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Reserved for the first landing card.
-            </p>
-          </div>
-
-          <div className="min-h-[220px] rounded-xl border border-dashed border-border bg-card/60 p-6">
-            <p className="text-sm font-medium text-foreground">Card slot 2</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Reserved for the second landing card.
-            </p>
-          </div>
-        </section>
-      </div>
+      <section className="grid gap-3 lg:grid-cols-2">
+        <div className="rounded-md border border-dashed border-border bg-card/60 p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Slot 1</p>
+          <p className="mt-1 text-sm text-muted-foreground">Reserved for the first landing card.</p>
+        </div>
+        <div className="rounded-md border border-dashed border-border bg-card/60 p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Slot 2</p>
+          <p className="mt-1 text-sm text-muted-foreground">Reserved for the second landing card.</p>
+        </div>
+      </section>
     </div>
   );
 }

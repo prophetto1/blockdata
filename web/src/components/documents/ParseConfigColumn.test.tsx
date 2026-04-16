@@ -5,6 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ParseConfigColumn } from './ParseConfigColumn';
 import type { ProjectDocumentRow } from '@/lib/projectDetailHelpers';
 
+vi.mock('./ParseTabPanel', () => ({
+  useParseTab: vi.fn(),
+}));
+
 vi.mock('@/components/ui/scroll-area', () => ({
   ScrollArea: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
@@ -63,7 +67,14 @@ function makeParseTabMock(overrides: Record<string, unknown> = {}) {
 
 describe('ParseConfigColumn', () => {
   it('filters active profiles to the selected document parser track', () => {
-    const parseTab = makeParseTabMock();
+    const parseTab = makeParseTabMock({
+      profiles: [
+        { id: 'tree-1', parser: 'tree_sitter', config: { name: 'Tree-sitter Standard' } },
+        { id: 'tree-2', parser: 'tree_sitter', config: { name: 'Symbols Only' } },
+      ],
+      selectedProfileId: 'tree-1',
+      selectedParser: 'tree_sitter',
+    });
 
     render(
       <ParseConfigColumn
@@ -119,5 +130,43 @@ describe('ParseConfigColumn', () => {
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.getByText('Parsed with')).toBeInTheDocument();
     expect(screen.getByText('Tree-sitter Standard')).toBeInTheDocument();
+  });
+
+  it('excludes markdown documents from docling batch parse counts', () => {
+    const pdfDoc: ProjectDocumentRow = {
+      ...baseDoc,
+      source_uid: 'source-pdf',
+      source_type: 'pdf',
+      doc_title: 'outline.pdf',
+      source_locator: 'projects/project-1/source/outline.pdf',
+    };
+    const markdownDoc: ProjectDocumentRow = {
+      ...baseDoc,
+      source_uid: 'source-md',
+      source_type: 'md',
+      doc_title: 'notes.md',
+      source_locator: 'projects/project-1/source/notes.md',
+    };
+
+    const parseTab = makeParseTabMock({
+      profiles: [
+        { id: 'docling-1', parser: 'docling', config: { name: 'Docling Standard' } },
+      ],
+      selectedProfileId: 'docling-1',
+      selectedParser: 'docling',
+    });
+
+    render(
+      <ParseConfigColumn
+        docs={[pdfDoc, markdownDoc]}
+        trackDocs={[pdfDoc, markdownDoc]}
+        selected={new Set(['source-pdf', 'source-md'])}
+        selectedDoc={pdfDoc}
+        parseTab={parseTab as never}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Parse All (1)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Parse Selected (1)' })).toBeInTheDocument();
   });
 });

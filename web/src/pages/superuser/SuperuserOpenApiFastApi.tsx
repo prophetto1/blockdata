@@ -1,12 +1,10 @@
-import { SuperuserControlTowerPlaceholderPage } from './SuperuserControlTowerPlaceholderPage';
+import { ApiEndpointsCatalogPage } from './SuperuserApiEndpoints';
 
 export function Component() {
   return (
-    <SuperuserControlTowerPlaceholderPage
-      title="OpenAPI & FastAPI"
-      summary=""
-      testId="superuser-openapi-fastapi-placeholder"
-      blank
+    <ApiEndpointsCatalogPage
+      shellTitle="OpenAPI & FastAPI"
+      breadcrumbs={['Superuser', 'OpenAPI & FastAPI']}
     />
   );
 }

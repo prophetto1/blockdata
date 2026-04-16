@@ -4,12 +4,21 @@ import json
 import os
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from app.auth.dependencies import require_auth
 from app.auth.principals import AuthPrincipal
-from app.domain.conversion.models import ConvertRequest, CitationsRequest, ReconstructRequest
+from app.domain.conversion.finalize import (
+    FinalizeCallbackError,
+    finalize_docling_callback,
+)
+from app.domain.conversion.models import (
+    CitationsRequest,
+    ConversionCallbackRequest,
+    ConvertRequest,
+    ReconstructRequest,
+)
 from app.domain.conversion.service import convert, reconstruct_from_dict
 from app.domain.conversion.callbacks import send_conversion_callback
 from app.infra.http_client import upload_bytes, append_token_if_needed, download_bytes
@@ -53,11 +62,27 @@ def _run_convert_in_process(req_dict: dict) -> tuple:
     return asyncio.run(convert(req))
 
 
-def _build_docling_conv_uid(docling_json_bytes: bytes) -> str:
+def build_docling_conv_uid(docling_json_bytes: bytes) -> str:
     digest = hashlib.sha256()
     digest.update(b"docling\ndoclingdocument_json\n")
     digest.update(docling_json_bytes)
     return digest.hexdigest()
+
+
+def ensure_conversion_capacity(pool) -> None:
+    use_pool = pool._max_workers > 0
+    if not use_pool:
+        return
+
+    pool_status = pool.status()
+    capacity = pool_status["max_workers"] + pool_status["max_queue_depth"]
+    if pool_status["active"] >= capacity:
+        raise PoolOverloaded("Conversion pool at capacity")
+
+
+def _default_callback_url() -> str:
+    base_url = os.environ.get("PLATFORM_API_URL", "http://localhost:8000").rstrip("/")
+    return f"{base_url}/conversion/callback"
 
 
 @router.post("/convert")
@@ -67,20 +92,20 @@ async def convert_route(
 ):
     shared_secret = os.environ.get("CONVERSION_SERVICE_KEY", "")
     track = "docling"
+    callback_url = body.callback_url or _default_callback_url()
 
     # Admission control: check capacity BEFORE entering the try/finally callback block.
     # If we reject here, no callback fires — the job was never accepted.
     pool = get_conversion_pool()
+    try:
+        ensure_conversion_capacity(pool)
+    except PoolOverloaded:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Conversion pool at capacity. Try again shortly."},
+            headers={"Retry-After": "15"},
+        )
     use_pool = pool._max_workers > 0
-    if use_pool:
-        pool_status = pool.status()
-        capacity = pool_status["max_workers"] + pool_status["max_queue_depth"]
-        if pool_status["active"] >= capacity:
-            return JSONResponse(
-                status_code=503,
-                content={"detail": "Conversion pool at capacity. Try again shortly."},
-                headers={"Retry-After": "15"},
-            )
 
     with tracer.start_as_current_span("conversion.request") as span:
         span.set_attribute("source_type", body.source_type)
@@ -119,7 +144,7 @@ async def convert_route(
                 url = append_token_if_needed(body.docling_output.signed_upload_url, body.docling_output.token)
                 await upload_bytes(url, docling_json_bytes, "application/json; charset=utf-8")
                 callback_payload["docling_key"] = body.docling_output.key
-                callback_payload["conv_uid"] = _build_docling_conv_uid(docling_json_bytes)
+                callback_payload["conv_uid"] = build_docling_conv_uid(docling_json_bytes)
                 callback_payload["docling_artifact_size_bytes"] = len(docling_json_bytes)
 
             if body.html_output and html_bytes:
@@ -140,9 +165,21 @@ async def convert_route(
             callback_payload["success"] = False
             callback_payload["error"] = str(e)[:1000]
         finally:
-            await send_conversion_callback(body.callback_url, shared_secret, callback_payload)
+            await send_conversion_callback(callback_url, shared_secret, callback_payload)
 
         return {"ok": True}
+
+
+@router.post("/conversion/callback")
+async def conversion_callback_route(
+    body: ConversionCallbackRequest,
+    auth: AuthPrincipal = Depends(require_auth),
+):
+    try:
+        result = await finalize_docling_callback(body)
+    except FinalizeCallbackError as exc:
+        return JSONResponse(status_code=exc.status_code, content={"error": exc.message})
+    return JSONResponse(status_code=200, content=result)
 
 
 @router.post("/citations")

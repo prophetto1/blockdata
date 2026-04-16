@@ -93,7 +93,14 @@ async function readJson<T>(req: Request): Promise<T> {
   }
 }
 
-Deno.serve(async (req) => {
+/**
+ * Legacy compatibility finalizer.
+ *
+ * Platform API `/parse` now owns the primary Docling completion path. This edge
+ * function remains available for in-flight or legacy callbacks that still post
+ * directly to `conversion-complete`.
+ */
+export async function handleConversionCompleteRequest(req: Request): Promise<Response> {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
@@ -555,4 +562,8 @@ Deno.serve(async (req) => {
     const msg = e instanceof Error ? e.message : String(e);
     return json(400, { error: msg });
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve((req) => handleConversionCompleteRequest(req));
+}

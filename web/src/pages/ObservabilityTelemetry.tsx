@@ -121,125 +121,94 @@ export function Component() {
   }, []);
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 md:px-6">
-      <header className="rounded-[28px] border border-border/70 bg-card/75 px-5 py-4 shadow-sm md:px-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="max-w-3xl space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">
-              Phase 2 proof-backed status
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Telemetry</h1>
-            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-              This page shows configured telemetry status and the latest export-probe result from
-              <span className="font-medium text-foreground"> /observability/telemetry-status</span>.
-              The proof run shows whether the collector accepted a real OTLP traces payload. It
-              does not prove sink delivery or trace completeness.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button type="button" onClick={() => void runExportProbe()} disabled={loading || runningProbe}>
-              {runningProbe ? 'Running Probe...' : 'Run Export Probe'}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => void loadTelemetryStatus()} disabled={loading || runningProbe}>
-              {loading ? 'Loading...' : 'Refresh Status'}
-            </Button>
-          </div>
+    <main className="flex w-full flex-col gap-4 px-6 py-5">
+      <header className="flex flex-wrap items-center gap-3">
+        <h1 className="text-lg font-semibold text-foreground">Telemetry</h1>
+        <span className="text-xs text-muted-foreground">
+          OTLP export-probe status from <code className="rounded bg-muted px-1 py-0.5 text-[11px]">/observability/telemetry-status</code>
+        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => void loadTelemetryStatus()} disabled={loading || runningProbe}>
+            {loading ? 'Loading…' : 'Refresh'}
+          </Button>
+          <Button type="button" size="sm" onClick={() => void runExportProbe()} disabled={loading || runningProbe}>
+            {runningProbe ? 'Running…' : 'Run Export Probe'}
+          </Button>
         </div>
       </header>
 
       {error ? (
-        <section role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-5 py-4 text-sm">
-          <p className="font-semibold text-foreground">Telemetry status unavailable.</p>
-          <p className="mt-2 text-muted-foreground">{error}</p>
-        </section>
+        <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+          <span className="font-semibold">Telemetry status unavailable.</span> {error}
+        </div>
       ) : null}
 
       {status ? (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <article className="rounded-2xl border border-border/70 bg-card/75 p-5 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Service
-            </p>
-            <p className="mt-2 text-lg font-semibold text-foreground">{status.service_name}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Namespace: {status.service_namespace}, Environment: {status.deployment_environment}
+        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <article className="rounded-md border border-border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Service</p>
+            <p className="mt-0.5 text-sm font-semibold text-foreground">{status.service_name}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {status.service_namespace} · {status.deployment_environment}
             </p>
           </article>
 
-          <article className="rounded-2xl border border-border/70 bg-card/75 p-5 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Pipeline status
-            </p>
-            <p className="mt-2 text-lg font-semibold text-foreground">
+          <article className="rounded-md border border-border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Pipeline</p>
+            <p className="mt-0.5 text-sm font-semibold text-foreground">
               {status.enabled ? 'Enabled' : 'Disabled'}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Protocol: {status.protocol}, Sampler: {status.sampler} ({status.sampler_arg})
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {status.protocol} · sampler {status.sampler} ({status.sampler_arg})
             </p>
           </article>
 
-          <article className="rounded-2xl border border-border/70 bg-card/75 p-5 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Collector target
-            </p>
-            <p className="mt-2 break-all text-lg font-semibold text-foreground">{status.otlp_endpoint}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Metrics: {status.metrics_enabled ? 'enabled' : 'disabled'}, Logs:{' '}
-              {status.logs_enabled ? 'enabled' : 'disabled'}, Correlation:{' '}
-              {status.log_correlation ? 'enabled' : 'disabled'}
+          <article className="rounded-md border border-border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Collector</p>
+            <p className="mt-0.5 break-all text-sm font-semibold text-foreground">{status.otlp_endpoint}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              metrics {status.metrics_enabled ? 'on' : 'off'} · logs {status.logs_enabled ? 'on' : 'off'} · correlation {status.log_correlation ? 'on' : 'off'}
             </p>
           </article>
 
-          <article className="rounded-2xl border border-border/70 bg-card/75 p-5 shadow-sm md:col-span-2 xl:col-span-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Latest export proof
-            </p>
-            <p className="mt-2 text-lg font-semibold text-foreground">
-              {proofLabel(status.proof_status)}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">{status.proof_summary}</p>
+          <article className="rounded-md border border-border bg-card p-3 md:col-span-2 xl:col-span-2">
+            <div className="flex items-baseline gap-2">
+              <p className="text-xs text-muted-foreground">Latest export proof</p>
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                status.proof_status === 'passing' ? 'bg-emerald-500/15 text-emerald-500' :
+                status.proof_status === 'failing' ? 'bg-rose-500/15 text-rose-500' :
+                'bg-muted text-muted-foreground'
+              }`}>{proofLabel(status.proof_status)}</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{status.proof_summary}</p>
             {status.latest_export_probe_run ? (
-              <dl className="mt-3 space-y-2 text-sm text-muted-foreground">
-                <div>
-                  <dt className="font-medium text-foreground">Probe kind</dt>
-                  <dd>{status.latest_export_probe_run.probe_kind}</dd>
-                </div>
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                <dt className="text-muted-foreground">Probe kind</dt>
+                <dd className="font-medium text-foreground">{status.latest_export_probe_run.probe_kind}</dd>
                 {status.latest_export_probe_run.created_at ? (
-                  <div>
-                    <dt className="font-medium text-foreground">Recorded at</dt>
-                    <dd>{status.latest_export_probe_run.created_at}</dd>
-                  </div>
+                  <>
+                    <dt className="text-muted-foreground">Recorded</dt>
+                    <dd className="font-medium text-foreground">{status.latest_export_probe_run.created_at}</dd>
+                  </>
                 ) : null}
                 {status.latest_export_probe_run.evidence?.request_url ? (
-                  <div>
-                    <dt className="font-medium text-foreground">Request URL</dt>
-                    <dd className="break-all">{status.latest_export_probe_run.evidence.request_url}</dd>
-                  </div>
+                  <>
+                    <dt className="text-muted-foreground">Request</dt>
+                    <dd className="break-all font-medium text-foreground">{status.latest_export_probe_run.evidence.request_url}</dd>
+                  </>
                 ) : null}
               </dl>
             ) : null}
           </article>
 
-          <article className="rounded-2xl border border-border/70 bg-card/75 p-5 shadow-sm md:col-span-2 xl:col-span-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Operator links
-            </p>
-            <div className="mt-3 flex flex-col gap-2 text-sm">
-              <a
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-                href={status.signoz_ui_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {status.signoz_ui_url}
+          <article className="rounded-md border border-border bg-card p-3">
+            <p className="text-xs text-muted-foreground">Operator links</p>
+            <div className="mt-1 flex flex-col gap-0.5 text-xs">
+              <a className="truncate font-medium text-foreground underline-offset-4 hover:underline" href={status.signoz_ui_url} target="_blank" rel="noreferrer">
+                SigNoz → {status.signoz_ui_url}
               </a>
-              <a
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-                href={status.jaeger_ui_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {status.jaeger_ui_url}
+              <a className="truncate font-medium text-foreground underline-offset-4 hover:underline" href={status.jaeger_ui_url} target="_blank" rel="noreferrer">
+                Jaeger → {status.jaeger_ui_url}
               </a>
             </div>
           </article>
@@ -247,14 +216,14 @@ export function Component() {
       ) : null}
 
       {!loading && !error && !status ? (
-        <div className="rounded-2xl border border-border/70 bg-card/75 px-5 py-4 text-sm text-muted-foreground">
-          No telemetry status was returned by the platform API.
+        <div className="rounded-md border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+          No telemetry status returned by the platform API.
         </div>
       ) : null}
 
       {loading && !status ? (
-        <div className="rounded-2xl border border-border/70 bg-card/75 px-5 py-4 text-sm text-muted-foreground">
-          Loading telemetry status...
+        <div className="rounded-md border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+          Loading telemetry status…
         </div>
       ) : null}
     </main>

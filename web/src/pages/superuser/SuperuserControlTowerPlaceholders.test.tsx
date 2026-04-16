@@ -33,14 +33,6 @@ const DESCRIBED_PAGES = [
     importPage: () => import('./SuperuserHuskyCiCd'),
   },
   {
-    label: 'State Management',
-    path: '/app/superuser/zustand-react-query',
-    route: "path: 'zustand-react-query'",
-    testId: 'superuser-zustand-react-query-placeholder',
-    summaryPattern: /i am not sure what is the best way to display or visually present this page/i,
-    importPage: () => import('./SuperuserZustandReactQuery'),
-  },
-  {
     label: 'CI/CD',
     path: '/app/superuser/hook-system',
     route: "path: 'hook-system'",
@@ -57,13 +49,6 @@ const BLANK_PAGES = [
     route: "path: 'open-telemetry'",
     testId: 'superuser-telemetry-logs-placeholder',
     importPage: () => import('./SuperuserTelemetryLogs'),
-  },
-  {
-    label: 'OpenAPI & FastAPI',
-    path: '/app/superuser/openapi-fastapi',
-    route: "path: 'openapi-fastapi'",
-    testId: 'superuser-openapi-fastapi-placeholder',
-    importPage: () => import('./SuperuserOpenApiFastApi'),
   },
   {
     label: 'Databases',

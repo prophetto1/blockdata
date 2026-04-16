@@ -257,7 +257,12 @@ class CoordinationClient:
 
     async def _list_kv_entries(self, bucket_name: str) -> list[tuple[str, Any]]:
         bucket = await self._open_kv_bucket(bucket_name)
-        keys = await bucket.keys()
+        try:
+            keys = await bucket.keys()
+        except Exception as exc:
+            if type(exc).__name__ == "NoKeysError":
+                return []
+            raise
         entries: list[tuple[str, Any]] = []
         for key in keys:
             try:

@@ -338,8 +338,20 @@ const inputClass =
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function Component() {
-  useShellHeaderTitle({ title: 'API Endpoints', breadcrumbs: ['Blockdata Admin', 'API Endpoints'] });
+type ApiEndpointsCatalogPageProps = {
+  shellTitle: string;
+  breadcrumbs: string[];
+  frameTitle?: string;
+  frameDescription?: string;
+};
+
+export function ApiEndpointsCatalogPage({
+  shellTitle,
+  breadcrumbs,
+  frameTitle = 'API Endpoints',
+  frameDescription = 'Browse route and plugin endpoint inventory, grouped authentication requirements, and source coverage.',
+}: ApiEndpointsCatalogPageProps) {
+  useShellHeaderTitle({ title: shellTitle, breadcrumbs });
 
   const { endpoints, status, error } = useApiEndpointCatalogState();
   const endpointRows = useMemo(() => endpoints ?? [], [endpoints]);
@@ -373,8 +385,8 @@ export function Component() {
 
   return (
     <SettingsPageFrame
-      title="API Endpoints"
-      description="Browse route and plugin endpoint inventory, grouped authentication requirements, and source coverage."
+      title={frameTitle}
+      description={frameDescription}
       headerVariant="admin"
       bodyClassName="p-0"
     >
@@ -491,4 +503,8 @@ export function Component() {
       </div>
     </SettingsPageFrame>
   );
+}
+
+export function Component() {
+  return <ApiEndpointsCatalogPage shellTitle="API Endpoints" breadcrumbs={['Blockdata Admin', 'API Endpoints']} />;
 }

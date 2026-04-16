@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react';
-import { edgeFetch } from '@/lib/edge';
 import { platformApiFetch } from '@/lib/platformApi';
 
 export type FileDispatchStatus = 'idle' | 'queued' | 'dispatching' | 'dispatched' | 'dispatch_error';
@@ -20,7 +19,7 @@ interface BatchParseProgress {
 }
 
 export function useBatchParse(options: UseBatchParseOptions) {
-  const { profileId, pipelineConfig, parser, concurrency = 3 } = options;
+  const { profileId, pipelineConfig, concurrency = 3 } = options;
 
   const [dispatchStatus, setDispatchStatus] = useState<Map<string, FileDispatchStatus>>(new Map());
   const [errors, setErrors] = useState<Map<string, string>>(new Map());
@@ -37,7 +36,7 @@ export function useBatchParse(options: UseBatchParseOptions) {
 
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  const dispatchOne = async (sourceUid: string, attempt = 0): Promise<void> => {
+  const dispatchOne = useCallback(async (sourceUid: string, attempt = 0): Promise<void> => {
     if (cancelledRef.current) return;
     updateStatus(sourceUid, 'dispatching');
     try {
@@ -52,10 +51,7 @@ export function useBatchParse(options: UseBatchParseOptions) {
         body: payload,
       };
 
-      // Tree-sitter goes through platform-api /parse; Docling through trigger-parse edge fn
-      const resp = parser === 'tree_sitter'
-        ? await platformApiFetch('/parse', fetchOpts)
-        : await edgeFetch('trigger-parse', fetchOpts);
+      const resp = await platformApiFetch('/parse', fetchOpts);
 
       if (!resp.ok) {
         const text = await resp.text().catch(() => '');
@@ -74,7 +70,7 @@ export function useBatchParse(options: UseBatchParseOptions) {
       updateStatus(sourceUid, 'dispatch_error');
       updateError(sourceUid, message);
     }
-  };
+  }, [pipelineConfig, profileId]);
 
   const start = useCallback(
     (sourceUids: string[]) => {
@@ -114,7 +110,7 @@ export function useBatchParse(options: UseBatchParseOptions) {
 
       next();
     },
-    [profileId, pipelineConfig, parser, concurrency],
+    [dispatchOne, concurrency],
   );
 
   const cancel = useCallback(() => {

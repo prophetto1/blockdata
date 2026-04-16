@@ -362,7 +362,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/app/superuser/api-endpoints',
-        element: <Navigate to="/app/blockdata-admin/api-endpoints" replace />,
+        element: <Navigate to="/app/superuser/openapi-fastapi" replace />,
       },
       {
         path: '/app/superuser/test-integrations',

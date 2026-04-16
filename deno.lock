@@ -55,7 +55,9 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:husky@^9.1.7",
         "npm:mintlify@^4.2.391",
+        "npm:nats@^2.29.3",
         "npm:pg@^8.19.0"
       ]
     },
@@ -95,9 +97,10 @@
             "npm:@radix-ui/react-tooltip@^1.2.8",
             "npm:@scalar/api-client@^2.31.3",
             "npm:@supabase/supabase-js@^2.95.3",
-            "npm:@tabler/icons-react@^3.36.1",
+            "npm:@tabler/icons-react@^3.41.1",
             "npm:@tailwindcss/typography@~0.5.19",
             "npm:@tailwindcss/vite@^4.2.0",
+            "npm:@tanstack/react-query@^5.99.0",
             "npm:@testing-library/jest-dom@^6.9.1",
             "npm:@testing-library/react@^16.3.2",
             "npm:@tiptap/pm@^3.20.1",
@@ -110,8 +113,8 @@
             "npm:@types/react@^19.2.5",
             "npm:@vitejs/plugin-react@^5.1.1",
             "npm:@xyflow/react@^12.10.0",
-            "npm:ag-grid-community@^35.0.1",
-            "npm:ag-grid-react@^35.0.1",
+            "npm:ag-grid-community@35.2.1",
+            "npm:ag-grid-react@35.2.1",
             "npm:ajv-formats@^3.0.1",
             "npm:ajv@^8.17.1",
             "npm:class-variance-authority@~0.7.1",
@@ -128,7 +131,7 @@
             "npm:katex@~0.16.38",
             "npm:lodash-es@^4.17.23",
             "npm:lucide-react@0.548",
-            "npm:pdfjs-dist@^5.4.296",
+            "npm:pdfjs-dist@^5.6.205",
             "npm:postcss@^8.5.6",
             "npm:pptx-viewer@0.1",
             "npm:react-data-grid@^7.0.0-beta.52",
@@ -151,7 +154,8 @@
             "npm:typescript-eslint@^8.46.4",
             "npm:typescript@~5.9.3",
             "npm:vite@^7.2.4",
-            "npm:vitest@^4.0.18"
+            "npm:vitest@^4.0.18",
+            "npm:zustand@^5.0.12"
           ]
         }
       },

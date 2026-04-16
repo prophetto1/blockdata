@@ -23,18 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - uses: supabase/setup-cli@v1
         with:
           version: 2.84.10
 
-      - name: Link production project
-        run: supabase link --project-ref $SUPABASE_PROJECT_ID
-
-      - name: Show migration state before deploy
-        run: supabase migration list
-
-      - name: Apply pending migrations
-        run: supabase db push
-
-      - name: Show migration state after deploy
-        run: supabase migration list
+      - name: Apply pending migrations via repo-owned wrapper
+        run: npm run ci:supabase-apply-pending

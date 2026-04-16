@@ -37,7 +37,7 @@ function getConfigCandidates(doc: ProjectDocumentRow): Array<Record<string, unkn
 }
 
 const DOCLING_SOURCE_TYPES = new Set([
-  'md', 'docx', 'pdf', 'pptx', 'xlsx', 'html', 'csv', 'txt',
+  'docx', 'pdf', 'pptx', 'xlsx', 'html', 'csv', 'txt',
   'rst', 'latex', 'odt', 'epub', 'rtf', 'org', 'asciidoc', 'vtt',
 ]);
 
