@@ -106,6 +106,7 @@ describe('AgchainOrganizationAiProvidersPage', () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByTestId('agchain-standard-surface')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'Organization AI Providers' })).toBeInTheDocument();
     expect(screen.getByTestId('organization-provider-surface')).toHaveTextContent('organization:1:ready:no-error');
 

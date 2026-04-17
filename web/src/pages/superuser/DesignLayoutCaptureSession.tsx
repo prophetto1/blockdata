@@ -19,10 +19,11 @@ import {
   saveSessionManifest,
 } from './capture-session-files';
 import { readBrowserCaptureSession, saveBrowserCaptureSession } from './browser-capture-sessions';
-import { probeCaptureBrowser, runCaptureWorker } from './capture-worker.api';
+import { listCaptureBrowserTargets, probeCaptureBrowser, runCaptureWorker } from './capture-worker.api';
 import type {
   CaptureArtifact,
   CaptureArtifactStatus,
+  CaptureBrowserTarget,
   CaptureSessionDetail,
   CaptureSessionStatus,
 } from './design-captures.types';
@@ -49,6 +50,8 @@ function sessionStatusVariant(status: CaptureSessionStatus) {
     case 'capture-failed':
       return 'red';
     case 'directory-missing':
+      return 'yellow';
+    case 'target-missing':
       return 'yellow';
     default:
       return 'gray';
@@ -77,6 +80,16 @@ function buildCaptureSuccessMessage(capture: CaptureArtifact): string {
   return `Captured ${capture.pageTitle || capture.pageUrl || 'current page'} at ${formatDate(capture.capturedAt)}.`;
 }
 
+function sessionReadyStatus(browserReachable: boolean, target: CaptureBrowserTarget | null): CaptureSessionStatus {
+  if (!browserReachable) return 'browser-unreachable';
+  return target?.id ? 'ready' : 'target-missing';
+}
+
+function describeTarget(target: CaptureBrowserTarget | null): string {
+  if (!target) return 'No target tab selected.';
+  return target.title || target.url || 'Selected target tab';
+}
+
 export function Component() {
   const { sessionId = '' } = useParams();
   const navigate = useNavigate();
@@ -86,6 +99,9 @@ export function Component() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [captureBusy, setCaptureBusy] = useState(false);
+  const [targetPickerBusy, setTargetPickerBusy] = useState(false);
+  const [showTargetPicker, setShowTargetPicker] = useState(false);
+  const [availableTargets, setAvailableTargets] = useState<CaptureBrowserTarget[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [captureFeedback, setCaptureFeedback] = useState<string | null>(null);
 
@@ -136,7 +152,7 @@ export function Component() {
         const probe = await probeCaptureBrowser(stored.cdpEndpoint);
         const nextSession: CaptureSessionDetail = {
           ...stored,
-          status: probe.reachable ? 'ready' : 'browser-unreachable',
+          status: sessionReadyStatus(probe.reachable, stored.target ?? null),
           currentTargetUrl: probe.currentTargetUrl,
           currentTargetTitle: probe.currentTargetTitle,
           browser: {
@@ -156,9 +172,13 @@ export function Component() {
         const nextSession: CaptureSessionDetail = {
           ...stored,
           status: 'browser-unreachable',
+          currentTargetUrl: null,
+          currentTargetTitle: null,
           browser: {
             ...stored.browser,
             reachable: false,
+            currentTargetUrl: null,
+            currentTargetTitle: null,
             lastError: errorMessage(nextError),
           },
         };
@@ -201,7 +221,7 @@ export function Component() {
       const probe = await probeCaptureBrowser(stored.cdpEndpoint);
       const nextSession: CaptureSessionDetail = {
         ...stored,
-        status: probe.reachable ? 'ready' : 'browser-unreachable',
+        status: sessionReadyStatus(probe.reachable, stored.target ?? null),
         currentTargetUrl: probe.currentTargetUrl,
         currentTargetTitle: probe.currentTargetTitle,
         browser: {
@@ -218,9 +238,13 @@ export function Component() {
       const nextSession: CaptureSessionDetail = {
         ...stored,
         status: 'browser-unreachable',
+        currentTargetUrl: null,
+        currentTargetTitle: null,
         browser: {
           ...stored.browser,
           reachable: false,
+          currentTargetUrl: null,
+          currentTargetTitle: null,
           lastError: errorMessage(nextError),
         },
       };
@@ -232,8 +256,47 @@ export function Component() {
     }
   }
 
+  async function loadAvailableTargets() {
+    if (!session) return;
+
+    try {
+      setTargetPickerBusy(true);
+      setError(null);
+      const targets = await listCaptureBrowserTargets(session.cdpEndpoint);
+      setAvailableTargets(targets);
+      setShowTargetPicker(true);
+    } catch (nextError) {
+      setError(errorMessage(nextError));
+    } finally {
+      setTargetPickerBusy(false);
+    }
+  }
+
+  function handleSelectTarget(target: CaptureBrowserTarget) {
+    if (!session) return;
+
+    const nextSession: CaptureSessionDetail = {
+      ...session,
+      status: sessionReadyStatus(session.browser.reachable, target),
+      target,
+      browser: {
+        ...session.browser,
+        lastError: null,
+      },
+    };
+    saveBrowserCaptureSession(nextSession);
+    setSession(nextSession);
+    setShowTargetPicker(false);
+    setCaptureFeedback(`Selected target tab: ${describeTarget(target)}.`);
+    setError(null);
+  }
+
   async function handleCapture() {
     if (!session) return;
+    if (!session.target?.id) {
+      setError('Choose Target Tab before capturing.');
+      return;
+    }
 
     try {
       setCaptureBusy(true);
@@ -241,7 +304,7 @@ export function Component() {
       setError(null);
 
       const rootHandle = await getCaptureSessionDirectoryHandle(session.directoryHandleKey);
-      const workerResult = await runCaptureWorker(session.cdpEndpoint);
+      const workerResult = await runCaptureWorker(session.cdpEndpoint, session.target.id);
       const savedPaths = await saveCaptureArtifacts(rootHandle, workerResult);
 
       const capture: CaptureArtifact = {
@@ -264,6 +327,11 @@ export function Component() {
         lastCapturedAt: capture.capturedAt,
         currentTargetUrl: workerResult.currentTargetUrl ?? workerResult.pageUrl,
         currentTargetTitle: workerResult.currentTargetTitle ?? workerResult.pageTitle,
+        target: {
+          id: session.target.id,
+          url: workerResult.currentTargetUrl ?? workerResult.pageUrl,
+          title: workerResult.currentTargetTitle ?? workerResult.pageTitle,
+        },
         browser: {
           ...session.browser,
           reachable: true,
@@ -280,7 +348,11 @@ export function Component() {
       setCaptureFeedback(buildCaptureSuccessMessage(capture));
     } catch (nextError) {
       const message = errorMessage(nextError);
-      const nextStatus: CaptureSessionStatus = message.includes('folder') ? 'directory-missing' : 'capture-failed';
+      const nextStatus: CaptureSessionStatus = message.includes('folder')
+        ? 'directory-missing'
+        : message.toLowerCase().includes('target')
+          ? 'target-missing'
+          : 'capture-failed';
       const nextSession: CaptureSessionDetail | null = session
         ? {
             ...session,
@@ -317,7 +389,14 @@ export function Component() {
     ? 'Launch a session first.'
     : !session.browser.reachable
       ? 'This browser session cannot reach the chosen Chrome endpoint right now. Reconnect Chrome or update the endpoint.'
-      : 'Navigate in the real Chrome window you want to inspect, then come back here and press Capture.';
+      : !session.target?.id
+        ? 'Choose Target Tab to pin the real Chrome tab this session should capture.'
+        : 'Keep working in the selected Chrome tab, then come back here and press Capture.';
+  const browserStatePending = Boolean(session) && (loading || refreshing);
+  const liveBrowserTitle = browserStatePending ? 'Refreshing live browser state...' : session?.browser.currentTargetTitle || '--';
+  const liveBrowserUrl = browserStatePending
+    ? 'Waiting for the local capture helper to report the current page.'
+    : session?.browser.currentTargetUrl || '--';
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6">
@@ -336,11 +415,23 @@ export function Component() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void loadAvailableTargets()}
+            disabled={!session || loading || refreshing || captureBusy || targetPickerBusy || !session.browser.reachable}
+          >
+            {targetPickerBusy ? 'Loading tabs...' : session?.target ? 'Choose Different Tab' : 'Choose Target Tab'}
+          </Button>
           <Button size="sm" variant="outline" onClick={() => void refreshSession()} disabled={loading || refreshing || captureBusy}>
             <IconRefresh />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
-          <Button size="sm" onClick={() => void handleCapture()} disabled={!session || captureBusy || !session.browser.reachable}>
+          <Button
+            size="sm"
+            onClick={() => void handleCapture()}
+            disabled={!session || captureBusy || !session.browser.reachable || !session.target?.id}
+          >
             <IconCamera />
             {captureBusy ? 'Capturing...' : 'Capture'}
           </Button>
@@ -424,13 +515,51 @@ export function Component() {
                   <dd className="break-all font-mono text-xs text-foreground">{session.browser.cdpEndpoint}</dd>
                 </div>
                 <div className="space-y-1 md:col-span-2">
-                  <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Current Page</dt>
-                  <dd className="text-sm text-foreground">{session.browser.currentTargetTitle || '--'}</dd>
+                  <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Live Browser Page</dt>
+                  <dd className="text-sm text-foreground">{liveBrowserTitle}</dd>
                   <dd className="break-all font-mono text-xs text-muted-foreground">
-                    {session.browser.currentTargetUrl || '--'}
+                    {liveBrowserUrl}
+                  </dd>
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <dt className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Pinned Target</dt>
+                  <dd className="text-sm text-foreground">{describeTarget(session.target)}</dd>
+                  <dd className="break-all font-mono text-xs text-muted-foreground">
+                    {session.target?.url || 'Use Choose Target Tab to pin the browser tab this session should capture.'}
                   </dd>
                 </div>
               </dl>
+              {showTargetPicker ? (
+                <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Eligible Tabs</p>
+                  {availableTargets.length === 0 ? (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      No eligible tabs found. Open the page you want to capture in Chrome, then load this list again.
+                    </p>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      {availableTargets.map((target) => (
+                        <div
+                          key={target.id}
+                          className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-border bg-card px-3 py-2"
+                        >
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <p className="text-sm font-medium text-foreground">{target.title || 'Untitled page'}</p>
+                            <p className="break-all font-mono text-xs text-muted-foreground">{target.url || '--'}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={session.target?.id === target.id ? 'secondary' : 'outline'}
+                            onClick={() => handleSelectTarget(target)}
+                          >
+                            {session.target?.id === target.id ? 'Selected' : 'Select'}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </section>
           </div>
 

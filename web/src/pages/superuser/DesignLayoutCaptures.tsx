@@ -49,6 +49,8 @@ function sessionStatusVariant(status: CaptureSessionStatus) {
       return 'red';
     case 'directory-missing':
       return 'yellow';
+    case 'target-missing':
+      return 'yellow';
     default:
       return 'gray';
   }

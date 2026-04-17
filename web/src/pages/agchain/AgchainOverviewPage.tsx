@@ -7,6 +7,7 @@ import { AgchainOverviewRecentGrid } from '@/components/agchain/overview/Agchain
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 import { AgchainPageFrame } from './AgchainPageFrame';
+import { AgchainStandardSurface } from './AgchainStandardSurface';
 
 export default function AgchainOverviewPage() {
   const [searchParams] = useSearchParams();
@@ -89,8 +90,8 @@ export default function AgchainOverviewPage() {
       : 'This workspace now acts as the shared AGChain parent surface. Benchmark definition remains a child resource inside the selected project.');
 
   return (
-    <AgchainPageFrame className="gap-6 py-8" data-testid="agchain-overview-page">
-      <section className="grid gap-6 xl:grid-cols-2">
+    <AgchainStandardSurface title="Overview" bodyClassName="space-y-6" surfaceTestId="agchain-standard-surface">
+      <section className="grid gap-6 xl:grid-cols-2" data-testid="agchain-overview-page">
         <AgchainOverviewObservabilityCard />
         <AgchainOverviewEvaluationCard />
       </section>
@@ -103,6 +104,6 @@ export default function AgchainOverviewPage() {
           {projectDescription}
         </p>
       </section>
-    </AgchainPageFrame>
+    </AgchainStandardSurface>
   );
 }

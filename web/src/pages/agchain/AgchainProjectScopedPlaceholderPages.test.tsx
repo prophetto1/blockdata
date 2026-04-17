@@ -41,7 +41,7 @@ describe('AGChain direct compatibility placeholder pages', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Runs' })).toBeInTheDocument();
-    expect(screen.getByText(/run setup, queue management, saved run profiles, and runtime policy controls/i)).toBeInTheDocument();
+    expect(screen.getByTestId('agchain-placeholder-body')).toBeEmptyDOMElement();
 
     rerender(
       <MemoryRouter>
@@ -50,7 +50,7 @@ describe('AGChain direct compatibility placeholder pages', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Results' })).toBeInTheDocument();
-    expect(screen.getByText(/scored outcomes, comparisons, summaries, and rerun history will be surfaced here/i)).toBeInTheDocument();
+    expect(screen.getByTestId('agchain-placeholder-body')).toBeEmptyDOMElement();
 
     rerender(
       <MemoryRouter>
@@ -59,10 +59,8 @@ describe('AGChain direct compatibility placeholder pages', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Observability' })).toBeInTheDocument();
-    expect(
-      screen.getByText(/agchain should use the host platform's opentelemetry patterns for run traces/i),
-    ).toBeInTheDocument();
-    expect(screen.getAllByText('Coming soon').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('agchain-placeholder-body')).toBeEmptyDOMElement();
+    expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
   });
 
   it('routes users back toward the project registry when no AGChain project is available', () => {

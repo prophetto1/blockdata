@@ -142,6 +142,7 @@ describe('AgchainOrganizationMembersPage', () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByTestId('agchain-standard-surface')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'Organization Members' })).toBeInTheDocument();
     expect(screen.getByText('Current organization: AGChain')).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: /find members/i })).toBeInTheDocument();

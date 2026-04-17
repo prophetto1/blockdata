@@ -22,6 +22,18 @@ function HeaderRegistrationRoute() {
   );
 }
 
+function InlineHeaderRegistrationRoute() {
+  return (
+    <>
+      <ShellPageHeader
+        title="Tasks"
+        description="Define the project-scoped task surface."
+      />
+      <div data-testid="agchain-route-content" />
+    </>
+  );
+}
+
 vi.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({
     isDark: false,
@@ -37,8 +49,8 @@ vi.mock('@/components/shell/ProjectSwitcher', () => ({
   ProjectSwitcher: () => <div data-testid="project-switcher">Project Switcher</div>,
 }));
 
-vi.mock('@/components/shell/ShellWorkspaceSelector', () => ({
-  ShellWorkspaceSelector: () => <button type="button">Workspace Selector</button>,
+vi.mock('@/components/shell/ShellPlatformToggle', () => ({
+  ShellPlatformToggle: () => <div data-testid="agchain-platform-toggle">Platform Toggle</div>,
 }));
 
 vi.mock('@/auth/AuthContext', () => ({
@@ -55,6 +67,10 @@ vi.mock('@/components/shell/LeftRailShadcn', () => ({
   LeftRailShadcn: (props: {
     headerBrand?: React.ReactNode;
     headerContent?: React.ReactNode;
+    footerContent?: React.ReactNode;
+    accountMenuHeaderContent?: React.ReactNode;
+    hideHeaderSeparator?: boolean;
+    navContentClassName?: string;
     desktopCompact?: boolean;
     onToggleDesktopCompact?: () => void;
   }) => {
@@ -63,6 +79,8 @@ vi.mock('@/components/shell/LeftRailShadcn', () => ({
       <div data-testid="agchain-primary-rail-content" data-compact={props.desktopCompact ? 'true' : 'false'}>
         <div data-testid="agchain-primary-rail-brand">{props.headerBrand}</div>
         <div data-testid="agchain-primary-rail-header-content">{props.headerContent}</div>
+        <div data-testid="agchain-primary-rail-footer-content">{props.footerContent}</div>
+        <div data-testid="agchain-primary-rail-account-menu-header-content">{props.accountMenuHeaderContent}</div>
       </div>
     );
   },
@@ -103,7 +121,7 @@ afterEach(() => {
 });
 
 describe('AgchainShellLayout', () => {
-  it('renders primary rail and outlet on overview-first routes', () => {
+  it('renders primary rail and outlet on overview-first routes without the fixed top shell', () => {
     render(
       <MemoryRouter initialEntries={['/app/agchain/overview']}>
         <Routes>
@@ -118,13 +136,13 @@ describe('AgchainShellLayout', () => {
     expect(screen.queryByTestId('agchain-secondary-rail')).not.toBeInTheDocument();
     expect(screen.getByTestId('agchain-primary-rail-brand')).toHaveTextContent('BlockDataBench');
     expect(screen.queryByTestId('project-switcher')).not.toBeInTheDocument();
-    expect(screen.getByTestId('top-command-bar-flags')).toHaveTextContent('hide-project-switcher');
-    expect(screen.getByTestId('top-command-bar-flags')).toHaveTextContent('hide-search');
-    expect(screen.getByTestId('agchain-shell-top-divider')).toBeInTheDocument();
+    expect(screen.queryByTestId('agchain-top-header')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('top-command-bar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agchain-rail-utilities')).not.toBeInTheDocument();
     expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
   });
 
-  it('renders the AGChain organization and project selectors in the rail header content instead of the top command bar', () => {
+  it('keeps the project selector in the rail header while the platform toggle and organization selector stay in the account menu', () => {
     render(
       <MemoryRouter initialEntries={['/app/agchain/overview']}>
         <Routes>
@@ -135,11 +153,30 @@ describe('AgchainShellLayout', () => {
       </MemoryRouter>,
     );
 
-    const railContent = screen.getByTestId('agchain-primary-rail-header-content');
-    expect(within(railContent).getByTestId('agchain-organization-context')).toBeInTheDocument();
-    expect(within(railContent).getByTestId('agchain-project-context')).toBeInTheDocument();
-    expect(within(screen.getByTestId('top-command-bar-left')).queryByTestId('agchain-organization-context')).not.toBeInTheDocument();
-    expect(within(screen.getByTestId('top-command-bar-left')).queryByTestId('agchain-project-context')).not.toBeInTheDocument();
+    const railHeader = within(screen.getByTestId('agchain-primary-rail-header-content'));
+    const accountMenuHeader = within(screen.getByTestId('agchain-primary-rail-account-menu-header-content'));
+
+    const projectContextShell = railHeader.getByTestId('agchain-project-context-shell');
+    const projectContext = within(projectContextShell).getByTestId('agchain-project-context');
+    expect(projectContext).toBeInTheDocument();
+    expect(projectContextShell.className).toContain('-ml-[12px]');
+    expect(projectContextShell.className).toContain('mt-[10px]');
+    expect(projectContextShell.className).toContain('-mb-[36px]');
+    expect(railHeader.queryByTestId('agchain-organization-context')).not.toBeInTheDocument();
+    const platformToggle = accountMenuHeader.getByTestId('agchain-platform-toggle');
+    const organizationContext = accountMenuHeader.getByTestId('agchain-organization-context');
+
+    expect(platformToggle).toBeInTheDocument();
+    expect(organizationContext).toBeInTheDocument();
+    expect(platformToggle.compareDocumentPosition(organizationContext) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(accountMenuHeader.queryByTestId('agchain-project-context')).not.toBeInTheDocument();
+    expect(within(screen.getByTestId('agchain-primary-rail-footer-content')).queryByTestId('agchain-platform-toggle')).not.toBeInTheDocument();
+    const lastCall = leftRailMock.mock.calls.at(-1)?.[0] as {
+      hideHeaderSeparator?: boolean;
+      navContentClassName?: string;
+    } | undefined;
+    expect(lastCall?.hideHeaderSeparator).toBe(true);
+    expect(lastCall?.navContentClassName).toBe('pl-[10px]');
   });
 
   it('restores AGChain-owned persisted desktop rail width from local storage', () => {
@@ -207,6 +244,8 @@ describe('AgchainShellLayout', () => {
     expect(rail2).toBeInTheDocument();
     expect(rail2).toHaveStyle({ top: '0px', bottom: '0px' });
     expect(screen.getByTestId('agchain-settings-nav')).toBeInTheDocument();
+    expect(screen.queryByTestId('agchain-top-header')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agchain-rail-utilities')).not.toBeInTheDocument();
     expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
   });
 
@@ -255,5 +294,41 @@ describe('AgchainShellLayout', () => {
     expect(within(header).getByRole('heading', { name: 'Tools' })).toBeInTheDocument();
     expect(within(header).getByText('Manage the merged tool registry for Legal-10.')).toBeInTheDocument();
     expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
+  });
+
+  it('drops the fixed top header on containerized AGChain routes and lets page headers render inline', () => {
+    const entries = [
+      '/app/agchain/overview',
+      '/app/agchain/datasets',
+      '/app/agchain/eval/datasets',
+      '/app/agchain/playground',
+      '/app/agchain/sandbox',
+      '/app/agchain/settings/organization/members',
+      '/app/agchain/eval/tasks',
+      '/app/agchain/monitor/metrics',
+      '/app/agchain/harness/prompts',
+    ];
+
+    for (const entry of entries) {
+      const view = render(
+        <MemoryRouter initialEntries={[entry]}>
+          <Routes>
+            <Route element={<AgchainShellLayout />}>
+              <Route path="/app/agchain/*" element={<InlineHeaderRegistrationRoute />} />
+            </Route>
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      expect(screen.queryByTestId('agchain-top-header')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('top-command-bar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('agchain-rail-utilities')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Workspace Selector' })).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Tasks' })).toBeInTheDocument();
+      expect(screen.getByText('Define the project-scoped task surface.')).toBeInTheDocument();
+      expect(screen.getByTestId('agchain-route-content')).toBeInTheDocument();
+
+      view.unmount();
+    }
   });
 });

@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
-import { ShellPageHeader } from '@/components/shell/ShellPageHeader';
 import { AgchainDatasetsToolbar } from '@/components/agchain/datasets/AgchainDatasetsToolbar';
 import { AgchainDatasetsTable } from '@/components/agchain/datasets/AgchainDatasetsTable';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { useAgchainDatasets } from '@/hooks/agchain/useAgchainDatasets';
 import { AgchainPageFrame } from './AgchainPageFrame';
+import { AgchainStandardSurface } from './AgchainStandardSurface';
 
 export default function AgchainDatasetsPage() {
   const scopeState = useAgchainScopeState('project');
@@ -93,30 +93,23 @@ export default function AgchainDatasetsPage() {
   }
 
   return (
-    <AgchainPageFrame className="gap-5 py-4">
-      <div className="flex min-h-0 flex-1 flex-col gap-5">
-        <ShellPageHeader
-          title="Datasets"
-          description={`Manage evaluation datasets for ${scopeState.focusedProject.project_name ?? scopeState.focusedProject.benchmark_name ?? 'this project'}.`}
-        />
+    <AgchainStandardSurface title="Datasets" bodyClassName="flex min-h-0 flex-1 flex-col gap-5">
+      {error && (
+        <div className="shrink-0 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
-        {error && (
-          <div className="shrink-0 rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
+      <AgchainDatasetsToolbar
+        search={search}
+        onSearchChange={setSearch}
+        sourceTypeFilter={sourceTypeFilter}
+        onSourceTypeChange={setSourceTypeFilter}
+        validationFilter={validationFilter}
+        onValidationChange={setValidationFilter}
+      />
 
-        <AgchainDatasetsToolbar
-          search={search}
-          onSearchChange={setSearch}
-          sourceTypeFilter={sourceTypeFilter}
-          onSourceTypeChange={setSourceTypeFilter}
-          validationFilter={validationFilter}
-          onValidationChange={setValidationFilter}
-        />
-
-        <AgchainDatasetsTable items={filteredItems} loading={loading} />
-      </div>
-    </AgchainPageFrame>
+      <AgchainDatasetsTable items={filteredItems} loading={loading} />
+    </AgchainStandardSurface>
   );
 }

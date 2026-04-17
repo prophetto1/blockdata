@@ -32,6 +32,7 @@ describe('AgchainWorkbenchShellLayout', () => {
     );
 
     expect(screen.getByTestId('agchain-workbench-rail')).toBeInTheDocument();
+    expect(screen.getByTestId('agchain-workbench-rail')).toHaveStyle({ width: '60px' });
     expect(screen.getByTestId('agchain-workbench-rail-content')).toBeInTheDocument();
     expect(screen.getByTestId('agchain-workbench-frame')).toBeInTheDocument();
     expect(screen.getByTestId('agchain-workbench-route-content')).toBeInTheDocument();

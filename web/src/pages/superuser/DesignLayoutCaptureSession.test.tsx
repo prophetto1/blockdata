@@ -31,6 +31,7 @@ const sessionDetail = {
   debugPort: 9222,
   currentTargetUrl: null,
   currentTargetTitle: null,
+  target: null,
   browser: {
     cdpEndpoint: 'http://localhost:9222',
     debugPort: 9222,
@@ -80,8 +81,70 @@ describe('DesignLayoutCaptureSession', () => {
     );
 
     expect(await screen.findByText('Live Browser Connection')).toBeInTheDocument();
+    expect(screen.getByText('Live Browser Page')).toBeInTheDocument();
+    expect(screen.getByText('Pinned Target')).toBeInTheDocument();
     expect(screen.getAllByText('Botpress Studio').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Capture Sessions')).toBeInTheDocument();
+  });
+
+  it('shows a live-browser refresh placeholder instead of stale stored page details while probing', async () => {
+    let resolveProbe: ((value: { reachable: boolean; currentTargetUrl: string; currentTargetTitle: string }) => void) | null = null;
+    const staleSession = {
+      ...sessionDetail,
+      browser: {
+        ...sessionDetail.browser,
+        currentTargetUrl: 'http://127.0.0.1:5374/app/superuser/design-layout-captures/browser-session-stale',
+        currentTargetTitle: 'Stale Controller Page',
+      },
+    };
+
+    vi.spyOn(browserCaptureSessions, 'readBrowserCaptureSession').mockReturnValue(staleSession);
+    vi.spyOn(captureWorkerApi, 'probeCaptureBrowser').mockReturnValue(
+      new Promise((resolve) => {
+        resolveProbe = resolve;
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={['/app/superuser/design-layout-captures/session-20260416-101500']}>
+        <Routes>
+          <Route path="/app/superuser/design-layout-captures/:sessionId" element={<DesignLayoutCaptureSession />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Live Browser Connection')).toBeInTheDocument();
+    expect(screen.getByText('Refreshing live browser state...')).toBeInTheDocument();
+    expect(screen.queryByText('Stale Controller Page')).not.toBeInTheDocument();
+
+    resolveProbe?.({
+      reachable: true,
+      currentTargetUrl: 'http://127.0.0.1:5374/app/agchain/overview',
+      currentTargetTitle: 'BlockData',
+    });
+
+    await screen.findByText('BlockData');
+    expect(screen.queryByText('Refreshing live browser state...')).not.toBeInTheDocument();
+  });
+
+  it('keeps capture disabled until a target tab has been selected for the session', async () => {
+    vi.spyOn(browserCaptureSessions, 'readBrowserCaptureSession').mockReturnValue(sessionDetail);
+    vi.spyOn(captureWorkerApi, 'probeCaptureBrowser').mockResolvedValue({
+      reachable: true,
+      currentTargetUrl: 'https://botpress.com/studio',
+      currentTargetTitle: 'Botpress Studio',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/app/superuser/design-layout-captures/session-20260416-101500']}>
+        <Routes>
+          <Route path="/app/superuser/design-layout-captures/:sessionId" element={<DesignLayoutCaptureSession />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Live Browser Connection')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Capture' })).toBeDisabled();
   });
 
   it('runs the worker and saves returned artifacts through the browser-owned file pipeline', async () => {
@@ -95,11 +158,23 @@ describe('DesignLayoutCaptureSession', () => {
 
     const readSessionMock = vi
       .spyOn(browserCaptureSessions, 'readBrowserCaptureSession')
-      .mockReturnValueOnce(sessionDetail)
+      .mockReturnValueOnce({
+        ...sessionDetail,
+        target: {
+          id: 'target-eval-designer',
+          url: 'https://botpress.com/studio',
+          title: 'Botpress Studio',
+        },
+      })
       .mockReturnValue({
         ...sessionDetail,
         captureCount: 1,
         lastCapturedAt: '2026-04-16T17:25:00.000Z',
+        target: {
+          id: 'target-eval-designer',
+          url: 'https://botpress.com/studio',
+          title: 'Botpress Studio',
+        },
         browser: {
           ...sessionDetail.browser,
           currentTargetUrl: 'https://botpress.com/studio',
@@ -162,6 +237,7 @@ describe('DesignLayoutCaptureSession', () => {
       expect(saveCaptureArtifactsMock).toHaveBeenCalledTimes(1);
       expect(saveSessionManifestMock).toHaveBeenCalledTimes(1);
       expect(readSessionMock).toHaveBeenCalled();
+      expect(captureWorkerApi.runCaptureWorker).toHaveBeenCalledWith('http://localhost:9222', 'target-eval-designer');
     });
   });
 });

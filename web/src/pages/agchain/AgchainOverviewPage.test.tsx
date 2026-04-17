@@ -55,6 +55,8 @@ describe('AgchainOverviewPage', () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByTestId('agchain-standard-surface')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Overview' })).toBeInTheDocument();
     expect(screen.getByText('Observability')).toBeInTheDocument();
     expect(screen.getByText('Evaluation')).toBeInTheDocument();
     expect(screen.getByText('Recently created')).toBeInTheDocument();

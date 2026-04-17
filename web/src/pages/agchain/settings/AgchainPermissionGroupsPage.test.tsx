@@ -195,6 +195,7 @@ describe('AgchainPermissionGroupsPage', () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByTestId('agchain-standard-surface')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'Permission Groups' })).toBeInTheDocument();
     expect(screen.getByText('Current organization: AGChain')).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: /find permission groups/i })).toBeInTheDocument();

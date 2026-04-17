@@ -43,11 +43,11 @@ describe('AgchainSectionPage', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Runs' })).toBeInTheDocument();
-    expect(screen.getByText(/legal-10 owns this runs page/i)).toBeInTheDocument();
-    expect(screen.getByText('Deprecated compatibility surface')).toBeInTheDocument();
+    expect(screen.getByTestId('agchain-placeholder-body')).toBeEmptyDOMElement();
+    expect(screen.queryByText('Deprecated compatibility surface')).not.toBeInTheDocument();
 
     const frame = screen.getByTestId('agchain-page-frame');
-    expect(frame).toHaveClass('w-full', 'px-4');
+    expect(frame).toHaveClass('w-full');
     expect(frame.className).not.toContain('max-w-');
     expect(frame.className).not.toContain('mx-auto');
   });

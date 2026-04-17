@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
-import { ShellPageHeader } from '@/components/shell/ShellPageHeader';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { AgchainPageFrame } from '@/pages/agchain/AgchainPageFrame';
+import '@/components/eval-designer/eval-designer-surface.css';
 
 export type AgchainProjectPlaceholderPageProps = {
   title: string;
@@ -13,9 +13,6 @@ export type AgchainProjectPlaceholderPageProps = {
 
 export function AgchainProjectPlaceholderPage({
   title,
-  description,
-  bullets,
-  statusLabel = 'Coming soon',
 }: AgchainProjectPlaceholderPageProps) {
   const scopeState = useAgchainScopeState('project');
 
@@ -80,38 +77,28 @@ export function AgchainProjectPlaceholderPage({
   }
 
   return (
-    <AgchainPageFrame className="gap-6 py-8">
-      <ShellPageHeader
-        title={title}
-        description={description}
-      />
-
-      <section className="rounded-3xl border border-border/70 bg-card/70 p-6 shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-border/60 pb-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {statusLabel}
-            </p>
-            <h2 className="mt-2 text-xl font-semibold tracking-tight text-card-foreground">
-              This surface is intentionally still a placeholder
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              The route stays mounted so navigation, ownership, and page boundaries are explicit before the deeper product behavior is implemented.
-            </p>
+    <AgchainPageFrame className="gap-0 px-0 pb-0">
+      <div className="min-h-0 flex-1 px-3 pb-3 pt-3">
+        <section
+          data-testid="agchain-placeholder-surface"
+          className="eval-designer-surface"
+        >
+          <div
+            data-testid="agchain-placeholder-title-strip"
+            className="eval-designer-surface__toolbar"
+          >
+            <div className="eval-designer-surface__identity">
+              <div className="eval-designer-surface__title-row">
+                <h1 className="eval-designer-surface__title">{title}</h1>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <ul className="mt-5 grid gap-3">
-          {bullets.map((bullet) => (
-            <li
-              key={bullet}
-              className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm leading-7 text-card-foreground"
-            >
-              {bullet}
-            </li>
-          ))}
-        </ul>
-      </section>
+          <div
+            data-testid="agchain-placeholder-body"
+            className="eval-designer-surface__canvas"
+          />
+        </section>
+      </div>
     </AgchainPageFrame>
   );
 }

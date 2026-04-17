@@ -1,6 +1,5 @@
 import { AgchainEmptyState } from '@/components/agchain/AgchainEmptyState';
 import { AgchainProviderCredentialsSurface } from '@/components/agchain/models/AgchainProviderCredentialsSurface';
-import { ShellPageHeader } from '@/components/shell/ShellPageHeader';
 import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
 import { useOrganizationModelProviders } from '@/hooks/agchain/useOrganizationModelProviders';
 import {
@@ -11,6 +10,7 @@ import {
   type ScopedCredentialPayload,
 } from '@/lib/agchainModelProviderCredentials';
 import { AgchainPageFrame } from '../AgchainPageFrame';
+import { AgchainStandardSurface } from '../AgchainStandardSurface';
 
 export default function AgchainOrganizationAiProvidersPage() {
   const scopeState = useAgchainScopeState('organization');
@@ -75,11 +75,15 @@ export default function AgchainOrganizationAiProvidersPage() {
   }
 
   return (
-    <AgchainPageFrame className="gap-6 py-8">
-      <ShellPageHeader
-        title="Organization AI Providers"
-        description="Configure the organization-wide AI provider credentials used as global defaults across AGChain projects."
-      />
+    <AgchainStandardSurface title="Organization AI Providers" bodyClassName="space-y-5">
+      <div className="space-y-2">
+        <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
+          Configure the organization-wide AI provider credentials used as global defaults across AGChain projects.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Current organization: {scopeState.selectedOrganization.display_name}
+        </p>
+      </div>
       <AgchainProviderCredentialsSurface
         scope="organization"
         rows={rows}
@@ -90,6 +94,6 @@ export default function AgchainOrganizationAiProvidersPage() {
         onTest={handleTest}
         onDelete={handleDelete}
       />
-    </AgchainPageFrame>
+    </AgchainStandardSurface>
   );
 }

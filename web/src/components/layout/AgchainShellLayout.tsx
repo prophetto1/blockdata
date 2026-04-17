@@ -12,6 +12,7 @@ import { HeaderCenterProvider, useHeaderCenter } from '@/components/shell/Header
 import { LeftRailShadcn as AgchainChromeRail } from '@/components/shell/LeftRailShadcn';
 import { RightRailProvider, useRightRailContext } from '@/components/shell/RightRailContext';
 import { RightRailShell } from '@/components/shell/RightRailShell';
+import { ShellPlatformToggle } from '@/components/shell/ShellPlatformToggle';
 import { AssistantDockHost } from '@/components/shell/AssistantDockHost';
 import { TopCommandBar } from '@/components/shell/TopCommandBar';
 import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
@@ -24,6 +25,28 @@ const AGCHAIN_RAIL_2_WIDTH = 224;
 const AGCHAIN_HEADER_HEIGHT = styleTokens.shell.headerHeight;
 const AGCHAIN_PAGE_HEADER_HEIGHT = styleTokens.shell.headerTallHeight;
 const AGCHAIN_SETTINGS_PATH_PREFIX = '/app/agchain/settings';
+const AGCHAIN_LEFT_RAIL_ONLY_PATH_PREFIXES = [
+  '/app/agchain/overview',
+  '/app/agchain/datasets',
+  '/app/agchain/playground',
+  '/app/agchain/sandbox',
+  '/app/agchain/eval/datasets',
+  '/app/agchain/settings',
+  '/app/agchain/eval/tasks',
+  '/app/agchain/eval/scorers',
+  '/app/agchain/eval/models',
+  '/app/agchain/eval/runs',
+  '/app/agchain/monitor/metrics',
+  '/app/agchain/monitor/logs',
+  '/app/agchain/monitor/trace',
+  '/app/agchain/harness/prompts',
+  '/app/agchain/harness/instructions',
+  '/app/agchain/harness/skills',
+  '/app/agchain/harness/mcp',
+  '/app/agchain/harness/storage',
+  '/app/agchain/harness/memory',
+  '/app/agchain/harness/hooks',
+] as const;
 
 function readStoredWidth(): number {
   if (typeof window === 'undefined') return styleTokens.shell.navbarWidth;
@@ -35,15 +58,24 @@ function readStoredWidth(): number {
 }
 
 export function AgchainShellLayout() {
-  return (
-    <HeaderCenterProvider>
-      <RightRailProvider>
-        <AgchainWorkspaceProvider>
-          <AgchainShellInner />
-        </AgchainWorkspaceProvider>
-      </RightRailProvider>
-    </HeaderCenterProvider>
+  const location = useLocation();
+  const useLeftRailOnlyShell = AGCHAIN_LEFT_RAIL_ONLY_PATH_PREFIXES.some((prefix) => (
+    location.pathname === prefix || location.pathname.startsWith(`${prefix}/`)
+  ));
+
+  const shell = (
+    <RightRailProvider>
+      <AgchainWorkspaceProvider>
+        <AgchainShellInner useLeftRailOnlyShell={useLeftRailOnlyShell} />
+      </AgchainWorkspaceProvider>
+    </RightRailProvider>
   );
+
+  if (useLeftRailOnlyShell) {
+    return shell;
+  }
+
+  return <HeaderCenterProvider>{shell}</HeaderCenterProvider>;
 }
 
 function DraggableChat({ onClose, onDock }: { onClose: () => void; onDock: () => void }) {
@@ -81,7 +113,7 @@ function DraggableChat({ onClose, onDock }: { onClose: () => void; onDock: () =>
   );
 }
 
-function AgchainShellInner() {
+function AgchainShellInner({ useLeftRailOnlyShell = false }: { useLeftRailOnlyShell?: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
@@ -95,13 +127,29 @@ function AgchainShellInner() {
   const showRail2 = location.pathname.startsWith(AGCHAIN_SETTINGS_PATH_PREFIX);
   const rail1Width = sidebarWidth;
   const rail2Width = showRail2 ? AGCHAIN_RAIL_2_WIDTH : 0;
-  const headerHeight = pageHeader ? AGCHAIN_PAGE_HEADER_HEIGHT : AGCHAIN_HEADER_HEIGHT;
+  const showTopHeader = isMobile || !useLeftRailOnlyShell;
+  const headerHeight = showTopHeader
+    ? (pageHeader ? AGCHAIN_PAGE_HEADER_HEIGHT : AGCHAIN_HEADER_HEIGHT)
+    : 0;
   const hasRailContent = rightRail.content !== null || (rightRail.activeTab === 'ai' && !rightRail.chatDetached);
   const showRightRail = !isMobile && hasRailContent && rightRail.isOpen;
   const totalRailWidth = rail1Width + rail2Width;
   const mainInsetEnd = showRightRail ? styleTokens.shell.rightRailWidth : 0;
   const canPortal = typeof document !== 'undefined';
   const navSections = buildAgchainNavSections();
+  const agchainRailProjectContext = (
+    <div data-testid="agchain-project-context-shell" className="-mb-[36px] -ml-[12px] mt-[10px]">
+      <AgchainProjectSwitcher />
+    </div>
+  );
+  const agchainAccountMenuContext = (
+    <div className="space-y-2">
+      <ShellPlatformToggle />
+      <div className="rounded-[8px] border border-border/70 bg-card/20 py-0.5">
+        <AgchainOrganizationSwitcher />
+      </div>
+    </div>
+  );
 
   const handleSignOut = async () => {
     await signOut();
@@ -163,37 +211,39 @@ function AgchainShellInner() {
 
   return (
     <div className="relative h-dvh overflow-hidden bg-background text-foreground">
-      <header
-        data-testid="agchain-top-header"
-        style={{
-          position: 'fixed',
-          insetInlineStart: `${totalRailWidth}px`,
-          insetInlineEnd: 0,
-          top: 0,
-          height: `${headerHeight}px`,
-          zIndex: 30,
-          backgroundColor: 'var(--chrome, var(--background))',
-        }}
-      >
-        <TopCommandBar
-          onToggleNav={() => setNavOpened((current) => !current)}
-          hideProjectSwitcher
-          hideSearch
-          primaryContext={pageHeader}
-        />
-        <div
-          data-testid="agchain-shell-top-divider"
-          aria-hidden
+      {showTopHeader ? (
+        <header
+          data-testid="agchain-top-header"
           style={{
-            position: 'absolute',
-            insetInlineStart: 0,
+            position: 'fixed',
+            insetInlineStart: `${totalRailWidth}px`,
             insetInlineEnd: 0,
-            bottom: 0,
-            height: '1px',
-            backgroundColor: 'var(--sidebar-border)',
+            top: 0,
+            height: `${headerHeight}px`,
+            zIndex: 30,
+            backgroundColor: 'var(--chrome, var(--background))',
           }}
-        />
-      </header>
+        >
+          <TopCommandBar
+            onToggleNav={() => setNavOpened((current) => !current)}
+            hideProjectSwitcher
+            hideSearch
+            primaryContext={pageHeader}
+          />
+          <div
+            data-testid="agchain-shell-top-divider"
+            aria-hidden
+            style={{
+              position: 'absolute',
+              insetInlineStart: 0,
+              insetInlineEnd: 0,
+              bottom: 0,
+              height: '1px',
+              backgroundColor: 'var(--sidebar-border)',
+            }}
+          />
+        </header>
+      ) : null}
 
       <aside
         data-testid="agchain-platform-rail"
@@ -211,6 +261,7 @@ function AgchainShellInner() {
             userLabel={profile?.display_name || profile?.email || user?.email}
             onSignOut={handleSignOut}
             navSections={navSections}
+            navContentClassName="pl-[10px]"
             headerBrand={(
               <span className="inline-flex items-baseline text-xs font-semibold uppercase tracking-[0.2em]">
                 <span className="text-sidebar-foreground">Block</span>
@@ -218,13 +269,9 @@ function AgchainShellInner() {
                 <span className="ml-1 text-sidebar-foreground/60">Bench</span>
               </span>
             )}
-            headerContent={(
-              <div className="flex w-full flex-col rounded-[6px] border border-border/70 bg-card/20 py-0.5">
-                <AgchainOrganizationSwitcher />
-                <div className="mx-2.5 h-px bg-border/50" />
-                <AgchainProjectSwitcher />
-              </div>
-            )}
+            headerContent={agchainRailProjectContext}
+            accountMenuHeaderContent={agchainAccountMenuContext}
+            hideHeaderSeparator
           />
         <div
           role="separator"
@@ -272,20 +319,17 @@ function AgchainShellInner() {
                 userLabel={profile?.display_name || profile?.email || user?.email}
                 onSignOut={handleSignOut}
                 navSections={navSections}
+                navContentClassName="pl-[10px]"
                 headerBrand={(
                   <span className="inline-flex items-baseline text-xs font-semibold uppercase tracking-[0.2em]">
-                    <span className="text-sidebar-foreground">Block</span>
+                <span className="text-sidebar-foreground">Block</span>
                   <span className="text-primary">Data</span>
                   <span className="ml-1 text-sidebar-foreground/60">Bench</span>
                 </span>
               )}
-              headerContent={(
-                <div className="flex w-full flex-col rounded-[6px] border border-border/70 bg-card/20 py-0.5">
-                  <AgchainOrganizationSwitcher />
-                  <div className="mx-2.5 h-px bg-border/50" />
-                  <AgchainProjectSwitcher />
-                </div>
-              )}
+              headerContent={agchainRailProjectContext}
+              accountMenuHeaderContent={agchainAccountMenuContext}
+              hideHeaderSeparator
             />
             </Drawer.Content>
           </Drawer.Positioner>
@@ -342,7 +386,7 @@ function AgchainShellInner() {
           style={{
             position: 'fixed',
             insetInlineEnd: 0,
-            top: `${headerHeight}px`,
+            top: showTopHeader ? `${headerHeight}px` : 0,
             bottom: 0,
             width: `${styleTokens.shell.rightRailWidth}px`,
             zIndex: 18,

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 import { once } from 'node:events';
 import { chooseCaptureTarget, createServer, isBrowserInternalUrl } from './capture-server.mjs';
@@ -17,6 +19,43 @@ test('chooseCaptureTarget skips internal browser pages and selects the first cap
     type: 'page',
     url: 'https://example.com/dashboard',
     title: 'Dashboard',
+  });
+});
+
+test('chooseCaptureTarget excludes superuser capture routes and honors a pinned target id', () => {
+  const targets = [
+    {
+      id: 'capture-session-page',
+      type: 'page',
+      url: 'http://127.0.0.1:5374/app/superuser/design-layout-captures/browser-session-20260416-212728-5jzx',
+      title: 'Capture Session',
+    },
+    {
+      id: 'target-overview',
+      type: 'page',
+      url: 'http://127.0.0.1:5374/app/agchain/overview',
+      title: 'Overview',
+    },
+    {
+      id: 'target-eval-designer',
+      type: 'page',
+      url: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+      title: 'Eval Designer',
+    },
+  ];
+
+  assert.deepEqual(chooseCaptureTarget(targets), {
+    id: 'target-overview',
+    type: 'page',
+    url: 'http://127.0.0.1:5374/app/agchain/overview',
+    title: 'Overview',
+  });
+
+  assert.deepEqual(chooseCaptureTarget(targets, { targetId: 'target-eval-designer' }), {
+    id: 'target-eval-designer',
+    type: 'page',
+    url: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+    title: 'Eval Designer',
   });
 });
 
@@ -72,12 +111,18 @@ test('createServer delegates capture runs to the injected worker implementation'
   const response = await fetch(`http://127.0.0.1:${port}/capture-worker/run`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cdpEndpoint: 'http://localhost:9222' }),
+    body: JSON.stringify({ cdpEndpoint: 'http://localhost:9222', targetId: 'target-eval-designer' }),
   });
 
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.capture.captureId, 'capture-1');
   assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0], { cdpEndpoint: 'http://localhost:9222' });
+  assert.deepEqual(calls[0], { cdpEndpoint: 'http://localhost:9222', targetId: 'target-eval-designer' });
+});
+
+test('capture server is wired to the v2 layout measurement worker', () => {
+  const source = fs.readFileSync(path.join(process.cwd(), 'scripts', 'capture-server.mjs'), 'utf8');
+
+  assert.match(source, /measure-layout-headed-v2\.mjs/);
 });

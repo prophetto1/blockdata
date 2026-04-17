@@ -143,6 +143,8 @@ describe('AgchainDatasetsPage', () => {
       expect(screen.getAllByText('Legal QA Dataset').length).toBeGreaterThan(0);
     });
 
+    expect(screen.getByTestId('agchain-standard-surface')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Datasets' })).toBeInTheDocument();
     expect(screen.getAllByText('legal-qa').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Financial News Corpus').length).toBeGreaterThan(0);
     expect(screen.getAllByText('financial-news').length).toBeGreaterThan(0);

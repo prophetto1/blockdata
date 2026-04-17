@@ -77,7 +77,11 @@ describe('AGChain new taxonomy placeholder pages', () => {
       );
 
       expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
-      expect(screen.getAllByText('Coming soon').length).toBeGreaterThan(0);
+      expect(screen.getByTestId('agchain-placeholder-surface')).toBeInTheDocument();
+      expect(screen.getByTestId('agchain-placeholder-title-strip')).toBeInTheDocument();
+      expect(screen.getByTestId('agchain-placeholder-body')).toBeEmptyDOMElement();
+      expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
+      expect(screen.queryByText('This surface is intentionally still a placeholder')).not.toBeInTheDocument();
     }
   });
 

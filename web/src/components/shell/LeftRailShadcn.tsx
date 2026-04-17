@@ -61,7 +61,10 @@ type LeftRailShadcnProps = {
   headerBrand?: ReactNode;
   headerContent?: ReactNode;
   footerContent?: ReactNode;
+  accountMenuHeaderContent?: ReactNode;
   hideHeaderChrome?: boolean;
+  hideHeaderSeparator?: boolean;
+  navContentClassName?: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -135,13 +138,20 @@ function AccountMenuContent({
   userLabel,
   docsSiteUrl,
   onSignOut,
+  accountMenuHeaderContent,
 }: {
   userLabel?: string;
   docsSiteUrl: string;
   onSignOut?: () => void | Promise<void>;
+  accountMenuHeaderContent?: ReactNode;
 }) {
   return (
     <MenuContent className="min-w-64 p-0">
+      {accountMenuHeaderContent ? (
+        <div className="border-b border-border px-3 pb-3 pt-3">
+          <div className="space-y-2">{accountMenuHeaderContent}</div>
+        </div>
+      ) : null}
       {/* Account header -- username + email, theme controls right */}
       <div className="flex items-start justify-between px-3 pb-2 pt-3">
         <div className="min-w-0 flex-1">
@@ -207,7 +217,10 @@ export function LeftRailShadcn({
   headerBrand,
   headerContent,
   footerContent,
+  accountMenuHeaderContent,
   hideHeaderChrome = false,
+  hideHeaderSeparator = false,
+  navContentClassName,
 }: LeftRailShadcnProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -493,7 +506,7 @@ export function LeftRailShadcn({
   };
 
   const renderSectionsNav = (sections: AdminNavSection[]) => (
-    <div className="space-y-3">
+    <div className="space-y-3 pt-9">
       {sections.map((section, sectionIndex) => (
         <div key={section.label || `section-${sectionIndex}`}>
           {section.label ? (
@@ -639,13 +652,15 @@ export function LeftRailShadcn({
                 {headerContent}
               </div>
             ) : null}
-            {!desktopCompact && <div className="h-px w-full bg-sidebar-border" />}
+            {!desktopCompact && !hideHeaderSeparator ? (
+              <div data-testid="left-rail-header-separator" className="h-px w-full bg-sidebar-border" />
+            ) : null}
           </SidebarHeader>
         )}
 
         {/* ---- Content: Nav items or drill view ---- */}
         {navSections ? (
-          <SidebarContent className={cn('px-1', hideHeaderChrome && 'pt-2')}>
+          <SidebarContent className={cn('px-1', hideHeaderChrome && 'pt-2', navContentClassName)}>
             <SidebarGroup className="p-1">
               <SidebarGroupContent>
                 {activeDrillConfig
@@ -655,7 +670,7 @@ export function LeftRailShadcn({
             </SidebarGroup>
           </SidebarContent>
         ) : !hideNav ? (
-          <SidebarContent className={cn(desktopCompact ? 'px-0' : 'px-1', hideHeaderChrome && 'pt-2')}>
+          <SidebarContent className={cn(desktopCompact ? 'px-0' : 'px-1', hideHeaderChrome && 'pt-2', navContentClassName)}>
             <SidebarGroup className={desktopCompact ? 'p-0' : 'p-1'}>
               <SidebarGroupContent>
                 {desktopCompact
@@ -712,6 +727,7 @@ export function LeftRailShadcn({
                 userLabel={userLabel}
                 docsSiteUrl={docsSiteUrl}
                 onSignOut={onSignOut}
+                accountMenuHeaderContent={accountMenuHeaderContent}
               />
             </MenuPositioner>
           </MenuRoot>

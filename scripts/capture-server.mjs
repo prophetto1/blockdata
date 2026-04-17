@@ -16,7 +16,7 @@ const layoutCaptureWrapperPath = path.join(
   "_research",
   "00--jon",
   "layout-capture-task",
-  "measure-layout-headed.mjs",
+  "measure-layout-headed-v2.mjs",
 );
 
 const PORT = Number(process.env.CAPTURE_SERVER_PORT || "4488");
@@ -331,11 +331,38 @@ export function isBrowserInternalUrl(url) {
   ].some((prefix) => url.startsWith(prefix));
 }
 
-export function chooseCaptureTarget(targets) {
+function isCaptureControlUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  try {
+    const pathname = new URL(url).pathname || "";
+    return pathname.startsWith("/app/superuser/design-layout-captures");
+  } catch {
+    return false;
+  }
+}
+
+function isCaptureEligibleTarget(target) {
   return (
-    targets.find((target) => target?.type === "page" && !isBrowserInternalUrl(target?.url || "")) ||
-    null
+    target?.type === "page" &&
+    !isBrowserInternalUrl(target?.url || "") &&
+    !isCaptureControlUrl(target?.url || "")
   );
+}
+
+function toCaptureBrowserTarget(target) {
+  return {
+    id: String(target?.id || ""),
+    url: target?.url ?? null,
+    title: target?.title ?? null,
+  };
+}
+
+export function chooseCaptureTarget(targets, options = {}) {
+  const eligibleTargets = Array.isArray(targets) ? targets.filter(isCaptureEligibleTarget) : [];
+  if (options?.targetId) {
+    return eligibleTargets.find((target) => String(target?.id || "") === String(options.targetId)) || null;
+  }
+  return eligibleTargets[0] || null;
 }
 
 async function listChromeTargets(cdpEndpoint) {
@@ -390,15 +417,27 @@ async function probeCaptureBrowser({ cdpEndpoint }) {
   }
 }
 
-async function runCaptureWorker({ cdpEndpoint }) {
+async function listCaptureTargets({ cdpEndpoint }) {
   if (!cdpEndpoint || typeof cdpEndpoint !== "string") {
     throw new Error("cdpEndpoint is required");
   }
 
   const targets = await listChromeTargets(cdpEndpoint);
-  const target = chooseCaptureTarget(targets);
+  return targets.filter(isCaptureEligibleTarget).map(toCaptureBrowserTarget);
+}
+
+async function runCaptureWorker({ cdpEndpoint, targetId }) {
+  if (!cdpEndpoint || typeof cdpEndpoint !== "string") {
+    throw new Error("cdpEndpoint is required");
+  }
+  if (!targetId || typeof targetId !== "string") {
+    throw new Error("No target tab selected for this session.");
+  }
+
+  const targets = await listChromeTargets(cdpEndpoint);
+  const target = chooseCaptureTarget(targets, { targetId });
   if (!target?.url) {
-    throw new Error("No capture-eligible page target found in the selected Chrome browser.");
+    throw new Error("Selected target tab is no longer available. Choose Target Tab again.");
   }
 
   const captureId = makeTimestamp();
@@ -762,6 +801,7 @@ async function handleRequest(req, res, options = {}) {
   const pathname = urlObj.pathname;
   const runWorker = options.runCaptureWorker || runCaptureWorker;
   const probeBrowser = options.probeCaptureBrowser || probeCaptureBrowser;
+  const fetchTargets = options.listCaptureTargets || listCaptureTargets;
 
   if (method === "OPTIONS") {
     res.writeHead(204, {
@@ -783,6 +823,13 @@ async function handleRequest(req, res, options = {}) {
       const body = await readBody(req);
       const probe = await probeBrowser(body || {});
       sendJson(res, 200, { probe });
+      return;
+    }
+
+    if (method === "POST" && pathname === "/capture-worker/targets") {
+      const body = await readBody(req);
+      const targets = await fetchTargets(body || {});
+      sendJson(res, 200, { targets });
       return;
     }
 
@@ -907,6 +954,7 @@ export function startServer(port = PORT) {
     console.log(`\nCapture server running on http://127.0.0.1:${port}`);
     console.log(`  GET  /capture-worker/status        - worker readiness`);
     console.log(`  POST /capture-worker/probe         - inspect current browser target`);
+    console.log(`  POST /capture-worker/targets       - list eligible browser tabs`);
     console.log(`  POST /capture-worker/run           - run the layout-capture worker`);
     console.log(`  GET  /capture-sessions/defaults     - defaults and browser detection`);
     console.log(`  GET  /capture-sessions              - list sessions`);

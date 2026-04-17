@@ -1,4 +1,10 @@
-export type CaptureSessionStatus = 'ready' | 'capturing' | 'browser-unreachable' | 'capture-failed' | 'directory-missing';
+export type CaptureSessionStatus =
+  | 'ready'
+  | 'capturing'
+  | 'browser-unreachable'
+  | 'capture-failed'
+  | 'directory-missing'
+  | 'target-missing';
 
 export type CaptureArtifactStatus = 'complete' | 'failed' | 'capturing';
 
@@ -26,6 +32,12 @@ export type CaptureSessionBrowser = {
   lastError: string | null;
 };
 
+export type CaptureBrowserTarget = {
+  id: string;
+  url: string | null;
+  title: string | null;
+};
+
 export type CaptureArtifact = {
   id: string;
   status: CaptureArtifactStatus;
@@ -41,6 +53,7 @@ export type CaptureArtifact = {
 
 export type CaptureSessionDetail = CaptureSessionSummary & {
   directoryHandleKey: string;
+  target: CaptureBrowserTarget | null;
   browser: CaptureSessionBrowser;
   captures: CaptureArtifact[];
 };

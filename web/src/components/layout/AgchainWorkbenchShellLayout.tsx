@@ -6,7 +6,7 @@ import { AgchainWorkbenchRail } from '@/components/agchain/AgchainWorkbenchRail'
 import { AgchainWorkspaceProvider } from '@/contexts/AgchainWorkspaceContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-const AGCHAIN_WORKBENCH_RAIL_WIDTH = 248;
+const AGCHAIN_WORKBENCH_RAIL_WIDTH = 60;
 
 export function AgchainWorkbenchShellLayout() {
   return (

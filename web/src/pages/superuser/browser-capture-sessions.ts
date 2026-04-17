@@ -62,6 +62,7 @@ function toStoredSession(session: CaptureSessionDetail): CaptureSessionDetail {
   const lastCapture = captures[captures.length - 1] ?? null;
   return {
     ...session,
+    target: session.target ?? null,
     updatedAt: session.updatedAt || nowIso(),
     captureCount: captures.length,
     lastCapturedAt: session.lastCapturedAt || lastCapture?.capturedAt || null,
@@ -143,6 +144,7 @@ export function createBrowserCaptureSession(input: CreateBrowserCaptureSessionIn
     debugPort: parseDebugPort(input.cdpEndpoint),
     currentTargetUrl: null,
     currentTargetTitle: null,
+    target: null,
     browser: {
       cdpEndpoint: input.cdpEndpoint,
       debugPort: parseDebugPort(input.cdpEndpoint),

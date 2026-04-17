@@ -108,6 +108,49 @@ describe('LeftRailShadcn', () => {
     expect(menuScope.getByText('Log Out')).toBeInTheDocument();
   });
 
+  it('renders custom account menu header content above the account details', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
+        <LeftRailShadcn
+          userLabel="jon@example.com"
+          onSignOut={vi.fn()}
+          {...({
+            accountMenuHeaderContent: <div data-testid="account-menu-header-content">AGChain selectors</div>,
+          } as Record<string, unknown>)}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Go to home' })).toBeInTheDocument();
+
+    const accountMenuTrigger = screen.getByRole('button', { name: 'Account menu' });
+    fireEvent.pointerDown(accountMenuTrigger);
+    fireEvent.click(accountMenuTrigger);
+
+    const menu = await screen.findByRole('menu');
+    const customHeader = within(menu).getByTestId('account-menu-header-content');
+    const userName = within(menu).getByText('jon');
+
+    expect(customHeader).toBeInTheDocument();
+    expect(customHeader.compareDocumentPosition(userName) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('applies a custom nav-content inset class to the rendered menu stack', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
+        <LeftRailShadcn {...({ navContentClassName: 'pl-[10px]' } as Record<string, unknown>)} />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Go to home' })).toBeInTheDocument();
+
+    const assetsButton = screen.getByRole('button', { name: 'Assets' });
+    const navContent = assetsButton.closest('[data-sidebar="content"]');
+
+    expect(navContent).toBeTruthy();
+    expect(navContent?.className).toContain('pl-[10px]');
+  });
+
   it('renders the brand logo and top-level nav items without inline drill children', async () => {
     render(
       <MemoryRouter initialEntries={['/app/assets']}>
@@ -289,6 +332,35 @@ describe('LeftRailShadcn', () => {
     expect(headerContent.compareDocumentPosition(navButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('omits the header separator when requested', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/assets']}>
+        <LeftRailShadcn
+          {...({
+            navSections: [
+              {
+                label: 'Project',
+                items: [
+                  {
+                    label: 'Overview',
+                    path: '/app/assets',
+                    icon: () => null,
+                  },
+                ],
+              },
+            ],
+            headerBrand: <div data-testid="rail-brand">Brand</div>,
+            headerContent: <div data-testid="rail-header-content">Selector</div>,
+            hideHeaderSeparator: true,
+          } as Record<string, unknown>)}
+        />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByTestId('rail-header-content')).toBeInTheDocument();
+    expect(screen.queryByTestId('left-rail-header-separator')).not.toBeInTheDocument();
+  });
+
   it('omits empty section headings and renders AGChain nav rows with denser lighter styling', async () => {
     render(
       <MemoryRouter initialEntries={['/app/agchain/overview']}>
@@ -322,9 +394,12 @@ describe('LeftRailShadcn', () => {
     );
 
     const overviewButton = await screen.findByRole('button', { name: 'Overview' });
+    const navStack = overviewButton.closest('.space-y-3');
 
     expect(screen.queryByText('Project')).not.toBeInTheDocument();
     expect(screen.getByText('Eval')).toBeInTheDocument();
+    expect(navStack).not.toBeNull();
+    expect((navStack as HTMLElement).className).toContain('pt-9');
     expect(overviewButton.className).toContain('h-[26px]');
     expect(overviewButton.className).toContain('px-1.5');
     expect(overviewButton.className).toContain('gap-2');
