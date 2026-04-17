@@ -11,13 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
-const layoutCaptureWrapperPath = path.join(
-  repoRoot,
-  "_research",
-  "00--jon",
-  "layout-capture-task",
-  "measure-layout-headed-v2.mjs",
-);
+const layoutCaptureWrapperPath = path.join(__dirname, "measure-layout-headed-v2.mjs");
 
 const PORT = Number(process.env.CAPTURE_SERVER_PORT || "4488");
 const DEFAULT_CHROME_URL = "about:blank";
@@ -137,6 +131,11 @@ function sanitizeName(input) {
 function makeSessionId() {
   const random = Math.random().toString(36).slice(2, 6);
   return `session-${makeTimestamp()}-${random}`;
+}
+
+function makeBrowserProfileId() {
+  const random = Math.random().toString(36).slice(2, 6);
+  return `browser-${makeTimestamp()}-${random}`;
 }
 
 function makeCaptureId(sessionDir) {
@@ -318,6 +317,25 @@ async function launchChromeSession({ debugPort, userDataDir, launchUrl }) {
   };
 }
 
+function normalizeLaunchUrl(launchUrl) {
+  return typeof launchUrl === "string" && launchUrl.trim() ? launchUrl.trim() : DEFAULT_CHROME_URL;
+}
+
+function normalizeUserDataDir(userDataDir) {
+  if (!userDataDir || typeof userDataDir !== "string") {
+    throw new Error("userDataDir is required");
+  }
+  return path.resolve(userDataDir);
+}
+
+function normalizeDebugPort(debugPort) {
+  const parsed = Number(debugPort);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error("debugPort must be a positive integer");
+  }
+  return parsed;
+}
+
 export function isBrowserInternalUrl(url) {
   if (!url) return true;
   return [
@@ -415,6 +433,63 @@ async function probeCaptureBrowser({ cdpEndpoint }) {
       currentTargetTitle: null,
     };
   }
+}
+
+async function buildCaptureBrowserState({
+  debugPort,
+  userDataDir,
+  launchUrl,
+  browserPid,
+  chromeExecutable,
+  launchedAt,
+}) {
+  const cdpEndpoint = `http://127.0.0.1:${debugPort}`;
+  const probe = await probeCaptureBrowser({ cdpEndpoint });
+
+  return {
+    cdpEndpoint,
+    debugPort,
+    reachable: probe.reachable,
+    currentTargetUrl: probe.currentTargetUrl,
+    currentTargetTitle: probe.currentTargetTitle,
+    lastError: null,
+    browserPid: browserPid ?? null,
+    userDataDir,
+    launchUrl,
+    chromeExecutable: chromeExecutable ?? null,
+    launchedAt,
+  };
+}
+
+async function launchManagedCaptureBrowser({ debugPort, userDataDir, launchUrl }) {
+  const normalizedDebugPort = normalizeDebugPort(debugPort);
+  const normalizedUserDataDir = normalizeUserDataDir(userDataDir);
+  const normalizedLaunchUrl = normalizeLaunchUrl(launchUrl);
+  const launchedAt = nowIso();
+  const launched = await launchChromeSession({
+    debugPort: normalizedDebugPort,
+    userDataDir: normalizedUserDataDir,
+    launchUrl: normalizedLaunchUrl,
+  });
+
+  return buildCaptureBrowserState({
+    debugPort: normalizedDebugPort,
+    userDataDir: normalizedUserDataDir,
+    launchUrl: normalizedLaunchUrl,
+    browserPid: launched.browserPid,
+    chromeExecutable: launched.chromeExecutable,
+    launchedAt,
+  });
+}
+
+async function launchCaptureBrowser({ launchUrl } = {}) {
+  const debugPort = await getFreePort();
+  const userDataDir = path.join(os.tmpdir(), "writing-system-capture-browser", makeBrowserProfileId());
+  return launchManagedCaptureBrowser({ debugPort, userDataDir, launchUrl });
+}
+
+async function recoverCaptureBrowser({ debugPort, userDataDir, launchUrl } = {}) {
+  return launchManagedCaptureBrowser({ debugPort, userDataDir, launchUrl });
 }
 
 async function listCaptureTargets({ cdpEndpoint }) {
@@ -627,10 +702,10 @@ async function createSession({ name, saveRoot, launchUrl }) {
     debugPort,
   });
 
-  const launched = await launchChromeSession({
+  const browser = await launchManagedCaptureBrowser({
     debugPort,
     userDataDir,
-    launchUrl: launchUrl || DEFAULT_CHROME_URL,
+    launchUrl,
   });
 
   const session = {
@@ -644,15 +719,7 @@ async function createSession({ name, saveRoot, launchUrl }) {
     saveRoot: resolvedSaveRoot,
     sessionDir,
     captures: [],
-    browser: {
-      debugPort,
-      cdpEndpoint: `http://127.0.0.1:${debugPort}`,
-      browserPid: launched.browserPid,
-      userDataDir,
-      launchUrl: launchUrl || DEFAULT_CHROME_URL,
-      chromeExecutable: launched.chromeExecutable,
-      launchedAt: nowIso(),
-    },
+    browser,
   };
 
   writeSessionFile(session);
@@ -661,8 +728,8 @@ async function createSession({ name, saveRoot, launchUrl }) {
   logEvent("capture.browser.launch.success", {
     sessionId,
     debugPort,
-    browserPid: launched.browserPid,
-    chromeExecutable: launched.chromeExecutable,
+    browserPid: browser.browserPid,
+    chromeExecutable: browser.chromeExecutable,
   });
 
   return session;
@@ -802,6 +869,8 @@ async function handleRequest(req, res, options = {}) {
   const runWorker = options.runCaptureWorker || runCaptureWorker;
   const probeBrowser = options.probeCaptureBrowser || probeCaptureBrowser;
   const fetchTargets = options.listCaptureTargets || listCaptureTargets;
+  const launchBrowser = options.launchCaptureBrowser || launchCaptureBrowser;
+  const recoverBrowser = options.recoverCaptureBrowser || recoverCaptureBrowser;
 
   if (method === "OPTIONS") {
     res.writeHead(204, {
@@ -837,6 +906,20 @@ async function handleRequest(req, res, options = {}) {
       const body = await readBody(req);
       const capture = await runWorker(body || {});
       sendJson(res, 200, { capture });
+      return;
+    }
+
+    if (method === "POST" && pathname === "/capture-browser/launch") {
+      const body = await readBody(req);
+      const browser = await launchBrowser(body || {});
+      sendJson(res, 200, { browser });
+      return;
+    }
+
+    if (method === "POST" && pathname === "/capture-browser/recover") {
+      const body = await readBody(req);
+      const browser = await recoverBrowser(body || {});
+      sendJson(res, 200, { browser });
       return;
     }
 
@@ -956,6 +1039,8 @@ export function startServer(port = PORT) {
     console.log(`  POST /capture-worker/probe         - inspect current browser target`);
     console.log(`  POST /capture-worker/targets       - list eligible browser tabs`);
     console.log(`  POST /capture-worker/run           - run the layout-capture worker`);
+    console.log(`  POST /capture-browser/launch       - launch a browser-owned capture Chrome`);
+    console.log(`  POST /capture-browser/recover      - relaunch an unreachable capture Chrome`);
     console.log(`  GET  /capture-sessions/defaults     - defaults and browser detection`);
     console.log(`  GET  /capture-sessions              - list sessions`);
     console.log(`  POST /capture-sessions              - create session and launch Chrome`);

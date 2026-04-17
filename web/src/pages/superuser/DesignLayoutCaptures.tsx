@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   IconChevronRight,
   IconFolderOpen,
@@ -23,12 +23,22 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { createBrowserCaptureSession, listBrowserCaptureSessions } from './browser-capture-sessions';
+import {
+  createBrowserCaptureSession,
+  listBrowserCaptureSessions,
+  readBrowserCaptureSession,
+  saveBrowserCaptureSession,
+} from './browser-capture-sessions';
 import { isCaptureServerDevControlEnabled, startCaptureServer } from './capture-server-dev-control';
-import { CAPTURE_WORKER, fetchCaptureWorkerStatus } from './capture-worker.api';
-import type { CaptureSessionStatus, CaptureSessionSummary } from './design-captures.types';
+import {
+  CAPTURE_WORKER,
+  fetchCaptureWorkerStatus,
+  launchCaptureBrowser,
+  recoverCaptureBrowser,
+} from './capture-worker.api';
+import type { CaptureSessionBrowser, CaptureSessionStatus, CaptureSessionSummary } from './design-captures.types';
 
-const LAST_CDP_ENDPOINT_KEY = 'superuser.designLayoutCapture.lastCdpEndpoint';
+const LAST_LAUNCH_URL_KEY = 'superuser.designLayoutCapture.lastLaunchUrl';
 
 function formatDate(value: string | null): string {
   if (!value) return '--';
@@ -60,13 +70,22 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function readLastCdpEndpoint(): string {
-  if (typeof window === 'undefined') return 'http://localhost:9222';
-  return window.localStorage.getItem(LAST_CDP_ENDPOINT_KEY) || 'http://localhost:9222';
+function readLastLaunchUrl(): string {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem(LAST_LAUNCH_URL_KEY) || '';
 }
 
 function makeDirectoryHandleKey() {
   return `capture-session-directory:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function canRecoverBrowser(browser: CaptureSessionBrowser): boolean {
+  return typeof browser.debugPort === 'number' && Boolean(browser.userDataDir);
+}
+
+function nextReadyStatus(browserReachable: boolean, hasPinnedTarget: boolean): CaptureSessionStatus {
+  if (!browserReachable) return 'browser-unreachable';
+  return hasPinnedTarget ? 'ready' : 'target-missing';
 }
 
 export function Component() {
@@ -81,13 +100,14 @@ export function Component() {
   const [workerReady, setWorkerReady] = useState(false);
   const [showNewSession, setShowNewSession] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [openingSessionId, setOpeningSessionId] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [startingServer, setStartingServer] = useState(false);
   const [serverActionMessage, setServerActionMessage] = useState<string | null>(null);
   const [selectedDirectoryHandle, setSelectedDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [form, setForm] = useState({
     name: '',
-    cdpEndpoint: readLastCdpEndpoint(),
+    launchUrl: readLastLaunchUrl(),
     directoryLabel: '',
   });
 
@@ -124,8 +144,8 @@ export function Component() {
     ? 'Start Capture Server to bring the local helper online, then create your first session.'
     : 'Start the local capture helper, then refresh this page before creating a session.';
   const emptyStateCopy = workerReady
-    ? 'No browser-owned sessions yet. Create one, choose a local folder, and point it at the Chrome DevTools endpoint you want to capture from.'
-    : 'No browser-owned sessions yet. Bring the local capture helper online, then create a session, choose a local folder, and point it at the Chrome DevTools endpoint you want to capture from.';
+    ? 'No browser-owned sessions yet. Create one, choose a local folder, and this page will launch a capture browser for you.'
+    : 'No browser-owned sessions yet. Bring the local capture helper online, then create a session, choose a local folder, and this page will launch a capture browser for you.';
 
   const sessionCountLabel = useMemo(() => {
     if (loading) return 'Loading sessions...';
@@ -158,32 +178,39 @@ export function Component() {
       return;
     }
 
-    const cdpEndpoint = form.cdpEndpoint.trim();
-    if (!cdpEndpoint) {
-      setCreateError('Enter the Chrome DevTools endpoint you want this browser session to use.');
-      return;
-    }
-
     try {
       setCreating(true);
       setCreateError(null);
 
+      const launchUrl = form.launchUrl.trim();
+      const launchedBrowser = await launchCaptureBrowser({
+        launchUrl: launchUrl || undefined,
+      });
       const directoryHandleKey = makeDirectoryHandleKey();
       const session = createBrowserCaptureSession({
         name: form.name.trim() || undefined,
-        cdpEndpoint,
+        cdpEndpoint: launchedBrowser.cdpEndpoint,
         storageDirectoryLabel: form.directoryLabel || selectedDirectoryHandle.name,
         directoryHandleKey,
+        browserPid: launchedBrowser.browserPid,
+        userDataDir: launchedBrowser.userDataDir,
+        launchUrl: launchedBrowser.launchUrl,
+        chromeExecutable: launchedBrowser.chromeExecutable,
+        launchedAt: launchedBrowser.launchedAt,
       });
 
       await saveDirectoryHandle(selectedDirectoryHandle, directoryHandleKey);
-      window.localStorage.setItem(LAST_CDP_ENDPOINT_KEY, cdpEndpoint);
+      if (launchUrl) {
+        window.localStorage.setItem(LAST_LAUNCH_URL_KEY, launchUrl);
+      } else {
+        window.localStorage.removeItem(LAST_LAUNCH_URL_KEY);
+      }
 
       setShowNewSession(false);
       setSelectedDirectoryHandle(null);
       setForm({
         name: '',
-        cdpEndpoint,
+        launchUrl,
         directoryLabel: '',
       });
 
@@ -194,6 +221,49 @@ export function Component() {
     } finally {
       setCreating(false);
     }
+  }
+
+  async function handleOpenSession(sessionId: string) {
+    try {
+      setOpeningSessionId(sessionId);
+      setError(null);
+
+      const stored = readBrowserCaptureSession(sessionId);
+      if (!stored) {
+        redirectToSessionList();
+        return;
+      }
+
+      if (stored.status === 'browser-unreachable' && canRecoverBrowser(stored.browser)) {
+        const recoveredBrowser = await recoverCaptureBrowser({
+          cdpEndpoint: stored.cdpEndpoint,
+          debugPort: stored.browser.debugPort!,
+          userDataDir: stored.browser.userDataDir!,
+          launchUrl: stored.browser.launchUrl,
+        });
+        saveBrowserCaptureSession({
+          ...stored,
+          status: nextReadyStatus(recoveredBrowser.reachable, Boolean(stored.target?.id)),
+          currentTargetUrl: recoveredBrowser.currentTargetUrl,
+          currentTargetTitle: recoveredBrowser.currentTargetTitle,
+          browser: {
+            ...stored.browser,
+            ...recoveredBrowser,
+            lastError: null,
+          },
+        });
+      }
+
+      navigate(`/app/superuser/design-layout-captures/${sessionId}`);
+    } catch (nextError) {
+      setError(errorMessage(nextError));
+    } finally {
+      setOpeningSessionId(null);
+    }
+  }
+
+  function redirectToSessionList() {
+    void loadSessions();
   }
 
   async function handleStartCaptureServer() {
@@ -245,7 +315,7 @@ export function Component() {
                 ...current,
                 name: '',
                 directoryLabel: '',
-                cdpEndpoint: current.cdpEndpoint || readLastCdpEndpoint(),
+                launchUrl: current.launchUrl || readLastLaunchUrl(),
               }));
               setShowNewSession(true);
             }}
@@ -339,11 +409,14 @@ export function Component() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Button asChild size="sm" variant="outline">
-                            <Link to={`/app/superuser/design-layout-captures/${session.id}`}>
-                              Open
-                              <IconChevronRight />
-                            </Link>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void handleOpenSession(session.id)}
+                            disabled={openingSessionId === session.id}
+                          >
+                            {openingSessionId === session.id ? 'Opening...' : 'Open'}
+                            <IconChevronRight />
                           </Button>
                         </td>
                       </tr>
@@ -408,21 +481,21 @@ export function Component() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground" htmlFor="capture-session-cdp-endpoint">
-                Chrome DevTools endpoint
+              <label className="text-sm font-medium text-foreground" htmlFor="capture-session-launch-url">
+                Launch URL
               </label>
               <Input
-                id="capture-session-cdp-endpoint"
-                value={form.cdpEndpoint}
+                id="capture-session-launch-url"
+                value={form.launchUrl}
                 onChange={(event) => {
                   const value = event.currentTarget.value;
-                  setForm((current) => ({ ...current, cdpEndpoint: value }));
+                  setForm((current) => ({ ...current, launchUrl: value }));
                 }}
-                placeholder="http://localhost:9222"
+                placeholder="Optional. Leave blank to launch an empty capture browser."
               />
               <p className="text-xs text-muted-foreground">
-                This browser stores the endpoint it wants to use. The capture worker will attach to it only when you
-                press Capture.
+                The helper launches a fresh Chrome window for this session. After it opens, navigate that browser to
+                the page state you want to capture.
               </p>
             </div>
 

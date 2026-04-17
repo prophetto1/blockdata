@@ -1,4 +1,12 @@
-import type { CaptureBrowserProbe, CaptureBrowserTarget, CaptureWorkerResult, CaptureWorkerStatus } from './design-captures.types';
+import type {
+  CaptureBrowserProbe,
+  CaptureBrowserTarget,
+  CaptureSessionBrowser,
+  CaptureWorkerResult,
+  CaptureWorkerStatus,
+  LaunchCaptureBrowserRequest,
+  RecoverCaptureBrowserRequest,
+} from './design-captures.types';
 
 export const CAPTURE_WORKER = import.meta.env.VITE_CAPTURE_SERVER_URL || 'http://localhost:4488';
 
@@ -50,4 +58,28 @@ export async function runCaptureWorker(cdpEndpoint: string, targetId: string): P
   });
   const payload = await readJsonOrThrow<{ capture: CaptureWorkerResult }>(response);
   return payload.capture;
+}
+
+export async function launchCaptureBrowser(
+  request: LaunchCaptureBrowserRequest = {},
+): Promise<CaptureSessionBrowser> {
+  const response = await fetch(`${CAPTURE_WORKER}/capture-browser/launch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const payload = await readJsonOrThrow<{ browser: CaptureSessionBrowser }>(response);
+  return payload.browser;
+}
+
+export async function recoverCaptureBrowser(
+  request: RecoverCaptureBrowserRequest,
+): Promise<CaptureSessionBrowser> {
+  const response = await fetch(`${CAPTURE_WORKER}/capture-browser/recover`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const payload = await readJsonOrThrow<{ browser: CaptureSessionBrowser }>(response);
+  return payload.browser;
 }

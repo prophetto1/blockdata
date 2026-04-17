@@ -30,6 +30,11 @@ export type CaptureSessionBrowser = {
   currentTargetUrl: string | null;
   currentTargetTitle: string | null;
   lastError: string | null;
+  browserPid: number | null;
+  userDataDir: string | null;
+  launchUrl: string | null;
+  chromeExecutable: string | null;
+  launchedAt: string | null;
 };
 
 export type CaptureBrowserTarget = {
@@ -63,6 +68,22 @@ export type CreateBrowserCaptureSessionInput = {
   cdpEndpoint: string;
   storageDirectoryLabel: string;
   directoryHandleKey: string;
+  browserPid?: number | null;
+  userDataDir?: string | null;
+  launchUrl?: string | null;
+  chromeExecutable?: string | null;
+  launchedAt?: string | null;
+};
+
+export type LaunchCaptureBrowserRequest = {
+  launchUrl?: string;
+};
+
+export type RecoverCaptureBrowserRequest = {
+  cdpEndpoint: string;
+  debugPort: number;
+  userDataDir: string;
+  launchUrl?: string | null;
 };
 
 export type CaptureSessionDefaults = {

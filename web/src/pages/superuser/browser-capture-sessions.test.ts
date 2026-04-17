@@ -17,6 +17,11 @@ describe('browser-capture-sessions', () => {
       cdpEndpoint: 'http://localhost:9222',
       storageDirectoryLabel: 'Capture Sessions',
       directoryHandleKey: 'capture-session:test:dir',
+      browserPid: 1234,
+      userDataDir: 'C:\\temp\\capture-browser-9222',
+      launchUrl: 'http://127.0.0.1:5374/app/agchain/overview',
+      chromeExecutable: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      launchedAt: '2026-04-17T09:15:00.000Z',
     });
 
     const summaries = listBrowserCaptureSessions();
@@ -26,6 +31,7 @@ describe('browser-capture-sessions', () => {
     expect(summaries[0].storageDirectoryLabel).toBe('Capture Sessions');
     expect(summaries[0].cdpEndpoint).toBe('http://localhost:9222');
     expect(summaries[0].captureCount).toBe(0);
+    expect(readBrowserCaptureSession(session.id)?.browser.userDataDir).toBe('C:\\temp\\capture-browser-9222');
   });
 
   it('persists appended captures and browser state updates', () => {
@@ -34,6 +40,7 @@ describe('browser-capture-sessions', () => {
       cdpEndpoint: 'http://localhost:9222',
       storageDirectoryLabel: 'Capture Sessions',
       directoryHandleKey: 'capture-session:test:dir',
+      userDataDir: 'C:\\temp\\capture-browser-9222',
     });
 
     saveBrowserCaptureSession({

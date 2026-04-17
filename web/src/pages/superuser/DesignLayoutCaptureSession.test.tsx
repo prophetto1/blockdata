@@ -39,6 +39,11 @@ const sessionDetail = {
     currentTargetUrl: 'https://botpress.com/studio',
     currentTargetTitle: 'Botpress Studio',
     lastError: null,
+    browserPid: 1234,
+    userDataDir: 'C:\\temp\\capture-browser-9222',
+    launchUrl: 'http://127.0.0.1:5374/app/agchain/overview',
+    chromeExecutable: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    launchedAt: '2026-04-16T17:15:00.000Z',
   },
   captures: [],
 };
@@ -66,6 +71,7 @@ describe('DesignLayoutCaptureSession', () => {
 
   it('renders browser-owned session metadata and probe state', async () => {
     vi.spyOn(browserCaptureSessions, 'readBrowserCaptureSession').mockReturnValue(sessionDetail);
+    vi.spyOn(captureWorkerApi, 'listCaptureBrowserTargets').mockResolvedValue([]);
     vi.spyOn(captureWorkerApi, 'probeCaptureBrowser').mockResolvedValue({
       reachable: true,
       currentTargetUrl: 'https://botpress.com/studio',
@@ -83,12 +89,13 @@ describe('DesignLayoutCaptureSession', () => {
     expect(await screen.findByText('Live Browser Connection')).toBeInTheDocument();
     expect(screen.getByText('Live Browser Page')).toBeInTheDocument();
     expect(screen.getByText('Pinned Target')).toBeInTheDocument();
-    expect(screen.getAllByText('Botpress Studio').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('No target tab selected.')).toBeInTheDocument();
+    expect(screen.getByText('https://botpress.com/studio')).toBeInTheDocument();
     expect(screen.getByText('Capture Sessions')).toBeInTheDocument();
   });
 
   it('shows a live-browser refresh placeholder instead of stale stored page details while probing', async () => {
-    let resolveProbe: ((value: { reachable: boolean; currentTargetUrl: string; currentTargetTitle: string }) => void) | null = null;
+    let resolveProbe!: (value: Awaited<ReturnType<typeof captureWorkerApi.probeCaptureBrowser>>) => void;
     const staleSession = {
       ...sessionDetail,
       browser: {
@@ -100,7 +107,7 @@ describe('DesignLayoutCaptureSession', () => {
 
     vi.spyOn(browserCaptureSessions, 'readBrowserCaptureSession').mockReturnValue(staleSession);
     vi.spyOn(captureWorkerApi, 'probeCaptureBrowser').mockReturnValue(
-      new Promise((resolve) => {
+      new Promise<Awaited<ReturnType<typeof captureWorkerApi.probeCaptureBrowser>>>((resolve) => {
         resolveProbe = resolve;
       }),
     );
@@ -117,7 +124,7 @@ describe('DesignLayoutCaptureSession', () => {
     expect(screen.getByText('Refreshing live browser state...')).toBeInTheDocument();
     expect(screen.queryByText('Stale Controller Page')).not.toBeInTheDocument();
 
-    resolveProbe?.({
+    resolveProbe({
       reachable: true,
       currentTargetUrl: 'http://127.0.0.1:5374/app/agchain/overview',
       currentTargetTitle: 'BlockData',
@@ -145,6 +152,165 @@ describe('DesignLayoutCaptureSession', () => {
 
     expect(await screen.findByText('Live Browser Connection')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Capture' })).toBeDisabled();
+  });
+
+  it('auto-selects the only eligible browser tab so capture is enabled without manual pinning', async () => {
+    vi.spyOn(browserCaptureSessions, 'readBrowserCaptureSession').mockReturnValue(sessionDetail);
+    vi.spyOn(browserCaptureSessions, 'saveBrowserCaptureSession').mockImplementation((session) => session);
+    vi.spyOn(captureWorkerApi, 'probeCaptureBrowser').mockResolvedValue({
+      reachable: true,
+      currentTargetUrl: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+      currentTargetTitle: 'BlockData',
+    });
+    vi.spyOn(captureWorkerApi, 'listCaptureBrowserTargets').mockResolvedValue([
+      {
+        id: 'target-eval-designer',
+        url: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+        title: 'BlockData',
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/app/superuser/design-layout-captures/session-20260416-101500']}>
+        <Routes>
+          <Route path="/app/superuser/design-layout-captures/:sessionId" element={<DesignLayoutCaptureSession />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect((await screen.findAllByText('BlockData')).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: 'Capture' })).toBeEnabled();
+    expect(screen.getAllByText('http://127.0.0.1:5374/app/agchain/eval-designer').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('No target tab selected.')).not.toBeInTheDocument();
+  });
+
+  it('auto-selects the live matching eligible tab even when multiple eligible tabs exist', async () => {
+    vi.spyOn(browserCaptureSessions, 'readBrowserCaptureSession').mockReturnValue(sessionDetail);
+    vi.spyOn(browserCaptureSessions, 'saveBrowserCaptureSession').mockImplementation((session) => session);
+    vi.spyOn(captureWorkerApi, 'probeCaptureBrowser').mockResolvedValue({
+      reachable: true,
+      currentTargetUrl: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+      currentTargetTitle: 'BlockData',
+    });
+    vi.spyOn(captureWorkerApi, 'listCaptureBrowserTargets').mockResolvedValue([
+      {
+        id: 'target-overview',
+        url: 'http://127.0.0.1:5374/app/agchain/overview',
+        title: 'Overview',
+      },
+      {
+        id: 'target-eval-designer',
+        url: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+        title: 'BlockData',
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/app/superuser/design-layout-captures/session-20260416-101500']}>
+        <Routes>
+          <Route path="/app/superuser/design-layout-captures/:sessionId" element={<DesignLayoutCaptureSession />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect((await screen.findAllByText('BlockData')).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: 'Capture' })).toBeEnabled();
+    expect(screen.getAllByText('http://127.0.0.1:5374/app/agchain/eval-designer').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText('No target tab selected.')).not.toBeInTheDocument();
+  });
+
+  it('refresh does not relaunch the browser when probing fails', async () => {
+    vi.spyOn(browserCaptureSessions, 'readBrowserCaptureSession').mockReturnValue(sessionDetail);
+    vi.spyOn(browserCaptureSessions, 'saveBrowserCaptureSession').mockImplementation((session) => session);
+    const probeSpy = vi
+      .spyOn(captureWorkerApi, 'probeCaptureBrowser')
+      .mockResolvedValueOnce({
+        reachable: true,
+        currentTargetUrl: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+        currentTargetTitle: 'BlockData',
+      })
+      .mockRejectedValueOnce(new Error('Failed to fetch'));
+    vi.spyOn(captureWorkerApi, 'listCaptureBrowserTargets').mockResolvedValue([
+      {
+        id: 'target-eval-designer',
+        url: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+        title: 'BlockData',
+      },
+    ]);
+    const recoverSpy = vi.spyOn(captureWorkerApi, 'recoverCaptureBrowser').mockResolvedValue({
+      cdpEndpoint: 'http://localhost:9222',
+      debugPort: 9222,
+      reachable: true,
+      currentTargetUrl: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+      currentTargetTitle: 'BlockData',
+      lastError: null,
+      browserPid: 5678,
+      userDataDir: 'C:\\temp\\capture-browser-9222',
+      launchUrl: 'http://127.0.0.1:5374/app/agchain/overview',
+      chromeExecutable: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      launchedAt: '2026-04-17T09:30:00.000Z',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/app/superuser/design-layout-captures/session-20260416-101500']}>
+        <Routes>
+          <Route path="/app/superuser/design-layout-captures/:sessionId" element={<DesignLayoutCaptureSession />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: 'Capture' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+
+    expect(await screen.findByText('Failed to fetch')).toBeInTheDocument();
+    expect(recoverSpy).not.toHaveBeenCalled();
+    expect(probeSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('recovers the launch-managed browser when probing the stored endpoint fails on direct open', async () => {
+    vi.spyOn(browserCaptureSessions, 'readBrowserCaptureSession').mockReturnValue({
+      ...sessionDetail,
+      status: 'browser-unreachable',
+      browser: {
+        ...sessionDetail.browser,
+        reachable: false,
+        currentTargetUrl: null,
+        currentTargetTitle: null,
+        lastError: 'Failed to fetch',
+      },
+    });
+    vi.spyOn(browserCaptureSessions, 'saveBrowserCaptureSession').mockImplementation((session) => session);
+    vi.spyOn(captureWorkerApi, 'probeCaptureBrowser').mockRejectedValue(new Error('Failed to fetch'));
+    const recoverSpy = vi.spyOn(captureWorkerApi, 'recoverCaptureBrowser').mockResolvedValue({
+      cdpEndpoint: 'http://localhost:9222',
+      debugPort: 9222,
+      reachable: true,
+      currentTargetUrl: 'http://127.0.0.1:5374/app/agchain/eval-designer',
+      currentTargetTitle: 'Eval Designer',
+      lastError: null,
+      browserPid: 5678,
+      userDataDir: 'C:\\temp\\capture-browser-9222',
+      launchUrl: 'http://127.0.0.1:5374/app/agchain/overview',
+      chromeExecutable: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      launchedAt: '2026-04-17T09:30:00.000Z',
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/app/superuser/design-layout-captures/session-20260416-101500']}>
+        <Routes>
+          <Route path="/app/superuser/design-layout-captures/:sessionId" element={<DesignLayoutCaptureSession />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Eval Designer')).toBeInTheDocument();
+    expect(recoverSpy).toHaveBeenCalledWith({
+      cdpEndpoint: 'http://localhost:9222',
+      debugPort: 9222,
+      userDataDir: 'C:\\temp\\capture-browser-9222',
+      launchUrl: 'http://127.0.0.1:5374/app/agchain/overview',
+    });
   });
 
   it('runs the worker and saves returned artifacts through the browser-owned file pipeline', async () => {

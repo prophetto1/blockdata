@@ -60,19 +60,28 @@ function readStoredSessions(): CaptureSessionDetail[] {
 function toStoredSession(session: CaptureSessionDetail): CaptureSessionDetail {
   const captures = Array.isArray(session.captures) ? session.captures : [];
   const lastCapture = captures[captures.length - 1] ?? null;
+  const parsedDebugPort = parseDebugPort(session.cdpEndpoint);
   return {
     ...session,
     target: session.target ?? null,
     updatedAt: session.updatedAt || nowIso(),
     captureCount: captures.length,
     lastCapturedAt: session.lastCapturedAt || lastCapture?.capturedAt || null,
-    debugPort: parseDebugPort(session.cdpEndpoint),
+    debugPort: parsedDebugPort,
     currentTargetUrl: session.browser.currentTargetUrl,
     currentTargetTitle: session.browser.currentTargetTitle,
     browser: {
-      ...session.browser,
+      browserPid: session.browser?.browserPid ?? null,
+      chromeExecutable: session.browser?.chromeExecutable ?? null,
       cdpEndpoint: session.cdpEndpoint,
-      debugPort: parseDebugPort(session.cdpEndpoint),
+      currentTargetTitle: session.browser?.currentTargetTitle ?? null,
+      currentTargetUrl: session.browser?.currentTargetUrl ?? null,
+      debugPort: parsedDebugPort,
+      lastError: session.browser?.lastError ?? null,
+      launchedAt: session.browser?.launchedAt ?? null,
+      launchUrl: session.browser?.launchUrl ?? null,
+      reachable: session.browser?.reachable ?? false,
+      userDataDir: session.browser?.userDataDir ?? null,
     },
     captures,
   };
@@ -130,6 +139,7 @@ export function saveBrowserCaptureSession(session: CaptureSessionDetail): Captur
 
 export function createBrowserCaptureSession(input: CreateBrowserCaptureSessionInput): CaptureSessionDetail {
   const createdAt = nowIso();
+  const debugPort = parseDebugPort(input.cdpEndpoint);
   const session: CaptureSessionDetail = {
     id: makeSessionId(),
     name: sanitizeName(input.name) || buildDefaultSessionName(),
@@ -141,17 +151,22 @@ export function createBrowserCaptureSession(input: CreateBrowserCaptureSessionIn
     directoryHandleKey: input.directoryHandleKey,
     captureCount: 0,
     cdpEndpoint: input.cdpEndpoint,
-    debugPort: parseDebugPort(input.cdpEndpoint),
+    debugPort,
     currentTargetUrl: null,
     currentTargetTitle: null,
     target: null,
     browser: {
       cdpEndpoint: input.cdpEndpoint,
-      debugPort: parseDebugPort(input.cdpEndpoint),
+      debugPort,
       reachable: false,
       currentTargetUrl: null,
       currentTargetTitle: null,
       lastError: null,
+      browserPid: input.browserPid ?? null,
+      userDataDir: input.userDataDir ?? null,
+      launchUrl: input.launchUrl ?? null,
+      chromeExecutable: input.chromeExecutable ?? null,
+      launchedAt: input.launchedAt ?? null,
     },
     captures: [],
   };

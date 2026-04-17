@@ -19,10 +19,16 @@ import {
   saveSessionManifest,
 } from './capture-session-files';
 import { readBrowserCaptureSession, saveBrowserCaptureSession } from './browser-capture-sessions';
-import { listCaptureBrowserTargets, probeCaptureBrowser, runCaptureWorker } from './capture-worker.api';
+import {
+  listCaptureBrowserTargets,
+  probeCaptureBrowser,
+  recoverCaptureBrowser,
+  runCaptureWorker,
+} from './capture-worker.api';
 import type {
   CaptureArtifact,
   CaptureArtifactStatus,
+  CaptureSessionBrowser,
   CaptureBrowserTarget,
   CaptureSessionDetail,
   CaptureSessionStatus,
@@ -90,6 +96,64 @@ function describeTarget(target: CaptureBrowserTarget | null): string {
   return target.title || target.url || 'Selected target tab';
 }
 
+function canRecoverBrowser(browser: CaptureSessionBrowser): boolean {
+  return typeof browser.debugPort === 'number' && Boolean(browser.userDataDir);
+}
+
+function applyBrowserState(
+  stored: CaptureSessionDetail,
+  browser: Partial<CaptureSessionBrowser> & {
+    reachable: boolean;
+    currentTargetUrl: string | null;
+    currentTargetTitle: string | null;
+  },
+  browserError: string | null = null,
+): CaptureSessionDetail {
+  return {
+    ...stored,
+    status: sessionReadyStatus(browser.reachable, stored.target ?? null),
+    currentTargetUrl: browser.currentTargetUrl,
+    currentTargetTitle: browser.currentTargetTitle,
+    browser: {
+      ...stored.browser,
+      ...browser,
+      lastError: browserError,
+    },
+  };
+}
+
+async function resolveAutomaticTargetSelection(
+  nextSession: CaptureSessionDetail,
+): Promise<CaptureSessionDetail> {
+  if (!nextSession.browser.reachable || nextSession.target?.id) {
+    return nextSession;
+  }
+
+  try {
+    const targets = await listCaptureBrowserTargets(nextSession.cdpEndpoint);
+    const liveUrl = nextSession.currentTargetUrl ?? nextSession.browser.currentTargetUrl;
+    const liveTitle = nextSession.currentTargetTitle ?? nextSession.browser.currentTargetTitle;
+
+    const liveMatchingTarget =
+      (liveUrl ? targets.find((target) => target.url === liveUrl) : null) ??
+      (liveTitle ? targets.find((target) => target.title === liveTitle) : null) ??
+      null;
+
+    const target = liveMatchingTarget ?? (targets.length === 1 ? targets[0] : null);
+    if (!target) {
+      return nextSession;
+    }
+
+    return {
+      ...nextSession,
+      status: 'ready',
+      target,
+    };
+  } catch {
+    return nextSession;
+  }
+}
+
 export function Component() {
   const { sessionId = '' } = useParams();
   const navigate = useNavigate();
@@ -113,6 +177,103 @@ export function Component() {
       },
     });
   };
+
+  async function resolveSessionBrowserState(
+    stored: CaptureSessionDetail,
+    options: { allowRecovery: boolean },
+  ) {
+    const recoverStoredBrowser = async () => {
+      if (!options.allowRecovery) {
+        return null;
+      }
+      if (!canRecoverBrowser(stored.browser)) {
+        return null;
+      }
+      return recoverCaptureBrowser({
+        cdpEndpoint: stored.cdpEndpoint,
+        debugPort: stored.browser.debugPort!,
+        userDataDir: stored.browser.userDataDir!,
+        launchUrl: stored.browser.launchUrl,
+      });
+    };
+
+    try {
+      const probe = await probeCaptureBrowser(stored.cdpEndpoint);
+      if (probe.reachable) {
+        const nextSession = await resolveAutomaticTargetSelection(applyBrowserState(stored, probe, null));
+        return {
+          nextSession,
+          nextError: null,
+        };
+      }
+
+        const recoveredBrowser = await recoverStoredBrowser();
+        if (recoveredBrowser) {
+        const nextSession = await resolveAutomaticTargetSelection(
+          applyBrowserState(stored, recoveredBrowser, null),
+        );
+          return {
+            nextSession,
+            nextError: null,
+        };
+      }
+
+      const unavailableMessage = 'Capture browser unreachable.';
+      return {
+        nextSession: applyBrowserState(
+          stored,
+          {
+            reachable: false,
+            currentTargetUrl: null,
+            currentTargetTitle: null,
+          },
+          unavailableMessage,
+        ),
+        nextError: unavailableMessage,
+      };
+    } catch (probeError) {
+      try {
+        const recoveredBrowser = await recoverStoredBrowser();
+        if (recoveredBrowser) {
+          const nextSession = await resolveAutomaticTargetSelection(
+            applyBrowserState(stored, recoveredBrowser, null),
+          );
+          return {
+            nextSession,
+            nextError: null,
+          };
+        }
+      } catch (recoverError) {
+        const recoverMessage = errorMessage(recoverError);
+        return {
+          nextSession: applyBrowserState(
+            stored,
+            {
+              reachable: false,
+              currentTargetUrl: null,
+              currentTargetTitle: null,
+            },
+            recoverMessage,
+          ),
+          nextError: recoverMessage,
+        };
+      }
+
+      const probeMessage = errorMessage(probeError);
+      return {
+        nextSession: applyBrowserState(
+          stored,
+          {
+            reachable: false,
+            currentTargetUrl: null,
+            currentTargetTitle: null,
+          },
+          probeMessage,
+        ),
+        nextError: probeMessage,
+      };
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -149,44 +310,12 @@ export function Component() {
       }
 
       try {
-        const probe = await probeCaptureBrowser(stored.cdpEndpoint);
-        const nextSession: CaptureSessionDetail = {
-          ...stored,
-          status: sessionReadyStatus(probe.reachable, stored.target ?? null),
-          currentTargetUrl: probe.currentTargetUrl,
-          currentTargetTitle: probe.currentTargetTitle,
-          browser: {
-            ...stored.browser,
-            reachable: probe.reachable,
-            currentTargetUrl: probe.currentTargetUrl,
-            currentTargetTitle: probe.currentTargetTitle,
-            lastError: null,
-          },
-        };
+        const { nextSession, nextError } = await resolveSessionBrowserState(stored, { allowRecovery: true });
         saveBrowserCaptureSession(nextSession);
 
         if (!cancelled) {
           setSession(nextSession);
-        }
-      } catch (nextError) {
-        const nextSession: CaptureSessionDetail = {
-          ...stored,
-          status: 'browser-unreachable',
-          currentTargetUrl: null,
-          currentTargetTitle: null,
-          browser: {
-            ...stored.browser,
-            reachable: false,
-            currentTargetUrl: null,
-            currentTargetTitle: null,
-            lastError: errorMessage(nextError),
-          },
-        };
-        saveBrowserCaptureSession(nextSession);
-
-        if (!cancelled) {
-          setSession(nextSession);
-          setError(errorMessage(nextError));
+          setError(nextError);
         }
       } finally {
         if (!cancelled) {
@@ -218,39 +347,10 @@ export function Component() {
     setSession(stored);
 
     try {
-      const probe = await probeCaptureBrowser(stored.cdpEndpoint);
-      const nextSession: CaptureSessionDetail = {
-        ...stored,
-        status: sessionReadyStatus(probe.reachable, stored.target ?? null),
-        currentTargetUrl: probe.currentTargetUrl,
-        currentTargetTitle: probe.currentTargetTitle,
-        browser: {
-          ...stored.browser,
-          reachable: probe.reachable,
-          currentTargetUrl: probe.currentTargetUrl,
-          currentTargetTitle: probe.currentTargetTitle,
-          lastError: null,
-        },
-      };
+      const { nextSession, nextError } = await resolveSessionBrowserState(stored, { allowRecovery: false });
       saveBrowserCaptureSession(nextSession);
       setSession(nextSession);
-    } catch (nextError) {
-      const nextSession: CaptureSessionDetail = {
-        ...stored,
-        status: 'browser-unreachable',
-        currentTargetUrl: null,
-        currentTargetTitle: null,
-        browser: {
-          ...stored.browser,
-          reachable: false,
-          currentTargetUrl: null,
-          currentTargetTitle: null,
-          lastError: errorMessage(nextError),
-        },
-      };
-      saveBrowserCaptureSession(nextSession);
-      setSession(nextSession);
-      setError(errorMessage(nextError));
+      setError(nextError);
     } finally {
       setRefreshing(false);
     }
@@ -585,7 +685,7 @@ export function Component() {
                       <th className="px-4 py-3 font-medium">Page</th>
                       <th className="w-28 px-4 py-3 font-medium">Viewport</th>
                       <th className="w-28 px-4 py-3 font-medium">Status</th>
-                      <th className="w-72 px-4 py-3 font-medium text-right">Artifacts</th>
+                      <th className="w-80 px-4 py-3 font-medium text-right">Artifacts</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -612,11 +712,12 @@ export function Component() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex flex-wrap justify-end gap-2">
+                            <div className="flex flex-nowrap justify-end gap-1.5">
                               {capture.viewportRelativePath ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  className="h-8 gap-1 px-2 text-xs [&_svg]:size-3.5"
                                   onClick={() => void handleOpenArtifact(capture.viewportRelativePath)}
                                 >
                                   <IconScreenshot />
@@ -627,6 +728,7 @@ export function Component() {
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  className="h-8 gap-1 px-2 text-xs [&_svg]:size-3.5"
                                   onClick={() => void handleOpenArtifact(capture.fullPageRelativePath)}
                                 >
                                   <IconExternalLink />
@@ -637,6 +739,7 @@ export function Component() {
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  className="h-8 gap-1 px-2 text-xs [&_svg]:size-3.5"
                                   onClick={() => void handleOpenArtifact(capture.reportRelativePath)}
                                 >
                                   <IconFileText />
