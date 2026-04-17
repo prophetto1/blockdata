@@ -30,23 +30,23 @@ export const BLOCKDATA_ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
     label: 'CONFIG',
     items: [
-      { label: 'Docling', icon: IconSettings, path: '/app/blockdata-admin/parsers-docling' },
+      { label: 'Docling', icon: IconSettings, path: '/app/superuser/bd/parsers-docling' },
     ],
   },
   {
     label: 'OPERATIONS',
     items: [
-      { label: 'AI Providers', icon: IconKey, path: '/app/blockdata-admin/ai-providers' },
-      { label: 'Model Roles', icon: IconWand, path: '/app/blockdata-admin/model-roles' },
-      { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/blockdata-admin/mcp' },
+      { label: 'AI Providers', icon: IconKey, path: '/app/superuser/bd/ai-providers' },
+      { label: 'Model Roles', icon: IconWand, path: '/app/superuser/bd/model-roles' },
+      { label: 'MCP Servers', icon: IconPlugConnected, path: '/app/superuser/bd/mcp' },
     ],
   },
   {
     label: 'SYSTEM',
     items: [
-      { label: 'Audit History', icon: IconClipboardList, path: '/app/blockdata-admin/audit' },
-      { label: 'API Endpoints', icon: IconCode, path: '/app/blockdata-admin/api-endpoints' },
-      { label: 'Test Integrations', icon: IconTestPipe, path: '/app/blockdata-admin/test-integrations' },
+      { label: 'Audit History', icon: IconClipboardList, path: '/app/superuser/bd/audit' },
+      { label: 'API Endpoints', icon: IconCode, path: '/app/superuser/bd/api-endpoints' },
+      { label: 'Test Integrations', icon: IconTestPipe, path: '/app/superuser/bd/test-integrations' },
     ],
   },
 ];
@@ -73,7 +73,7 @@ export const SUPERUSER_NAV_SECTIONS: AdminNavSection[] = [
   {
     label: 'DEV TOOLS',
     items: [
-      { label: 'Layout Capture', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
+      { label: 'Capture Sessions', icon: IconCamera, path: '/app/superuser/design-layout-captures' },
       { label: 'Plan Tracker', icon: IconClipboardList, path: '/app/superuser/plan-tracker' },
     ],
   },
@@ -90,21 +90,19 @@ export const AGCHAIN_ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
     label: '',
     items: [
-      { label: 'Models', icon: IconWand, path: '/app/agchain-admin/models' },
-      { label: 'Tools', icon: IconCode, path: '/app/agchain-admin/tools' },
+      { label: 'Models', icon: IconWand, path: '/app/superuser/ac/models' },
+      { label: 'Tools', icon: IconCode, path: '/app/superuser/ac/tools' },
     ],
   },
 ];
 
 export function getAdminNavSections(pathname: string): AdminNavSection[] {
-  if (pathname.startsWith('/app/blockdata-admin')) return BLOCKDATA_ADMIN_NAV_SECTIONS;
-  if (pathname.startsWith('/app/agchain-admin')) return AGCHAIN_ADMIN_NAV_SECTIONS;
+  if (pathname.startsWith('/app/superuser/bd')) return BLOCKDATA_ADMIN_NAV_SECTIONS;
+  if (pathname.startsWith('/app/superuser/ac')) return AGCHAIN_ADMIN_NAV_SECTIONS;
   return SUPERUSER_NAV_SECTIONS;
 }
 
 export function resolveAdminSurfaceLabel(pathname: string): string {
-  if (pathname.startsWith('/app/blockdata-admin')) return 'Blockdata Admin';
-  if (pathname.startsWith('/app/agchain-admin')) return 'AGChain Admin';
   if (pathname.startsWith('/app/superuser')) return 'Superuser';
   return 'Admin';
 }

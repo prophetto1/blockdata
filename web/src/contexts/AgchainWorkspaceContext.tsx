@@ -11,8 +11,7 @@ import {
 import { useAuth } from '@/auth/AuthContext';
 import type { AgchainOrganizationRow, AgchainProjectRow } from '@/lib/agchainWorkspaces';
 import {
-  fetchAgchainOrganizations,
-  fetchAgchainProjects,
+  fetchAgchainWorkspaceBootstrap,
 } from '@/lib/agchainWorkspaces';
 import {
   readStoredAgchainOrganizationFocusId,
@@ -20,10 +19,7 @@ import {
   readStoredAgchainProjectFocusSlug,
   writeStoredAgchainWorkspaceFocus,
 } from '@/lib/agchainProjectFocus';
-import {
-  reconcileWorkspaceSelection,
-  type AgchainWorkspaceStatus,
-} from '@/lib/agchainWorkspaceReconciliation';
+import type { AgchainWorkspaceStatus } from '@/lib/agchainWorkspaceReconciliation';
 
 export type { AgchainWorkspaceStatus } from '@/lib/agchainWorkspaceReconciliation';
 
@@ -165,63 +161,25 @@ async function fetchResolvedWorkspaceState(options?: {
   preferredProjectSlug?: string | null;
   preferredOrgId?: string | null;
 }): Promise<ProviderState> {
-  const storedOrgId = options?.preferredOrgId ?? readStoredAgchainOrganizationFocusId();
-  const orgsResponse = await fetchAgchainOrganizations();
-  const organizations = orgsResponse.items;
-
-  if (organizations.length === 0) {
-    const result = reconcileWorkspaceSelection({
-      organizations: [],
-      projects: [],
-      preferredOrgId: null,
-      preferredProjectId: null,
-      preferredProjectSlug: null,
-      fetchError: null,
-    });
-
-    return {
-      status: result.status,
-      organizations,
-      projects: [],
-      selectedOrganizationId: result.selectedOrganizationId,
-      selectedProjectId: result.selectedProjectId,
-      error: result.error,
-    };
-  }
-
-  const resolvedOrgId =
-    (storedOrgId && organizations.some((o) => o.organization_id === storedOrgId))
-      ? storedOrgId
-      : organizations[0].organization_id;
-
-  const projectsResponse = await fetchAgchainProjects({ organizationId: resolvedOrgId });
-  const projects = projectsResponse.items;
-  const preferredProjectId = options?.preferredProjectId ?? readStoredAgchainProjectFocusId();
-  const preferredProjectSlug = options?.preferredProjectSlug ?? readStoredAgchainProjectFocusSlug();
-
-  const result = reconcileWorkspaceSelection({
-    organizations,
-    projects,
-    preferredOrgId: resolvedOrgId,
-    preferredProjectId,
-    preferredProjectSlug,
-    fetchError: null,
+  const bootstrap = await fetchAgchainWorkspaceBootstrap({
+    preferredOrganizationId: options?.preferredOrgId ?? readStoredAgchainOrganizationFocusId(),
+    preferredProjectId: options?.preferredProjectId ?? readStoredAgchainProjectFocusId(),
+    preferredProjectSlug: options?.preferredProjectSlug ?? readStoredAgchainProjectFocusSlug(),
   });
-
-  const resolvedProject = projects.find((p) => p.project_id === result.selectedProjectId);
+  const resolvedProject = bootstrap.projects.find((p) => p.project_id === bootstrap.selectedProjectId);
   writeStoredAgchainWorkspaceFocus({
-    focusedOrganizationId: result.selectedOrganizationId,
-    focusedProjectId: result.selectedProjectId,
+    focusedOrganizationId: bootstrap.selectedOrganizationId,
+    focusedProjectId: bootstrap.selectedProjectId,
     focusedProjectSlug: resolvedProject?.project_slug ?? null,
   });
 
   return {
-    status: result.status,
-    organizations,
-    projects,
-    selectedOrganizationId: result.selectedOrganizationId,
-    selectedProjectId: result.selectedProjectId,
-    error: result.error,
+    status: bootstrap.status,
+    organizations: bootstrap.organizations,
+    projects: bootstrap.projects,
+    selectedOrganizationId: bootstrap.selectedOrganizationId,
+    selectedProjectId: bootstrap.selectedProjectId,
+    error: bootstrap.error,
   };
 }
 
@@ -365,7 +323,7 @@ export function AgchainWorkspaceProvider({ children }: { children: ReactNode }) 
       await resolveSharedWorkspace(userKey, requestKey, {
         force: true,
         preferredOrgId: organizationId,
-        preserveSnapshot: false,
+        preserveSnapshot: true,
       });
     },
     [requestKey, userKey],

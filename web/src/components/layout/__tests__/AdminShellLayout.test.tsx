@@ -11,8 +11,25 @@ vi.mock('@/auth/AuthContext', () => ({
   }),
 }));
 
+vi.mock('@/lib/supabase', () => ({
+  supabase: {},
+}));
+
 vi.mock('@/components/shell/LeftRailShadcn', () => ({
   LeftRailShadcn: () => <div data-testid="mock-platform-rail-content">platform rail</div>,
+}));
+
+vi.mock('@/hooks/useAdminSurfaceAccess', () => ({
+  useAdminSurfaceAccessState: () => ({
+    access: {
+      blockdataAdmin: true,
+      agchainAdmin: true,
+      superuser: true,
+    },
+    status: 'ready',
+    error: null,
+    refresh: vi.fn(),
+  }),
 }));
 
 afterEach(() => {
@@ -25,14 +42,6 @@ function renderWithRouter(path = '/app/superuser') {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/app/superuser/*" element={<AdminShellLayout />}>
-          <Route index element={<div data-testid="outlet-child">outlet</div>} />
-          <Route path="*" element={<div data-testid="outlet-child">outlet</div>} />
-        </Route>
-        <Route path="/app/blockdata-admin/*" element={<AdminShellLayout />}>
-          <Route index element={<div data-testid="outlet-child">outlet</div>} />
-          <Route path="*" element={<div data-testid="outlet-child">outlet</div>} />
-        </Route>
-        <Route path="/app/agchain-admin/*" element={<AdminShellLayout />}>
           <Route index element={<div data-testid="outlet-child">outlet</div>} />
           <Route path="*" element={<div data-testid="outlet-child">outlet</div>} />
         </Route>
@@ -65,19 +74,30 @@ describe('AdminShellLayout', () => {
     });
   });
 
+  it('renders the superuser tabs in the center of the top band', () => {
+    renderWithRouter('/app/superuser');
+
+    const centerSlot = screen.getByTestId('admin-shell-top-band-center');
+    expect(centerSlot).toBeInTheDocument();
+    expect(centerSlot).toContainElement(screen.getByRole('tab', { name: /^superuser$/i }));
+    expect(screen.getByRole('tab', { name: /^bd$/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^ac$/i })).toBeInTheDocument();
+    expect(screen.getByTestId('admin-shell-frame')).not.toContainElement(screen.getByRole('tablist'));
+  });
+
   it('renders the exact Superuser breadcrumb from the primary rail label', () => {
     renderWithRouter('/app/superuser/plan-tracker');
     expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('Superuser / Plan Tracker');
   });
 
-  it('renders the exact Blockdata Admin breadcrumb from the primary rail label', () => {
-    renderWithRouter('/app/blockdata-admin/model-roles');
-    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('Blockdata Admin / Model Roles');
+  it('renders the BD breadcrumb from the unified superuser shell label', () => {
+    renderWithRouter('/app/superuser/bd/model-roles');
+    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('Superuser / Model Roles');
   });
 
-  it('renders the exact AGChain Admin breadcrumb from the primary rail label', () => {
-    renderWithRouter('/app/agchain-admin/models');
-    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('AGChain Admin / Models');
+  it('renders the AC breadcrumb from the unified superuser shell label', () => {
+    renderWithRouter('/app/superuser/ac/models');
+    expect(screen.getByTestId('admin-shell-breadcrumb')).toHaveTextContent('Superuser / Models');
   });
 
   it('does not render the secondary rail on routes without secondary nav', () => {
@@ -85,13 +105,13 @@ describe('AdminShellLayout', () => {
     expect(screen.queryByTestId('admin-secondary-rail')).not.toBeInTheDocument();
   });
 
-  it('does not render the secondary rail on blockdata admin routes after the config menus were removed', () => {
-    renderWithRouter('/app/blockdata-admin/parsers-docling');
+  it('does not render the secondary rail on BD routes after the config menus were removed', () => {
+    renderWithRouter('/app/superuser/bd/parsers-docling');
     expect(screen.queryByTestId('admin-secondary-rail')).not.toBeInTheDocument();
   });
 
   it('hides the full left-side chrome stack while keeping the top band visible', () => {
-    renderWithRouter('/app/blockdata-admin/parsers-docling');
+    renderWithRouter('/app/superuser/bd/parsers-docling');
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide admin navigation' }));
 
@@ -107,7 +127,7 @@ describe('AdminShellLayout', () => {
   });
 
   it('restores the admin chrome stack when the top-band toggle is pressed again', () => {
-    renderWithRouter('/app/blockdata-admin/parsers-docling');
+    renderWithRouter('/app/superuser/bd/parsers-docling');
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide admin navigation' }));
     fireEvent.click(screen.getByRole('button', { name: 'Show admin navigation' }));

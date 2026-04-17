@@ -16,15 +16,30 @@ const MOUNTED_REAL_PAGES = [
   'src/pages/agchain/AgchainOverviewPage.tsx',
   'src/pages/agchain/AgchainDatasetsPage.tsx',
   'src/pages/agchain/AgchainWorkflowPage.tsx',
+  'src/pages/agchain/AgchainEvalDesignerPage.tsx',
+  'src/pages/agchain/AgchainHarnessDesignerPage.tsx',
   'src/pages/agchain/AgchainToolsPage.tsx',
   'src/pages/agchain/AgchainBenchmarksPage.tsx',
 ] as const;
 
 const MOUNTED_PLACEHOLDER_PAGES = [
+  'src/pages/agchain/AgchainPlaygroundPage.tsx',
+  'src/pages/agchain/AgchainSandboxPage.tsx',
   'src/pages/agchain/AgchainPromptsPage.tsx',
+  'src/pages/agchain/AgchainTasksPage.tsx',
   'src/pages/agchain/AgchainScorersPage.tsx',
   'src/pages/agchain/AgchainParametersPage.tsx',
+  'src/pages/agchain/AgchainEvalModelsPage.tsx',
   'src/pages/agchain/AgchainRunsPage.tsx',
+  'src/pages/agchain/AgchainMetricsPage.tsx',
+  'src/pages/agchain/AgchainLogsPage.tsx',
+  'src/pages/agchain/AgchainTracePage.tsx',
+  'src/pages/agchain/AgchainInstructionsPage.tsx',
+  'src/pages/agchain/AgchainSkillsPage.tsx',
+  'src/pages/agchain/AgchainMcpPage.tsx',
+  'src/pages/agchain/AgchainStoragePage.tsx',
+  'src/pages/agchain/AgchainMemoryPage.tsx',
+  'src/pages/agchain/AgchainHooksPage.tsx',
   'src/pages/agchain/AgchainResultsPage.tsx',
   'src/pages/agchain/AgchainObservabilityPage.tsx',
 ] as const;
@@ -83,6 +98,15 @@ function getRuntimePageFiles() {
 }
 
 describe('AGChain page architecture', () => {
+  it('routes the two designer pages through a dedicated workbench shell branch', () => {
+    const routerSource = read('src/router.tsx');
+
+    expect(routerSource).toContain("import { AgchainWorkbenchShellLayout } from '@/components/layout/AgchainWorkbenchShellLayout';");
+    expect(routerSource).toMatch(/element:\s*<AgchainWorkbenchShellLayout\s*\/>[\s\S]*path:\s*'\/app\/agchain\/eval-designer'[\s\S]*path:\s*'\/app\/agchain\/harness-designer'/);
+    expect(routerSource).not.toContain("path: 'eval-designer'");
+    expect(routerSource).not.toContain("path: 'harness-designer'");
+  });
+
   it('classifies every mounted AGChain page file from the route tree', () => {
     const classifiedPages = [
       ...MOUNTED_REAL_PAGES,

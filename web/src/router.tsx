@@ -55,18 +55,25 @@ import LogsPage from '@/pages/kestra/LogsPage';
 import TestsPage from '@/pages/kestra/TestsPage';
 import { FlowsShellLayout } from '@/components/layout/FlowsShellLayout';
 import { featureFlags } from '@/lib/featureFlags';
-import { BlockdataAdminGuard, AgchainAdminGuard, SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
+import {
+  BlockdataAdminGuard,
+  AgchainAdminGuard,
+  SuperuserGuard,
+  SuperuserOnlyGuard,
+} from '@/pages/superuser/SuperuserGuard';
 import NotFound from '@/pages/NotFound';
 import { AdminShellLayout } from '@/components/layout/AdminShellLayout';
 import { AgchainShellLayout } from '@/components/layout/AgchainShellLayout';
+import { AgchainWorkbenchShellLayout } from '@/components/layout/AgchainWorkbenchShellLayout';
 import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
+import { SuperuserAdminIndex } from '@/pages/superuser/SuperuserAdminIndex';
 import {
   AgchainProviderCredentialPopupMock,
   grokBasicSchema,
-} from '../../docs/analysis/agchain-provider-credential-popup-mock';
-import { AgchainVertexAICredentialPopupPreview } from '../../docs/analysis/agchain-vertex-ai-credential-form-preview';
-import { AgchainProviderReferenceUiPreview } from '../../docs/analysis/agchain-provider-reference-ui-preview';
-import { AgchainProviderReferenceTableLookPreview } from '../../docs/analysis/agchain-provider-reference-table-look-preview';
+} from '@/pages/analysis/agchain-provider-credential-popup-mock';
+import { AgchainVertexAICredentialPopupPreview } from '@/pages/analysis/agchain-vertex-ai-credential-form-preview';
+import { AgchainProviderReferenceUiPreview } from '@/pages/analysis/agchain-provider-reference-ui-preview';
+import { AgchainProviderReferenceTableLookPreview } from '@/pages/analysis/agchain-provider-reference-table-look-preview';
 
 
 function LegacyToTransform() {
@@ -77,12 +84,12 @@ function LegacyToTransform() {
 
 function LegacySettingsAdminRedirect() {
   const { category } = useParams<{ category?: string }>();
-  const fallbackPath = '/app/blockdata-admin/parsers-docling';
+  const fallbackPath = '/app/superuser/bd/parsers-docling';
   const targetByCategory: Record<string, string> = {
     'instance-config': fallbackPath,
     'worker-config': fallbackPath,
-    audit: '/app/blockdata-admin/audit',
-    'parsers-docling': '/app/blockdata-admin/parsers-docling',
+    audit: '/app/superuser/bd/audit',
+    'parsers-docling': '/app/superuser/bd/parsers-docling',
     'platform-config': fallbackPath,
   };
 
@@ -233,7 +240,7 @@ export const router = createBrowserRouter([
           { path: '/app/secrets', element: <SecretsPage /> },
           { path: '/app/tests', element: <TestsPage /> },
           { path: '/app/logs', element: <LogsPage /> },
-          { path: '/app/test-integrations', element: <Navigate to="/app/blockdata-admin/test-integrations" replace /> },
+          { path: '/app/test-integrations', element: <Navigate to="/app/superuser/bd/test-integrations" replace /> },
           { path: '/app/marketplace/integrations', element: <IntegrationsCatalog /> },
           { path: '/app/marketplace/services', element: <ServicesCatalog /> },
           { path: '/app/marketplace/services/:serviceId', element: <ServiceDetailPage /> },
@@ -279,10 +286,10 @@ export const router = createBrowserRouter([
               { path: 'secrets', element: <SettingsSecrets /> },
               { path: 'ai', element: <LegacyAiProvidersRedirect /> },
               { path: 'ai/:providerId', element: <LegacyAiProvidersRedirect /> },
-              { path: 'model-roles', element: <Navigate to="/app/blockdata-admin/model-roles" replace /> },
-              { path: 'mcp', element: <Navigate to="/app/blockdata-admin/mcp" replace /> },
+              { path: 'model-roles', element: <Navigate to="/app/superuser/bd/model-roles" replace /> },
+              { path: 'mcp', element: <Navigate to="/app/superuser/bd/mcp" replace /> },
               { path: 'grid-sample', element: <SettingsGridSample /> },
-              { path: 'admin', element: <Navigate to="/app/blockdata-admin/parsers-docling" replace /> },
+              { path: 'admin', element: <Navigate to="/app/superuser/bd/parsers-docling" replace /> },
               { path: 'admin/:category', element: <LegacySettingsAdminRedirect /> },
             ],
           },
@@ -324,8 +331,8 @@ export const router = createBrowserRouter([
             path: '/app/onboarding/agents/connect/:agentSlug/:authMethod',
             element: featureFlags.agentsConfigUI ? <AgentOnboardingConnect /> : <Navigate to="/app/settings" replace />,
           },
-          // /app/mcp removed — MCP now lives at /app/blockdata-admin/mcp
-          { path: '/app/mcp', element: <Navigate to="/app/blockdata-admin/mcp" replace /> },
+          // /app/mcp removed — MCP now lives at /app/superuser/bd/mcp
+          { path: '/app/mcp', element: <Navigate to="/app/superuser/bd/mcp" replace /> },
           {
             path: '/app/commands',
             element: featureFlags.commandsUI ? <Commands /> : <Navigate to="/app/settings" replace />,
@@ -346,19 +353,19 @@ export const router = createBrowserRouter([
       },
       {
         path: '/app/superuser/parsers-docling',
-        element: <Navigate to="/app/blockdata-admin/parsers-docling" replace />,
+        element: <Navigate to="/app/superuser/bd/parsers-docling" replace />,
       },
       {
         path: '/app/superuser/instance-config',
-        element: <Navigate to="/app/blockdata-admin/parsers-docling" replace />,
+        element: <Navigate to="/app/superuser/bd/parsers-docling" replace />,
       },
       {
         path: '/app/superuser/worker-config',
-        element: <Navigate to="/app/blockdata-admin/parsers-docling" replace />,
+        element: <Navigate to="/app/superuser/bd/parsers-docling" replace />,
       },
       {
         path: '/app/superuser/audit',
-        element: <Navigate to="/app/blockdata-admin/audit" replace />,
+        element: <Navigate to="/app/superuser/bd/audit" replace />,
       },
       {
         path: '/app/superuser/api-endpoints',
@@ -366,7 +373,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '/app/superuser/test-integrations',
-        element: <Navigate to="/app/blockdata-admin/test-integrations" replace />,
+        element: <Navigate to="/app/superuser/bd/test-integrations" replace />,
       },
       {
         path: '/app/superuser/ai-providers',
@@ -378,54 +385,33 @@ export const router = createBrowserRouter([
       },
       {
         path: '/app/superuser/model-roles',
-        element: <Navigate to="/app/blockdata-admin/model-roles" replace />,
+        element: <Navigate to="/app/superuser/bd/model-roles" replace />,
       },
       {
         path: '/app/superuser/mcp',
-        element: <Navigate to="/app/blockdata-admin/mcp" replace />,
+        element: <Navigate to="/app/superuser/bd/mcp" replace />,
       },
       {
         path: '/app/blockdata-admin',
-        element: <BlockdataAdminGuard />,
         children: [
-          {
-            element: <AdminShellLayout />,
-            children: [
-              { index: true, element: <Navigate to="/app/blockdata-admin/parsers-docling" replace /> },
-              { path: 'parsers-docling', lazy: () => import('@/pages/settings/DoclingConfigPanel') },
-              { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
-              { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
-              { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
-              { path: 'ai-providers', element: <SettingsAiOverview /> },
-              { path: 'ai-providers/:providerId', element: <SettingsProviderForm /> },
-              { path: 'model-roles', element: <SettingsModelRoles /> },
-              { path: 'mcp', element: <McpServers /> },
-            ],
-          },
+          { index: true, element: <Navigate to="/app/superuser/bd" replace /> },
+          { path: 'parsers-docling', element: <Navigate to="/app/superuser/bd/parsers-docling" replace /> },
+          { path: 'audit', element: <Navigate to="/app/superuser/bd/audit" replace /> },
+          { path: 'api-endpoints', element: <Navigate to="/app/superuser/bd/api-endpoints" replace /> },
+          { path: 'test-integrations', element: <Navigate to="/app/superuser/bd/test-integrations" replace /> },
+          { path: 'ai-providers', element: <Navigate to="/app/superuser/bd/ai-providers" replace /> },
+          { path: 'ai-providers/:providerId', element: <LegacyAiProvidersRedirect /> },
+          { path: 'model-roles', element: <Navigate to="/app/superuser/bd/model-roles" replace /> },
+          { path: 'mcp', element: <Navigate to="/app/superuser/bd/mcp" replace /> },
         ],
       },
       {
         path: '/app/agchain-admin',
-        element: <AgchainAdminGuard />,
         children: [
-          {
-            element: <AdminShellLayout />,
-            children: [
-              { index: true, element: <Navigate to="/app/agchain-admin/models" replace /> },
-              {
-                path: 'models',
-                lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminModelsPage')).default }),
-              },
-              {
-                path: 'models-copy',
-                lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminModelsPageCopy')).default }),
-              },
-              {
-                path: 'tools',
-                lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminToolsPage')).default }),
-              },
-            ],
-          },
+          { index: true, element: <Navigate to="/app/superuser/ac" replace /> },
+          { path: 'models', element: <Navigate to="/app/superuser/ac/models" replace /> },
+          { path: 'models-copy', element: <Navigate to="/app/superuser/ac/models-copy" replace /> },
+          { path: 'tools', element: <Navigate to="/app/superuser/ac/tools" replace /> },
         ],
       },
       {
@@ -435,28 +421,84 @@ export const router = createBrowserRouter([
           {
             element: <AdminShellLayout />,
             children: [
-               { index: true, lazy: () => import('@/pages/superuser/SuperuserControlTower') },
-               { path: 'operational-readiness', lazy: () => import('@/pages/superuser/SuperuserOperationalReadiness') },
-               { path: 'essential-links', lazy: () => import('@/pages/superuser/SuperuserEssentialLinks') },
-               { path: 'secrets-env', lazy: () => import('@/pages/superuser/SuperuserSecretsEnv') },
-               { path: 'coordination-runtime', lazy: () => import('@/pages/superuser/CoordinationRuntime') },
-               { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
-               { path: 'skill-driven-dev', lazy: () => import('@/pages/superuser/SkillDrivenDev') },
-               { path: 'plan-tracker', lazy: () => import('@/pages/superuser/PlanTracker') },
-               { path: 'husky-ci-cd', lazy: () => import('@/pages/superuser/SuperuserHuskyCiCd') },
-               { path: 'zustand-react-query', lazy: () => import('@/pages/superuser/SuperuserZustandReactQuery') },
-               { path: 'hook-system', lazy: () => import('@/pages/superuser/SuperuserHookSystem') },
-               { path: 'open-telemetry', lazy: () => import('@/pages/superuser/SuperuserTelemetryLogs') },
-               { path: 'openapi-fastapi', lazy: () => import('@/pages/superuser/SuperuserOpenApiFastApi') },
-               { path: 'databases', lazy: () => import('@/pages/superuser/SuperuserDatabases') },
-               { path: 'frontend-contracts', lazy: () => import('@/pages/superuser/SuperuserFrontendContracts') },
-               { path: 'dependencies', lazy: () => import('@/pages/superuser/SuperuserDependencies') },
-               { path: 'inventory-cost-management', lazy: () => import('@/pages/superuser/SuperuserInventoryCostManagement') },
-               { path: 'telemetry-logs', lazy: () => import('@/pages/superuser/SuperuserTelemetryLogs') },
-               { path: 'gcp-cost-inventory', lazy: () => import('@/pages/superuser/GcpCostInventory') },
-               { path: 'agchain-benchmarks-demo', lazy: () => import('@/pages/superuser/AgchainBenchmarksDemo') },
-               { path: 'block-viewer-grid-demo', lazy: () => import('@/pages/superuser/BlockViewerGridDemo') },
+              { index: true, element: <SuperuserAdminIndex /> },
+              {
+                path: 'bd',
+                element: <BlockdataAdminGuard />,
+                children: [
+                  { index: true, element: <Navigate to="/app/superuser/bd/parsers-docling" replace /> },
+                  { path: 'parsers-docling', lazy: () => import('@/pages/settings/DoclingConfigPanel') },
+                  { path: 'audit', lazy: () => import('@/pages/superuser/SuperuserAuditHistory') },
+                  { path: 'api-endpoints', lazy: () => import('@/pages/superuser/SuperuserApiEndpoints') },
+                  { path: 'test-integrations', lazy: () => import('@/pages/superuser/TestIntegrations') },
+                  { path: 'ai-providers', element: <SettingsAiOverview /> },
+                  { path: 'ai-providers/:providerId', element: <SettingsProviderForm /> },
+                  { path: 'model-roles', element: <SettingsModelRoles /> },
+                  { path: 'mcp', element: <McpServers /> },
+                ],
+              },
+              {
+                path: 'ac',
+                element: <AgchainAdminGuard />,
+                children: [
+                  { index: true, element: <Navigate to="/app/superuser/ac/models" replace /> },
+                  {
+                    path: 'models',
+                    lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminModelsPage')).default }),
+                  },
+                  {
+                    path: 'models-copy',
+                    lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminModelsPageCopy')).default }),
+                  },
+                  {
+                    path: 'tools',
+                    lazy: async () => ({ Component: (await import('@/pages/admin/AgchainAdminToolsPage')).default }),
+                  },
+                ],
+              },
+              {
+                element: <SuperuserOnlyGuard />,
+                children: [
+                  { path: 'operational-readiness', lazy: () => import('@/pages/superuser/SuperuserOperationalReadiness') },
+                  { path: 'essential-links', lazy: () => import('@/pages/superuser/SuperuserEssentialLinks') },
+                  { path: 'secrets-env', lazy: () => import('@/pages/superuser/SuperuserSecretsEnv') },
+                  { path: 'coordination-runtime', lazy: () => import('@/pages/superuser/CoordinationRuntime') },
+                  { path: 'design-layout-captures', lazy: () => import('@/pages/superuser/DesignLayoutCaptures') },
+                  {
+                    path: 'design-layout-captures/:sessionId',
+                    lazy: () => import('@/pages/superuser/DesignLayoutCaptureSession'),
+                  },
+                  { path: 'skill-driven-dev', lazy: () => import('@/pages/superuser/SkillDrivenDev') },
+                  { path: 'plan-tracker', lazy: () => import('@/pages/superuser/PlanTracker') },
+                  { path: 'husky-ci-cd', lazy: () => import('@/pages/superuser/SuperuserHuskyCiCd') },
+                  { path: 'zustand-react-query', lazy: () => import('@/pages/superuser/SuperuserZustandReactQuery') },
+                  { path: 'hook-system', lazy: () => import('@/pages/superuser/SuperuserHookSystem') },
+                  { path: 'open-telemetry', lazy: () => import('@/pages/superuser/SuperuserTelemetryLogs') },
+                  { path: 'openapi-fastapi', lazy: () => import('@/pages/superuser/SuperuserOpenApiFastApi') },
+                  { path: 'databases', lazy: () => import('@/pages/superuser/SuperuserDatabases') },
+                  { path: 'frontend-contracts', lazy: () => import('@/pages/superuser/SuperuserFrontendContracts') },
+                  { path: 'dependencies', lazy: () => import('@/pages/superuser/SuperuserDependencies') },
+                  { path: 'inventory-cost-management', lazy: () => import('@/pages/superuser/SuperuserInventoryCostManagement') },
+                  { path: 'telemetry-logs', lazy: () => import('@/pages/superuser/SuperuserTelemetryLogs') },
+                  { path: 'gcp-cost-inventory', lazy: () => import('@/pages/superuser/GcpCostInventory') },
+                  { path: 'agchain-benchmarks-demo', lazy: () => import('@/pages/superuser/AgchainBenchmarksDemo') },
+                  { path: 'block-viewer-grid-demo', lazy: () => import('@/pages/superuser/BlockViewerGridDemo') },
+                ],
+              },
             ],
+          },
+        ],
+      },
+      {
+        element: <AgchainWorkbenchShellLayout />,
+        children: [
+          {
+            path: '/app/agchain/eval-designer',
+            lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainEvalDesignerPage')).default }),
+          },
+          {
+            path: '/app/agchain/harness-designer',
+            lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainHarnessDesignerPage')).default }),
           },
         ],
       },
@@ -504,8 +546,120 @@ export const router = createBrowserRouter([
                 lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainPromptsPage')).default }),
               },
               {
+                path: 'playground',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainPlaygroundPage')).default }),
+              },
+              {
+                path: 'sandbox',
+                lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainSandboxPage')).default }),
+              },
+              {
                 path: 'workflow',
                 lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainWorkflowPage')).default }),
+              },
+              {
+                path: 'eval',
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="/app/agchain/eval/datasets" replace />,
+                  },
+                  {
+                    path: 'datasets',
+                    children: [
+                      {
+                        index: true,
+                        lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetsPage')).default }),
+                      },
+                      {
+                        path: 'new',
+                        lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetCreatePage')).default }),
+                      },
+                      {
+                        path: ':datasetId',
+                        lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetDetailPage')).default }),
+                      },
+                      {
+                        path: ':datasetId/versions/new/:draftId',
+                        lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainDatasetVersionDraftPage')).default }),
+                      },
+                    ],
+                  },
+                  {
+                    path: 'tasks',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainTasksPage')).default }),
+                  },
+                  {
+                    path: 'scorers',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainScorersPage')).default }),
+                  },
+                  {
+                    path: 'models',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainEvalModelsPage')).default }),
+                  },
+                  {
+                    path: 'runs',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainRunsPage')).default }),
+                  },
+                ],
+              },
+              {
+                path: 'monitor',
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="/app/agchain/monitor/metrics" replace />,
+                  },
+                  {
+                    path: 'metrics',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainMetricsPage')).default }),
+                  },
+                  {
+                    path: 'logs',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainLogsPage')).default }),
+                  },
+                  {
+                    path: 'trace',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainTracePage')).default }),
+                  },
+                ],
+              },
+              {
+                path: 'harness',
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="/app/agchain/harness/prompts" replace />,
+                  },
+                  {
+                    path: 'prompts',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainPromptsPage')).default }),
+                  },
+                  {
+                    path: 'instructions',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainInstructionsPage')).default }),
+                  },
+                  {
+                    path: 'skills',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainSkillsPage')).default }),
+                  },
+                  {
+                    path: 'mcp',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainMcpPage')).default }),
+                  },
+                  {
+                    path: 'storage',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainStoragePage')).default }),
+                  },
+                  {
+                    path: 'memory',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainMemoryPage')).default }),
+                  },
+                  {
+                    path: 'hooks',
+                    lazy: async () => ({ Component: (await import('@/pages/agchain/AgchainHooksPage')).default }),
+                  },
+                ],
               },
               {
                 path: 'scorers',

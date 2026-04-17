@@ -25,29 +25,27 @@ describe('AdminLeftNav', () => {
     expect(screen.getByRole('navigation', { name: /admin secondary navigation/i })).toBeTruthy();
   });
 
-  it('renders no secondary links on the blockdata admin index page', () => {
-    renderNav('/app/blockdata-admin');
+  it('renders no secondary links on the BD index page', () => {
+    renderNav('/app/superuser/bd');
     expect(screen.queryAllByRole('link')).toHaveLength(0);
   });
 
   it('getSecondaryNav returns empty array for all current admin routes', () => {
-    expect(getSecondaryNav('/app/blockdata-admin')).toHaveLength(0);
-    expect(getSecondaryNav('/app/blockdata-admin/instance-config')).toHaveLength(0);
-    expect(getSecondaryNav('/app/blockdata-admin/worker-config')).toHaveLength(0);
-    expect(getSecondaryNav('/app/blockdata-admin/audit')).toHaveLength(0);
-    expect(getSecondaryNav('/app/blockdata-admin/parsers-docling')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser/bd')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser/bd/audit')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser/bd/parsers-docling')).toHaveLength(0);
     expect(getSecondaryNav('/app/superuser')).toHaveLength(0);
     expect(getSecondaryNav('/app/superuser/operational-readiness')).toHaveLength(0);
-    expect(getSecondaryNav('/app/blockdata-admin/ai-providers')).toHaveLength(0);
+    expect(getSecondaryNav('/app/superuser/bd/ai-providers')).toHaveLength(0);
   });
 
   it('keeps only the remaining blockdata admin surfaces in the primary rail', () => {
     expect(BLOCKDATA_ADMIN_NAV_SECTIONS.map((section) => section.label)).toEqual(['CONFIG', 'OPERATIONS', 'SYSTEM']);
     const paths = BLOCKDATA_ADMIN_NAV_SECTIONS.flatMap((section) => section.items).map((item) => item.path);
-    expect(paths).not.toContain('/app/blockdata-admin/instance-config');
-    expect(paths).not.toContain('/app/blockdata-admin/worker-config');
-    expect(paths).toContain('/app/blockdata-admin/parsers-docling');
-    expect(paths).toContain('/app/blockdata-admin/test-integrations');
+    expect(paths).not.toContain('/app/superuser/bd/instance-config');
+    expect(paths).not.toContain('/app/superuser/bd/worker-config');
+    expect(paths).toContain('/app/superuser/bd/parsers-docling');
+    expect(paths).toContain('/app/superuser/bd/test-integrations');
   });
 
   it('groups Superuser navigation into Control Tower, Dev Tools, and Dev Only', () => {
@@ -73,7 +71,7 @@ describe('AdminLeftNav', () => {
       expect.objectContaining({ label: 'Inventory & Cost Management', path: '/app/superuser/inventory-cost-management' }),
     ]);
     expect(devToolsSection?.items).toEqual([
-      expect.objectContaining({ label: 'Layout Capture', path: '/app/superuser/design-layout-captures' }),
+      expect.objectContaining({ label: 'Capture Sessions', path: '/app/superuser/design-layout-captures' }),
       expect.objectContaining({ label: 'Plan Tracker', path: '/app/superuser/plan-tracker' }),
     ]);
     expect(devOnlySection?.items).toEqual([
@@ -90,16 +88,16 @@ describe('AdminLeftNav', () => {
     expect(allPaths).not.toContain('/app/superuser/gcp-cost-inventory');
   });
 
-  it('boots AGChain Admin with Models and Tools menu items', () => {
+  it('boots AC with Models and Tools menu items', () => {
     expect(AGCHAIN_ADMIN_NAV_SECTIONS).toHaveLength(1);
     expect(AGCHAIN_ADMIN_NAV_SECTIONS[0]?.items).toEqual([
       expect.objectContaining({
         label: 'Models',
-        path: '/app/agchain-admin/models',
+        path: '/app/superuser/ac/models',
       }),
       expect.objectContaining({
         label: 'Tools',
-        path: '/app/agchain-admin/tools',
+        path: '/app/superuser/ac/tools',
       }),
     ]);
   });

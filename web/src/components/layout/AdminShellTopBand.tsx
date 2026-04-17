@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { IconLayoutSidebarLeftCollapse } from '@tabler/icons-react';
 import { useLocation } from 'react-router-dom';
 import { resolveAdminShellBreadcrumbSegments } from '@/components/admin/AdminLeftNav';
@@ -11,6 +11,7 @@ type AdminShellTopBandProps = {
   primaryRailWidth: number;
   height: number;
   onToggleNav: () => void;
+  centerSlot?: ReactNode;
 };
 
 const OPEN_CONTENT_GAP = 28;
@@ -23,6 +24,7 @@ export function AdminShellTopBand({
   primaryRailWidth,
   height,
   onToggleNav,
+  centerSlot,
 }: AdminShellTopBandProps) {
   const { pathname } = useLocation();
   const toggleInset = navOpen ? Math.max(primaryRailWidth - OPEN_TOGGLE_OVERHANG, CLOSED_TOGGLE_INSET) : CLOSED_TOGGLE_INSET;
@@ -73,6 +75,16 @@ export function AdminShellTopBand({
           <div className="min-w-0 flex-1 overflow-hidden">
             {breadcrumb}
           </div>
+          {centerSlot ? (
+            <div
+              data-testid="admin-shell-top-band-center"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            >
+              <div className="pointer-events-auto">
+                {centerSlot}
+              </div>
+            </div>
+          ) : null}
           <div className="hidden shrink-0 sm:block">
             <ShellWorkspaceSelector />
           </div>

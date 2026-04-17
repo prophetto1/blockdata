@@ -5,7 +5,7 @@ import { Drawer } from '@ark-ui/react/drawer';
 import { IconLayoutSidebarRightCollapse, IconLayoutSidebarRightExpand } from '@tabler/icons-react';
 import { AgchainSettingsNav } from '@/components/agchain/settings/AgchainSettingsNav';
 import { useAuth } from '@/auth/AuthContext';
-import { AGCHAIN_NAV_SECTIONS } from '@/components/agchain/AgchainLeftNav';
+import { buildAgchainNavSections } from '@/components/agchain/AgchainLeftNav';
 import { AgchainOrganizationSwitcher } from '@/components/agchain/AgchainOrganizationSwitcher';
 import { AgchainProjectSwitcher } from '@/components/agchain/AgchainProjectSwitcher';
 import { HeaderCenterProvider, useHeaderCenter } from '@/components/shell/HeaderCenterContext';
@@ -101,6 +101,7 @@ function AgchainShellInner() {
   const totalRailWidth = rail1Width + rail2Width;
   const mainInsetEnd = showRightRail ? styleTokens.shell.rightRailWidth : 0;
   const canPortal = typeof document !== 'undefined';
+  const navSections = buildAgchainNavSections();
 
   const handleSignOut = async () => {
     await signOut();
@@ -209,7 +210,7 @@ function AgchainShellInner() {
           <AgchainChromeRail
             userLabel={profile?.display_name || profile?.email || user?.email}
             onSignOut={handleSignOut}
-            navSections={AGCHAIN_NAV_SECTIONS}
+            navSections={navSections}
             headerBrand={(
               <span className="inline-flex items-baseline text-xs font-semibold uppercase tracking-[0.2em]">
                 <span className="text-sidebar-foreground">Block</span>
@@ -218,9 +219,9 @@ function AgchainShellInner() {
               </span>
             )}
             headerContent={(
-              <div className="flex w-full flex-col rounded-lg border border-border bg-card/30 py-1">
+              <div className="flex w-full flex-col rounded-[6px] border border-border/70 bg-card/20 py-0.5">
                 <AgchainOrganizationSwitcher />
-                <div className="mx-3 h-px bg-border/60" />
+                <div className="mx-2.5 h-px bg-border/50" />
                 <AgchainProjectSwitcher />
               </div>
             )}
@@ -270,22 +271,22 @@ function AgchainShellInner() {
               <AgchainChromeRail
                 userLabel={profile?.display_name || profile?.email || user?.email}
                 onSignOut={handleSignOut}
-                navSections={AGCHAIN_NAV_SECTIONS}
+                navSections={navSections}
                 headerBrand={(
                   <span className="inline-flex items-baseline text-xs font-semibold uppercase tracking-[0.2em]">
                     <span className="text-sidebar-foreground">Block</span>
-                    <span className="text-primary">Data</span>
-                    <span className="ml-1 text-sidebar-foreground/60">Bench</span>
-                  </span>
-                )}
-                headerContent={(
-                  <div className="flex w-full flex-col rounded-lg border border-border bg-card/30 py-1">
-                    <AgchainOrganizationSwitcher />
-                    <div className="mx-3 h-px bg-border/60" />
-                    <AgchainProjectSwitcher />
-                  </div>
-                )}
-              />
+                  <span className="text-primary">Data</span>
+                  <span className="ml-1 text-sidebar-foreground/60">Bench</span>
+                </span>
+              )}
+              headerContent={(
+                <div className="flex w-full flex-col rounded-[6px] border border-border/70 bg-card/20 py-0.5">
+                  <AgchainOrganizationSwitcher />
+                  <div className="mx-2.5 h-px bg-border/50" />
+                  <AgchainProjectSwitcher />
+                </div>
+              )}
+            />
             </Drawer.Content>
           </Drawer.Positioner>
         </Drawer.Root>

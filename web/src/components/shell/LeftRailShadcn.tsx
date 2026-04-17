@@ -493,13 +493,15 @@ export function LeftRailShadcn({
   };
 
   const renderSectionsNav = (sections: AdminNavSection[]) => (
-    <div className="space-y-4">
-      {sections.map((section) => (
-        <div key={section.label}>
-          <div className="mb-1.5 px-2.5 text-[var(--app-shell-sidebar-section-font)] font-normal tracking-normal text-sidebar-foreground/50">
-            {section.label}
-          </div>
-          <div className="space-y-0.5">
+    <div className="space-y-3">
+      {sections.map((section, sectionIndex) => (
+        <div key={section.label || `section-${sectionIndex}`}>
+          {section.label ? (
+            <div className="mb-1 px-1.5 text-[11px] font-normal tracking-normal text-sidebar-foreground/48">
+              {section.label}
+            </div>
+          ) : null}
+          <div className="space-y-px">
             {section.items.map((item) => {
               const ItemIcon = item.icon;
               const hasDrill = Boolean(item.drillId);
@@ -513,16 +515,16 @@ export function LeftRailShadcn({
                     navigateTo(item.path);
                   }}
                   className={cn(
-                    'flex w-full items-center gap-2.5 rounded-md px-2 h-7 text-[var(--app-shell-sidebar-item-font)] font-medium leading-[1.5] transition-colors',
+                    'flex w-full items-center gap-2 rounded-[5px] px-1.5 h-[26px] text-[13px] font-normal leading-[1.35] transition-colors',
                     isActive
                       ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                      : 'text-sidebar-foreground/82 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   )}
                 >
-                  <ItemIcon size={14} stroke={1.75} className="shrink-0" />
+                  <ItemIcon size={13} stroke={1.75} className="shrink-0" />
                   <span className="truncate">{item.label}</span>
                   {hasDrill && (
-                    <IconChevronRight size={14} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/40" />
+                    <IconChevronRight size={13} stroke={1.75} className="ml-auto shrink-0 text-sidebar-foreground/38" />
                   )}
                 </button>
               );

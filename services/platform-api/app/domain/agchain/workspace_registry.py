@@ -166,8 +166,7 @@ def _resolve_unique_project_slug(
         suffix += 1
 
 
-def list_organizations(*, user_id: str) -> list[dict[str, Any]]:
-    sb = get_supabase_admin()
+def _build_organization_selector_rows(*, user_id: str, sb) -> list[dict[str, Any]]:
     memberships = _list_organization_memberships(user_id=user_id, sb=sb)
     if not memberships:
         return []
@@ -215,6 +214,104 @@ def list_organizations(*, user_id: str) -> list[dict[str, Any]]:
     return sorted(items, key=lambda item: (not item["is_personal"], item["display_name"].lower()))
 
 
+def _build_project_selector_rows(
+    *,
+    user_id: str,
+    organization_id: str,
+    sb,
+) -> list[dict[str, Any]]:
+    project_rows = load_accessible_projects(
+        user_id=user_id,
+        organization_id=organization_id,
+        sb=sb,
+    )
+    primary_benchmarks = _project_primary_benchmarks(
+        project_ids=[row["project_id"] for row in project_rows if row.get("project_id")],
+        sb=sb,
+    )
+    items: list[dict[str, Any]] = []
+    for row in project_rows:
+        items.append(
+            {
+                "project_id": row["project_id"],
+                "organization_id": row["organization_id"],
+                "project_slug": row.get("project_slug"),
+                "project_name": row["project_name"],
+                "description": row.get("description") or "",
+                "membership_role": row["membership_role"],
+                "updated_at": row.get("updated_at"),
+                "primary_benchmark_slug": (primary_benchmarks.get(row["project_id"]) or {}).get("benchmark_slug"),
+                "primary_benchmark_name": (primary_benchmarks.get(row["project_id"]) or {}).get("benchmark_name"),
+            }
+        )
+    return sorted(items, key=lambda item: (item["project_name"].lower(), item["project_id"]))
+
+
+def _resolve_workspace_bootstrap_selection(
+    *,
+    organizations: list[dict[str, Any]],
+    projects: list[dict[str, Any]],
+    preferred_organization_id: str | None,
+    preferred_project_id: str | None,
+    preferred_project_slug: str | None,
+) -> dict[str, Any]:
+    if not organizations:
+        return {
+            "status": "no-organization",
+            "selected_organization_id": None,
+            "selected_project_id": None,
+            "error": None,
+        }
+
+    selected_organization_id = next(
+        (
+            item["organization_id"]
+            for item in organizations
+            if item["organization_id"] == preferred_organization_id
+        ),
+        organizations[0]["organization_id"],
+    )
+
+    if not projects:
+        return {
+            "status": "no-project",
+            "selected_organization_id": selected_organization_id,
+            "selected_project_id": None,
+            "error": None,
+        }
+
+    selected_project = None
+    if preferred_project_id is not None:
+        selected_project = next(
+            (item for item in projects if item["project_id"] == preferred_project_id),
+            None,
+        )
+    if selected_project is None and preferred_project_slug is not None:
+        selected_project = next(
+            (
+                item
+                for item in projects
+                if item.get("project_slug") == preferred_project_slug
+                or item.get("primary_benchmark_slug") == preferred_project_slug
+            ),
+            None,
+        )
+    if selected_project is None:
+        selected_project = projects[0]
+
+    return {
+        "status": "ready",
+        "selected_organization_id": selected_organization_id,
+        "selected_project_id": selected_project["project_id"],
+        "error": None,
+    }
+
+
+def list_organizations(*, user_id: str) -> list[dict[str, Any]]:
+    sb = get_supabase_admin()
+    return _build_organization_selector_rows(user_id=user_id, sb=sb)
+
+
 def list_projects(
     *,
     user_id: str,
@@ -223,29 +320,14 @@ def list_projects(
 ) -> list[dict[str, Any]]:
     sb = get_supabase_admin()
     target_organization = _resolve_target_organization(user_id=user_id, organization_id=organization_id, sb=sb)
-    project_rows = load_accessible_projects(
+    items = _build_project_selector_rows(
         user_id=user_id,
         organization_id=target_organization["organization_id"],
         sb=sb,
     )
-    primary_benchmarks = _project_primary_benchmarks(
-        project_ids=[row["project_id"] for row in project_rows if row.get("project_id")],
-        sb=sb,
-    )
     needle = (search or "").strip().lower()
-    items: list[dict[str, Any]] = []
-    for row in project_rows:
-        item = {
-            "project_id": row["project_id"],
-            "organization_id": row["organization_id"],
-            "project_slug": row.get("project_slug"),
-            "project_name": row["project_name"],
-            "description": row.get("description") or "",
-            "membership_role": row["membership_role"],
-            "updated_at": row.get("updated_at"),
-            "primary_benchmark_slug": (primary_benchmarks.get(row["project_id"]) or {}).get("benchmark_slug"),
-            "primary_benchmark_name": (primary_benchmarks.get(row["project_id"]) or {}).get("benchmark_name"),
-        }
+    filtered: list[dict[str, Any]] = []
+    for item in items:
         haystack = " ".join(
             str(part)
             for part in (item["project_slug"], item["project_name"], item["description"])
@@ -253,8 +335,51 @@ def list_projects(
         ).lower()
         if needle and needle not in haystack:
             continue
-        items.append(item)
-    return sorted(items, key=lambda item: (item["project_name"].lower(), item["project_id"]))
+        filtered.append(item)
+    return filtered
+
+
+def get_workspace_bootstrap(
+    *,
+    user_id: str,
+    preferred_organization_id: str | None = None,
+    preferred_project_id: str | None = None,
+    preferred_project_slug: str | None = None,
+) -> dict[str, Any]:
+    sb = get_supabase_admin()
+    organizations = _build_organization_selector_rows(user_id=user_id, sb=sb)
+    selected_organization_id = next(
+        (
+            item["organization_id"]
+            for item in organizations
+            if item["organization_id"] == preferred_organization_id
+        ),
+        organizations[0]["organization_id"] if organizations else None,
+    )
+    projects = (
+        _build_project_selector_rows(
+            user_id=user_id,
+            organization_id=selected_organization_id,
+            sb=sb,
+        )
+        if selected_organization_id is not None
+        else []
+    )
+    selection = _resolve_workspace_bootstrap_selection(
+        organizations=organizations,
+        projects=projects,
+        preferred_organization_id=preferred_organization_id,
+        preferred_project_id=preferred_project_id,
+        preferred_project_slug=preferred_project_slug,
+    )
+    return {
+        "status": selection["status"],
+        "organizations": organizations,
+        "projects": projects,
+        "selected_organization_id": selection["selected_organization_id"],
+        "selected_project_id": selection["selected_project_id"],
+        "error": selection["error"],
+    }
 
 
 def create_project(*, user_id: str, payload: dict[str, Any]) -> dict[str, Any]:

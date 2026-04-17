@@ -8,7 +8,7 @@
   "scripts": {
     "capture-server": "node scripts/capture-server.mjs",
     "ci:app-pr": "npm run ci:contracts && npm run ci:frontend && npm run ci:platform-api",
-    "ci:contracts": "npm run test:workflow-guardrails && npm run test:app-pr-gate-workflow",
+    "ci:contracts": "npm run test:workflow-guardrails && npm run test:app-pr-gate-workflow && npm run test:vercel-web-deploy-workflow",
     "ci:frontend": "npm --workspace web run build",
     "ci:platform-api": "pytest -q services/platform-api/tests",
     "ci:supabase-apply-pending": "node scripts/supabase-migration-control.mjs apply-pending",
@@ -33,7 +33,8 @@
     "test:supabase-migration-command-contract": "node --test scripts/tests/supabase-migration-command-contract.test.mjs",
     "test:supabase-extension-replay-guardrails": "node --test scripts/tests/supabase-extension-replay-guardrails.test.mjs",
     "test:workflow-guardrails": "node --test scripts/tests/supabase-db-workflows.test.mjs",
-    "test:supabase-migration-reconciliation-contract": "node --test scripts/tests/supabase-migration-reconciliation-contract.test.mjs"
+    "test:supabase-migration-reconciliation-contract": "node --test scripts/tests/supabase-migration-reconciliation-contract.test.mjs",
+    "test:vercel-web-deploy-workflow": "node --test scripts/tests/vercel-web-deploy-workflow.test.mjs"
   },
   "dependencies": {
     "nats": "^2.29.3",

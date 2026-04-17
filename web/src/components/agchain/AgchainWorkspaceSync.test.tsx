@@ -8,6 +8,7 @@ import { useAgchainProjectFocus } from '@/hooks/agchain/useAgchainProjectFocus';
 
 const fetchAgchainOrganizationsMock = vi.fn();
 const fetchAgchainProjectsMock = vi.fn();
+const fetchAgchainWorkspaceBootstrapMock = vi.fn();
 
 class ResizeObserverMock {
   observe() {}
@@ -25,14 +26,11 @@ class IntersectionObserverMock {
   thresholds = [];
 }
 
-vi.mock('@/lib/agchainWorkspaces', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/agchainWorkspaces')>('@/lib/agchainWorkspaces');
-  return {
-    ...actual,
-    fetchAgchainOrganizations: () => fetchAgchainOrganizationsMock(),
-    fetchAgchainProjects: (options?: unknown) => fetchAgchainProjectsMock(options),
-  };
-});
+vi.mock('@/lib/agchainWorkspaces', () => ({
+  fetchAgchainOrganizations: () => fetchAgchainOrganizationsMock(),
+  fetchAgchainProjects: (options?: unknown) => fetchAgchainProjectsMock(options),
+  fetchAgchainWorkspaceBootstrap: (options?: unknown) => fetchAgchainWorkspaceBootstrapMock(options),
+}));
 
 vi.mock('@/auth/AuthContext', () => ({
   useAuth: () => ({
@@ -58,10 +56,16 @@ describe('AGChain workspace synchronization', () => {
   beforeEach(() => {
     fetchAgchainOrganizationsMock.mockReset();
     fetchAgchainProjectsMock.mockReset();
+    fetchAgchainWorkspaceBootstrapMock.mockReset();
     resetAgchainWorkspaceStateForTests();
 
-    fetchAgchainOrganizationsMock.mockResolvedValue({
-      items: [
+    fetchAgchainOrganizationsMock.mockRejectedValue(new Error('legacy organizations bootstrap should not run'));
+    fetchAgchainProjectsMock.mockRejectedValue(new Error('legacy projects bootstrap should not run'));
+
+    fetchAgchainWorkspaceBootstrapMock.mockImplementation((options?: {
+      preferredOrganizationId?: string | null;
+    }) => {
+      const organizations = [
         {
           organization_id: 'org-1',
           organization_slug: 'personal-user-1',
@@ -78,13 +82,13 @@ describe('AGChain workspace synchronization', () => {
           is_personal: false,
           project_count: 1,
         },
-      ],
-    });
+      ];
 
-    fetchAgchainProjectsMock.mockImplementation((options?: { organizationId?: string | null }) => {
-      if (options?.organizationId === 'org-2') {
+      if (options?.preferredOrganizationId === 'org-2') {
         return Promise.resolve({
-          items: [
+          status: 'ready',
+          organizations,
+          projects: [
             {
               project_id: 'project-2',
               organization_id: 'org-2',
@@ -97,11 +101,16 @@ describe('AGChain workspace synchronization', () => {
               primary_benchmark_name: 'Finance Eval',
             },
           ],
+          selectedOrganizationId: 'org-2',
+          selectedProjectId: 'project-2',
+          error: null,
         });
       }
 
       return Promise.resolve({
-        items: [
+        status: 'ready',
+        organizations,
+        projects: [
           {
             project_id: 'project-1',
             organization_id: 'org-1',
@@ -114,6 +123,9 @@ describe('AGChain workspace synchronization', () => {
             primary_benchmark_name: 'Legal-10',
           },
         ],
+        selectedOrganizationId: 'org-1',
+        selectedProjectId: 'project-1',
+        error: null,
       });
     });
 

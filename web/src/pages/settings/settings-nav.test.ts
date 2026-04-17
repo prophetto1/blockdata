@@ -12,10 +12,10 @@ describe('settings nav', () => {
     expect(findNavItemByPath('/app/settings/secrets')?.label).toBe('Secrets');
   });
 
-  it('uses the canonical blockdata admin AI providers route', () => {
+  it('uses the canonical BD AI providers route under superuser', () => {
     const aiProviders = ALL_NAV_ITEMS.find((item) => item.id === 'ai-providers');
 
-    expect(aiProviders?.path).toBe('/app/blockdata-admin/ai-providers');
+    expect(aiProviders?.path).toBe('/app/superuser/bd/ai-providers');
   });
 
   it('does not treat superuser pages as settings nav items', () => {

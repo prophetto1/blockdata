@@ -4,14 +4,14 @@ import { MemoryRouter } from 'react-router-dom';
 import AgchainOrganizationMembersPage from './AgchainOrganizationMembersPage';
 
 const useAgchainOrganizationMembersMock = vi.fn();
-const useAgchainScopeStateMock = vi.fn();
+const useAgchainOrganizationScopeStateMock = vi.fn();
 
 vi.mock('@/hooks/agchain/useAgchainOrganizationMembers', () => ({
   useAgchainOrganizationMembers: () => useAgchainOrganizationMembersMock(),
 }));
 
-vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
-  useAgchainScopeState: () => useAgchainScopeStateMock(),
+vi.mock('@/hooks/agchain/useAgchainOrganizationScopeState', () => ({
+  useAgchainOrganizationScopeState: () => useAgchainOrganizationScopeStateMock(),
 }));
 
 // Ark UI Select relies on DOM APIs not available in JSDOM
@@ -42,17 +42,18 @@ describe('AgchainOrganizationMembersPage', () => {
     inviteMembersMock.mockReset();
     updateMembershipStatusMock.mockReset();
     useAgchainOrganizationMembersMock.mockReset();
-    useAgchainScopeStateMock.mockReset();
+    useAgchainOrganizationScopeStateMock.mockReset();
 
     inviteMembersMock.mockResolvedValue(undefined);
     updateMembershipStatusMock.mockResolvedValue(undefined);
 
-    useAgchainScopeStateMock.mockReturnValue({
-      kind: 'no-project',
+    useAgchainOrganizationScopeStateMock.mockReturnValue({
+      kind: 'ready',
       selectedOrganization: {
         organization_id: 'org-1',
         display_name: 'AGChain',
       },
+      reload: vi.fn(),
     });
 
     useAgchainOrganizationMembersMock.mockReturnValue({
@@ -192,7 +193,7 @@ describe('AgchainOrganizationMembersPage', () => {
   });
 
   it('renders the no-organization state from the shared scope hook', () => {
-    useAgchainScopeStateMock.mockReturnValue({
+    useAgchainOrganizationScopeStateMock.mockReturnValue({
       kind: 'no-organization',
     });
 

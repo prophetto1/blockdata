@@ -6,6 +6,7 @@ import { execFile } from 'node:child_process'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { platformApiDevControlPlugin } from './dev-server/platformApiDevControl'
+import { captureServerDevControlPlugin } from './dev-server/captureServerDevControl'
 
 function superuserToolsPlugin() {
   return {
@@ -64,7 +65,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     envDir: projectRoot,
-    plugins: [react(), tailwindcss(), superuserToolsPlugin(), platformApiDevControlPlugin({ projectRoot })],
+    plugins: [
+      react(),
+      tailwindcss(),
+      superuserToolsPlugin(),
+      platformApiDevControlPlugin({ projectRoot }),
+      captureServerDevControlPlugin({ projectRoot }),
+    ],
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {

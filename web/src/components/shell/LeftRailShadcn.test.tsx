@@ -288,6 +288,49 @@ describe('LeftRailShadcn', () => {
     expect(brand.compareDocumentPosition(headerContent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(headerContent.compareDocumentPosition(navButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it('omits empty section headings and renders AGChain nav rows with denser lighter styling', async () => {
+    render(
+      <MemoryRouter initialEntries={['/app/agchain/overview']}>
+        <LeftRailShadcn
+          {...({
+            navSections: [
+              {
+                label: '',
+                items: [
+                  {
+                    label: 'Overview',
+                    path: '/app/agchain/overview',
+                    icon: () => null,
+                  },
+                ],
+              },
+              {
+                label: 'Eval',
+                items: [
+                  {
+                    label: 'Datasets',
+                    path: '/app/agchain/eval/datasets',
+                    icon: () => null,
+                  },
+                ],
+              },
+            ],
+          } as Record<string, unknown>)}
+        />
+      </MemoryRouter>,
+    );
+
+    const overviewButton = await screen.findByRole('button', { name: 'Overview' });
+
+    expect(screen.queryByText('Project')).not.toBeInTheDocument();
+    expect(screen.getByText('Eval')).toBeInTheDocument();
+    expect(overviewButton.className).toContain('h-[26px]');
+    expect(overviewButton.className).toContain('px-1.5');
+    expect(overviewButton.className).toContain('gap-2');
+    expect(overviewButton.className).toContain('font-normal');
+  });
+
   it('uses the compact header button to expand the side rail', async () => {
     const onToggleDesktopCompact = vi.fn();
 

@@ -110,7 +110,7 @@ export function ProjectFocusSelectorPopover({
         data-testid={triggerTestId}
         className={cn(
           triggerVariant === 'sidebar-row'
-            ? 'project-switcher-trigger inline-flex min-h-9 w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-sm text-foreground transition-colors hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            ? 'project-switcher-trigger inline-flex min-h-[34px] w-full items-center gap-2 rounded-[4px] border border-border/70 bg-background/35 px-2.5 py-1.5 text-left text-[13px] text-foreground transition-colors hover:border-border hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
             : 'project-switcher-trigger inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           triggerClassName,
         )}
@@ -120,21 +120,21 @@ export function ProjectFocusSelectorPopover({
             <span
               aria-hidden="true"
               className={cn(
-                'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold',
+                'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] text-[10px] font-semibold',
                 leadingBadgeClassName ?? 'bg-primary/10 text-primary',
               )}
             >
               {resolvedTriggerLeadingText}
             </span>
             <span className="grid min-w-0 flex-1 text-left leading-tight">
-              <span className="truncate text-sm font-medium text-foreground">{triggerLabel}</span>
+              <span className="truncate text-[13px] font-medium leading-[1.1] text-foreground">{triggerLabel}</span>
               {triggerDescription ? (
-                <span className="truncate pt-0.5 text-xs text-muted-foreground">{triggerDescription}</span>
+                <span className="truncate pt-px text-[11px] leading-[1.1] text-muted-foreground">{triggerDescription}</span>
               ) : null}
             </span>
             <IconChevronDown
               aria-hidden="true"
-              size={16}
+              size={14}
               stroke={1.75}
               className="ml-auto shrink-0 text-muted-foreground"
             />

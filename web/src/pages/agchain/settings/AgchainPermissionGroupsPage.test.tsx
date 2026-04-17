@@ -4,14 +4,14 @@ import { MemoryRouter } from 'react-router-dom';
 import AgchainPermissionGroupsPage from './AgchainPermissionGroupsPage';
 
 const useAgchainPermissionGroupsMock = vi.fn();
-const useAgchainScopeStateMock = vi.fn();
+const useAgchainOrganizationScopeStateMock = vi.fn();
 
 vi.mock('@/hooks/agchain/useAgchainPermissionGroups', () => ({
   useAgchainPermissionGroups: () => useAgchainPermissionGroupsMock(),
 }));
 
-vi.mock('@/hooks/agchain/useAgchainScopeState', () => ({
-  useAgchainScopeState: () => useAgchainScopeStateMock(),
+vi.mock('@/hooks/agchain/useAgchainOrganizationScopeState', () => ({
+  useAgchainOrganizationScopeState: () => useAgchainOrganizationScopeStateMock(),
 }));
 
 afterEach(() => {
@@ -34,7 +34,7 @@ describe('AgchainPermissionGroupsPage', () => {
     addGroupMembersMock.mockReset();
     removeGroupMemberMock.mockReset();
     useAgchainPermissionGroupsMock.mockReset();
-    useAgchainScopeStateMock.mockReset();
+    useAgchainOrganizationScopeStateMock.mockReset();
 
     createPermissionGroupMock.mockResolvedValue(undefined);
     loadPermissionGroupDetailMock.mockResolvedValue(undefined);
@@ -42,12 +42,13 @@ describe('AgchainPermissionGroupsPage', () => {
     addGroupMembersMock.mockResolvedValue(undefined);
     removeGroupMemberMock.mockResolvedValue(undefined);
 
-    useAgchainScopeStateMock.mockReturnValue({
-      kind: 'no-project',
+    useAgchainOrganizationScopeStateMock.mockReturnValue({
+      kind: 'ready',
       selectedOrganization: {
         organization_id: 'org-1',
         display_name: 'AGChain',
       },
+      reload: vi.fn(),
     });
 
     useAgchainPermissionGroupsMock.mockReturnValue({
@@ -234,7 +235,7 @@ describe('AgchainPermissionGroupsPage', () => {
   });
 
   it('renders the no-organization state from the shared scope hook', () => {
-    useAgchainScopeStateMock.mockReturnValue({
+    useAgchainOrganizationScopeStateMock.mockReturnValue({
       kind: 'no-organization',
     });
 

@@ -5,6 +5,7 @@ import {
   AgchainAdminGuard,
   BlockdataAdminGuard,
   SuperuserGuard,
+  SuperuserOnlyGuard,
 } from './SuperuserGuard';
 
 type AccessState = {
@@ -51,14 +52,17 @@ function renderGuard(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/app" element={<div data-testid="app-home">app home</div>} />
-        <Route path="/app/blockdata-admin/*" element={<BlockdataAdminGuard />}>
-          <Route path="*" element={<div data-testid="protected-surface">blockdata admin</div>} />
-        </Route>
-        <Route path="/app/agchain-admin/*" element={<AgchainAdminGuard />}>
-          <Route path="*" element={<div data-testid="protected-surface">agchain admin</div>} />
-        </Route>
         <Route path="/app/superuser/*" element={<SuperuserGuard />}>
-          <Route path="*" element={<div data-testid="protected-surface">superuser</div>} />
+          <Route index element={<div data-testid="protected-surface">unified admin</div>} />
+          <Route path="bd/*" element={<BlockdataAdminGuard />}>
+            <Route path="*" element={<div data-testid="protected-surface">bd admin</div>} />
+          </Route>
+          <Route path="ac/*" element={<AgchainAdminGuard />}>
+            <Route path="*" element={<div data-testid="protected-surface">ac admin</div>} />
+          </Route>
+          <Route path="ops/*" element={<SuperuserOnlyGuard />}>
+            <Route path="*" element={<div data-testid="protected-surface">superuser only</div>} />
+          </Route>
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -74,12 +78,12 @@ describe('SuperuserGuard surfaces', () => {
       refresh: vi.fn(),
     });
 
-    renderGuard('/app/blockdata-admin');
+    renderGuard('/app/superuser');
 
     expect(screen.getByText(/verifying access/i)).toBeInTheDocument();
   });
 
-  it('allows a blockdata-only admin into the blockdata admin surface', () => {
+  it('allows a blockdata-only admin into the unified superuser family', () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: true,
@@ -91,12 +95,29 @@ describe('SuperuserGuard surfaces', () => {
       refresh: vi.fn(),
     });
 
-    renderGuard('/app/blockdata-admin');
+    renderGuard('/app/superuser');
 
-    expect(screen.getByTestId('protected-surface')).toHaveTextContent('blockdata admin');
+    expect(screen.getByTestId('protected-surface')).toHaveTextContent('unified admin');
   });
 
-  it('does not let a superuser-only persona into the blockdata admin surface', () => {
+  it('allows a blockdata-only admin into the BD surface', () => {
+    useAdminSurfaceAccessStateMock.mockReturnValue({
+      access: {
+        blockdataAdmin: true,
+        agchainAdmin: false,
+        superuser: false,
+      },
+      status: 'ready',
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderGuard('/app/superuser/bd/parsers-docling');
+
+    expect(screen.getByTestId('protected-surface')).toHaveTextContent('bd admin');
+  });
+
+  it('lets a superuser into the BD surface', () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: false,
@@ -108,12 +129,12 @@ describe('SuperuserGuard surfaces', () => {
       refresh: vi.fn(),
     });
 
-    renderGuard('/app/blockdata-admin');
+    renderGuard('/app/superuser/bd/parsers-docling');
 
-    expect(screen.getByTestId('app-home')).toBeInTheDocument();
+    expect(screen.getByTestId('protected-surface')).toHaveTextContent('bd admin');
   });
 
-  it('allows an agchain-only admin into the AGChain admin surface', () => {
+  it('allows an agchain-only admin into the AC surface', () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: false,
@@ -125,12 +146,12 @@ describe('SuperuserGuard surfaces', () => {
       refresh: vi.fn(),
     });
 
-    renderGuard('/app/agchain-admin/models');
+    renderGuard('/app/superuser/ac/models');
 
-    expect(screen.getByTestId('protected-surface')).toHaveTextContent('agchain admin');
+    expect(screen.getByTestId('protected-surface')).toHaveTextContent('ac admin');
   });
 
-  it('does not let a blockdata-only persona into the AGChain admin surface', () => {
+  it('does not let a blockdata-only persona into the AC surface', () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: true,
@@ -142,12 +163,12 @@ describe('SuperuserGuard surfaces', () => {
       refresh: vi.fn(),
     });
 
-    renderGuard('/app/agchain-admin/models');
+    renderGuard('/app/superuser/ac/models');
 
     expect(screen.getByTestId('app-home')).toBeInTheDocument();
   });
 
-  it('allows a superuser-only persona into the superuser surface', () => {
+  it('allows a superuser-only persona into superuser-only surfaces', () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: false,
@@ -159,9 +180,26 @@ describe('SuperuserGuard surfaces', () => {
       refresh: vi.fn(),
     });
 
-    renderGuard('/app/superuser/operational-readiness');
+    renderGuard('/app/superuser/ops/runtime');
 
-    expect(screen.getByTestId('protected-surface')).toHaveTextContent('superuser');
+    expect(screen.getByTestId('protected-surface')).toHaveTextContent('superuser only');
+  });
+
+  it('does not let an agchain-only persona into superuser-only surfaces', () => {
+    useAdminSurfaceAccessStateMock.mockReturnValue({
+      access: {
+        blockdataAdmin: false,
+        agchainAdmin: true,
+        superuser: false,
+      },
+      status: 'ready',
+      error: null,
+      refresh: vi.fn(),
+    });
+
+    renderGuard('/app/superuser/ops/runtime');
+
+    expect(screen.getByTestId('app-home')).toBeInTheDocument();
   });
 
   it('does not keep showing verification after the access probe has failed', () => {
@@ -172,7 +210,7 @@ describe('SuperuserGuard surfaces', () => {
       refresh: vi.fn(),
     });
 
-    renderGuard('/app/superuser/operational-readiness');
+    renderGuard('/app/superuser/ops/runtime');
 
     expect(screen.getByText(/unable to verify admin access/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
@@ -190,8 +228,8 @@ describe('SuperuserGuard surfaces', () => {
       refresh: vi.fn(),
     });
 
-    renderGuard('/app/blockdata-admin');
+    renderGuard('/app/superuser/bd/parsers-docling');
 
-    expect(screen.getByTestId('protected-surface')).toHaveTextContent('blockdata admin');
+    expect(screen.getByTestId('protected-surface')).toHaveTextContent('bd admin');
   });
 });

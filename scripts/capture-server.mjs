@@ -2,73 +2,172 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import http from "node:http";
-import { createRequire } from "node:module";
+import net from "node:net";
+import { spawn, execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
-const capturesRoot = path.join(repoRoot, "docs", "design-layouts");
-const skillScriptsDir = path.join(
+const layoutCaptureWrapperPath = path.join(
   repoRoot,
-  "docs",
-  "jon",
-  "skills",
-  "design-1-layouts-spec-with-playwright",
-  "scripts"
+  "_research",
+  "00--jon",
+  "layout-capture-task",
+  "measure-layout-headed.mjs",
 );
-const capturesJsonPath = path.join(capturesRoot, "captures.json");
 
 const PORT = Number(process.env.CAPTURE_SERVER_PORT || "4488");
+const DEFAULT_CHROME_URL = "about:blank";
+const DEFAULT_WINDOW_SIZE = "1920,1080";
+const DESIGN_LAYOUT_CAPTURE_SESSION_TYPE = "design-layout-capture-session";
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
+let chromeExecutableCache = null;
+
+function nowIso() {
+  return new Date().toISOString();
+}
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
-function readCaptures() {
-  if (!fs.existsSync(capturesJsonPath)) return [];
-  const raw = fs.readFileSync(capturesJsonPath, "utf8");
-  const trimmed = String(raw).trim();
-  let capturesJsonText = trimmed;
-  let captures;
-
-  try {
-    captures = JSON.parse(capturesJsonText);
-  } catch (error) {
-    // Backward-compatibility repair for accidental writes that stored escaped newlines
-    // as literal "\\n" characters (for example `[]\\n`), which breaks JSON.parse.
-    while (capturesJsonText.endsWith("\\n")) {
-      capturesJsonText = capturesJsonText.slice(0, -2);
-    }
-    try {
-      captures = JSON.parse(capturesJsonText);
-      console.warn(`[capture] Repaired captures.json after detecting escaped newline corruption at ${capturesJsonPath}`);
-      writeCaptures(captures);
-    } catch {
-      throw new Error(`Invalid captures.json: ${(error && error.message) || "Unknown JSON parse error"}`);
-    }
+function getDefaultCaptureSessionsRoot() {
+  const override = process.env.CAPTURE_SESSIONS_ROOT;
+  if (override && override.trim()) {
+    return path.resolve(override.trim());
   }
-
-  return captures.map((entry) => ({
-    ...entry,
-    outputDir: typeof entry.outputDir === "string" ? entry.outputDir.replace(/\\/g, "/") : entry.outputDir,
-    status:
-      entry.status === "complete" &&
-      (typeof entry.outputDir !== "string" || !fs.existsSync(path.join(capturesRoot, entry.outputDir.replace(/\\/g, "/"))))
-        ? "failed"
-        : entry.status,
-  }));
+  return path.join(os.homedir(), "Downloads", "CaptureSessions");
 }
 
-function writeCaptures(entries) {
-  ensureDir(path.dirname(capturesJsonPath));
-  fs.writeFileSync(capturesJsonPath, JSON.stringify(entries, null, 2) + "\n", "utf8");
+function getSessionRegistryPath() {
+  return path.join(getDefaultCaptureSessionsRoot(), "session-registry.json");
+}
+
+function readJsonFile(filePath, fallback) {
+  if (!fs.existsSync(filePath)) return fallback;
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonFile(filePath, value) {
+  ensureDir(path.dirname(filePath));
+  fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+function readSessionRegistry() {
+  return readJsonFile(getSessionRegistryPath(), []);
+}
+
+function writeSessionRegistry(entries) {
+  writeJsonFile(getSessionRegistryPath(), entries);
+}
+
+function sessionFilePath(sessionDir) {
+  return path.join(sessionDir, "session.json");
+}
+
+function temporaryWorkerDir(captureId) {
+  return path.join(os.tmpdir(), "writing-system-capture-worker", captureId);
+}
+
+function readSessionFile(sessionDir) {
+  return readJsonFile(sessionFilePath(sessionDir), null);
+}
+
+function writeSessionFile(session) {
+  session.updatedAt = nowIso();
+  writeJsonFile(sessionFilePath(session.sessionDir), session);
+}
+
+function normalizeRegistryEntries(entries) {
+  return entries
+    .filter((entry) => entry && typeof entry.id === "string" && typeof entry.sessionDir === "string")
+    .map((entry) => ({
+      id: entry.id,
+      sessionDir: path.resolve(entry.sessionDir),
+      createdAt: entry.createdAt ?? null,
+    }));
+}
+
+function syncRegistryEntry(session) {
+  const entries = normalizeRegistryEntries(readSessionRegistry());
+  const nextEntry = {
+    id: session.id,
+    sessionDir: path.resolve(session.sessionDir),
+    createdAt: session.createdAt,
+  };
+  const index = entries.findIndex((entry) => entry.id === session.id);
+  if (index >= 0) {
+    entries[index] = nextEntry;
+  } else {
+    entries.push(nextEntry);
+  }
+  writeSessionRegistry(entries);
+}
+
+function removeRegistryEntry(sessionId) {
+  const entries = normalizeRegistryEntries(readSessionRegistry()).filter((entry) => entry.id !== sessionId);
+  writeSessionRegistry(entries);
+}
+
+function makeTimestamp(date = new Date()) {
+  const year = String(date.getFullYear());
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}${month}${day}-${hours}${minutes}${seconds}`;
+}
+
+function sanitizeName(input) {
+  return String(input || "")
+    .trim()
+    .replace(/[\\/:*?"<>|]+/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
+}
+
+function makeSessionId() {
+  const random = Math.random().toString(36).slice(2, 6);
+  return `session-${makeTimestamp()}-${random}`;
+}
+
+function makeCaptureId(sessionDir) {
+  const base = makeTimestamp();
+  let counter = 0;
+  while (true) {
+    const suffix = counter === 0 ? "" : `-${String(counter).padStart(2, "0")}`;
+    const candidate = `${base}${suffix}`;
+    const candidateDir = path.join(sessionDir, "captures", candidate);
+    if (!fs.existsSync(candidateDir)) {
+      return candidate;
+    }
+    counter += 1;
+  }
+}
+
+function buildDefaultSessionName() {
+  return `Capture Session ${makeTimestamp().replace("-", " ")}`;
+}
+
+function encodePathSegments(relativePath) {
+  return relativePath
+    .replace(/\\/g, "/")
+    .split("/")
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join("/");
+}
+
+function logEvent(event, payload = {}) {
+  console.log(JSON.stringify({ ts: nowIso(), event, ...payload }));
 }
 
 function sendJson(res, status, data) {
@@ -86,6 +185,10 @@ function readBody(req) {
     const chunks = [];
     req.on("data", (chunk) => chunks.push(chunk));
     req.on("end", () => {
+      if (chunks.length === 0) {
+        resolve({});
+        return;
+      }
       try {
         resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
       } catch {
@@ -96,141 +199,570 @@ function readBody(req) {
   });
 }
 
-function resolvePlaywright() {
-  const candidates = [process.cwd(), repoRoot, path.join(repoRoot, "web"), path.join(repoRoot, "web-docs")];
-  for (const basePath of candidates) {
-    try {
-      return require(require.resolve("playwright", { paths: [basePath] }));
-    } catch {
-      // keep trying
+function findChromeExecutable() {
+  if (chromeExecutableCache !== null) {
+    return chromeExecutableCache;
+  }
+
+  const envCandidates = [process.env.CHROME_PATH].filter(Boolean);
+  const programFiles = process.env.PROGRAMFILES || "C:\\Program Files";
+  const programFilesX86 = process.env["PROGRAMFILES(X86)"] || "C:\\Program Files (x86)";
+  const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
+
+  const candidates = [
+    ...envCandidates,
+    path.join(programFiles, "Google", "Chrome", "Application", "chrome.exe"),
+    path.join(programFilesX86, "Google", "Chrome", "Application", "chrome.exe"),
+    path.join(localAppData, "Google", "Chrome", "Application", "chrome.exe"),
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/snap/bin/chromium",
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && fs.existsSync(candidate)) {
+      chromeExecutableCache = candidate;
+      return chromeExecutableCache;
     }
   }
-  throw new Error("Unable to resolve 'playwright'. Install it in the workspace.");
-}
 
-function updateCaptureStatus(id, status, capturedAt = null) {
-  const captures = readCaptures();
-  const entry = captures.find((c) => c.id === id);
-  if (entry) {
-    entry.status = status;
-    if (capturedAt) entry.capturedAt = capturedAt;
-    writeCaptures(captures);
-  }
-}
-
-async function deleteCapture(id) {
-  const captures = readCaptures();
-  const index = captures.findIndex((entry) => entry.id === id);
-  if (index < 0) {
-    return null;
-  }
-
-  const [entry] = captures.splice(index, 1);
-  writeCaptures(captures);
-
-  const designLayoutsRoot = path.join(repoRoot, "docs", "design-layouts");
-  const outputDirPath = path.join(designLayoutsRoot, entry.outputDir);
   try {
-    if (fs.existsSync(outputDirPath)) {
-      fs.rmSync(outputDirPath, { recursive: true, force: true });
+    if (process.platform === "win32") {
+      const output = execFileSync("where.exe", ["chrome.exe"], { encoding: "utf8" }).trim();
+      const first = output.split(/\r?\n/).find(Boolean);
+      if (first && fs.existsSync(first)) {
+        chromeExecutableCache = first;
+        return chromeExecutableCache;
+      }
     }
-  } catch (error) {
-    console.warn(`[capture] Failed to remove output dir for ${id}: ${error?.message || error}`);
+  } catch {
+    // ignore fallback failure
   }
 
-  return entry;
+  chromeExecutableCache = null;
+  return null;
 }
 
-/* ------------------------------------------------------------------ */
-/*  Capture logic                                                      */
-/* ------------------------------------------------------------------ */
-
-async function loadMeasureModule() {
-  return import(pathToFileURL(path.join(skillScriptsDir, "measure-layout.mjs")).href);
+async function getFreePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address ? address.port : null;
+      server.close((closeError) => {
+        if (closeError) {
+          reject(closeError);
+          return;
+        }
+        if (typeof port !== "number") {
+          reject(new Error("Failed to allocate a free port."));
+          return;
+        }
+        resolve(port);
+      });
+    });
+  });
 }
 
-async function startCapture(body) {
-  const {
-    url,
-    width = 1920,
-    height = 1080,
-    theme = "light",
-    pageType = "settings",
-  } = body;
-  if (!url) throw new Error("Missing required field: url");
+async function waitForHttpReady(url, timeoutMs = 12000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError = null;
 
-  const mod = await loadMeasureModule();
-  const slug = mod.deriveCaptureSlug(url);
-  const outputDir = mod.deriveDefaultOutputDir({ repoRoot, targetUrl: url, width, height });
-  const id = `${slug}--${width}x${height}--${theme}--${pageType}`;
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(1500) });
+      if (res.ok) {
+        return true;
+      }
+      lastError = new Error(`HTTP ${res.status}`);
+    } catch (error) {
+      lastError = error;
+    }
 
-  const entry = {
-    id,
-    name: slug,
-    url,
-    viewport: `${width}x${height}`,
-    theme,
-    pageType,
-    capturedAt: null,
-    outputDir: path.relative(path.join(repoRoot, "docs", "design-layouts"), outputDir).replace(/\\/g, "/"),
-    status: "pending",
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  throw new Error(`Timed out waiting for ${url}${lastError ? ` (${lastError.message})` : ""}`);
+}
+
+async function launchChromeSession({ debugPort, userDataDir, launchUrl }) {
+  const chromeExecutable = findChromeExecutable();
+  if (!chromeExecutable) {
+    throw new Error("Chrome executable not found. Install Google Chrome or set CHROME_PATH.");
+  }
+
+  ensureDir(userDataDir);
+
+  const args = [
+    `--remote-debugging-port=${debugPort}`,
+    `--user-data-dir=${userDataDir}`,
+    "--new-window",
+    `--window-size=${DEFAULT_WINDOW_SIZE}`,
+    launchUrl || DEFAULT_CHROME_URL,
+  ];
+
+  const child = spawn(chromeExecutable, args, {
+    detached: true,
+    stdio: "ignore",
+  });
+  child.unref();
+
+  await waitForHttpReady(`http://127.0.0.1:${debugPort}/json/version`);
+
+  return {
+    chromeExecutable,
+    browserPid: child.pid ?? null,
   };
-
-  const captures = readCaptures();
-  const existingIdx = captures.findIndex((c) => c.id === id);
-  if (existingIdx >= 0) {
-    captures[existingIdx] = { ...captures[existingIdx], ...entry };
-  } else {
-    captures.push(entry);
-  }
-  writeCaptures(captures);
-
-  return runCapture(id, entry, { url, width, height, theme, outputDir });
 }
 
-async function runCapture(id, entry, options) {
-  updateCaptureStatus(id, "capturing");
-  console.log(`[capture] Starting ${id} → ${options.url} at ${options.width}x${options.height} theme=${options.theme}`);
+export function isBrowserInternalUrl(url) {
+  if (!url) return true;
+  return [
+    "about:blank",
+    "chrome://",
+    "devtools://",
+    "chrome-extension://",
+    "edge://",
+    "brave://",
+    "data:",
+  ].some((prefix) => url.startsWith(prefix));
+}
+
+export function chooseCaptureTarget(targets) {
+  return (
+    targets.find((target) => target?.type === "page" && !isBrowserInternalUrl(target?.url || "")) ||
+    null
+  );
+}
+
+async function listChromeTargets(cdpEndpoint) {
+  const response = await fetch(`${cdpEndpoint.replace(/\/+$/, "")}/json`, {
+    signal: AbortSignal.timeout(2500),
+  });
+  if (!response.ok) {
+    throw new Error(`Unable to list Chrome targets (HTTP ${response.status})`);
+  }
+  return response.json();
+}
+
+function readBinaryArtifact(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return null;
+
+  const extension = path.extname(filePath).toLowerCase();
+  const mimeType =
+    extension === ".png"
+      ? "image/png"
+      : extension === ".jpg" || extension === ".jpeg"
+        ? "image/jpeg"
+        : extension === ".webp"
+          ? "image/webp"
+          : "application/octet-stream";
+
+  return {
+    fileName: path.basename(filePath),
+    mimeType,
+    base64: fs.readFileSync(filePath).toString("base64"),
+  };
+}
+
+async function probeCaptureBrowser({ cdpEndpoint }) {
+  if (!cdpEndpoint || typeof cdpEndpoint !== "string") {
+    throw new Error("cdpEndpoint is required");
+  }
+
+  try {
+    const targets = await listChromeTargets(cdpEndpoint);
+    const target = chooseCaptureTarget(targets);
+    return {
+      reachable: true,
+      currentTargetUrl: target?.url ?? null,
+      currentTargetTitle: target?.title ?? null,
+    };
+  } catch {
+    return {
+      reachable: false,
+      currentTargetUrl: null,
+      currentTargetTitle: null,
+    };
+  }
+}
+
+async function runCaptureWorker({ cdpEndpoint }) {
+  if (!cdpEndpoint || typeof cdpEndpoint !== "string") {
+    throw new Error("cdpEndpoint is required");
+  }
+
+  const targets = await listChromeTargets(cdpEndpoint);
+  const target = chooseCaptureTarget(targets);
+  if (!target?.url) {
+    throw new Error("No capture-eligible page target found in the selected Chrome browser.");
+  }
+
+  const captureId = makeTimestamp();
+  const workerDir = temporaryWorkerDir(captureId);
+  const reportPath = path.join(workerDir, "report.json");
+
+  ensureDir(workerDir);
 
   try {
     const mod = await loadMeasureModule();
+    const report = await mod.measureLayout({
+      url: target.url,
+      cdpEndpoint,
+      waitForUrlContains: target.url,
+      outputDir: workerDir,
+      jsonOut: reportPath,
+      waitMs: "1000",
+    });
 
-    const measureOptions = {
-      url: options.url,
-      width: String(options.width),
-      height: String(options.height),
-      outputDir: options.outputDir,
+    const finalReport = readJsonFile(reportPath, report);
+    const captureTimestamp = finalReport?.capture?.capturedAt || nowIso();
+
+    return {
+      captureId,
+      capturedAt: captureTimestamp,
+      pageUrl: finalReport?.capture?.page?.url || target.url,
+      pageTitle: finalReport?.capture?.page?.title || target.title || null,
+      viewportWidth: finalReport?.capture?.viewport?.width || null,
+      viewportHeight: finalReport?.capture?.viewport?.height || null,
+      currentTargetUrl: target.url,
+      currentTargetTitle: target.title || null,
+      report: finalReport,
+      reportFileName: "report.json",
+      viewportScreenshot: readBinaryArtifact(finalReport?.capture?.artifacts?.viewportScreenshot),
+      fullPageScreenshot: readBinaryArtifact(finalReport?.capture?.artifacts?.fullPageScreenshot),
     };
-
-    if (options.theme === "both") {
-      measureOptions.captureBothThemes = "true";
-    } else if (options.theme === "light" || options.theme === "dark") {
-      measureOptions.theme = options.theme;
-    }
-
-    await mod.measureLayout(measureOptions);
-
-    const capturedAt = new Date().toISOString();
-    updateCaptureStatus(id, "complete", capturedAt);
-    console.log(`[capture] Complete: ${id}`);
-    return { id, status: "complete" };
-  } catch (err) {
-    updateCaptureStatus(id, "failed");
-    console.error(`[capture] Failed: ${id}`, err.message);
-    throw err;
+  } finally {
+    fs.rmSync(workerDir, { recursive: true, force: true });
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  HTTP routes                                                        */
-/* ------------------------------------------------------------------ */
+function normalizeSessionShape(session) {
+  return {
+    ...session,
+    sessionType: typeof session?.sessionType === "string" ? session.sessionType : null,
+    captures: Array.isArray(session?.captures) ? session.captures : [],
+    browser: session?.browser || {},
+  };
+}
 
-async function handleRequest(req, res) {
+function isDesignLayoutCaptureSession(session) {
+  return normalizeSessionShape(session).sessionType === DESIGN_LAYOUT_CAPTURE_SESSION_TYPE;
+}
+
+function buildCaptureFileUrl(sessionId, relativePath) {
+  return `http://127.0.0.1:${PORT}/capture-sessions/${encodeURIComponent(sessionId)}/files/${encodePathSegments(relativePath)}`;
+}
+
+function captureSummaryForResponse(sessionId, capture) {
+  return {
+    ...capture,
+    reportUrl: capture.reportRelativePath ? buildCaptureFileUrl(sessionId, capture.reportRelativePath) : null,
+    viewportUrl: capture.viewportRelativePath ? buildCaptureFileUrl(sessionId, capture.viewportRelativePath) : null,
+    fullPageUrl: capture.fullPageRelativePath ? buildCaptureFileUrl(sessionId, capture.fullPageRelativePath) : null,
+  };
+}
+
+function sessionSummaryForResponse(session) {
+  const normalized = normalizeSessionShape(session);
+  const lastCapture = normalized.captures[normalized.captures.length - 1] || null;
+  return {
+    id: normalized.id,
+    name: normalized.name,
+    status: normalized.status,
+    createdAt: normalized.createdAt,
+    updatedAt: normalized.updatedAt,
+    lastCapturedAt: normalized.lastCapturedAt || lastCapture?.capturedAt || null,
+    saveRoot: normalized.saveRoot,
+    sessionDir: normalized.sessionDir,
+    captureCount: normalized.captures.length,
+    debugPort: normalized.browser?.debugPort ?? null,
+    cdpEndpoint: normalized.browser?.cdpEndpoint ?? null,
+    browserPid: normalized.browser?.browserPid ?? null,
+  };
+}
+
+async function sessionDetailForResponse(session) {
+  const normalized = normalizeSessionShape(session);
+  let browserReachable = false;
+  let currentTarget = null;
+
+  if (normalized.browser?.cdpEndpoint) {
+    try {
+      const targets = await listChromeTargets(normalized.browser.cdpEndpoint);
+      currentTarget = chooseCaptureTarget(targets);
+      browserReachable = true;
+    } catch {
+      browserReachable = false;
+    }
+  }
+
+  return {
+    ...sessionSummaryForResponse(normalized),
+    saveRoot: normalized.saveRoot,
+    sessionDir: normalized.sessionDir,
+    browser: {
+      ...normalized.browser,
+      reachable: browserReachable,
+      currentTargetUrl: currentTarget?.url ?? null,
+      currentTargetTitle: currentTarget?.title ?? null,
+    },
+    captures: normalized.captures.map((capture) => captureSummaryForResponse(normalized.id, capture)),
+  };
+}
+
+function readAllSessions() {
+  const entries = normalizeRegistryEntries(readSessionRegistry());
+  const liveSessions = [];
+  const liveRegistry = [];
+
+  for (const entry of entries) {
+    const session = readSessionFile(entry.sessionDir);
+    if (!session) continue;
+    const normalized = normalizeSessionShape(session);
+    if (!isDesignLayoutCaptureSession(normalized)) continue;
+    liveSessions.push(normalized);
+    liveRegistry.push(entry);
+  }
+
+  if (liveRegistry.length !== entries.length) {
+    writeSessionRegistry(liveRegistry);
+  }
+
+  return liveSessions.sort((left, right) => String(right.createdAt).localeCompare(String(left.createdAt)));
+}
+
+function flattenLegacyCaptures() {
+  return readAllSessions().flatMap((session) =>
+    normalizeSessionShape(session).captures.map((capture) => ({
+      id: `${session.id}:${capture.id}`,
+      name: session.name,
+      url: capture.pageUrl || "",
+      viewport:
+        capture.viewportWidth && capture.viewportHeight
+          ? `${capture.viewportWidth}x${capture.viewportHeight}`
+          : "--",
+      theme: "light",
+      pageType: "workbench",
+      capturedAt: capture.capturedAt,
+      outputDir: capture.reportRelativePath ? path.dirname(capture.reportRelativePath).replace(/\\/g, "/") : "",
+      status: capture.status,
+    })),
+  );
+}
+
+async function loadMeasureModule() {
+  return import(pathToFileURL(layoutCaptureWrapperPath).href);
+}
+
+function relativeToSessionDir(sessionDir, filePath) {
+  return path.relative(sessionDir, filePath).replace(/\\/g, "/");
+}
+
+function copyIfExists(sourcePath, destinationPath) {
+  if (!sourcePath || !fs.existsSync(sourcePath)) return false;
+  fs.copyFileSync(sourcePath, destinationPath);
+  return true;
+}
+
+async function createSession({ name, saveRoot, launchUrl }) {
+  const resolvedSaveRoot = path.resolve(saveRoot || getDefaultCaptureSessionsRoot());
+  ensureDir(resolvedSaveRoot);
+
+  const sessionId = makeSessionId();
+  const sessionDir = path.join(resolvedSaveRoot, sessionId);
+  const capturesDir = path.join(sessionDir, "captures");
+  const userDataDir = path.join(sessionDir, "chrome-profile");
+
+  ensureDir(sessionDir);
+  ensureDir(capturesDir);
+
+  const debugPort = await getFreePort();
+
+  logEvent("capture.session.create.start", {
+    sessionId,
+    saveRoot: resolvedSaveRoot,
+    debugPort,
+  });
+
+  const launched = await launchChromeSession({
+    debugPort,
+    userDataDir,
+    launchUrl: launchUrl || DEFAULT_CHROME_URL,
+  });
+
+  const session = {
+    id: sessionId,
+    sessionType: DESIGN_LAYOUT_CAPTURE_SESSION_TYPE,
+    name: sanitizeName(name) || buildDefaultSessionName(),
+    status: "ready",
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    lastCapturedAt: null,
+    saveRoot: resolvedSaveRoot,
+    sessionDir,
+    captures: [],
+    browser: {
+      debugPort,
+      cdpEndpoint: `http://127.0.0.1:${debugPort}`,
+      browserPid: launched.browserPid,
+      userDataDir,
+      launchUrl: launchUrl || DEFAULT_CHROME_URL,
+      chromeExecutable: launched.chromeExecutable,
+      launchedAt: nowIso(),
+    },
+  };
+
+  writeSessionFile(session);
+  syncRegistryEntry(session);
+
+  logEvent("capture.browser.launch.success", {
+    sessionId,
+    debugPort,
+    browserPid: launched.browserPid,
+    chromeExecutable: launched.chromeExecutable,
+  });
+
+  return session;
+}
+
+async function captureSessionPage(sessionId) {
+  const session = readAllSessions().find((entry) => entry.id === sessionId);
+  if (!session) {
+    throw new Error(`Session ${sessionId} not found`);
+  }
+
+  const normalized = normalizeSessionShape(session);
+  const cdpEndpoint = normalized.browser?.cdpEndpoint;
+  if (!cdpEndpoint) {
+    normalized.status = "browser-missing";
+    writeSessionFile(normalized);
+    throw new Error("Session has no stored CDP endpoint.");
+  }
+
+  logEvent("capture.session.capture.start", { sessionId });
+
+  const targets = await listChromeTargets(cdpEndpoint);
+  const target = chooseCaptureTarget(targets);
+  if (!target?.url) {
+    normalized.status = "browser-missing";
+    writeSessionFile(normalized);
+    throw new Error("No capture-eligible page target found in the session browser.");
+  }
+
+  logEvent("capture.session.capture.target_selected", {
+    sessionId,
+    targetUrl: target.url,
+    targetTitle: target.title ?? null,
+  });
+
+  const mod = await loadMeasureModule();
+  const captureId = makeCaptureId(normalized.sessionDir);
+  const captureDir = path.join(normalized.sessionDir, "captures", captureId);
+  const reportPath = path.join(captureDir, "report.json");
+  const viewportPath = path.join(captureDir, "viewport.png");
+  const fullPagePath = path.join(captureDir, "full-page.png");
+
+  ensureDir(captureDir);
+
+  normalized.status = "capturing";
+  writeSessionFile(normalized);
+
+  try {
+    const report = await mod.measureLayout({
+      url: target.url,
+      cdpEndpoint,
+      waitForUrlContains: target.url,
+      outputDir: captureDir,
+      jsonOut: reportPath,
+      waitMs: "1000",
+    });
+
+    const viewportSource = report?.capture?.artifacts?.viewportScreenshot;
+    const fullPageSource = report?.capture?.artifacts?.fullPageScreenshot;
+    copyIfExists(viewportSource, viewportPath);
+    copyIfExists(fullPageSource, fullPagePath);
+
+    const finalReport = readJsonFile(reportPath, report);
+    const captureTimestamp = finalReport?.capture?.capturedAt || nowIso();
+    const captureArtifact = {
+      id: captureId,
+      status: "complete",
+      capturedAt: captureTimestamp,
+      pageUrl: finalReport?.capture?.page?.url || target.url,
+      pageTitle: finalReport?.capture?.page?.title || target.title || null,
+      viewportWidth: finalReport?.capture?.viewport?.width || null,
+      viewportHeight: finalReport?.capture?.viewport?.height || null,
+      reportRelativePath: relativeToSessionDir(normalized.sessionDir, reportPath),
+      viewportRelativePath: fs.existsSync(viewportPath)
+        ? relativeToSessionDir(normalized.sessionDir, viewportPath)
+        : null,
+      fullPageRelativePath: fs.existsSync(fullPagePath)
+        ? relativeToSessionDir(normalized.sessionDir, fullPagePath)
+        : null,
+    };
+
+    normalized.status = "ready";
+    normalized.lastCapturedAt = captureTimestamp;
+    normalized.browser.lastTargetUrl = target.url;
+    normalized.browser.lastTargetTitle = target.title || null;
+    normalized.captures = [...normalized.captures, captureArtifact];
+    writeSessionFile(normalized);
+
+    logEvent("capture.session.capture.success", {
+      sessionId,
+      captureId,
+      pageUrl: captureArtifact.pageUrl,
+      reportPath,
+    });
+
+    return captureSummaryForResponse(sessionId, captureArtifact);
+  } catch (error) {
+    normalized.status = "capture-failed";
+    normalized.lastError = error?.message || String(error);
+    writeSessionFile(normalized);
+
+    logEvent("capture.session.capture.failure", {
+      sessionId,
+      error: normalized.lastError,
+    });
+
+    throw error;
+  }
+}
+
+function deleteLegacyCapture() {
+  return { error: "Legacy capture deletion is no longer supported. Use capture sessions." };
+}
+
+function sendFile(res, filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeTypes = {
+    ".json": "application/json",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+  };
+
+  res.writeHead(200, {
+    "Content-Type": mimeTypes[ext] || "application/octet-stream",
+    "Access-Control-Allow-Origin": "*",
+  });
+  fs.createReadStream(filePath).pipe(res);
+}
+
+async function handleRequest(req, res, options = {}) {
   const { method } = req;
-  const urlObj = new URL(req.url, `http://localhost:${PORT}`);
+  const urlObj = new URL(req.url, `http://127.0.0.1:${PORT}`);
   const pathname = urlObj.pathname;
+  const runWorker = options.runCaptureWorker || runCaptureWorker;
+  const probeBrowser = options.probeCaptureBrowser || probeCaptureBrowser;
 
-  // CORS preflight
   if (method === "OPTIONS") {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
@@ -242,129 +774,151 @@ async function handleRequest(req, res) {
   }
 
   try {
-    // GET /captures — list all
-    if (method === "GET" && pathname === "/captures") {
-      sendJson(res, 200, readCaptures());
+    if (method === "GET" && pathname === "/capture-worker/status") {
+      sendJson(res, 200, { ok: true });
       return;
     }
 
-    // POST /capture — start new capture
-    if (method === "POST" && pathname === "/capture") {
+    if (method === "POST" && pathname === "/capture-worker/probe") {
       const body = await readBody(req);
-      const result = await startCapture(body);
-      sendJson(res, 200, result);
+      const probe = await probeBrowser(body || {});
+      sendJson(res, 200, { probe });
       return;
     }
 
-    // POST /captures/delete — remove capture and artifacts
-    if (method === "POST" && pathname === "/captures/delete") {
+    if (method === "POST" && pathname === "/capture-worker/run") {
       const body = await readBody(req);
-      const id = body?.id;
-      if (typeof id !== "string" || !id.trim()) {
-        sendJson(res, 400, { error: "Missing capture id" });
-        return;
-      }
-      const deleted = await deleteCapture(decodeURIComponent(id));
-      if (!deleted) {
-        sendJson(res, 404, { error: `Capture ${id} not found` });
-        return;
-      }
-      sendJson(res, 200, { id, status: "deleted" });
+      const capture = await runWorker(body || {});
+      sendJson(res, 200, { capture });
       return;
     }
 
-    // POST /captures/:id/delete — remove capture and artifacts
-    if (method === "POST") {
-      const deleteMatch = pathname.match(/^\/captures\/(.+)\/delete\/?$/);
-      if (deleteMatch) {
-        const id = decodeURIComponent(deleteMatch[1]);
-        const deleted = await deleteCapture(id);
-        if (!deleted) {
-          sendJson(res, 404, { error: `Capture ${id} not found` });
+    if (method === "GET" && pathname === "/capture-sessions/defaults") {
+      sendJson(res, 200, {
+        defaultSaveRoot: getDefaultCaptureSessionsRoot(),
+        chromeExecutableDetected: Boolean(findChromeExecutable()),
+      });
+      return;
+    }
+
+    if (method === "GET" && pathname === "/capture-sessions") {
+      const sessions = readAllSessions().map(sessionSummaryForResponse);
+      sendJson(res, 200, { sessions });
+      return;
+    }
+
+    if (method === "POST" && pathname === "/capture-sessions") {
+      const body = await readBody(req);
+      const session = await createSession(body || {});
+      sendJson(res, 200, { session: sessionSummaryForResponse(session) });
+      return;
+    }
+
+    if (method === "GET") {
+      const detailMatch = pathname.match(/^\/capture-sessions\/([^/]+)$/);
+      if (detailMatch) {
+        const sessionId = decodeURIComponent(detailMatch[1]);
+        const session = readAllSessions().find((entry) => entry.id === sessionId);
+        if (!session) {
+          sendJson(res, 404, { error: `Session ${sessionId} not found` });
           return;
         }
-        sendJson(res, 200, { id, status: "deleted" });
+        sendJson(res, 200, { session: await sessionDetailForResponse(session) });
         return;
       }
     }
 
-    // DELETE /captures/:id — remove capture and artifacts
-    if (method === "DELETE" && pathname.startsWith("/captures/")) {
-      const id = decodeURIComponent(pathname.slice("/captures/".length));
-      const deleted = await deleteCapture(id);
-      if (!deleted) {
-        sendJson(res, 404, { error: `Capture ${id} not found` });
+    if (method === "POST") {
+      const captureMatch = pathname.match(/^\/capture-sessions\/([^/]+)\/captures$/);
+      if (captureMatch) {
+        const sessionId = decodeURIComponent(captureMatch[1]);
+        const capture = await captureSessionPage(sessionId);
+        sendJson(res, 200, { capture });
         return;
       }
-      sendJson(res, 200, { id, status: "deleted" });
+    }
+
+    if (method === "GET") {
+      const fileMatch = pathname.match(/^\/capture-sessions\/([^/]+)\/files\/(.+)$/);
+      if (fileMatch) {
+        const sessionId = decodeURIComponent(fileMatch[1]);
+        const relativePath = decodeURIComponent(fileMatch[2]);
+        const session = readAllSessions().find((entry) => entry.id === sessionId);
+        if (!session) {
+          sendJson(res, 404, { error: `Session ${sessionId} not found` });
+          return;
+        }
+        const root = path.resolve(session.sessionDir);
+        const filePath = path.resolve(root, relativePath);
+        if (!filePath.startsWith(root) || relativePath.includes("..")) {
+          sendJson(res, 403, { error: "Forbidden" });
+          return;
+        }
+        if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+          sendJson(res, 404, { error: "File not found" });
+          return;
+        }
+        sendFile(res, filePath);
+        return;
+      }
+    }
+
+    if (method === "GET" && pathname === "/captures") {
+      sendJson(res, 200, flattenLegacyCaptures());
       return;
     }
 
-    // GET /status/:id — check single capture
-    if (method === "GET" && pathname.startsWith("/status/")) {
-      const id = decodeURIComponent(pathname.slice("/status/".length));
-      const captures = readCaptures();
-      const entry = captures.find((c) => c.id === id);
-      if (!entry) {
-        sendJson(res, 404, { error: "Capture not found" });
-        return;
-      }
-      sendJson(res, 200, entry);
-      return;
-    }
-
-    // GET /files/* — serve captured files (screenshots, reports)
-    if (method === "GET" && pathname.startsWith("/files/")) {
-      const designLayoutsDir = path.join(repoRoot, "docs", "design-layouts");
-      const relativePath = decodeURIComponent(pathname.slice("/files/".length));
-      const filePath = path.resolve(designLayoutsDir, relativePath);
-
-      if (!filePath.startsWith(designLayoutsDir) || relativePath.includes("..")) {
-        sendJson(res, 403, { error: "Forbidden" });
-        return;
-      }
-
-      if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-        sendJson(res, 404, { error: "File not found" });
-        return;
-      }
-
-      const ext = path.extname(filePath).toLowerCase();
-      const mimeTypes = {
-        ".json": "application/json",
-        ".png": "image/png",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".webp": "image/webp",
-        ".svg": "image/svg+xml",
-      };
-
-      res.writeHead(200, {
-        "Content-Type": mimeTypes[ext] || "application/octet-stream",
-        "Access-Control-Allow-Origin": "*",
+    if (method === "POST" && pathname === "/capture") {
+      sendJson(res, 410, {
+        error: "Legacy one-off capture is no longer supported. Create a capture session instead.",
       });
-      fs.createReadStream(filePath).pipe(res);
+      return;
+    }
+
+    if (
+      (method === "POST" && pathname === "/captures/delete") ||
+      (method === "POST" && /^\/captures\/.+\/delete\/?$/.test(pathname)) ||
+      (method === "DELETE" && pathname.startsWith("/captures/"))
+    ) {
+      sendJson(res, 410, deleteLegacyCapture());
       return;
     }
 
     sendJson(res, 404, { error: "Not found" });
-  } catch (err) {
-    console.error(`[server] Error:`, err.message);
-    sendJson(res, 500, { error: err.message });
+  } catch (error) {
+    const message = error?.message || String(error);
+    if (message.includes("Session") && message.includes("not found")) {
+      sendJson(res, 404, { error: message });
+      return;
+    }
+    sendJson(res, 500, { error: message });
   }
 }
 
-/* ------------------------------------------------------------------ */
-/*  Start                                                              */
-/* ------------------------------------------------------------------ */
+export function createServer(options = {}) {
+  return http.createServer((req, res) => {
+    void handleRequest(req, res, options);
+  });
+}
 
-const server = http.createServer(handleRequest);
-server.listen(PORT, () => {
-  console.log(`\nCapture server running on http://localhost:${PORT}`);
-  console.log(`  GET  /captures        — list all captures`);
-  console.log(`  POST /capture         — start new { url, width, height, theme, pageType }`);
-  console.log(`  POST /captures/delete — remove capture and artifacts (payload id)`);
-  console.log(`  POST /captures/:id/delete — remove capture and artifacts`);
-  console.log(`  DELETE /captures/:id    — remove capture and artifacts (legacy)`);
-  console.log(`  GET  /status/:id      — check one capture\n`);
-});
+export function startServer(port = PORT) {
+  const server = createServer();
+  server.listen(port, () => {
+    console.log(`\nCapture server running on http://127.0.0.1:${port}`);
+    console.log(`  GET  /capture-worker/status        - worker readiness`);
+    console.log(`  POST /capture-worker/probe         - inspect current browser target`);
+    console.log(`  POST /capture-worker/run           - run the layout-capture worker`);
+    console.log(`  GET  /capture-sessions/defaults     - defaults and browser detection`);
+    console.log(`  GET  /capture-sessions              - list sessions`);
+    console.log(`  POST /capture-sessions              - create session and launch Chrome`);
+    console.log(`  GET  /capture-sessions/:id          - read session detail`);
+    console.log(`  POST /capture-sessions/:id/captures - append a capture to a session`);
+    console.log(`  GET  /capture-sessions/:id/files/*  - serve session artifacts`);
+    console.log(`  GET  /captures                      - legacy readiness/list endpoint\n`);
+  });
+  return server;
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
+  startServer();
+}

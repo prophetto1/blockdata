@@ -8,15 +8,13 @@ import { useAgchainWorkspace, AgchainWorkspaceProvider, resetAgchainWorkspaceSta
 
 const fetchAgchainOrganizationsMock = vi.fn();
 const fetchAgchainProjectsMock = vi.fn();
+const fetchAgchainWorkspaceBootstrapMock = vi.fn();
 
-vi.mock('@/lib/agchainWorkspaces', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/agchainWorkspaces')>('@/lib/agchainWorkspaces');
-  return {
-    ...actual,
-    fetchAgchainOrganizations: () => fetchAgchainOrganizationsMock(),
-    fetchAgchainProjects: (options?: unknown) => fetchAgchainProjectsMock(options),
-  };
-});
+vi.mock('@/lib/agchainWorkspaces', () => ({
+  fetchAgchainOrganizations: () => fetchAgchainOrganizationsMock(),
+  fetchAgchainProjects: (options?: unknown) => fetchAgchainProjectsMock(options),
+  fetchAgchainWorkspaceBootstrap: (options?: unknown) => fetchAgchainWorkspaceBootstrapMock(options),
+}));
 
 vi.mock('@/auth/AuthContext', () => ({
   useAuth: () => ({
@@ -72,6 +70,24 @@ const PROJECT_2 = {
   primary_benchmark_name: 'Finance Eval',
 };
 
+const WORKSPACE_BOOTSTRAP_ORG_1 = {
+  status: 'ready',
+  organizations: [ORG_1, ORG_2],
+  projects: [PROJECT_1],
+  selectedOrganizationId: 'org-1',
+  selectedProjectId: 'project-1',
+  error: null,
+};
+
+const WORKSPACE_BOOTSTRAP_ORG_2 = {
+  status: 'ready',
+  organizations: [ORG_1, ORG_2],
+  projects: [PROJECT_2],
+  selectedOrganizationId: 'org-2',
+  selectedProjectId: 'project-2',
+  error: null,
+};
+
 // ---------------------------------------------------------------------------
 // Probe component
 // ---------------------------------------------------------------------------
@@ -104,12 +120,13 @@ function renderWithProvider() {
 // ---------------------------------------------------------------------------
 
 function setupHappyPath() {
-  fetchAgchainOrganizationsMock.mockResolvedValue({ items: [ORG_1, ORG_2] });
-  fetchAgchainProjectsMock.mockImplementation((options?: { organizationId?: string | null }) => {
-    if (options?.organizationId === 'org-2') {
-      return Promise.resolve({ items: [PROJECT_2] });
+  fetchAgchainWorkspaceBootstrapMock.mockImplementation((options?: {
+    preferredOrganizationId?: string | null;
+  }) => {
+    if (options?.preferredOrganizationId === 'org-2') {
+      return Promise.resolve(WORKSPACE_BOOTSTRAP_ORG_2);
     }
-    return Promise.resolve({ items: [PROJECT_1] });
+    return Promise.resolve(WORKSPACE_BOOTSTRAP_ORG_1);
   });
 }
 
@@ -128,7 +145,64 @@ describe('AgchainWorkspaceProvider', () => {
   beforeEach(() => {
     fetchAgchainOrganizationsMock.mockReset();
     fetchAgchainProjectsMock.mockReset();
+    fetchAgchainWorkspaceBootstrapMock.mockReset();
+    fetchAgchainOrganizationsMock.mockRejectedValue(new Error('legacy organizations bootstrap should not run'));
+    fetchAgchainProjectsMock.mockRejectedValue(new Error('legacy projects bootstrap should not run'));
     resetAgchainWorkspaceStateForTests();
+  });
+
+  it('bootstraps through the combined workspace endpoint instead of separate organizations and projects calls', async () => {
+    fetchAgchainWorkspaceBootstrapMock.mockResolvedValue(WORKSPACE_BOOTSTRAP_ORG_1);
+    fetchAgchainOrganizationsMock.mockRejectedValue(new Error('legacy organizations bootstrap should not run'));
+    fetchAgchainProjectsMock.mockRejectedValue(new Error('legacy projects bootstrap should not run'));
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('ready');
+    });
+
+    expect(screen.getByTestId('org')).toHaveTextContent('Personal');
+    expect(screen.getByTestId('project')).toHaveTextContent('Legal Evals');
+    expect(fetchAgchainWorkspaceBootstrapMock).toHaveBeenCalledTimes(1);
+    expect(fetchAgchainOrganizationsMock).not.toHaveBeenCalled();
+    expect(fetchAgchainProjectsMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps the last resolved workspace visible while an organization switch is loading', async () => {
+    let resolveNextWorkspace: ((value: typeof WORKSPACE_BOOTSTRAP_ORG_2) => void) | null = null;
+    fetchAgchainWorkspaceBootstrapMock
+      .mockResolvedValueOnce(WORKSPACE_BOOTSTRAP_ORG_1)
+      .mockImplementationOnce(
+        () => new Promise<typeof WORKSPACE_BOOTSTRAP_ORG_2>((resolve) => {
+          resolveNextWorkspace = resolve;
+        }),
+      );
+    fetchAgchainOrganizationsMock.mockRejectedValue(new Error('legacy organizations bootstrap should not run'));
+    fetchAgchainProjectsMock.mockRejectedValue(new Error('legacy projects bootstrap should not run'));
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('ready');
+    });
+
+    await act(async () => {
+      screen.getByTestId('switch-org').click();
+    });
+
+    expect(screen.getByTestId('status')).toHaveTextContent('ready');
+    expect(screen.getByTestId('org')).toHaveTextContent('Personal');
+    expect(screen.getByTestId('project')).toHaveTextContent('Legal Evals');
+
+    await act(async () => {
+      resolveNextWorkspace?.(WORKSPACE_BOOTSTRAP_ORG_2);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('org')).toHaveTextContent('Acme');
+      expect(screen.getByTestId('project')).toHaveTextContent('Finance Evals');
+    });
   });
 
   it('bootstraps to ready with valid org + project', async () => {
@@ -146,7 +220,14 @@ describe('AgchainWorkspaceProvider', () => {
   });
 
   it('transitions to no-organization when no orgs returned', async () => {
-    fetchAgchainOrganizationsMock.mockResolvedValue({ items: [] });
+    fetchAgchainWorkspaceBootstrapMock.mockResolvedValue({
+      status: 'no-organization',
+      organizations: [],
+      projects: [],
+      selectedOrganizationId: null,
+      selectedProjectId: null,
+      error: null,
+    });
     renderWithProvider();
 
     await waitFor(() => {
@@ -155,8 +236,14 @@ describe('AgchainWorkspaceProvider', () => {
   });
 
   it('transitions to no-project when org exists but no projects', async () => {
-    fetchAgchainOrganizationsMock.mockResolvedValue({ items: [ORG_1] });
-    fetchAgchainProjectsMock.mockResolvedValue({ items: [] });
+    fetchAgchainWorkspaceBootstrapMock.mockResolvedValue({
+      status: 'no-project',
+      organizations: [ORG_1],
+      projects: [],
+      selectedOrganizationId: 'org-1',
+      selectedProjectId: null,
+      error: null,
+    });
     renderWithProvider();
 
     await waitFor(() => {
@@ -166,7 +253,7 @@ describe('AgchainWorkspaceProvider', () => {
   });
 
   it('transitions to error on fetch failure', async () => {
-    fetchAgchainOrganizationsMock.mockRejectedValue(new Error('Network failure'));
+    fetchAgchainWorkspaceBootstrapMock.mockRejectedValue(new Error('Network failure'));
     renderWithProvider();
 
     await waitFor(() => {
@@ -195,88 +282,94 @@ describe('AgchainWorkspaceProvider', () => {
   });
 
   it('updates project immediately without re-fetch on project switch', async () => {
-    fetchAgchainOrganizationsMock.mockResolvedValue({ items: [ORG_1] });
-    fetchAgchainProjectsMock.mockResolvedValue({ items: [PROJECT_1, { ...PROJECT_2, organization_id: 'org-1' }] });
+    fetchAgchainWorkspaceBootstrapMock.mockResolvedValue({
+      status: 'ready',
+      organizations: [ORG_1],
+      projects: [PROJECT_1, { ...PROJECT_2, organization_id: 'org-1' }],
+      selectedOrganizationId: 'org-1',
+      selectedProjectId: 'project-1',
+      error: null,
+    });
     renderWithProvider();
 
     await waitFor(() => {
       expect(screen.getByTestId('status')).toHaveTextContent('ready');
     });
 
-    const fetchCountBefore = fetchAgchainProjectsMock.mock.calls.length;
+    const fetchCountBefore = fetchAgchainWorkspaceBootstrapMock.mock.calls.length;
 
     act(() => {
       screen.getByTestId('switch-project').click();
     });
 
     expect(screen.getByTestId('project')).toHaveTextContent('Finance Evals');
-    expect(fetchAgchainProjectsMock.mock.calls.length).toBe(fetchCountBefore);
+    expect(fetchAgchainWorkspaceBootstrapMock.mock.calls.length).toBe(fetchCountBefore);
   });
 
   it('falls back correctly with stale localStorage', async () => {
     window.localStorage.setItem('agchain.organizationFocusId', 'org-deleted');
     window.localStorage.setItem('agchain.projectFocusId', 'project-deleted');
 
-    setupHappyPath();
+    fetchAgchainWorkspaceBootstrapMock.mockResolvedValue(WORKSPACE_BOOTSTRAP_ORG_1);
     renderWithProvider();
 
     await waitFor(() => {
       expect(screen.getByTestId('status')).toHaveTextContent('ready');
     });
 
-    // Falls back to first org and first project
     expect(screen.getByTestId('org')).toHaveTextContent('Personal');
     expect(screen.getByTestId('project')).toHaveTextContent('Legal Evals');
   });
 
   it('discards stale response on rapid org switch (latest-request-wins)', async () => {
-    const org1Gate: { resolve: ((value: { items: (typeof PROJECT_1)[] }) => void) | null } = { resolve: null };
+    const initialGate: { resolve: ((value: typeof WORKSPACE_BOOTSTRAP_ORG_1) => void) | null } = { resolve: null };
 
-    fetchAgchainOrganizationsMock.mockResolvedValue({ items: [ORG_1, ORG_2] });
-    fetchAgchainProjectsMock.mockImplementation((options?: { organizationId?: string | null }) => {
-      if (options?.organizationId === 'org-2') {
-        return Promise.resolve({ items: [PROJECT_2] });
+    fetchAgchainWorkspaceBootstrapMock.mockImplementation((options?: {
+      preferredOrganizationId?: string | null;
+    }) => {
+      if (options?.preferredOrganizationId === 'org-2') {
+        return Promise.resolve(WORKSPACE_BOOTSTRAP_ORG_2);
       }
-      // First org: delay resolution so we can trigger a second switch
-      return new Promise<{ items: (typeof PROJECT_1)[] }>((resolve) => {
-        org1Gate.resolve = resolve;
+      return new Promise<typeof WORKSPACE_BOOTSTRAP_ORG_1>((resolve) => {
+        initialGate.resolve = resolve;
       });
     });
 
     renderWithProvider();
 
-    // Wait for bootstrap to start (orgs loaded, first project fetch in-flight)
+    // Wait for the first bootstrap request to start.
     await waitFor(() => {
-      expect(fetchAgchainProjectsMock).toHaveBeenCalled();
+      expect(fetchAgchainWorkspaceBootstrapMock).toHaveBeenCalled();
     });
 
-    // Resolve the first project fetch so bootstrap completes
+    // Resolve the first bootstrap so the provider becomes ready.
     await act(async () => {
-      org1Gate.resolve?.({ items: [PROJECT_1] });
+      initialGate.resolve?.(WORKSPACE_BOOTSTRAP_ORG_1);
     });
 
     await waitFor(() => {
       expect(screen.getByTestId('status')).toHaveTextContent('ready');
     });
 
-    // Now set up a slow response for org-1 and switch twice
-    type ProjectsResult = { items: (typeof PROJECT_1)[] };
-    const slowSwitch: { resolve: ((value: ProjectsResult) => void) | null } = { resolve: null };
-    fetchAgchainProjectsMock.mockImplementation((options?: { organizationId?: string | null }) => {
-      if (options?.organizationId === 'org-2') {
-        return Promise.resolve({ items: [PROJECT_2] });
+    // Now set up a slow response for org-1 and switch twice.
+    const slowSwitch: { resolve: ((value: typeof WORKSPACE_BOOTSTRAP_ORG_1) => void) | null } = { resolve: null };
+    fetchAgchainWorkspaceBootstrapMock.mockImplementation((options?: {
+      preferredOrganizationId?: string | null;
+    }) => {
+      if (options?.preferredOrganizationId === 'org-2') {
+        return Promise.resolve(WORKSPACE_BOOTSTRAP_ORG_2);
       }
-      return new Promise<ProjectsResult>((resolve) => {
+      return new Promise<typeof WORKSPACE_BOOTSTRAP_ORG_1>((resolve) => {
         slowSwitch.resolve = resolve;
       });
     });
 
-    // First switch: to org-1 (slow)
+    // First switch: reload current org-1 (slow).
     act(() => {
       screen.getByTestId('reload').click();
     });
 
-    // Second switch: to org-2 (fast) — should win
+    // Second switch: to org-2 (fast) — should win.
     await act(async () => {
       screen.getByTestId('switch-org').click();
     });
@@ -286,10 +379,10 @@ describe('AgchainWorkspaceProvider', () => {
       expect(screen.getByTestId('org')).toHaveTextContent('Acme');
     });
 
-    // Now resolve the slow org-1 response — it should be discarded
-    slowSwitch.resolve?.({ items: [PROJECT_1] });
+    // Now resolve the slow org-1 response — it should be discarded.
+    slowSwitch.resolve?.(WORKSPACE_BOOTSTRAP_ORG_1);
 
-    // Wait a tick and verify state didn't revert
+    // Wait a tick and verify state did not revert.
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
     });
@@ -309,8 +402,7 @@ describe('AgchainWorkspaceProvider', () => {
 
     expect(screen.getByTestId('org')).toHaveTextContent('Personal');
     expect(screen.getByTestId('project')).toHaveTextContent('Legal Evals');
-    expect(fetchAgchainOrganizationsMock).toHaveBeenCalledTimes(1);
-    expect(fetchAgchainProjectsMock).toHaveBeenCalledTimes(1);
+    expect(fetchAgchainWorkspaceBootstrapMock).toHaveBeenCalledTimes(1);
 
     firstRender.unmount();
 
@@ -319,7 +411,6 @@ describe('AgchainWorkspaceProvider', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('ready');
     expect(screen.getByTestId('org')).toHaveTextContent('Personal');
     expect(screen.getByTestId('project')).toHaveTextContent('Legal Evals');
-    expect(fetchAgchainOrganizationsMock).toHaveBeenCalledTimes(1);
-    expect(fetchAgchainProjectsMock).toHaveBeenCalledTimes(1);
+    expect(fetchAgchainWorkspaceBootstrapMock).toHaveBeenCalledTimes(1);
   });
 });

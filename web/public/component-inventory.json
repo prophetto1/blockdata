@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-15T02:40:08.987Z",
+  "generatedAt": "2026-04-17T03:57:28.173Z",
   "scope": "auth",
   "pages": [
     {
@@ -199,10 +199,10 @@
     },
     {
       "page": "src/pages/DatabasePlaceholder.tsx",
-      "componentCount": 4,
+      "componentCount": 7,
       "categoryCounts": {
         "local-components": 3,
-        "tabler-icons": 1
+        "tabler-icons": 4
       },
       "components": [
         {
@@ -224,6 +224,24 @@
           "definition": "ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert)"
         },
         {
+          "component": "IconChevronLeft",
+          "usedAs": "IconChevronLeft",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronLeft",
+          "category": "tabler-icons",
+          "definition": "IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft)"
+        },
+        {
+          "component": "IconChevronRight",
+          "usedAs": "IconChevronRight",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconChevronRight",
+          "category": "tabler-icons",
+          "definition": "IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight)"
+        },
+        {
           "component": "IconDatabase",
           "usedAs": "IconDatabase",
           "source": "@tabler/icons-react",
@@ -231,6 +249,15 @@
           "importedAs": "IconDatabase",
           "category": "tabler-icons",
           "definition": "IconDatabase comes from @tabler/icons-react (named import of IconDatabase)"
+        },
+        {
+          "component": "IconRefresh",
+          "usedAs": "IconRefresh",
+          "source": "@tabler/icons-react",
+          "importKind": "named",
+          "importedAs": "IconRefresh",
+          "category": "tabler-icons",
+          "definition": "IconRefresh comes from @tabler/icons-react (named import of IconRefresh)"
         },
         {
           "component": "PageHeader",
@@ -4439,6 +4466,34 @@
       ]
     },
     {
+      "page": "src/pages/superuser/SuperuserAdminIndex.tsx",
+      "componentCount": 2,
+      "categoryCounts": {
+        "external-package": 1,
+        "relative-local": 1
+      },
+      "components": [
+        {
+          "component": "Navigate",
+          "usedAs": "Navigate",
+          "source": "react-router-dom",
+          "importKind": "named",
+          "importedAs": "Navigate",
+          "category": "external-package",
+          "definition": "Navigate comes from react-router-dom (named import of Navigate)"
+        },
+        {
+          "component": "SuperuserControlTowerComponent",
+          "usedAs": "SuperuserControlTowerComponent",
+          "source": "./SuperuserControlTower",
+          "importKind": "named",
+          "importedAs": "Component",
+          "category": "relative-local",
+          "definition": "SuperuserControlTowerComponent comes from ./SuperuserControlTower (named import of Component)"
+        }
+      ]
+    },
+    {
       "page": "src/pages/superuser/SuperuserGuard.tsx",
       "componentCount": 3,
       "categoryCounts": {
@@ -4512,14 +4567,14 @@
       ]
     }
   ],
-  "totalComponentUsages": 443,
+  "totalComponentUsages": 448,
   "categoryTotals": {
     "local-pages": 2,
     "local-components": 166,
-    "tabler-icons": 74,
+    "tabler-icons": 77,
     "in-file component": 21,
     "ark-ui": 138,
-    "external-package": 22,
-    "relative-local": 20
+    "external-package": 23,
+    "relative-local": 21
   }
 }

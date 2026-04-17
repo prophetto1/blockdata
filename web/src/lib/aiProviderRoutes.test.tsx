@@ -9,9 +9,9 @@ import {
 } from './aiProviderRoutes';
 
 describe('aiProviderRoutes', () => {
-  it('builds canonical blockdata admin AI provider paths', () => {
-    expect(blockdataAiProvidersPath()).toBe('/app/blockdata-admin/ai-providers');
-    expect(blockdataAiProviderPath('openai')).toBe('/app/blockdata-admin/ai-providers/openai');
+  it('builds canonical BD AI provider paths under superuser', () => {
+    expect(blockdataAiProvidersPath()).toBe('/app/superuser/bd/ai-providers');
+    expect(blockdataAiProviderPath('openai')).toBe('/app/superuser/bd/ai-providers/openai');
   });
 
   it('preserves providerId when redirecting a legacy AI provider detail URL', () => {
@@ -19,7 +19,7 @@ describe('aiProviderRoutes', () => {
       <MemoryRouter initialEntries={['/app/settings/ai/openai']}>
         <Routes>
           <Route path="/app/settings/ai/:providerId" element={<LegacyAiProvidersRedirect />} />
-          <Route path="/app/blockdata-admin/ai-providers/:providerId" element={<div>Provider detail</div>} />
+          <Route path="/app/superuser/bd/ai-providers/:providerId" element={<div>Provider detail</div>} />
         </Routes>
       </MemoryRouter>,
     );
@@ -27,12 +27,12 @@ describe('aiProviderRoutes', () => {
     expect(screen.getByText('Provider detail')).toBeInTheDocument();
   });
 
-  it('redirects the legacy list URL to the canonical blockdata admin list page', () => {
+  it('redirects the legacy list URL to the canonical BD list page', () => {
     render(
       <MemoryRouter initialEntries={['/app/settings/ai']}>
         <Routes>
           <Route path="/app/settings/ai" element={<LegacyAiProvidersRedirect />} />
-          <Route path="/app/blockdata-admin/ai-providers" element={<div>Provider list</div>} />
+          <Route path="/app/superuser/bd/ai-providers" element={<div>Provider list</div>} />
         </Routes>
       </MemoryRouter>,
     );
@@ -45,7 +45,7 @@ describe('aiProviderRoutes', () => {
       <MemoryRouter initialEntries={['/app/superuser/ai-providers/openai']}>
         <Routes>
           <Route path="/app/superuser/ai-providers/:providerId" element={<LegacyAiProvidersRedirect />} />
-          <Route path="/app/blockdata-admin/ai-providers/:providerId" element={<div>Superuser provider detail</div>} />
+          <Route path="/app/superuser/bd/ai-providers/:providerId" element={<div>Superuser provider detail</div>} />
         </Routes>
       </MemoryRouter>,
     );

@@ -516,7 +516,7 @@ export function Component() {
 }
 
 export function DoclingConfigPanel() {
-  useShellHeaderTitle({ title: 'Profiles', breadcrumbs: ['Blockdata Admin', 'Docling', 'Profiles'] });
+  useShellHeaderTitle({ title: 'Profiles', breadcrumbs: ['Superuser', 'BD', 'Docling', 'Profiles'] });
 
   const [profiles, setProfiles] = useState<ParsingProfile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);

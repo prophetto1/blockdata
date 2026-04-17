@@ -4,12 +4,10 @@ import type { ReactNode } from 'react';
 import { AgchainWorkspaceProvider, resetAgchainWorkspaceStateForTests } from '@/contexts/AgchainWorkspaceContext';
 import { useAgchainProjectFocus } from './useAgchainProjectFocus';
 
-const fetchAgchainOrganizationsMock = vi.fn();
-const fetchAgchainProjectsMock = vi.fn();
+const fetchAgchainWorkspaceBootstrapMock = vi.fn();
 
 vi.mock('@/lib/agchainWorkspaces', () => ({
-  fetchAgchainOrganizations: (...args: unknown[]) => fetchAgchainOrganizationsMock(...args),
-  fetchAgchainProjects: (...args: unknown[]) => fetchAgchainProjectsMock(...args),
+  fetchAgchainWorkspaceBootstrap: (...args: unknown[]) => fetchAgchainWorkspaceBootstrapMock(...args),
 }));
 
 vi.mock('@/auth/AuthContext', () => ({
@@ -26,12 +24,15 @@ function wrapper({ children }: { children: ReactNode }) {
 
 describe('useAgchainProjectFocus', () => {
   beforeEach(() => {
-    fetchAgchainOrganizationsMock.mockReset();
-    fetchAgchainProjectsMock.mockReset();
+    fetchAgchainWorkspaceBootstrapMock.mockReset();
     resetAgchainWorkspaceStateForTests();
     window.localStorage.clear();
-    fetchAgchainOrganizationsMock.mockResolvedValue({
-      items: [
+    fetchAgchainWorkspaceBootstrapMock.mockImplementation((options?: {
+      preferredProjectId?: string | null;
+      preferredProjectSlug?: string | null;
+      preferredOrganizationId?: string | null;
+    }) => {
+      const organizations = [
         {
           organization_id: 'org-1',
           organization_slug: 'personal-user-1',
@@ -40,10 +41,8 @@ describe('useAgchainProjectFocus', () => {
           is_personal: true,
           project_count: 2,
         },
-      ],
-    });
-    fetchAgchainProjectsMock.mockResolvedValue({
-      items: [
+      ];
+      const projects = [
         {
           project_id: 'project-1',
           organization_id: 'org-1',
@@ -66,7 +65,21 @@ describe('useAgchainProjectFocus', () => {
           primary_benchmark_slug: 'finance-eval',
           primary_benchmark_name: 'Finance Eval',
         },
-      ],
+      ];
+      let selectedProjectId = 'project-1';
+      if (options?.preferredProjectId === 'project-2') {
+        selectedProjectId = 'project-2';
+      } else if (options?.preferredProjectSlug === 'finance-eval') {
+        selectedProjectId = 'project-2';
+      }
+      return Promise.resolve({
+        status: 'ready',
+        organizations,
+        projects,
+        selectedOrganizationId: options?.preferredOrganizationId ?? 'org-1',
+        selectedProjectId,
+        error: null,
+      });
     });
   });
 
@@ -111,7 +124,7 @@ describe('useAgchainProjectFocus', () => {
   });
 
   it('reports bootstrapping status before the project list finishes loading', () => {
-    fetchAgchainProjectsMock.mockReturnValue(new Promise(() => {}));
+    fetchAgchainWorkspaceBootstrapMock.mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useAgchainProjectFocus(), { wrapper });
 
@@ -122,8 +135,22 @@ describe('useAgchainProjectFocus', () => {
 
   it('clears a stale legacy slug after loading finishes without a matching project', async () => {
     window.localStorage.setItem('agchain.projectFocusSlug', 'finance-eval');
-    fetchAgchainProjectsMock.mockResolvedValue({
-      items: [],
+    fetchAgchainWorkspaceBootstrapMock.mockResolvedValue({
+      status: 'no-project',
+      organizations: [
+        {
+          organization_id: 'org-1',
+          organization_slug: 'personal-user-1',
+          display_name: 'Personal Workspace',
+          membership_role: 'organization_admin',
+          is_personal: true,
+          project_count: 2,
+        },
+      ],
+      projects: [],
+      selectedOrganizationId: 'org-1',
+      selectedProjectId: null,
+      error: null,
     });
 
     const { result } = renderHook(() => useAgchainProjectFocus(), { wrapper });

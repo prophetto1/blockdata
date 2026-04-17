@@ -76,7 +76,7 @@ describe('AgchainOrganizationSwitcher', () => {
     window.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
   });
 
-  it('shows the selected AGChain organization', () => {
+  it('shows the selected AGChain organization with compact selector sizing', () => {
     render(
       <MemoryRouter>
         <AgchainOrganizationSwitcher />
@@ -85,7 +85,10 @@ describe('AgchainOrganizationSwitcher', () => {
 
     const trigger = screen.getByRole('button', { name: /personal workspace/i });
     expect(trigger).toBeInTheDocument();
-    expect(within(trigger).getByText('Personal workspace · 2 projects')).toBeInTheDocument();
+    expect(trigger.className).toContain('min-h-[34px]');
+    expect(trigger.className).toContain('rounded-[4px]');
+    expect(within(trigger).getByText('Personal Workspace').className).toContain('text-[13px]');
+    expect(within(trigger).getByText(/2 projects/i)).toBeInTheDocument();
   });
 
   it('lists available organizations and allows switching', async () => {

@@ -1,22 +1,22 @@
 # Component Inventory
 
-Generated: 2026-04-15T02:40:09.003Z
+Generated: 2026-04-17T03:57:28.182Z
 Scope: auth
 
-Pages scanned: 53
-Unique component usages: 443
+Pages scanned: 54
+Unique component usages: 448
 
 ## Category Totals
 
 | Category | Count |
 | --- | ---: |
 | ark-ui | 138 |
-| external-package | 22 |
+| external-package | 23 |
 | in-file component | 21 |
 | local-components | 166 |
 | local-pages | 2 |
-| relative-local | 20 |
-| tabler-icons | 74 |
+| relative-local | 21 |
+| tabler-icons | 77 |
 
 ## src/pages/AgentOnboarding.tsx
 
@@ -90,13 +90,16 @@ Component usages: 1
 
 ## src/pages/DatabasePlaceholder.tsx
 
-Component usages: 4
+Component usages: 7
 
 | Used As | Source | Category | Definition |
 | --- | --- | --- | --- |
 | `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
 | `ErrorAlert` | `@/components/common/ErrorAlert` | local-components | ErrorAlert comes from @/components/common/ErrorAlert (named import of ErrorAlert) |
+| `IconChevronLeft` | `@tabler/icons-react` | tabler-icons | IconChevronLeft comes from @tabler/icons-react (named import of IconChevronLeft) |
+| `IconChevronRight` | `@tabler/icons-react` | tabler-icons | IconChevronRight comes from @tabler/icons-react (named import of IconChevronRight) |
 | `IconDatabase` | `@tabler/icons-react` | tabler-icons | IconDatabase comes from @tabler/icons-react (named import of IconDatabase) |
+| `IconRefresh` | `@tabler/icons-react` | tabler-icons | IconRefresh comes from @tabler/icons-react (named import of IconRefresh) |
 | `PageHeader` | `@/components/common/PageHeader` | local-components | PageHeader comes from @/components/common/PageHeader (named import of PageHeader) |
 
 ## src/pages/ExtractPage.tsx
@@ -805,6 +808,15 @@ Component usages: 2
 | --- | --- | --- | --- |
 | `Button` | `@/components/ui/button` | local-components | Button comes from @/components/ui/button (named import of Button) |
 | `SettingCard` | `./setting-card-shared` | relative-local | SettingCard comes from ./setting-card-shared (named import of SettingCard) |
+
+## src/pages/superuser/SuperuserAdminIndex.tsx
+
+Component usages: 2
+
+| Used As | Source | Category | Definition |
+| --- | --- | --- | --- |
+| `Navigate` | `react-router-dom` | external-package | Navigate comes from react-router-dom (named import of Navigate) |
+| `SuperuserControlTowerComponent` | `./SuperuserControlTower` | relative-local | SuperuserControlTowerComponent comes from ./SuperuserControlTower (named import of Component) |
 
 ## src/pages/superuser/SuperuserGuard.tsx
 

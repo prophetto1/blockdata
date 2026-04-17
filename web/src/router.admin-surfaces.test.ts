@@ -1,7 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Navigate } from 'react-router-dom';
 import { AdminShellLayout } from '@/components/layout/AdminShellLayout';
 import { router } from '@/router';
-import { AgchainAdminGuard, BlockdataAdminGuard, SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
+import { SuperuserGuard } from '@/pages/superuser/SuperuserGuard';
+
+vi.mock('@/components/layout/AdminShellLayout', () => ({
+  AdminShellLayout: function AdminShellLayout() {
+    return null;
+  },
+}));
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: {},
+}));
 
 vi.mock('react-pdf-highlighter', () => ({
   AreaHighlight: () => null,
@@ -15,6 +26,7 @@ vi.mock('react-pdf-highlighter/dist/style.css', () => ({}));
 
 type RouteNode = {
   path?: string;
+  index?: boolean;
   children?: RouteNode[];
   element?: unknown;
 };
@@ -40,6 +52,10 @@ function findRouteChain(routes: RouteNode[], targetPath: string, ancestors: Rout
   return null;
 }
 
+function findIndexChild(route: RouteNode): RouteNode | null {
+  return route.children?.find((child) => child.index) ?? null;
+}
+
 function expectGuardOutsideAdminShell(path: string, expectedGuard: unknown) {
   const chain = findRouteChain(router.routes as RouteNode[], path);
   expect(chain, `expected to find route ${path}`).not.toBeNull();
@@ -49,16 +65,27 @@ function expectGuardOutsideAdminShell(path: string, expectedGuard: unknown) {
   expect(resolvedChain.slice(0, -1).map(getElementType)).not.toContain(AdminShellLayout);
 }
 
+function expectLegacyRedirect(path: string) {
+  const chain = findRouteChain(router.routes as RouteNode[], path);
+  expect(chain, `expected to find route ${path}`).not.toBeNull();
+  const route = chain!.at(-1)!;
+  const indexChild = findIndexChild(route);
+
+  expect(indexChild).not.toBeNull();
+  expect(getElementType(indexChild!)).toBe(Navigate);
+  expect(chain!.map(getElementType)).not.toContain(AdminShellLayout);
+}
+
 describe('admin surface route ancestry', () => {
-  it('keeps Blockdata Admin guarded before the admin shell mounts', () => {
-    expectGuardOutsideAdminShell('/app/blockdata-admin', BlockdataAdminGuard);
-  });
-
-  it('keeps AGChain Admin guarded before the admin shell mounts', () => {
-    expectGuardOutsideAdminShell('/app/agchain-admin', AgchainAdminGuard);
-  });
-
-  it('keeps Superuser guarded before the admin shell mounts', () => {
+  it('keeps the unified superuser family guarded before the admin shell mounts', () => {
     expectGuardOutsideAdminShell('/app/superuser', SuperuserGuard);
+  });
+
+  it('keeps the legacy blockdata admin entry as a redirect', () => {
+    expectLegacyRedirect('/app/blockdata-admin');
+  });
+
+  it('keeps the legacy agchain admin entry as a redirect', () => {
+    expectLegacyRedirect('/app/agchain-admin');
   });
 });

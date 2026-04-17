@@ -111,7 +111,7 @@ describe('ShellWorkspaceSelector', () => {
     });
   });
 
-  it('hides the elevated admin surfaces when the probe is not authorized', () => {
+  it('hides the unified admin workspace when the probe is not authorized', () => {
     render(
       <MemoryRouter initialEntries={['/app']}>
         <ShellWorkspaceSelector />
@@ -125,7 +125,7 @@ describe('ShellWorkspaceSelector', () => {
     expect(screen.queryByRole('option', { name: /superuser/i })).not.toBeInTheDocument();
   });
 
-  it('shows the three elevated admin surfaces when the probe is authorized', async () => {
+  it('shows the unified admin workspace when any admin access is available', async () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: true,
@@ -145,12 +145,12 @@ describe('ShellWorkspaceSelector', () => {
 
     fireEvent.click(screen.getByRole('combobox', { name: /workspace/i }));
 
-    expect(await screen.findByRole('option', { name: /blockdata admin/i })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /agchain admin/i })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /superuser/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /superuser/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /blockdata admin/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /agchain admin/i })).not.toBeInTheDocument();
   });
 
-  it('shows only Blockdata Admin for a blockdata-only admin persona', async () => {
+  it('shows Superuser for a blockdata-only admin persona', async () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: true,
@@ -170,12 +170,12 @@ describe('ShellWorkspaceSelector', () => {
 
     fireEvent.click(screen.getByRole('combobox', { name: /workspace/i }));
 
-    expect(await screen.findByRole('option', { name: /blockdata admin/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /^superuser$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /blockdata admin/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /agchain admin/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: /^superuser$/i })).not.toBeInTheDocument();
   });
 
-  it('shows only AGChain Admin for an agchain-only admin persona', async () => {
+  it('shows Superuser for an agchain-only admin persona', async () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: false,
@@ -195,9 +195,9 @@ describe('ShellWorkspaceSelector', () => {
 
     fireEvent.click(screen.getByRole('combobox', { name: /workspace/i }));
 
-    expect(await screen.findByRole('option', { name: /agchain admin/i })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: /^superuser$/i })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /blockdata admin/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: /^superuser$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /agchain admin/i })).not.toBeInTheDocument();
   });
 
   it('shows only Superuser for a superuser-only persona', async () => {
@@ -225,9 +225,9 @@ describe('ShellWorkspaceSelector', () => {
     expect(screen.queryByRole('option', { name: /agchain admin/i })).not.toBeInTheDocument();
   });
 
-  it('falls back to a visible workspace when the current admin route is forbidden', () => {
+  it('falls back to a visible workspace when the current unified admin route is forbidden', () => {
     render(
-      <MemoryRouter initialEntries={['/app/blockdata-admin/parsers-docling']}>
+      <MemoryRouter initialEntries={['/app/superuser/bd/parsers-docling']}>
         <ShellWorkspaceSelector />
       </MemoryRouter>,
     );
@@ -241,7 +241,7 @@ describe('ShellWorkspaceSelector', () => {
     expect(screen.queryByRole('option', { name: /^superuser$/i })).not.toBeInTheDocument();
   });
 
-  it('navigates to the blockdata admin shell when Blockdata Admin is selected', async () => {
+  it('shows Superuser as the selected workspace on unified admin routes', () => {
     useAdminSurfaceAccessStateMock.mockReturnValue({
       access: {
         blockdataAdmin: true,
@@ -254,43 +254,12 @@ describe('ShellWorkspaceSelector', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/app']}>
+      <MemoryRouter initialEntries={['/app/superuser/bd/parsers-docling']}>
         <ShellWorkspaceSelector />
       </MemoryRouter>,
     );
 
-    fireEvent.click(screen.getByRole('combobox', { name: /workspace/i }));
-    fireEvent.click(await screen.findByRole('option', { name: /blockdata admin/i }));
-
-    await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith('/app/blockdata-admin/parsers-docling');
-    });
-  });
-
-  it('navigates to the agchain admin shell when AGChain Admin is selected', async () => {
-    useAdminSurfaceAccessStateMock.mockReturnValue({
-      access: {
-        blockdataAdmin: true,
-        agchainAdmin: true,
-        superuser: true,
-      },
-      status: 'ready',
-      error: null,
-      refresh: vi.fn(),
-    });
-
-    render(
-      <MemoryRouter initialEntries={['/app']}>
-        <ShellWorkspaceSelector />
-      </MemoryRouter>,
-    );
-
-    fireEvent.click(screen.getByRole('combobox', { name: /workspace/i }));
-    fireEvent.click(await screen.findByRole('option', { name: /agchain admin/i }));
-
-    await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith('/app/agchain-admin');
-    });
+    expect(screen.getByRole('combobox', { name: /workspace/i })).toHaveValue('Superuser');
   });
 
   it('navigates to the superuser shell when Superuser is selected', async () => {

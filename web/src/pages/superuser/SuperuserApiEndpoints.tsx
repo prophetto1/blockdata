@@ -506,5 +506,5 @@ export function ApiEndpointsCatalogPage({
 }
 
 export function Component() {
-  return <ApiEndpointsCatalogPage shellTitle="API Endpoints" breadcrumbs={['Blockdata Admin', 'API Endpoints']} />;
+  return <ApiEndpointsCatalogPage shellTitle="API Endpoints" breadcrumbs={['Superuser', 'BD', 'API Endpoints']} />;
 }

@@ -258,8 +258,8 @@ function ModelCompatibilityBadges({ model }: { model: AgchainModelTarget }) {
 
 export default function AgchainAdminModelsPage() {
   useShellHeaderTitle({
-    title: 'AGChain Admin Models',
-    breadcrumbs: ['AGChain Admin', 'Models'],
+    title: 'Models',
+    breadcrumbs: ['Superuser', 'AC', 'Models'],
   });
 
   const {

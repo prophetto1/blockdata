@@ -38,12 +38,37 @@ export type AgchainProjectCreateResult = {
   redirect_path: string;
 };
 
+export type AgchainWorkspaceBootstrapStatus =
+  | 'bootstrapping'
+  | 'no-organization'
+  | 'no-project'
+  | 'ready'
+  | 'error';
+
+export type AgchainWorkspaceBootstrapResult = {
+  status: AgchainWorkspaceBootstrapStatus;
+  organizations: AgchainOrganizationRow[];
+  projects: AgchainProjectRow[];
+  selectedOrganizationId: string | null;
+  selectedProjectId: string | null;
+  error: string | null;
+};
+
 type OrganizationsResponse = {
   items?: AgchainOrganizationRow[];
 };
 
 type ProjectsResponse = {
   items?: AgchainProjectRow[];
+};
+
+type WorkspaceBootstrapResponse = {
+  status?: AgchainWorkspaceBootstrapStatus;
+  organizations?: AgchainOrganizationRow[];
+  projects?: AgchainProjectRow[];
+  selected_organization_id?: string | null;
+  selected_project_id?: string | null;
+  error?: string | null;
 };
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -80,6 +105,34 @@ export async function fetchAgchainProjects(options: {
   const response = await platformApiFetch(`/agchain/projects${suffix}`);
   const data = await parseJsonResponse<ProjectsResponse>(response);
   return { items: data.items ?? [] };
+}
+
+export async function fetchAgchainWorkspaceBootstrap(options: {
+  preferredOrganizationId?: string | null;
+  preferredProjectId?: string | null;
+  preferredProjectSlug?: string | null;
+} = {}): Promise<AgchainWorkspaceBootstrapResult> {
+  const params = new URLSearchParams();
+  if (options.preferredOrganizationId) {
+    params.set('preferred_organization_id', options.preferredOrganizationId);
+  }
+  if (options.preferredProjectId) {
+    params.set('preferred_project_id', options.preferredProjectId);
+  }
+  if (options.preferredProjectSlug) {
+    params.set('preferred_project_slug', options.preferredProjectSlug);
+  }
+  const suffix = params.size ? `?${params.toString()}` : '';
+  const response = await platformApiFetch(`/agchain/workspace${suffix}`);
+  const data = await parseJsonResponse<WorkspaceBootstrapResponse>(response);
+  return {
+    status: data.status ?? 'bootstrapping',
+    organizations: data.organizations ?? [],
+    projects: data.projects ?? [],
+    selectedOrganizationId: data.selected_organization_id ?? null,
+    selectedProjectId: data.selected_project_id ?? null,
+    error: data.error ?? null,
+  };
 }
 
 export async function createAgchainProject(

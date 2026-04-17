@@ -5,6 +5,7 @@ import { AdminLeftNav, getAdminNavSections, getSecondaryNav } from '@/components
 import { HeaderCenterProvider } from '@/components/shell/HeaderCenterContext';
 import { LeftRailShadcn as AdminChromeRail } from '@/components/shell/LeftRailShadcn';
 import { styleTokens } from '@/lib/styleTokens';
+import { SuperuserAdminTabsLayout } from '@/pages/superuser/SuperuserAdminTabsLayout';
 import { AdminShellTopBand } from './AdminShellTopBand';
 
 const LEGACY_SIDEBAR_WIDTH_KEY = 'blockdata.shell.sidebar_width';
@@ -34,6 +35,7 @@ function AdminShellLayoutFrame() {
   const { pathname } = useLocation();
   const { user, profile, signOut } = useAuth();
   const hasSecondaryRail = getSecondaryNav(pathname).length > 0;
+  const hasSuperuserTabs = pathname.startsWith('/app/superuser');
   const navSections = getAdminNavSections(pathname);
   const [sidebarWidth, setSidebarWidth] = useState<number>(readStoredSidebarWidth);
   const [navOpen, setNavOpen] = useState<boolean>(readStoredNavOpen);
@@ -108,6 +110,7 @@ function AdminShellLayoutFrame() {
         primaryRailWidth={sidebarWidth}
         height={topBandHeight}
         onToggleNav={handleToggleNav}
+        centerSlot={hasSuperuserTabs ? <SuperuserAdminTabsLayout /> : null}
       />
 
       {navOpen && (

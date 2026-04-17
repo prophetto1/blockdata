@@ -243,6 +243,54 @@ def test_list_projects_returns_workspace_rows(client):
     assert response.json()["items"][0]["project_slug"] == "legal-evals"
 
 
+def test_workspace_bootstrap_returns_combined_workspace_context(client):
+    with patch("app.api.routes.agchain_workspaces.get_workspace_bootstrap") as mock_bootstrap:
+        mock_bootstrap.return_value = {
+            "status": "ready",
+            "organizations": [
+                {
+                    "organization_id": ORG_ID,
+                    "organization_slug": "personal-user-1",
+                    "display_name": "Personal Workspace",
+                    "membership_role": "organization_admin",
+                    "is_personal": True,
+                    "project_count": 2,
+                }
+            ],
+            "projects": [
+                {
+                    "project_id": PROJECT_ID,
+                    "organization_id": ORG_ID,
+                    "project_slug": "legal-evals",
+                    "project_name": "Legal Evals",
+                    "description": "Shared AGChain workspace.",
+                    "membership_role": "project_admin",
+                    "updated_at": "2026-03-31T20:00:00Z",
+                    "primary_benchmark_slug": "legal-10",
+                    "primary_benchmark_name": "Legal-10",
+                }
+            ],
+            "selected_organization_id": ORG_ID,
+            "selected_project_id": PROJECT_ID,
+            "error": None,
+        }
+
+        response = client.get(
+            "/agchain/workspace",
+            params={
+                "preferred_organization_id": ORG_ID,
+                "preferred_project_id": PROJECT_ID,
+                "preferred_project_slug": "legal-evals",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ready"
+    assert response.json()["selected_organization_id"] == ORG_ID
+    assert response.json()["selected_project_id"] == PROJECT_ID
+    assert response.json()["projects"][0]["project_slug"] == "legal-evals"
+
+
 def test_create_project_returns_seeded_redirect(client):
     with patch("app.api.routes.agchain_workspaces.create_project") as mock_create:
         mock_create.return_value = {

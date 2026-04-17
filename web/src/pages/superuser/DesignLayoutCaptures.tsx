@@ -1,116 +1,34 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  IconArrowDown,
-  IconArrowUp,
-  IconArrowsSort,
-  IconCamera,
-  IconDownload,
-  IconEye,
+  IconChevronRight,
+  IconFolderOpen,
+  IconPlugConnected,
   IconPlus,
   IconRefresh,
-  IconTrash,
+  IconServer,
 } from '@tabler/icons-react';
-import { Search01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Checkbox } from '@ark-ui/react/checkbox';
-import { PaginationRoot, PaginationPrevTrigger, PaginationNextTrigger } from '@/components/ui/pagination';
 import { useShellHeaderTitle } from '@/components/common/useShellHeaderTitle';
+import { pickDirectory, saveDirectoryHandle } from '@/lib/fs-access';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  DialogRoot,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-  DialogCloseTrigger,
   DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogDescription,
   DialogFooter,
+  DialogRoot,
+  DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
-import {
-  ICON_CONTEXT_SIZE,
-  ICON_SIZES,
-  ICON_STANDARD,
-  ICON_STROKES,
-} from '@/lib/icon-contract';
-import type { CaptureEntry, CaptureRequest, PageType, ThemeRequest } from './design-captures.types';
+import { createBrowserCaptureSession, listBrowserCaptureSessions } from './browser-capture-sessions';
+import { isCaptureServerDevControlEnabled, startCaptureServer } from './capture-server-dev-control';
+import { CAPTURE_WORKER, fetchCaptureWorkerStatus } from './capture-worker.api';
+import type { CaptureSessionStatus, CaptureSessionSummary } from './design-captures.types';
 
-/* ------------------------------------------------------------------ */
-/*  Constants                                                          */
-/* ------------------------------------------------------------------ */
-
-const CAPTURE_SERVER = import.meta.env.VITE_CAPTURE_SERVER_URL || 'http://localhost:4488';
-const DELETE_CAPABILITY_TTL_MS = 10_000;
-
-type DeleteCapabilityCache = {
-  checkedAt: number;
-  supportsDelete: boolean | null;
-};
-const deleteCapabilityCache: DeleteCapabilityCache = {
-  checkedAt: 0,
-  supportsDelete: null,
-};
-
-async function checkServerDeleteCapability(): Promise<boolean> {
-  const now = Date.now();
-  if (deleteCapabilityCache.supportsDelete !== null && now - deleteCapabilityCache.checkedAt < DELETE_CAPABILITY_TTL_MS) {
-    return deleteCapabilityCache.supportsDelete;
-  }
-
-  try {
-    const res = await fetch(`${CAPTURE_SERVER}`, {
-      method: 'OPTIONS',
-    });
-    const allowMethods = res.headers.get('access-control-allow-methods') || '';
-    const supportsDelete = allowMethods.toUpperCase().includes('DELETE');
-    deleteCapabilityCache.checkedAt = now;
-    deleteCapabilityCache.supportsDelete = supportsDelete;
-    return supportsDelete;
-  } catch {
-    deleteCapabilityCache.checkedAt = now;
-    deleteCapabilityCache.supportsDelete = false;
-    return false;
-  }
-}
-
-function staleDeleteServerError() {
-  const base = CAPTURE_SERVER.replace(/\/+$/, '');
-  return `Delete endpoint unavailable on ${base}. This usually means the capture server is still running an older script. Restart with "npm run capture-server" from this repo, then retry.`;
-}
-
-type SortField = 'name' | 'viewport' | 'theme' | 'pageType' | 'capturedAt';
-type SortDir = 'asc' | 'desc';
-
-const PAGE_SIZES = [10, 25, 50] as const;
-
-const PAGE_TYPE_COLORS = {
-  settings: 'blue',
-  editor: 'violet',
-  dashboard: 'teal',
-  workbench: 'orange',
-  marketing: 'green',
-} as const satisfies Record<PageType, string>;
-
-const THEME_BADGE = {
-  light: 'default',
-  dark: 'dark',
-  both: 'gray',
-} as const satisfies Record<ThemeRequest, string>;
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-function fileUrl(relativePath: string): string {
-  const normalized = relativePath.replace(/\\/g, '/');
-  const encoded = normalized.split('/').map(encodeURIComponent).join('/');
-  return `${CAPTURE_SERVER}/files/${encoded}`;
-}
-
-function captureFileUrl(row: CaptureEntry, theme: string, filename: string): string {
-  return fileUrl(`${row.outputDir}/${theme}/${filename}`.replace(/\\/g, '/'));
-}
+const LAST_CDP_ENDPOINT_KEY = 'superuser.designLayoutCapture.lastCdpEndpoint';
 
 function formatDate(value: string | null): string {
   if (!value) return '--';
@@ -119,640 +37,421 @@ function formatDate(value: string | null): string {
   return parsed.toLocaleString();
 }
 
-async function fetchCaptures(): Promise<{ data: CaptureEntry[]; connected: boolean }> {
-  try {
-    const res = await fetch(`${CAPTURE_SERVER}/captures`);
-    if (!res.ok) return { data: [], connected: true };
-    return { data: await res.json(), connected: true };
-  } catch {
-    return { data: [], connected: false };
+function sessionStatusVariant(status: CaptureSessionStatus) {
+  switch (status) {
+    case 'ready':
+      return 'green';
+    case 'capturing':
+      return 'blue';
+    case 'browser-unreachable':
+      return 'yellow';
+    case 'capture-failed':
+      return 'red';
+    case 'directory-missing':
+      return 'yellow';
+    default:
+      return 'gray';
   }
 }
 
-async function requestCapture(body: CaptureRequest): Promise<{ id: string; status: string; message?: string }> {
-  const res = await fetch(`${CAPTURE_SERVER}/capture`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new Error(err.error ?? `HTTP ${res.status}`);
-  }
-  return res.json();
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
-function normalizeOutputDir(outputDir: string): string {
-  return outputDir.replace(/\\/g, "/");
+function readLastCdpEndpoint(): string {
+  if (typeof window === 'undefined') return 'http://localhost:9222';
+  return window.localStorage.getItem(LAST_CDP_ENDPOINT_KEY) || 'http://localhost:9222';
 }
 
-function makeCaptureEntryForPreview(row: CaptureEntry): CaptureEntry {
-  return {
-    ...row,
-    outputDir: normalizeOutputDir(row.outputDir),
-  };
+function makeDirectoryHandleKey() {
+  return `capture-session-directory:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
 }
-
-async function parseFailureBody(res: Response): Promise<string> {
-  const text = await res.text();
-  if (!text) return `HTTP ${res.status}`;
-
-  try {
-    const payload = JSON.parse(text);
-    return typeof payload?.error === "string" ? payload.error : text;
-  } catch {
-    return text.length > 260 ? `${text.slice(0, 260)}...` : text;
-  }
-}
-
-async function requestDeleteCapture(captureId: string): Promise<{ id: string; status: string }> {
-  const encoded = encodeURIComponent(captureId);
-  const deleteUrl = `${CAPTURE_SERVER}/captures/${encoded}/delete`;
-  const supportsDelete = await checkServerDeleteCapability();
-  const attempted: string[] = [];
-
-  let res = await fetch(deleteUrl, { method: 'POST' });
-  if (res.ok) return res.json();
-  attempted.push(`POST ${deleteUrl} (${res.status})`);
-
-  // Fallback for backends that only implement explicit body endpoint
-  res = await fetch(`${CAPTURE_SERVER}/captures/delete`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: captureId }),
-  });
-  if (res.ok) return res.json();
-  attempted.push(`POST ${CAPTURE_SERVER}/captures/delete (${res.status})`);
-
-  if (!supportsDelete) {
-    throw new Error(`${staleDeleteServerError()}\nRecent attempts: ${attempted.join(', ')}`);
-  }
-
-  // Fallback to legacy DELETE endpoint for older deployments
-  res = await fetch(`${CAPTURE_SERVER}/captures/${encoded}`, {
-    method: 'DELETE',
-  });
-
-  if (!res.ok) {
-    const err = await parseFailureBody(res);
-    throw new Error(`${err}\nRecent attempts: ${attempted.join(', ')}; DELETE /captures/:id was attempted as final fallback.`);
-  }
-  return res.json();
-}
-
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                     */
-/* ------------------------------------------------------------------ */
-
-function SortIcon({ field, activeField, dir }: { field: SortField; activeField: SortField | null; dir: SortDir }) {
-  if (field !== activeField) return <IconArrowsSort size={12} className="text-muted-foreground/50" />;
-  return dir === 'asc'
-    ? <IconArrowUp size={12} className="text-primary" />
-    : <IconArrowDown size={12} className="text-primary" />;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Page component                                                     */
-/* ------------------------------------------------------------------ */
 
 export function Component() {
-  useShellHeaderTitle({ title: 'Design Layout Captures', breadcrumbs: ['Superuser', 'Design Layout Captures'] });
+  useShellHeaderTitle({ title: 'Capture Sessions', breadcrumbs: ['Superuser', 'Capture Sessions'] });
 
-  const [rows, setRows] = useState<CaptureEntry[]>([]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [sessions, setSessions] = useState<CaptureSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [serverOnline, setServerOnline] = useState(true);
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<number>(25);
-  const [sortField, setSortField] = useState<SortField | null>('capturedAt');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [deleting, setDeleting] = useState<Set<string>>(new Set());
-  const [previewLoadFailed, setPreviewLoadFailed] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [workerReady, setWorkerReady] = useState(false);
+  const [showNewSession, setShowNewSession] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [startingServer, setStartingServer] = useState(false);
+  const [serverActionMessage, setServerActionMessage] = useState<string | null>(null);
+  const [selectedDirectoryHandle, setSelectedDirectoryHandle] = useState<FileSystemDirectoryHandle | null>(null);
+  const [form, setForm] = useState({
+    name: '',
+    cdpEndpoint: readLastCdpEndpoint(),
+    directoryLabel: '',
+  });
 
-  const utilityIconSize = ICON_SIZES[ICON_CONTEXT_SIZE[ICON_STANDARD.utilityTopRight.context]];
-  const utilityIconStroke = ICON_STROKES[ICON_STANDARD.utilityTopRight.stroke];
+  const loadSessions = useCallback(async (mode: 'initial' | 'refresh' = 'refresh') => {
+    if (mode === 'initial') {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
 
-  // ---------- data loading ----------
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const { data, connected } = await fetchCaptures();
-    setRows(data);
-    setServerOnline(connected);
-    setPreviewLoadFailed(new Set());
-    setLoading(false);
+    try {
+      setError(null);
+      setSessions(listBrowserCaptureSessions());
+      await fetchCaptureWorkerStatus();
+      setWorkerReady(true);
+    } catch (nextError) {
+      setWorkerReady(false);
+      setError(errorMessage(nextError));
+      setSessions(listBrowserCaptureSessions());
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  useEffect(() => { void loadData(); }, [loadData]);
+  useEffect(() => {
+    void loadSessions('initial');
+  }, [loadSessions]);
 
-  // ---------- sort / filter ----------
+  const canStartCaptureServer = isCaptureServerDevControlEnabled();
+  const showStartServerButton = canStartCaptureServer && !workerReady;
+  const workerStatusLabel = workerReady ? 'Worker ready' : error ? 'Setup needed' : 'Worker offline';
+  const workerSetupGuidance = showStartServerButton
+    ? 'Start Capture Server to bring the local helper online, then create your first session.'
+    : 'Start the local capture helper, then refresh this page before creating a session.';
+  const emptyStateCopy = workerReady
+    ? 'No browser-owned sessions yet. Create one, choose a local folder, and point it at the Chrome DevTools endpoint you want to capture from.'
+    : 'No browser-owned sessions yet. Bring the local capture helper online, then create a session, choose a local folder, and point it at the Chrome DevTools endpoint you want to capture from.';
 
-  const toggleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortDir('asc');
+  const sessionCountLabel = useMemo(() => {
+    if (loading) return 'Loading sessions...';
+    return `${sessions.length} session${sessions.length === 1 ? '' : 's'}`;
+  }, [loading, sessions.length]);
+  const recoveryNotice =
+    location.state && typeof location.state === 'object' && 'captureSessionNotice' in location.state
+      ? typeof location.state.captureSessionNotice === 'string'
+        ? location.state.captureSessionNotice
+        : null
+      : null;
+
+  async function handlePickDirectory() {
+    try {
+      const handle = await pickDirectory();
+      setSelectedDirectoryHandle(handle);
+      setForm((current) => ({
+        ...current,
+        directoryLabel: handle.name,
+      }));
+      setCreateError(null);
+    } catch (nextError) {
+      setCreateError(errorMessage(nextError));
     }
-    setPage(1);
-  };
+  }
 
-  const toggleRow = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  async function handleCreateSession() {
+    if (!selectedDirectoryHandle) {
+      setCreateError('Choose a local folder before starting a session.');
+      return;
+    }
 
-  const filtered = rows
-    .filter((row) => {
-      if (!query) return true;
-      const q = query.toLowerCase();
-      return [row.name, row.url, row.viewport, row.theme, row.pageType]
-        .join(' ')
-        .toLowerCase()
-        .includes(q);
-    })
-    .sort((a, b) => {
-      if (!sortField) return 0;
-      const aVal = a[sortField] ?? '';
-      const bVal = b[sortField] ?? '';
-      const cmp = String(aVal).localeCompare(String(bVal));
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-  // ---------- re-capture ----------
-
-  const handleReCapture = async (row: CaptureEntry) => {
-    const [w, h] = row.viewport.split('x').map(Number);
-    const req: CaptureRequest = {
-      url: row.url,
-      width: w,
-      height: h,
-      theme: row.theme,
-      pageType: row.pageType,
-    };
+    const cdpEndpoint = form.cdpEndpoint.trim();
+    if (!cdpEndpoint) {
+      setCreateError('Enter the Chrome DevTools endpoint you want this browser session to use.');
+      return;
+    }
 
     try {
-      await requestCapture(req);
-      void loadData();
-    } catch (err) {
-      setCaptureForm(req);
-      setModalStatus({ state: 'error', message: err instanceof Error ? err.message : String(err) });
-      setShowAddNew(true);
-    }
-  };
+      setCreating(true);
+      setCreateError(null);
 
-  const handleDelete = async (row: CaptureEntry) => {
-    if (!window.confirm(`Delete capture "${row.name}" and remove its artifacts?`)) return;
-
-    setDeleting((prev) => new Set(prev).add(row.id));
-    try {
-      await requestDeleteCapture(row.id);
-      setSelected((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
+      const directoryHandleKey = makeDirectoryHandleKey();
+      const session = createBrowserCaptureSession({
+        name: form.name.trim() || undefined,
+        cdpEndpoint,
+        storageDirectoryLabel: form.directoryLabel || selectedDirectoryHandle.name,
+        directoryHandleKey,
       });
-      await loadData();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : String(err));
+
+      await saveDirectoryHandle(selectedDirectoryHandle, directoryHandleKey);
+      window.localStorage.setItem(LAST_CDP_ENDPOINT_KEY, cdpEndpoint);
+
+      setShowNewSession(false);
+      setSelectedDirectoryHandle(null);
+      setForm({
+        name: '',
+        cdpEndpoint,
+        directoryLabel: '',
+      });
+
+      await loadSessions();
+      navigate(`/app/superuser/design-layout-captures/${session.id}`);
+    } catch (nextError) {
+      setCreateError(errorMessage(nextError));
     } finally {
-      setDeleting((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
-      });
+      setCreating(false);
     }
-  };
+  }
 
-  // ---------- add-new modal ----------
-
-  const [showAddNew, setShowAddNew] = useState(false);
-  const [captureForm, setCaptureForm] = useState<CaptureRequest>({
-    url: '',
-    width: 1920,
-    height: 1080,
-    theme: 'light',
-    pageType: 'settings',
-  });
-  const [modalStatus, setModalStatus] = useState<{
-    state: 'idle' | 'submitting' | 'capturing' | 'done' | 'error';
-    message?: string;
-    captureId?: string;
-  }>({ state: 'idle' });
-
-  const handleStartCapture = async () => {
-    setModalStatus({ state: 'submitting' });
+  async function handleStartCaptureServer() {
     try {
-      const result = await requestCapture(captureForm);
-      if (result.status === 'complete') {
-        setModalStatus({ state: 'done', captureId: result.id });
-        void loadData();
-      } else {
-        setModalStatus({ state: 'capturing', captureId: result.id });
-        void loadData();
-      }
-    } catch (err) {
-      setModalStatus({ state: 'error', message: err instanceof Error ? err.message : String(err) });
+      setStartingServer(true);
+      setServerActionMessage(null);
+      const result = await startCaptureServer();
+      setServerActionMessage(result.message);
+      await loadSessions();
+    } catch (nextError) {
+      setError(errorMessage(nextError));
+    } finally {
+      setStartingServer(false);
     }
-  };
-
-  // ---------- render ----------
+  }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-3">
-      {!serverOnline && !loading && (
-        <div className="flex items-center gap-3 rounded-md border border-red-300 bg-red-50 px-4 py-3 dark:border-red-700 dark:bg-red-900/20">
-          <span className="text-sm font-medium text-red-800 dark:text-red-300">Capture server unavailable</span>
-          <span className="text-sm text-red-700 dark:text-red-400">
-            Run <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono text-xs dark:bg-red-900/40">npm run capture-server</code> to start it on localhost:{CAPTURE_SERVER.split(':').pop()}
-          </span>
+    <div className="flex h-full min-h-0 flex-col gap-4 p-4 md:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Capture Sessions</h1>
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Create a browser-owned capture session, choose a local folder, and save repeated screenshot plus audit JSON
+            sets from the Chrome window you point this browser at.
+          </p>
         </div>
-      )}
-      <section className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
-          <label className="relative min-w-[220px] flex-1 max-w-sm">
-            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2">
-              <HugeiconsIcon icon={Search01Icon} size={utilityIconSize} strokeWidth={utilityIconStroke} className="text-muted-foreground" />
-            </span>
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => {
-                    const next = e.currentTarget?.value ?? "";
-                    setQuery(next);
-                    setPage(1);
-                  }}
-                  placeholder="Search captures"
-                  className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-sm text-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => void loadSessions()} disabled={loading || refreshing}>
+            <IconRefresh />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          {showStartServerButton ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void handleStartCaptureServer()}
+              disabled={startingServer}
+            >
+              <IconServer />
+              {startingServer ? 'Starting Capture Server...' : 'Start Capture Server'}
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            onClick={() => {
+              setCreateError(null);
+              setSelectedDirectoryHandle(null);
+              setForm((current) => ({
+                ...current,
+                name: '',
+                directoryLabel: '',
+                cdpEndpoint: current.cdpEndpoint || readLastCdpEndpoint(),
+              }));
+              setShowNewSession(true);
+            }}
+          >
+            <IconPlus />
+            New Session
+          </Button>
+        </div>
+      </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => void loadData()}>
-              <IconRefresh size={14} />
-              Refresh
-            </Button>
-            <Button size="sm" onClick={() => setShowAddNew(true)}>
-              <IconPlus size={14} />
-              Add New
-            </Button>
+      {serverActionMessage ? (
+        <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+          {serverActionMessage}
+        </div>
+      ) : null}
+
+      {recoveryNotice ? (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+          {recoveryNotice}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+          <p>
+            Capture worker not ready at <code>{CAPTURE_WORKER}</code>. {workerSetupGuidance}
+          </p>
+          <p className="mt-1 text-xs opacity-90">Detail: {error}</p>
+        </div>
+      ) : null}
+
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.9fr)]">
+        <section className="rounded-xl border border-border bg-card p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Session List</p>
+              <p className="mt-1 text-sm text-muted-foreground">{sessionCountLabel}</p>
+            </div>
+            <Badge variant={workerReady ? 'green' : 'yellow'} size="sm">
+              {workerStatusLabel}
+            </Badge>
           </div>
-        </div>
 
-        {/* Table */}
-        <ScrollArea className="min-h-0 flex-1">
-          <table className="w-full table-fixed text-left">
-            <thead className="sticky top-0 z-10 bg-card text-xs text-muted-foreground">
-              <tr className="border-b border-border">
-                <th className="w-10 px-3 py-2">
-                  <Checkbox.Root
-                    checked={selected.size === paginated.length && paginated.length > 0}
-                    onCheckedChange={(details) => {
-                      if (details.checked) {
-                        setSelected(new Set(paginated.map((r) => r.id)));
-                      } else {
-                        setSelected(new Set());
-                      }
-                    }}
-                  >
-                    <Checkbox.Control className="h-4 w-4 rounded border-input" />
-                    <Checkbox.HiddenInput />
-                  </Checkbox.Root>
-                </th>
-                <th className="w-[6rem] px-3 py-2 font-medium">Preview</th>
-                <th className="w-[36%] px-3 py-2 font-medium">URL</th>
-                <th className="w-[7rem] px-3 py-2 font-medium">
-                  <button type="button" onClick={() => toggleSort('viewport')} className="inline-flex items-center gap-1 hover:text-foreground">
-                    Viewport <SortIcon field="viewport" activeField={sortField} dir={sortDir} />
-                  </button>
-                </th>
-                <th className="w-[6rem] px-3 py-2 font-medium">
-                  <button type="button" onClick={() => toggleSort('theme')} className="inline-flex items-center gap-1 hover:text-foreground">
-                    Theme <SortIcon field="theme" activeField={sortField} dir={sortDir} />
-                  </button>
-                </th>
-                <th className="w-[7rem] px-3 py-2 font-medium">
-                  <button type="button" onClick={() => toggleSort('pageType')} className="inline-flex items-center gap-1 hover:text-foreground">
-                    Page Type <SortIcon field="pageType" activeField={sortField} dir={sortDir} />
-                  </button>
-                </th>
-                <th className="w-[10rem] px-3 py-2 font-medium">
-                  <button type="button" onClick={() => toggleSort('capturedAt')} className="inline-flex items-center gap-1 hover:text-foreground">
-                    Captured <SortIcon field="capturedAt" activeField={sortField} dir={sortDir} />
-                  </button>
-                </th>
-                <th className="w-[7rem] px-3 py-2 font-medium">Status</th>
-                <th className="w-[9rem] px-3 py-2 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-3 py-10 text-center text-sm text-muted-foreground">
-                    Loading captures...
-                  </td>
-                </tr>
-              ) : paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-3 py-10 text-center text-sm text-muted-foreground">
-                    No captures yet. Click "Add New" to start.
-                  </td>
-                </tr>
-              ) : (
-                paginated.map((row) => (
-                  <tr
-                    key={row.id}
-                    className={cn(
-                      'border-b border-border/60 align-top hover:bg-accent/30',
-                      selected.has(row.id) && 'bg-accent/20',
-                    )}
-                  >
-                    <td className="w-10 px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox.Root
-                        checked={selected.has(row.id)}
-                        onCheckedChange={() => toggleRow(row.id)}
-                      >
-                        <Checkbox.Control className="h-4 w-4 rounded border-input" />
-                        <Checkbox.HiddenInput />
-                      </Checkbox.Root>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center justify-center">
-                        {row.status === 'complete' && (
-                          previewLoadFailed.has(row.id) ? (
-                            <div className="flex h-8 w-14 shrink-0 items-center justify-center rounded border border-dashed border-border bg-muted text-[10px] text-muted-foreground">
-                              No image
-                            </div>
-                          ) : (
-                            <img
-                              src={captureFileUrl(
-                                makeCaptureEntryForPreview(row),
-                                row.theme === 'both' ? 'light' : row.theme,
-                                'viewport.png',
-                              )}
-                              alt=""
-                              className="h-8 w-14 shrink-0 rounded border border-border object-cover object-top"
-                              onError={() =>
-                                setPreviewLoadFailed((prev) => new Set(prev).add(row.id))
-                              }
-                            />
-                          )
-                        )}
-                      </div>
-                    </td>
-                    <td className="break-all whitespace-normal px-3 py-3 text-sm text-muted-foreground" title={row.url}>
-                      {row.url}
-                    </td>
-                    <td className="px-3 py-3 text-sm text-muted-foreground font-mono">{row.viewport}</td>
-                    <td className="px-3 py-3">
-                      <Badge variant={THEME_BADGE[row.theme]} size="sm">{row.theme}</Badge>
-                    </td>
-                    <td className="px-3 py-3">
-                      <Badge variant={PAGE_TYPE_COLORS[row.pageType]} size="sm">{row.pageType}</Badge>
-                    </td>
-                    <td className="px-3 py-3 text-sm text-muted-foreground">{formatDate(row.capturedAt)}</td>
-                    <td className="px-3 py-3">
-                      <Badge
-                        variant={
-                          row.status === 'complete' ? 'green'
-                          : row.status === 'failed' ? 'red'
-                          : row.status === 'auth-needed' ? 'yellow'
-                          : row.status === 'capturing' ? 'blue'
-                          : 'gray'
-                        }
-                        size="sm"
-                      >
-                        {row.status}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex flex-wrap items-center justify-end gap-1">
-                        {row.status === 'complete' && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              aria-label="View screenshot"
-                              title="View screenshot"
-                              onClick={() => window.open(captureFileUrl(row, row.theme === 'both' ? 'light' : row.theme, 'viewport.png'), '_blank')}
-                            >
-                              <IconEye size={14} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              aria-label="Download report"
-                              title="Download report"
-                              onClick={() => window.open(captureFileUrl(row, row.theme === 'both' ? 'light' : row.theme, 'report.json'), '_blank')}
-                            >
-                              <IconDownload size={14} />
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          aria-label="Re-capture"
-                          title="Re-capture"
-                          onClick={() => void handleReCapture(row)}
-                        >
-                          <IconCamera size={14} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                          aria-label="Delete capture"
-                          title="Delete capture and artifacts"
-                          onClick={() => void handleDelete(row)}
-                          disabled={deleting.has(row.id)}
-                        >
-                          <IconTrash size={14} />
-                        </Button>
-                      </div>
-                    </td>
+          <div className="mt-4 overflow-hidden rounded-lg border border-border">
+            <ScrollArea className="max-h-[34rem]">
+              <table className="w-full table-fixed text-left text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Session</th>
+                    <th className="w-28 px-4 py-3 font-medium">Status</th>
+                    <th className="w-20 px-4 py-3 font-medium text-right">Captures</th>
+                    <th className="w-48 px-4 py-3 font-medium">Last Capture</th>
+                    <th className="w-52 px-4 py-3 font-medium">Endpoint</th>
+                    <th className="w-32 px-4 py-3 font-medium text-right">Open</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </ScrollArea>
-
-        {/* Pagination footer */}
-        <div className="flex items-center justify-between border-t border-border px-3 py-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  const value = Number(e.currentTarget?.value ?? "0");
-                  setPageSize(Number.isFinite(value) && value > 0 ? value : 10);
-                  setPage(1);
-                }}
-                className="rounded-md border border-border bg-background px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-              {PAGE_SIZES.map((s) => (
-                <option key={s} value={s}>{s} per page</option>
-              ))}
-            </select>
-            {totalPages > 1 && (
-              <PaginationRoot
-                count={filtered.length}
-                pageSize={pageSize}
-                page={page}
-                onPageChange={(details) => setPage(details.page)}
-                className="flex items-center gap-1"
-              >
-                <PaginationPrevTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
-                  Prev
-                </PaginationPrevTrigger>
-                <span>Page {page} of {totalPages}</span>
-                <PaginationNextTrigger className="rounded px-1.5 py-0.5 hover:bg-accent disabled:opacity-40">
-                  Next
-                </PaginationNextTrigger>
-              </PaginationRoot>
-            )}
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                        Loading capture sessions...
+                      </td>
+                    </tr>
+                  ) : sessions.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                        {emptyStateCopy}
+                      </td>
+                    </tr>
+                  ) : (
+                    sessions.map((session) => (
+                      <tr key={session.id} className="border-t border-border align-top">
+                        <td className="px-4 py-3">
+                          <div className="space-y-1">
+                            <p className="font-medium text-foreground">{session.name}</p>
+                            <p className="truncate text-xs text-muted-foreground">{session.id}</p>
+                            <p className="truncate text-xs text-muted-foreground">{session.storageDirectoryLabel}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={sessionStatusVariant(session.status)} size="sm">
+                            {session.status}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium">{session.captureCount}</td>
+                        <td className="px-4 py-3 text-muted-foreground">{formatDate(session.lastCapturedAt)}</td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          <div className="space-y-1">
+                            <code className="block break-all text-xs">{session.cdpEndpoint}</code>
+                            <p className="truncate text-xs">{session.currentTargetTitle || session.currentTargetUrl || '--'}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button asChild size="sm" variant="outline">
+                            <Link to={`/app/superuser/design-layout-captures/${session.id}`}>
+                              Open
+                              <IconChevronRight />
+                            </Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </ScrollArea>
           </div>
-          <span className="font-medium">Total: {filtered.length}</span>
-        </div>
-      </section>
+        </section>
 
-      {/* Add New Capture modal */}
-      <DialogRoot open={showAddNew} onOpenChange={(details) => {
-        setShowAddNew(details.open);
-        if (!details.open) setModalStatus({ state: 'idle' });
-      }}>
-        <DialogContent className="max-w-lg">
+        <aside className="space-y-3 rounded-xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <IconFolderOpen className="size-4 text-muted-foreground" />
+            Browser-owned Storage
+          </div>
+          <div className="rounded-lg border border-dashed border-border bg-background/60 p-3">
+            <p className="text-xs text-muted-foreground">
+              Each session saves into the local folder that this browser chooses through the File System Access API.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <IconPlugConnected className="size-4 text-muted-foreground" />
+            Capture Worker Endpoint
+          </div>
+          <div className="rounded-lg border border-dashed border-border bg-background/60 p-3">
+            <p className="break-all font-mono text-xs text-foreground">{CAPTURE_WORKER}</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            The browser owns the session record, selected CDP endpoint, chosen save folder, and visible history. The
+            helper only runs the capture worker and returns artifacts.
+          </p>
+        </aside>
+      </div>
+
+      <DialogRoot
+        open={showNewSession}
+        onOpenChange={(details) => {
+          if (!creating) setShowNewSession(details.open);
+        }}
+      >
+        <DialogContent className="w-[min(36rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)]">
           <DialogCloseTrigger />
-          <DialogTitle>New Capture</DialogTitle>
+          <DialogTitle>New Capture Session</DialogTitle>
           <DialogDescription>
-            Enter a URL and capture settings. The capture server must be running on localhost:4488.
+            This browser will store the session record and save returned artifacts into a local folder you choose.
           </DialogDescription>
-
-          <DialogBody>
-            <label className="block">
-              <span className="text-sm font-medium">URL</span>
-              <input
-                type="url"
-                value={captureForm.url}
-                onChange={(e) => {
-                  const value = e.currentTarget?.value ?? "";
-                  setCaptureForm((f) => ({ ...f, url: value }));
+          <DialogBody className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="capture-session-name">
+                Session name
+              </label>
+              <Input
+                id="capture-session-name"
+                value={form.name}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setForm((current) => ({ ...current, name: value }));
                 }}
-                placeholder="https://www.evidence.studio/settings/organization"
-                className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="Optional. A timestamped name will be generated if left blank."
               />
-            </label>
-
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-sm font-medium">Width</span>
-              <input
-                type="number"
-                value={captureForm.width}
-                onChange={(e) => {
-                  const value = Number(e.currentTarget?.value ?? "0");
-                  setCaptureForm((f) => ({ ...f, width: Number.isFinite(value) && value > 0 ? value : 1920 }));
-                }}
-                className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium">Height</span>
-              <input
-                type="number"
-                value={captureForm.height}
-                onChange={(e) => {
-                  const value = Number(e.currentTarget?.value ?? "0");
-                  setCaptureForm((f) => ({ ...f, height: Number.isFinite(value) && value > 0 ? value : 1080 }));
-                }}
-                className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-sm font-medium">Theme</span>
-                <select
-                  value={captureForm.theme}
-                  onChange={(e) => {
-                    const next = (e.currentTarget?.value ?? "light") as ThemeRequest;
-                    setCaptureForm((f) => ({ ...f, theme: next }));
-                  }}
-                  className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                  <option value="both">Both (light + dark)</option>
-                </select>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground" htmlFor="capture-session-cdp-endpoint">
+                Chrome DevTools endpoint
               </label>
-              <label className="block">
-                <span className="text-sm font-medium">Page Type</span>
-                <select
-                  value={captureForm.pageType}
-                  onChange={(e) => {
-                    const next = (e.currentTarget?.value ?? "settings") as PageType;
-                    setCaptureForm((f) => ({ ...f, pageType: next }));
-                  }}
-                  className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="settings">Settings</option>
-                  <option value="editor">Editor</option>
-                  <option value="dashboard">Dashboard</option>
-                  <option value="workbench">Workbench</option>
-                  <option value="marketing">Marketing</option>
-                </select>
-              </label>
+              <Input
+                id="capture-session-cdp-endpoint"
+                value={form.cdpEndpoint}
+                onChange={(event) => {
+                  const value = event.currentTarget.value;
+                  setForm((current) => ({ ...current, cdpEndpoint: value }));
+                }}
+                placeholder="http://localhost:9222"
+              />
+              <p className="text-xs text-muted-foreground">
+                This browser stores the endpoint it wants to use. The capture worker will attach to it only when you
+                press Capture.
+              </p>
             </div>
 
-            {/* Status feedback */}
-            {modalStatus.state === 'submitting' && (
-              <p className="text-sm text-muted-foreground">Starting capture...</p>
-            )}
-            {modalStatus.state === 'capturing' && (
-              <div className="flex gap-3 rounded-md border border-blue-300 bg-blue-50 p-3 dark:border-blue-700 dark:bg-blue-900/20">
-                <span className="text-sm text-blue-800 dark:text-blue-300">Capturing... Playwright is running the measurement scripts.</span>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">Session folder</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => void handlePickDirectory()}>
+                  <IconFolderOpen />
+                  {form.directoryLabel ? 'Change Folder' : 'Choose Folder'}
+                </Button>
+                <p className="text-sm text-muted-foreground">{form.directoryLabel || 'No folder chosen yet.'}</p>
               </div>
-            )}
-            {modalStatus.state === 'done' && (
-              <div className="flex gap-3 rounded-md border border-emerald-300 bg-emerald-50 p-3 dark:border-emerald-700 dark:bg-emerald-900/20">
-                <span className="text-sm text-emerald-800 dark:text-emerald-300">Capture complete.</span>
+              <p className="text-xs text-muted-foreground">
+                The browser saves each capture into this folder after the worker returns the generated artifacts.
+              </p>
+            </div>
+
+            {createError ? (
+              <div className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+                {createError}
               </div>
-            )}
-            {modalStatus.state === 'error' && (
-              <div className="flex gap-3 rounded-md border border-red-300 bg-red-50 p-3 dark:border-red-700 dark:bg-red-900/20">
-                <span className="text-sm text-red-800 dark:text-red-300">{modalStatus.message}</span>
-              </div>
-            )}
+            ) : null}
           </DialogBody>
-
           <DialogFooter>
-            {modalStatus.state !== 'done' && (
-              <Button size="sm" variant="outline" onClick={() => setShowAddNew(false)}>Cancel</Button>
-            )}
-            {(modalStatus.state === 'idle' || modalStatus.state === 'error') && (
-              <Button size="sm" onClick={() => void handleStartCapture()} disabled={!captureForm.url}>
-                <IconCamera size={14} />
-                Capture
-              </Button>
-            )}
-            {modalStatus.state === 'done' && (
-              <Button size="sm" variant="outline" onClick={() => setShowAddNew(false)}>
-                Close
-              </Button>
-            )}
+            <Button size="sm" variant="outline" onClick={() => setShowNewSession(false)} disabled={creating}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={() => void handleCreateSession()} disabled={creating}>
+              <IconPlus />
+              {creating ? 'Starting Session...' : 'Start Session'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </DialogRoot>

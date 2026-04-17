@@ -6,7 +6,7 @@ import { PermissionGroupMembersModal } from '@/components/agchain/settings/Permi
 import { PermissionGroupPermissionsModal } from '@/components/agchain/settings/PermissionGroupPermissionsModal';
 import { PermissionGroupsTable } from '@/components/agchain/settings/PermissionGroupsTable';
 import { Button } from '@/components/ui/button';
-import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
+import { useAgchainOrganizationScopeState } from '@/hooks/agchain/useAgchainOrganizationScopeState';
 import { useAgchainPermissionGroups } from '@/hooks/agchain/useAgchainPermissionGroups';
 import { AgchainPageFrame } from '@/pages/agchain/AgchainPageFrame';
 
@@ -15,7 +15,7 @@ export default function AgchainPermissionGroupsPage() {
   const [permissionsOpen, setPermissionsOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
   const [selectedPermissionGroupId, setSelectedPermissionGroupId] = useState<string | null>(null);
-  const scopeState = useAgchainScopeState('organization');
+  const scopeState = useAgchainOrganizationScopeState();
   const {
     items,
     permissionDefinitions,
@@ -41,7 +41,9 @@ export default function AgchainPermissionGroupsPage() {
     addGroupMembers,
     removeGroupMember,
     reload,
-  } = useAgchainPermissionGroups();
+  } = useAgchainPermissionGroups(
+    scopeState.kind === 'ready' ? scopeState.selectedOrganizationId : null,
+  );
 
   if (scopeState.kind === 'bootstrapping') {
     return (

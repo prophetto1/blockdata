@@ -16,9 +16,9 @@ class IntersectionObserverMock {
   unobserve() {}
   disconnect() {}
   takeRecords() { return []; }
-   root = null;
-   rootMargin = '';
-   thresholds = [];
+  root = null;
+  rootMargin = '';
+  thresholds = [];
 }
 
 vi.mock('@/hooks/agchain/useAgchainProjectFocus', () => ({
@@ -76,7 +76,7 @@ describe('AgchainProjectSwitcher', () => {
     window.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver;
   });
 
-  it('shows the focused AGChain project or evaluation', () => {
+  it('shows the focused AGChain project or evaluation with compact selector sizing', () => {
     render(
       <MemoryRouter>
         <AgchainProjectSwitcher />
@@ -85,6 +85,9 @@ describe('AgchainProjectSwitcher', () => {
 
     const trigger = screen.getByRole('button', { name: /legal evals/i });
     expect(trigger).toBeInTheDocument();
+    expect(trigger.className).toContain('min-h-[34px]');
+    expect(trigger.className).toContain('rounded-[4px]');
+    expect(within(trigger).getByText('Legal Evals').className).toContain('text-[13px]');
     expect(within(trigger).getByText('Legal benchmark package')).toBeInTheDocument();
   });
 

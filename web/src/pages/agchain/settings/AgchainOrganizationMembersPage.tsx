@@ -16,13 +16,13 @@ import {
   SelectHiddenSelect,
   createListCollection,
 } from '@/components/ui/select';
-import { useAgchainScopeState } from '@/hooks/agchain/useAgchainScopeState';
+import { useAgchainOrganizationScopeState } from '@/hooks/agchain/useAgchainOrganizationScopeState';
 import { useAgchainOrganizationMembers } from '@/hooks/agchain/useAgchainOrganizationMembers';
 import { AgchainPageFrame } from '@/pages/agchain/AgchainPageFrame';
 
 export default function AgchainOrganizationMembersPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
-  const scopeState = useAgchainScopeState('organization');
+  const scopeState = useAgchainOrganizationScopeState();
   const statusCollection = createListCollection({
     items: [
       { label: 'All', value: 'all' },
@@ -47,7 +47,9 @@ export default function AgchainOrganizationMembersPage() {
     inviteMembers,
     updateMembershipStatus,
     reload,
-  } = useAgchainOrganizationMembers();
+  } = useAgchainOrganizationMembers(
+    scopeState.kind === 'ready' ? scopeState.selectedOrganizationId : null,
+  );
 
   if (scopeState.kind === 'bootstrapping') {
     return (

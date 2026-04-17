@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAgchainWorkspaceContext } from '@/hooks/agchain/useAgchainWorkspaceContext';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createOrganizationMemberInvitations,
   fetchOrganizationMembers,
@@ -32,8 +31,8 @@ function derivePermissionGroups(items: AgchainOrganizationMember[]): AgchainPerm
   });
 }
 
-export function useAgchainOrganizationMembers() {
-  const { selectedOrganizationId } = useAgchainWorkspaceContext();
+export function useAgchainOrganizationMembers(selectedOrganizationId: string | null) {
+  const loadRequestIdRef = useRef(0);
   const [organization, setOrganization] = useState<AgchainSettingsOrganization | null>(null);
   const [items, setItems] = useState<AgchainOrganizationMember[]>([]);
   const [search, setSearch] = useState('');
@@ -46,6 +45,8 @@ export function useAgchainOrganizationMembers() {
   const [updatingMemberId, setUpdatingMemberId] = useState<string | null>(null);
 
   const loadMembers = useCallback(async () => {
+    const requestId = ++loadRequestIdRef.current;
+
     if (!selectedOrganizationId) {
       setOrganization(null);
       setItems([]);
@@ -60,13 +61,21 @@ export function useAgchainOrganizationMembers() {
         search,
         status: statusFilter,
       });
+      if (loadRequestIdRef.current !== requestId) {
+        return;
+      }
       setOrganization(result.organization);
       setItems(result.items);
       setError(null);
     } catch (nextError) {
+      if (loadRequestIdRef.current !== requestId) {
+        return;
+      }
       setError(getErrorMessage(nextError));
     } finally {
-      setLoading(false);
+      if (loadRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [search, selectedOrganizationId, statusFilter]);
 

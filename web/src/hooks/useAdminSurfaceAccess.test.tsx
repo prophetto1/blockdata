@@ -136,11 +136,11 @@ describe('useAdminSurfaceAccess', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/app/blockdata-admin/parsers-docling']}>
+      <MemoryRouter initialEntries={['/app/superuser/bd/parsers-docling']}>
         <ShellWorkspaceSelector />
         <Routes>
           <Route path="/app" element={<div data-testid="app-home">app home</div>} />
-          <Route path="/app/blockdata-admin/*" element={<BlockdataAdminGuard />}>
+          <Route path="/app/superuser/bd/*" element={<BlockdataAdminGuard />}>
             <Route path="*" element={<div data-testid="protected-surface">protected</div>} />
           </Route>
         </Routes>
@@ -149,7 +149,7 @@ describe('useAdminSurfaceAccess', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('protected-surface')).toBeInTheDocument();
-      expect(screen.getByRole('combobox', { name: /workspace/i })).toHaveValue('Blockdata Admin');
+      expect(screen.getByRole('combobox', { name: /workspace/i })).toHaveValue('Superuser');
     });
 
     expect(platformApiFetchMock).toHaveBeenCalledTimes(1);

@@ -11,6 +11,7 @@ from app.auth.dependencies import require_user_auth
 from app.auth.principals import AuthPrincipal
 from app.domain.agchain.workspace_registry import (
     create_project,
+    get_workspace_bootstrap,
     get_project,
     list_organizations,
     list_projects,
@@ -26,9 +27,11 @@ meter = metrics.get_meter(__name__)
 
 organizations_list_counter = meter.create_counter("platform.agchain.organizations.list.count")
 projects_list_counter = meter.create_counter("platform.agchain.projects.list.count")
+workspace_bootstrap_counter = meter.create_counter("platform.agchain.workspace.bootstrap.count")
 projects_create_counter = meter.create_counter("platform.agchain.projects.create.count")
 projects_update_counter = meter.create_counter("platform.agchain.projects.update.count")
 
+workspace_bootstrap_duration_ms = meter.create_histogram("platform.agchain.workspace.bootstrap.duration_ms")
 projects_list_duration_ms = meter.create_histogram("platform.agchain.projects.list.duration_ms")
 
 
@@ -78,6 +81,37 @@ async def list_projects_route(
         projects_list_counter.add(1, safe_attributes(attrs))
         projects_list_duration_ms.record(duration_ms, safe_attributes(attrs))
         return {"items": items}
+
+
+@router.get("/workspace", summary="Get AG chain workspace bootstrap context")
+async def get_workspace_route(
+    preferred_organization_id: str | None = Query(default=None),
+    preferred_project_id: str | None = Query(default=None),
+    preferred_project_slug: str | None = Query(default=None),
+    auth: AuthPrincipal = Depends(require_user_auth),
+):
+    start = time.perf_counter()
+    with tracer.start_as_current_span("agchain.workspace.bootstrap") as span:
+        result = get_workspace_bootstrap(
+            user_id=auth.user_id,
+            preferred_organization_id=preferred_organization_id,
+            preferred_project_id=preferred_project_id,
+            preferred_project_slug=preferred_project_slug,
+        )
+        duration_ms = max(0, int((time.perf_counter() - start) * 1000))
+        attrs = {
+            "organization_count": len(result["organizations"]),
+            "project_count": len(result["projects"]),
+            "preferred_organization_id_present": preferred_organization_id is not None,
+            "preferred_project_id_present": preferred_project_id is not None,
+            "preferred_project_slug_present": preferred_project_slug is not None,
+            "status": result["status"],
+            "latency_ms": duration_ms,
+        }
+        set_span_attributes(span, attrs)
+        workspace_bootstrap_counter.add(1, safe_attributes(attrs))
+        workspace_bootstrap_duration_ms.record(duration_ms, safe_attributes(attrs))
+        return result
 
 
 @router.post("/projects", summary="Create an AG chain project")

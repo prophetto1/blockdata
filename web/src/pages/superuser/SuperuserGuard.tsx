@@ -8,7 +8,24 @@ const AUTH_BYPASS_ENABLED = import.meta.env.VITE_AUTH_BYPASS === 'true';
 
 type SurfaceKey = 'blockdataAdmin' | 'agchainAdmin' | 'superuser';
 
-function AdminSurfaceGuard({ surface }: { surface: SurfaceKey }) {
+function hasSurfaceAccess(
+  access: { blockdataAdmin: boolean; agchainAdmin: boolean; superuser: boolean } | null,
+  surface: SurfaceKey | 'anyAdmin',
+) {
+  if (!access) return false;
+  if (surface === 'anyAdmin') {
+    return access.blockdataAdmin || access.agchainAdmin || access.superuser;
+  }
+  if (surface === 'blockdataAdmin') {
+    return access.blockdataAdmin || access.superuser;
+  }
+  if (surface === 'agchainAdmin') {
+    return access.agchainAdmin || access.superuser;
+  }
+  return access.superuser;
+}
+
+function AdminSurfaceGuard({ surface }: { surface: SurfaceKey | 'anyAdmin' }) {
   const { access, status, refresh } = useAdminSurfaceAccessState();
 
   if (AUTH_BYPASS_ENABLED) {
@@ -23,7 +40,7 @@ function AdminSurfaceGuard({ surface }: { surface: SurfaceKey }) {
     );
   }
 
-  if (access?.[surface]) {
+  if (hasSurfaceAccess(access, surface)) {
     return <Outlet />;
   }
 
@@ -42,7 +59,7 @@ function AdminSurfaceGuard({ surface }: { surface: SurfaceKey }) {
     );
   }
 
-  if (!access?.[surface]) {
+  if (!hasSurfaceAccess(access, surface)) {
     return <Navigate to="/app" replace />;
   }
 
@@ -50,6 +67,10 @@ function AdminSurfaceGuard({ surface }: { surface: SurfaceKey }) {
 }
 
 export function SuperuserGuard() {
+  return <AdminSurfaceGuard surface="anyAdmin" />;
+}
+
+export function SuperuserOnlyGuard() {
   return <AdminSurfaceGuard surface="superuser" />;
 }
 

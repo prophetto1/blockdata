@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useAgchainWorkspaceContext } from '@/hooks/agchain/useAgchainWorkspaceContext';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addPermissionGroupMembers,
   createOrganizationPermissionGroup,
@@ -22,8 +21,8 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
 }
 
-export function useAgchainPermissionGroups() {
-  const { selectedOrganizationId } = useAgchainWorkspaceContext();
+export function useAgchainPermissionGroups(selectedOrganizationId: string | null) {
+  const loadIndexRequestIdRef = useRef(0);
   const [organization, setOrganization] = useState<AgchainSettingsOrganization | null>(null);
   const [items, setItems] = useState<AgchainPermissionGroup[]>([]);
   const [permissionDefinitions, setPermissionDefinitions] = useState<AgchainPermissionDefinitionsResponse | null>(null);
@@ -44,6 +43,8 @@ export function useAgchainPermissionGroups() {
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
   const loadPermissionGroupsIndex = useCallback(async () => {
+    const requestId = ++loadIndexRequestIdRef.current;
+
     if (!selectedOrganizationId) {
       setOrganization(null);
       setItems([]);
@@ -59,14 +60,22 @@ export function useAgchainPermissionGroups() {
         fetchPermissionDefinitions(selectedOrganizationId),
         fetchPermissionGroups(selectedOrganizationId, { search }),
       ]);
+      if (loadIndexRequestIdRef.current !== requestId) {
+        return;
+      }
       setPermissionDefinitions(definitions);
       setOrganization(groups.organization);
       setItems(groups.items);
       setError(null);
     } catch (nextError) {
+      if (loadIndexRequestIdRef.current !== requestId) {
+        return;
+      }
       setError(getErrorMessage(nextError));
     } finally {
-      setLoading(false);
+      if (loadIndexRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [search, selectedOrganizationId]);
 

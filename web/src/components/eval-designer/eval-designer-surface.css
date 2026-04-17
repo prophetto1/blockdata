@@ -1,0 +1,192 @@
+.eval-designer-surface {
+  display: flex;
+  height: 100%;
+  min-height: 560px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at top left, rgba(74, 88, 130, 0.09), transparent 32%),
+    #111111;
+}
+
+.eval-designer-surface__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(17, 17, 17, 0.9);
+}
+
+.eval-designer-surface__identity {
+  min-width: 0;
+}
+
+.eval-designer-surface__title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.eval-designer-surface__title {
+  margin: 0;
+  color: #f4f4f5;
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.eval-designer-surface__project-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.eval-designer-surface__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.eval-designer-surface__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.eval-designer-surface__action:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f4f4f5;
+}
+
+.eval-designer-surface__action--primary {
+  border-color: rgba(0, 119, 255, 0.35);
+  background: rgba(0, 119, 255, 0.2);
+  color: #d7e8ff;
+}
+
+.eval-designer-surface__action--primary:hover {
+  border-color: rgba(0, 119, 255, 0.46);
+  background: rgba(0, 119, 255, 0.27);
+  color: #edf5ff;
+}
+
+.eval-designer-surface__canvas {
+  min-height: 0;
+  flex: 1;
+}
+
+.eval-designer-surface .pm-reactflow-wrap .react-flow {
+  background: #111111;
+}
+
+.eval-designer-surface .pm-reactflow-wrap .react-flow__background pattern circle {
+  fill: rgba(255, 255, 255, 0.055);
+}
+
+.eval-designer-surface .pm-flow-node {
+  min-width: 164px;
+  max-width: 212px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  background: #161616;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.eval-designer-surface .pm-flow-node[data-variant='start'] {
+  border-left: 1px solid rgba(151, 146, 255, 0.4);
+  box-shadow:
+    inset 0 0 0 1px rgba(151, 146, 255, 0.12),
+    0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.eval-designer-surface .pm-flow-node__header {
+  padding: 7px 10px 4px;
+}
+
+.eval-designer-surface .pm-flow-node__title {
+  color: #f4f4f5;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.eval-designer-surface .pm-flow-node__kind {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 7px;
+}
+
+.eval-designer-surface .pm-flow-node__body {
+  padding: 0 10px 9px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  line-height: 1.38;
+}
+
+.eval-designer-surface .pm-flow-node.is-selected {
+  outline: 1px solid rgba(96, 150, 255, 0.65);
+}
+
+.eval-designer-surface .pm-flow-node .react-flow__handle {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #202020;
+}
+
+.eval-designer-surface .react-flow__controls {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  background: rgba(18, 18, 18, 0.92);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.eval-designer-surface .react-flow__controls-button {
+  background: transparent;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  fill: rgba(255, 255, 255, 0.72);
+}
+
+.eval-designer-surface .react-flow__controls-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.eval-designer-surface .react-flow__minimap {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .eval-designer-surface__toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .eval-designer-surface__actions {
+    width: 100%;
+  }
+}

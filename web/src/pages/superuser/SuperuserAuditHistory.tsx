@@ -93,7 +93,7 @@ function isAuditRowInRange(changedAt: string, range: AuditTimeRange): boolean {
 }
 
 export function Component() {
-  useShellHeaderTitle({ title: 'Audit History', breadcrumbs: ['Blockdata Admin', 'Audit History'] });
+  useShellHeaderTitle({ title: 'Audit History', breadcrumbs: ['Superuser', 'BD', 'Audit History'] });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,7 +172,7 @@ export function Component() {
   return (
     <SettingsPageFrame
       title="Audit History"
-      description="Review configuration change history, actors, reasons, and before-and-after values across Blockdata Admin."
+      description="Review configuration change history, actors, reasons, and before-and-after values across BD surfaces."
       headerVariant="admin"
       bodyClassName="p-0"
     >

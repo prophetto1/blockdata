@@ -4,13 +4,13 @@ import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAdminSurfaceAccessState } from '@/hooks/useAdminSurfaceAccess';
 
-type WorkspaceValue = 'blockdata' | 'agchain' | 'blockdata-admin' | 'agchain-admin' | 'superuser';
+type WorkspaceValue = 'blockdata' | 'agchain' | 'superuser';
 
 type WorkspaceOption = {
   label: string;
   value: WorkspaceValue;
   path: string;
-  adminKey?: 'blockdataAdmin' | 'agchainAdmin' | 'superuser';
+  adminKey?: 'superuser';
 };
 
 const BASE_WORKSPACE_OPTIONS: WorkspaceOption[] = [
@@ -19,20 +19,16 @@ const BASE_WORKSPACE_OPTIONS: WorkspaceOption[] = [
 ];
 
 const ADMIN_WORKSPACE_OPTIONS: WorkspaceOption[] = [
-  { label: 'Blockdata Admin', value: 'blockdata-admin', path: '/app/blockdata-admin/parsers-docling', adminKey: 'blockdataAdmin' },
-  { label: 'AGChain Admin', value: 'agchain-admin', path: '/app/agchain-admin', adminKey: 'agchainAdmin' },
   { label: 'Superuser', value: 'superuser', path: '/app/superuser', adminKey: 'superuser' },
 ];
 
-const ADMIN_WORKSPACE_FALLBACKS: Record<Extract<WorkspaceValue, 'blockdata-admin' | 'agchain-admin' | 'superuser'>, Extract<WorkspaceValue, 'blockdata' | 'agchain'>> = {
-  'blockdata-admin': 'blockdata',
-  'agchain-admin': 'agchain',
+const ADMIN_WORKSPACE_FALLBACKS: Record<'superuser', Extract<WorkspaceValue, 'blockdata' | 'agchain'>> = {
   superuser: 'blockdata',
 };
 
 function isAdminWorkspaceValue(
   value: WorkspaceValue,
-): value is Extract<WorkspaceValue, 'blockdata-admin' | 'agchain-admin' | 'superuser'> {
+): value is 'superuser' {
   return value in ADMIN_WORKSPACE_FALLBACKS;
 }
 
@@ -41,11 +37,7 @@ export function ShellWorkspaceSelector() {
   const navigate = useNavigate();
   const { access, status } = useAdminSurfaceAccessState();
 
-  const currentValue: WorkspaceValue = location.pathname.startsWith('/app/blockdata-admin')
-    ? 'blockdata-admin'
-    : location.pathname.startsWith('/app/agchain-admin')
-      ? 'agchain-admin'
-      : location.pathname.startsWith('/app/superuser')
+  const currentValue: WorkspaceValue = location.pathname.startsWith('/app/superuser')
     ? 'superuser'
     : location.pathname.startsWith('/app/agchain')
       ? 'agchain'
@@ -57,7 +49,7 @@ export function ShellWorkspaceSelector() {
       ...ADMIN_WORKSPACE_OPTIONS.filter((option) => (
         status === 'loading' || status === 'idle'
           ? option.value === currentValue
-          : (option.adminKey ? Boolean(access?.[option.adminKey]) : false)
+          : Boolean(access?.superuser || access?.blockdataAdmin || access?.agchainAdmin)
       )),
     ]
   ), [access, currentValue, status]);

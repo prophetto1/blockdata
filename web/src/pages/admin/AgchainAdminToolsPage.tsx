@@ -3,8 +3,8 @@ import { SettingsPageFrame } from '@/pages/settings/SettingsPageHeader';
 
 export default function AgchainAdminToolsPage() {
   useShellHeaderTitle({
-    title: 'AGChain Admin Tools',
-    breadcrumbs: ['AGChain Admin', 'Tools'],
+    title: 'Tools',
+    breadcrumbs: ['Superuser', 'AC', 'Tools'],
   });
 
   return (
