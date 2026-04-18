@@ -1,4 +1,10 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "master": false
+    }
+  },
   "outputDirectory": "dist",
   "rewrites": [
     { "source": "/docs/:path*", "destination": "https://blockdata-ct.vercel.app/docs/:path*" }

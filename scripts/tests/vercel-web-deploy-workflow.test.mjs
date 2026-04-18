@@ -42,4 +42,17 @@ test('vercel web deploy workflow is repo-owned and production-scoped', () => {
   assert.match(workflow, /vercel@latest pull --yes --environment=production/, 'workflow must pull production config');
   assert.match(workflow, /vercel@latest build --prod/, 'workflow must build through Vercel CLI');
   assert.match(workflow, /vercel@latest deploy --prebuilt --prod/, 'workflow must deploy the prebuilt output');
+  assert.match(workflow, /id:\s*deploy/, 'workflow must capture the production deploy step output');
+  assert.match(workflow, /PRODUCTION_URL:\s*https:\/\/blockdata\.run/, 'workflow must smoke-check the official production domain');
+  assert.match(workflow, /BlockData/, 'workflow smoke verification must assert the production shell marker');
+});
+
+test('web vercel config disables direct master git deployments', () => {
+  const config = JSON.parse(read('web/vercel.json'));
+
+  assert.equal(
+    config.git?.deploymentEnabled?.master,
+    false,
+    'web/vercel.json must disable direct Vercel Git deployments for master so production flows through the repo-owned workflow',
+  );
 });

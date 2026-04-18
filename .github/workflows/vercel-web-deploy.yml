@@ -49,5 +49,37 @@ jobs:
         run: npx vercel@latest build --prod --token=$VERCEL_TOKEN
 
       - name: Deploy web to Vercel production
+        id: deploy
         working-directory: web
-        run: npx vercel@latest deploy --prebuilt --prod --token=$VERCEL_TOKEN
+        run: |
+          deployment_url="$(npx vercel@latest deploy --prebuilt --prod --token=$VERCEL_TOKEN)"
+          echo "deployment_url=${deployment_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke-check production deployment
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment_url }}
+          PRODUCTION_URL: https://blockdata.run
+        run: |
+          node --input-type=module - <<'EOF'
+          const targets = [
+            ['deployment', process.env.DEPLOYMENT_URL?.trim()],
+            ['production', process.env.PRODUCTION_URL?.trim()],
+          ];
+
+          for (const [label, url] of targets) {
+            if (!url) {
+              throw new Error(`Missing ${label} url for smoke verification`);
+            }
+
+            const response = await fetch(url, { redirect: 'follow' });
+            const html = await response.text();
+
+            if (!response.ok) {
+              throw new Error(`${label} smoke check failed with ${response.status} for ${url}`);
+            }
+
+            if (!html.includes('<title>BlockData</title>')) {
+              throw new Error(`${label} smoke check did not find the BlockData HTML title for ${url}`);
+            }
+          }
+          EOF
